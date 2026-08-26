@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../app_settings.dart';
 import '../../update/release_info.dart';
-import '../../update/update_downloader.dart';
 import '../../update/update_service.dart';
 import '../theme.dart';
 import 'common.dart';
@@ -127,13 +126,13 @@ class _UpdateCardState extends State<UpdateCard> {
           _note(t.updateReady, AppTheme.cool),
           const SizedBox(height: 10),
           FilledButton.icon(
-            onPressed: () async {
-              await s.install();
-              // The package is only cleaned up once the system has been handed
-              // it; deleting sooner would pull the file out from under the
-              // installer.
-              await UpdateDownloader.clearCache();
-            },
+            // No cleanup here. Handing over the intent is not the same as the
+            // installer having read the file: it opens the content:// URI
+            // afterwards, on its own schedule, and deleting at this point makes
+            // it fail with "there is a problem with the package" -- an error
+            // that blames the download rather than the app that removed it.
+            // The stale package is cleared at the start of the next check.
+            onPressed: s.install,
             icon: const Icon(Icons.system_update_alt, size: 19),
             label: Text(t.updateInstall),
           ),
