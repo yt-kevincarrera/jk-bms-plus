@@ -67,6 +67,15 @@ class UpdateService extends ChangeNotifier {
   }
 
   Future<UpdateCheck> check() async {
+    // Clears any package left from a previous run. This is the only safe
+    // moment to do it: the system installer reads the file asynchronously
+    // after the intent is handed over, so deleting right after the hand-off
+    // pulls it out from under the installer. By the next check that install
+    // has either finished or been abandoned, and either way the file is dead
+    // weight -- 21 MB of it.
+    await UpdateDownloader.clearCache();
+    _downloaded = null;
+
     phase = UpdatePhase.checking;
     error = null;
     notifyListeners();
