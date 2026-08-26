@@ -28,7 +28,7 @@
     <!-- The app talks to exactly one host on the internet: api.github.com, to
          ask whether a newer release has been published, and to fetch it when
          the rider says so. Nothing about the pack, the rides or the location
-         is ever uploaded -- there is no server, no account and no telemetry. -->
+         is ever uploaded: there is no server, no account and no telemetry. -->
     <uses-permission android:name="android.permission.INTERNET" />
 
     <!-- This app is not on a store, so an update is a package it hands to the
