@@ -54,7 +54,23 @@ flutter build apk --release --split-per-abi
    A tag the app cannot parse — `nightly`, `1.2.3rc` — is ignored by the
    updater rather than misread, so such a release simply never reaches anyone.
 
+## Updating your own phone, locally
+
+None of the token business applies when the phone is in front of you:
+
+```bash
+./tool/install.sh
+```
+
+It reads the phone's ABI, builds only that one, and installs over the existing
+app. Same signing key, so the ride history and stored readings survive. No
+GitHub, no release, no token, no internet.
+
+The in-app updater exists for the times the phone is *not* plugged into the
+machine that builds it.
+
 ## While the repository is private
+
 
 GitHub will not serve a private repository's release to an anonymous request,
 and returns 404 rather than 403 so that the repo's existence stays hidden. The
@@ -67,9 +83,14 @@ is a token handed to everyone who receives the package.
 
 Make one at github.com/settings/tokens with as little reach as possible:
 
-- Fine-grained token, this repository only
-- Repository permissions: **Contents: Read-only**
-- Nothing else
+- **Fine-grained tokens** -> Generate new token
+- Repository access: **Only select repositories** -> `jk-bms-plus`
+- Repository permissions: **Contents: Read-only**. Nothing else.
+- Expiration: whatever you are willing to retype. When it expires the update
+  check says the repo is private again, which is the same message as having no
+  token, so it is not mysterious.
+
+Then paste it into System -> Updates on the phone, once.
 
 Making the repository public removes the need for any of this — the code holds
 no secrets, and release downloads then work with no token at all.

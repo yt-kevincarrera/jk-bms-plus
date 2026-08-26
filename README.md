@@ -167,6 +167,16 @@ came from community reverse engineering and is cited in the code. Read
 also lists where the reference and the captured data disagree, and what still
 has to be checked against the pack.
 
+## Installing on your own phone
+
+```bash
+./tool/install.sh
+```
+
+Builds only the ABI the connected phone reports and installs over the existing
+app, keeping its data. No GitHub and no token involved -- that path is for
+phones that are not plugged into the machine that builds them.
+
 ## Releasing
 
 Builds are published as GitHub releases, split per ABI, and the app updates
