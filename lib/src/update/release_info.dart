@@ -32,6 +32,7 @@ class ReleaseInfo {
     required this.notes,
     required this.assets,
     required this.htmlUrl,
+    this.publishedAt,
   });
 
   final AppVersion version;
@@ -39,6 +40,9 @@ class ReleaseInfo {
   final String notes;
   final List<ReleaseAsset> assets;
   final String htmlUrl;
+
+  /// When GitHub says it was published. Null if it did not say.
+  final DateTime? publishedAt;
 
   /// Picks the build for this phone's instruction set.
   ///

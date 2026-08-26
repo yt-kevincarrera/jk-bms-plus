@@ -75,7 +75,23 @@ class _UpdateCardState extends State<UpdateCard> {
           ? Pill(check!.release!.tag, color: AppTheme.cool)
           : null,
       children: [
-        InfoRow(t.updateInstalled, s.currentVersion.toString()),
+        InfoRow(
+          t.updateInstalled,
+          s.currentVersion.toString(),
+          last: check?.release == null,
+        ),
+        // Once a check has run, the published version is worth keeping on
+        // screen next to the installed one: two numbers side by side answer
+        // "am I behind" without reading a sentence.
+        if (check?.release != null)
+          InfoRow(
+            t.updatePublished,
+            check!.release!.version.toString(),
+            valueColor: check.hasUpdate ? AppTheme.cool : null,
+            hint: check.release!.publishedAt == null
+                ? null
+                : t.updateReleasedOn(_date(check.release!.publishedAt!)),
+          ),
         const SizedBox(height: 4),
         ..._body(t, s, check),
         const SizedBox(height: 8),
@@ -151,6 +167,16 @@ class _UpdateCardState extends State<UpdateCard> {
               check.asset!.sizeMb.toStringAsFixed(1),
             ),
             AppTheme.cool,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            check.asset!.name,
+            style: const TextStyle(
+              fontSize: 11,
+              height: 1.4,
+              color: AppTheme.textFaint,
+              fontFeatures: [FontFeature.tabularFigures()],
+            ),
           ),
           if (check.release!.notes.trim().isNotEmpty) ...[
             const SizedBox(height: 8),
@@ -260,4 +286,10 @@ class _UpdateCardState extends State<UpdateCard> {
         text,
         style: TextStyle(fontSize: 12, height: 1.45, color: colour),
       );
+
+  static String _date(DateTime utc) {
+    final d = utc.toLocal();
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${two(d.day)}/${two(d.month)}/${d.year}';
+  }
 }

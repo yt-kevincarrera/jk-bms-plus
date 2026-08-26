@@ -1542,6 +1542,14 @@ class AppL10nEn extends AppL10n {
   String get updateInstalled => 'Installed version';
 
   @override
+  String get updatePublished => 'Latest published';
+
+  @override
+  String updateReleasedOn(String date) {
+    return 'Published on $date';
+  }
+
+  @override
   String get updateCheck => 'Check for update';
 
   @override
@@ -1582,14 +1590,14 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get updateNeedsToken =>
-      'The repository is private, so GitHub will not serve the release without permission. Paste a read-only access token below, or make the repository public and none is needed.';
+      'GitHub did not serve the release. Usually that means the repository is private, which needs a read-only token. If it is public, try again in a moment.';
 
   @override
   String get updateTokenLabel => 'GitHub token';
 
   @override
   String get updateTokenHint =>
-      'Kept on this phone only and sent only to api.github.com. It is not inside the APK, precisely so it does not travel with it.';
+      'Only needed while the repository is private. Kept on this phone and sent only to api.github.com; it is not inside the APK, precisely so it does not travel with it.';
 
   @override
   String get updateTokenSave => 'Save';
