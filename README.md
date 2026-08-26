@@ -179,6 +179,10 @@ phones that are not plugged into the machine that builds them.
 
 ## Releasing
 
+The in-app updater has been exercised end to end on a Pixel 6: check, download
+over the public release, and hand-off to the system installer.
+
+
 Builds are published as GitHub releases, split per ABI, and the app updates
 itself from them. The signing key is what makes that possible and losing it
 ends it permanently -- read [docs/RELEASING.md](docs/RELEASING.md) before
