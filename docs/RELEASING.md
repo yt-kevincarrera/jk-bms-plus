@@ -83,3 +83,22 @@ permission exists solely for this.
 
 Checks are manual. Nothing polls, nothing downloads over mobile data on its own,
 and the system's install prompt appears every time.
+
+## Two GitHub accounts on this machine
+
+`gh` is logged into a personal account and a work one, and the active account
+has switched on its own between commands here. A push then fails with
+"Repository not found" — GitHub's way of saying *this token cannot see that
+private repo*, which reads like the repo is gone.
+
+This clone pins its credentials to whichever account `gh` has active:
+
+```bash
+git config --local credential.https://github.com.helper "!gh auth git-credential"
+```
+
+So if a push starts failing, check the account rather than the repository:
+
+```bash
+gh auth status && gh auth switch --user yt-kevincarrera
+```
