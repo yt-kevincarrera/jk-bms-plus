@@ -4,6 +4,7 @@ import 'ble/ble_transport.dart';
 import 'ble/bms_link.dart';
 import 'ble/simulator/simulated_pack.dart';
 import 'ble/switchable_link.dart';
+import 'data/database.dart';
 import 'data/repository.dart';
 import 'gps/location_source.dart';
 import 'gps/simulated_location_source.dart';
@@ -54,7 +55,8 @@ class BmsService {
 
   /// Learns the bike's real consumption and turns it into a range estimate.
   ///
-  /// Rebuilt from stored trips at startup by [relearnRangeFromTrips], and
+  /// Rebuilt from the connected pack's stored trips by [relearnRangeFromTrips],
+  /// on every connection, and
   /// refined in half-kilometre segments while a ride is being recorded. With
   /// nothing stored it quotes its starting default and says so rather than
   /// dressing a guess up as a measurement.
@@ -66,9 +68,26 @@ class BmsService {
   /// nagging once the measurement has actually been made.
   int capacityTestCount = 0;
 
-  /// What the pack was sold as, in amp-hours. The BMS has no idea, so it has
-  /// to be told; it is what the honest-capacity comparison is measured against.
-  double catalogueCapacityAh = 45.0;
+  /// The pack currently connected, as stored.
+  ///
+  /// Everything the app records or reads back is scoped to this. Null means
+  /// nothing is connected, and in that state the app records nothing rather
+  /// than filing readings under no pack at all.
+  Device? activeDevice;
+
+  String? get activeDeviceId => activeDevice?.id;
+
+  /// Used only while no pack is known, so the screens have a sane number to
+  /// show before the first connection.
+  double fallbackCatalogueAh = 45.0;
+
+  /// What *this* pack was sold as, in amp-hours.
+  ///
+  /// Per pack, not global. The BMS has no idea what was on the box, so it has
+  /// to be told, and telling it once for a rider with two batteries would make
+  /// at least one of the two health readings quietly wrong.
+  double get catalogueCapacityAh =>
+      activeDevice?.catalogueCapacityAh ?? fallbackCatalogueAh;
 
   /// Volts per cell at which the pack cuts off. Taken from the BMS's own
   /// undervoltage setting once the settings frame arrives, so the usable-energy
@@ -177,9 +196,53 @@ class BmsService {
     if (link == null) return;
     _resetDecoding();
     await link.useSimulator(scenario: scenario);
+    // The simulated pack is a pack like any other as far as storage goes. It
+    // gets its own row, so demo rides learn from demo rides and never touch
+    // what the app believes about a real battery.
+    await _activate(id: demoDeviceId, name: 'Pack demo', demo: true);
     _armSilenceWatchdog();
-    await link.connect('demo');
+    await link.connect(demoDeviceId);
   }
+
+  /// The id the simulated pack is stored under.
+  static const String demoDeviceId = 'demo';
+
+  /// Records which pack is connected and points storage at it.
+  Future<void> _activate({
+    required String id,
+    required String name,
+    required bool demo,
+  }) async {
+    final repo = repository;
+    if (repo == null) return;
+    activeDevice = await repo.rememberDevice(id: id, name: name, demo: demo);
+    repo.activeDeviceId = id;
+    repo.activeIsDemo = demo;
+    _deviceController.add(activeDevice);
+
+    // Everything derived from history has to be rebuilt for *this* pack. None
+    // of it can happen at startup any more, because until a pack is connected
+    // there is no history to speak of -- only several histories, and no way to
+    // know which one applies.
+    await relearnRangeFromTrips();
+    await resumeCapacityTest();
+    await scanForCapacityCycles();
+  }
+
+  /// Re-reads the stored row, after a rename or a catalogue change.
+  Future<void> refreshActiveDevice() async {
+    final id = activeDeviceId;
+    final repo = repository;
+    if (id == null || repo == null) return;
+    activeDevice = await repo.device(id);
+    _deviceController.add(activeDevice);
+  }
+
+  final StreamController<Device?> _deviceController =
+      StreamController<Device?>.broadcast();
+
+  /// Fires whenever the connected pack changes, or its stored details do.
+  Stream<Device?> get deviceStream => _deviceController.stream;
 
   /// Returns to the radio.
   Future<void> exitDemoMode() async {
@@ -187,6 +250,9 @@ class BmsService {
     if (link == null) return;
     _resetDecoding();
     await link.useRealBms();
+    activeDevice = null;
+    repository?.activeDeviceId = null;
+    _deviceController.add(null);
   }
 
   /// Feeds the range estimator during a ride, so the number improves as you go
@@ -218,10 +284,11 @@ class BmsService {
     _lastSettings = null;
   }
 
-  Future<void> connect(String deviceId) {
+  Future<void> connect(String deviceId, {String name = ''}) async {
     _assembler.reset();
+    await _activate(id: deviceId, name: name, demo: false);
     _armSilenceWatchdog();
-    return _transport.connect(deviceId);
+    await _transport.connect(deviceId);
   }
 
   /// Complains if the link comes up but stays quiet.
@@ -285,6 +352,9 @@ class BmsService {
 
   void _handleDeviceInfo(JkDeviceInfo info) {
     _lastDeviceInfo = info;
+    // The serial and model only arrive once a frame has been parsed, so the
+    // stored row catches up here rather than at connect time.
+    _recordDeviceDetails(info);
     _variant = _override ?? info.variant;
     _deviceInfoController.add(info);
 
@@ -379,8 +449,10 @@ class BmsService {
     final whPerKmBefore = rangeEstimator.whPerKm;
     // Asked of the store, not the in-memory estimator: entering demo mode
     // resets the estimator, and "first trip ever" should not depend on that.
-    final priorTrips =
-        await repository?.tripsForLearning(demo: isDemo) ?? const [];
+    final device = activeDeviceId;
+    final priorTrips = device == null
+        ? const <Trip>[]
+        : await repository?.tripsForLearning(device) ?? const <Trip>[];
     final hadLearnedBefore = priorTrips.isNotEmpty;
 
     final points = trip.points;
@@ -467,7 +539,9 @@ class BmsService {
     final repo = repository;
     if (repo == null) return 0;
 
-    final trips = await repo.tripsForLearning(demo: isDemo);
+    final device = activeDeviceId;
+    if (device == null) return 0;
+    final trips = await repo.tripsForLearning(device);
     final rebuilt = RangeEstimator();
     for (final t in trips) {
       rebuilt.addSegment(
@@ -618,7 +692,10 @@ class BmsService {
         measuredAh: capacityTest.measuredAh,
         measuredWh: capacityTest.measuredWh,
       );
-      capacityTestCount = await repository?.countCompletedCapacityTests() ?? 0;
+      final device = activeDeviceId;
+      capacityTestCount = device == null
+          ? 0
+          : await repository?.countCompletedCapacityTests(device) ?? 0;
     }
     capacityTest.finish();
     _capacityController.add(capacityTest.state);
@@ -674,7 +751,9 @@ class BmsService {
     required bool rawFrames,
     bool setByUser = false,
   }) {
-    catalogueCapacityAh = catalogueAh;
+    // Only the fallback: a connected pack carries its own figure, and a
+    // global setting must not reach in and overwrite it.
+    fallbackCatalogueAh = catalogueAh;
     catalogueSetByUser = setByUser;
     hapticAlerts = haptics;
     repository?.recordRawFrames = rawFrames;
@@ -685,7 +764,10 @@ class BmsService {
     final repo = repository;
     if (repo == null || capacityTest.isRunning) return;
 
-    final unfinished = await repo.unfinishedCapacityTest();
+    final device = activeDeviceId;
+    if (device == null) return;
+
+    final unfinished = await repo.unfinishedCapacityTest(device);
     if (unfinished == null) return;
 
     capacityTest.resume(
@@ -697,7 +779,7 @@ class BmsService {
       startPackVoltage: unfinished.startPackVoltage,
       catalogueAh: unfinished.catalogueAh,
     );
-    capacityTestCount = await repo.countCompletedCapacityTests();
+    capacityTestCount = await repo.countCompletedCapacityTests(device);
     _capacityController.add(capacityTest.state);
   }
 
@@ -709,9 +791,10 @@ class BmsService {
   /// after each ride.
   Future<int> scanForCapacityCycles() async {
     final repo = repository;
-    if (repo == null) return 0;
+    final device = activeDeviceId;
+    if (repo == null || device == null) return 0;
 
-    final readings = await repo.allSnapshots();
+    final readings = await repo.allSnapshots(device);
     if (readings.length < 20) return 0;
 
     const detector = CapacityCycleDetector();
@@ -719,10 +802,12 @@ class BmsService {
 
     var added = 0;
     for (final cycle in found) {
-      if (await repo.recordDetectedCycle(cycle, catalogueCapacityAh)) added++;
+      if (await repo.recordDetectedCycle(device, cycle, catalogueCapacityAh)) {
+        added++;
+      }
     }
     if (added > 0) {
-      capacityTestCount = await repo.countCompletedCapacityTests();
+      capacityTestCount = await repo.countCompletedCapacityTests(device);
       _capacityController.add(capacityTest.state);
     }
     return added;
@@ -747,7 +832,22 @@ class BmsService {
     return n;
   }
 
+  Future<void> _recordDeviceDetails(JkDeviceInfo info) async {
+    final id = activeDeviceId;
+    final repo = repository;
+    if (id == null || repo == null) return;
+    activeDevice = await repo.rememberDevice(
+      id: id,
+      name: activeDevice?.name ?? '',
+      demo: activeDevice?.demo ?? false,
+      serialNumber: info.serialNumber,
+      model: info.model,
+    );
+    _deviceController.add(activeDevice);
+  }
+
   Future<void> dispose() async {
+
     _silenceTimer?.cancel();
     await _stopLiveNotification();
     await _stopLocation();

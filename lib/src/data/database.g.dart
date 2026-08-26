@@ -3,6 +3,541 @@
 part of 'database.dart';
 
 // ignore_for_file: type=lint
+class $DevicesTable extends Devices with TableInfo<$DevicesTable, Device> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DevicesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _serialNumberMeta = const VerificationMeta(
+    'serialNumber',
+  );
+  @override
+  late final GeneratedColumn<String> serialNumber = GeneratedColumn<String>(
+    'serial_number',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _modelMeta = const VerificationMeta('model');
+  @override
+  late final GeneratedColumn<String> model = GeneratedColumn<String>(
+    'model',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _catalogueCapacityAhMeta =
+      const VerificationMeta('catalogueCapacityAh');
+  @override
+  late final GeneratedColumn<double> catalogueCapacityAh =
+      GeneratedColumn<double>(
+        'catalogue_capacity_ah',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(45),
+      );
+  static const VerificationMeta _firstSeenAtMeta = const VerificationMeta(
+    'firstSeenAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> firstSeenAt = GeneratedColumn<DateTime>(
+    'first_seen_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastSeenAtMeta = const VerificationMeta(
+    'lastSeenAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastSeenAt = GeneratedColumn<DateTime>(
+    'last_seen_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _demoMeta = const VerificationMeta('demo');
+  @override
+  late final GeneratedColumn<bool> demo = GeneratedColumn<bool>(
+    'demo',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("demo" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    serialNumber,
+    model,
+    catalogueCapacityAh,
+    firstSeenAt,
+    lastSeenAt,
+    demo,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'devices';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Device> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    }
+    if (data.containsKey('serial_number')) {
+      context.handle(
+        _serialNumberMeta,
+        serialNumber.isAcceptableOrUnknown(
+          data['serial_number']!,
+          _serialNumberMeta,
+        ),
+      );
+    }
+    if (data.containsKey('model')) {
+      context.handle(
+        _modelMeta,
+        model.isAcceptableOrUnknown(data['model']!, _modelMeta),
+      );
+    }
+    if (data.containsKey('catalogue_capacity_ah')) {
+      context.handle(
+        _catalogueCapacityAhMeta,
+        catalogueCapacityAh.isAcceptableOrUnknown(
+          data['catalogue_capacity_ah']!,
+          _catalogueCapacityAhMeta,
+        ),
+      );
+    }
+    if (data.containsKey('first_seen_at')) {
+      context.handle(
+        _firstSeenAtMeta,
+        firstSeenAt.isAcceptableOrUnknown(
+          data['first_seen_at']!,
+          _firstSeenAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_firstSeenAtMeta);
+    }
+    if (data.containsKey('last_seen_at')) {
+      context.handle(
+        _lastSeenAtMeta,
+        lastSeenAt.isAcceptableOrUnknown(
+          data['last_seen_at']!,
+          _lastSeenAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_lastSeenAtMeta);
+    }
+    if (data.containsKey('demo')) {
+      context.handle(
+        _demoMeta,
+        demo.isAcceptableOrUnknown(data['demo']!, _demoMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Device map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Device(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      serialNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}serial_number'],
+      )!,
+      model: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}model'],
+      )!,
+      catalogueCapacityAh: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}catalogue_capacity_ah'],
+      )!,
+      firstSeenAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}first_seen_at'],
+      )!,
+      lastSeenAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_seen_at'],
+      )!,
+      demo: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}demo'],
+      )!,
+    );
+  }
+
+  @override
+  $DevicesTable createAlias(String alias) {
+    return $DevicesTable(attachedDatabase, alias);
+  }
+}
+
+class Device extends DataClass implements Insertable<Device> {
+  final String id;
+
+  /// What the BMS advertises, or whatever the rider renames it to.
+  final String name;
+
+  /// From the device info frame, once one has arrived.
+  final String serialNumber;
+  final String model;
+
+  /// What *this* pack was sold as.
+  ///
+  /// Per pack rather than global: a rider with a 45 Ah pack and a 30 Ah spare
+  /// measured against one shared figure gets a wrong answer for at least one
+  /// of them, and no warning that it happened.
+  final double catalogueCapacityAh;
+  final DateTime firstSeenAt;
+  final DateTime lastSeenAt;
+
+  /// True for the simulated pack, so demo data stays in its own world.
+  final bool demo;
+  const Device({
+    required this.id,
+    required this.name,
+    required this.serialNumber,
+    required this.model,
+    required this.catalogueCapacityAh,
+    required this.firstSeenAt,
+    required this.lastSeenAt,
+    required this.demo,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['serial_number'] = Variable<String>(serialNumber);
+    map['model'] = Variable<String>(model);
+    map['catalogue_capacity_ah'] = Variable<double>(catalogueCapacityAh);
+    map['first_seen_at'] = Variable<DateTime>(firstSeenAt);
+    map['last_seen_at'] = Variable<DateTime>(lastSeenAt);
+    map['demo'] = Variable<bool>(demo);
+    return map;
+  }
+
+  DevicesCompanion toCompanion(bool nullToAbsent) {
+    return DevicesCompanion(
+      id: Value(id),
+      name: Value(name),
+      serialNumber: Value(serialNumber),
+      model: Value(model),
+      catalogueCapacityAh: Value(catalogueCapacityAh),
+      firstSeenAt: Value(firstSeenAt),
+      lastSeenAt: Value(lastSeenAt),
+      demo: Value(demo),
+    );
+  }
+
+  factory Device.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Device(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      serialNumber: serializer.fromJson<String>(json['serialNumber']),
+      model: serializer.fromJson<String>(json['model']),
+      catalogueCapacityAh: serializer.fromJson<double>(
+        json['catalogueCapacityAh'],
+      ),
+      firstSeenAt: serializer.fromJson<DateTime>(json['firstSeenAt']),
+      lastSeenAt: serializer.fromJson<DateTime>(json['lastSeenAt']),
+      demo: serializer.fromJson<bool>(json['demo']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'serialNumber': serializer.toJson<String>(serialNumber),
+      'model': serializer.toJson<String>(model),
+      'catalogueCapacityAh': serializer.toJson<double>(catalogueCapacityAh),
+      'firstSeenAt': serializer.toJson<DateTime>(firstSeenAt),
+      'lastSeenAt': serializer.toJson<DateTime>(lastSeenAt),
+      'demo': serializer.toJson<bool>(demo),
+    };
+  }
+
+  Device copyWith({
+    String? id,
+    String? name,
+    String? serialNumber,
+    String? model,
+    double? catalogueCapacityAh,
+    DateTime? firstSeenAt,
+    DateTime? lastSeenAt,
+    bool? demo,
+  }) => Device(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    serialNumber: serialNumber ?? this.serialNumber,
+    model: model ?? this.model,
+    catalogueCapacityAh: catalogueCapacityAh ?? this.catalogueCapacityAh,
+    firstSeenAt: firstSeenAt ?? this.firstSeenAt,
+    lastSeenAt: lastSeenAt ?? this.lastSeenAt,
+    demo: demo ?? this.demo,
+  );
+  Device copyWithCompanion(DevicesCompanion data) {
+    return Device(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      serialNumber: data.serialNumber.present
+          ? data.serialNumber.value
+          : this.serialNumber,
+      model: data.model.present ? data.model.value : this.model,
+      catalogueCapacityAh: data.catalogueCapacityAh.present
+          ? data.catalogueCapacityAh.value
+          : this.catalogueCapacityAh,
+      firstSeenAt: data.firstSeenAt.present
+          ? data.firstSeenAt.value
+          : this.firstSeenAt,
+      lastSeenAt: data.lastSeenAt.present
+          ? data.lastSeenAt.value
+          : this.lastSeenAt,
+      demo: data.demo.present ? data.demo.value : this.demo,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Device(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('serialNumber: $serialNumber, ')
+          ..write('model: $model, ')
+          ..write('catalogueCapacityAh: $catalogueCapacityAh, ')
+          ..write('firstSeenAt: $firstSeenAt, ')
+          ..write('lastSeenAt: $lastSeenAt, ')
+          ..write('demo: $demo')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    serialNumber,
+    model,
+    catalogueCapacityAh,
+    firstSeenAt,
+    lastSeenAt,
+    demo,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Device &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.serialNumber == this.serialNumber &&
+          other.model == this.model &&
+          other.catalogueCapacityAh == this.catalogueCapacityAh &&
+          other.firstSeenAt == this.firstSeenAt &&
+          other.lastSeenAt == this.lastSeenAt &&
+          other.demo == this.demo);
+}
+
+class DevicesCompanion extends UpdateCompanion<Device> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> serialNumber;
+  final Value<String> model;
+  final Value<double> catalogueCapacityAh;
+  final Value<DateTime> firstSeenAt;
+  final Value<DateTime> lastSeenAt;
+  final Value<bool> demo;
+  final Value<int> rowid;
+  const DevicesCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.serialNumber = const Value.absent(),
+    this.model = const Value.absent(),
+    this.catalogueCapacityAh = const Value.absent(),
+    this.firstSeenAt = const Value.absent(),
+    this.lastSeenAt = const Value.absent(),
+    this.demo = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DevicesCompanion.insert({
+    required String id,
+    this.name = const Value.absent(),
+    this.serialNumber = const Value.absent(),
+    this.model = const Value.absent(),
+    this.catalogueCapacityAh = const Value.absent(),
+    required DateTime firstSeenAt,
+    required DateTime lastSeenAt,
+    this.demo = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       firstSeenAt = Value(firstSeenAt),
+       lastSeenAt = Value(lastSeenAt);
+  static Insertable<Device> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? serialNumber,
+    Expression<String>? model,
+    Expression<double>? catalogueCapacityAh,
+    Expression<DateTime>? firstSeenAt,
+    Expression<DateTime>? lastSeenAt,
+    Expression<bool>? demo,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (serialNumber != null) 'serial_number': serialNumber,
+      if (model != null) 'model': model,
+      if (catalogueCapacityAh != null)
+        'catalogue_capacity_ah': catalogueCapacityAh,
+      if (firstSeenAt != null) 'first_seen_at': firstSeenAt,
+      if (lastSeenAt != null) 'last_seen_at': lastSeenAt,
+      if (demo != null) 'demo': demo,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DevicesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String>? serialNumber,
+    Value<String>? model,
+    Value<double>? catalogueCapacityAh,
+    Value<DateTime>? firstSeenAt,
+    Value<DateTime>? lastSeenAt,
+    Value<bool>? demo,
+    Value<int>? rowid,
+  }) {
+    return DevicesCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      serialNumber: serialNumber ?? this.serialNumber,
+      model: model ?? this.model,
+      catalogueCapacityAh: catalogueCapacityAh ?? this.catalogueCapacityAh,
+      firstSeenAt: firstSeenAt ?? this.firstSeenAt,
+      lastSeenAt: lastSeenAt ?? this.lastSeenAt,
+      demo: demo ?? this.demo,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (serialNumber.present) {
+      map['serial_number'] = Variable<String>(serialNumber.value);
+    }
+    if (model.present) {
+      map['model'] = Variable<String>(model.value);
+    }
+    if (catalogueCapacityAh.present) {
+      map['catalogue_capacity_ah'] = Variable<double>(
+        catalogueCapacityAh.value,
+      );
+    }
+    if (firstSeenAt.present) {
+      map['first_seen_at'] = Variable<DateTime>(firstSeenAt.value);
+    }
+    if (lastSeenAt.present) {
+      map['last_seen_at'] = Variable<DateTime>(lastSeenAt.value);
+    }
+    if (demo.present) {
+      map['demo'] = Variable<bool>(demo.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DevicesCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('serialNumber: $serialNumber, ')
+          ..write('model: $model, ')
+          ..write('catalogueCapacityAh: $catalogueCapacityAh, ')
+          ..write('firstSeenAt: $firstSeenAt, ')
+          ..write('lastSeenAt: $lastSeenAt, ')
+          ..write('demo: $demo, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -227,6 +762,17 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -249,6 +795,7 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
     descentM,
     note,
     demo,
+    deviceId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -443,6 +990,12 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
         demo.isAcceptableOrUnknown(data['demo']!, _demoMeta),
       );
     }
+    if (data.containsKey('device_id')) {
+      context.handle(
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
+      );
+    }
     return context;
   }
 
@@ -532,6 +1085,10 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
         DriftSqlType.bool,
         data['${effectivePrefix}demo'],
       )!,
+      deviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_id'],
+      ),
     );
   }
 
@@ -571,6 +1128,10 @@ class Trip extends DataClass implements Insertable<Trip> {
   /// from the totals: a made-up ride teaching the real range estimate is
   /// exactly the kind of quiet wrongness this app is built to avoid.
   final bool demo;
+
+  /// Which pack this was recorded on. Null for rows written before the app
+  /// tracked packs at all -- see [BmsRepository.orphanCounts].
+  final String? deviceId;
   const Trip({
     required this.id,
     required this.startedAt,
@@ -592,6 +1153,7 @@ class Trip extends DataClass implements Insertable<Trip> {
     required this.descentM,
     required this.note,
     required this.demo,
+    this.deviceId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -616,6 +1178,9 @@ class Trip extends DataClass implements Insertable<Trip> {
     map['descent_m'] = Variable<double>(descentM);
     map['note'] = Variable<String>(note);
     map['demo'] = Variable<bool>(demo);
+    if (!nullToAbsent || deviceId != null) {
+      map['device_id'] = Variable<String>(deviceId);
+    }
     return map;
   }
 
@@ -641,6 +1206,9 @@ class Trip extends DataClass implements Insertable<Trip> {
       descentM: Value(descentM),
       note: Value(note),
       demo: Value(demo),
+      deviceId: deviceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deviceId),
     );
   }
 
@@ -672,6 +1240,7 @@ class Trip extends DataClass implements Insertable<Trip> {
       descentM: serializer.fromJson<double>(json['descentM']),
       note: serializer.fromJson<String>(json['note']),
       demo: serializer.fromJson<bool>(json['demo']),
+      deviceId: serializer.fromJson<String?>(json['deviceId']),
     );
   }
   @override
@@ -698,6 +1267,7 @@ class Trip extends DataClass implements Insertable<Trip> {
       'descentM': serializer.toJson<double>(descentM),
       'note': serializer.toJson<String>(note),
       'demo': serializer.toJson<bool>(demo),
+      'deviceId': serializer.toJson<String?>(deviceId),
     };
   }
 
@@ -722,6 +1292,7 @@ class Trip extends DataClass implements Insertable<Trip> {
     double? descentM,
     String? note,
     bool? demo,
+    Value<String?> deviceId = const Value.absent(),
   }) => Trip(
     id: id ?? this.id,
     startedAt: startedAt ?? this.startedAt,
@@ -743,6 +1314,7 @@ class Trip extends DataClass implements Insertable<Trip> {
     descentM: descentM ?? this.descentM,
     note: note ?? this.note,
     demo: demo ?? this.demo,
+    deviceId: deviceId.present ? deviceId.value : this.deviceId,
   );
   Trip copyWithCompanion(TripsCompanion data) {
     return Trip(
@@ -788,6 +1360,7 @@ class Trip extends DataClass implements Insertable<Trip> {
       descentM: data.descentM.present ? data.descentM.value : this.descentM,
       note: data.note.present ? data.note.value : this.note,
       demo: data.demo.present ? data.demo.value : this.demo,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
     );
   }
 
@@ -813,13 +1386,14 @@ class Trip extends DataClass implements Insertable<Trip> {
           ..write('climbM: $climbM, ')
           ..write('descentM: $descentM, ')
           ..write('note: $note, ')
-          ..write('demo: $demo')
+          ..write('demo: $demo, ')
+          ..write('deviceId: $deviceId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     startedAt,
     endedAt,
@@ -840,7 +1414,8 @@ class Trip extends DataClass implements Insertable<Trip> {
     descentM,
     note,
     demo,
-  );
+    deviceId,
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -864,7 +1439,8 @@ class Trip extends DataClass implements Insertable<Trip> {
           other.climbM == this.climbM &&
           other.descentM == this.descentM &&
           other.note == this.note &&
-          other.demo == this.demo);
+          other.demo == this.demo &&
+          other.deviceId == this.deviceId);
 }
 
 class TripsCompanion extends UpdateCompanion<Trip> {
@@ -888,6 +1464,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
   final Value<double> descentM;
   final Value<String> note;
   final Value<bool> demo;
+  final Value<String?> deviceId;
   const TripsCompanion({
     this.id = const Value.absent(),
     this.startedAt = const Value.absent(),
@@ -909,6 +1486,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     this.descentM = const Value.absent(),
     this.note = const Value.absent(),
     this.demo = const Value.absent(),
+    this.deviceId = const Value.absent(),
   });
   TripsCompanion.insert({
     this.id = const Value.absent(),
@@ -931,6 +1509,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     required double descentM,
     this.note = const Value.absent(),
     this.demo = const Value.absent(),
+    this.deviceId = const Value.absent(),
   }) : startedAt = Value(startedAt),
        endedAt = Value(endedAt),
        distanceKm = Value(distanceKm),
@@ -969,6 +1548,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     Expression<double>? descentM,
     Expression<String>? note,
     Expression<bool>? demo,
+    Expression<String>? deviceId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -992,6 +1572,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
       if (descentM != null) 'descent_m': descentM,
       if (note != null) 'note': note,
       if (demo != null) 'demo': demo,
+      if (deviceId != null) 'device_id': deviceId,
     });
   }
 
@@ -1016,6 +1597,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     Value<double>? descentM,
     Value<String>? note,
     Value<bool>? demo,
+    Value<String?>? deviceId,
   }) {
     return TripsCompanion(
       id: id ?? this.id,
@@ -1038,6 +1620,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
       descentM: descentM ?? this.descentM,
       note: note ?? this.note,
       demo: demo ?? this.demo,
+      deviceId: deviceId ?? this.deviceId,
     );
   }
 
@@ -1106,6 +1689,9 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     if (demo.present) {
       map['demo'] = Variable<bool>(demo.value);
     }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
     return map;
   }
 
@@ -1131,7 +1717,8 @@ class TripsCompanion extends UpdateCompanion<Trip> {
           ..write('climbM: $climbM, ')
           ..write('descentM: $descentM, ')
           ..write('note: $note, ')
-          ..write('demo: $demo')
+          ..write('demo: $demo, ')
+          ..write('deviceId: $deviceId')
           ..write(')'))
         .toString();
   }
@@ -1933,6 +2520,17 @@ class $SnapshotsTable extends Snapshots
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1952,6 +2550,7 @@ class $SnapshotsTable extends Snapshots
     warningsMask,
     balancerActive,
     cellVoltagesJson,
+    deviceId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2116,6 +2715,12 @@ class $SnapshotsTable extends Snapshots
     } else if (isInserting) {
       context.missing(_cellVoltagesJsonMeta);
     }
+    if (data.containsKey('device_id')) {
+      context.handle(
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
+      );
+    }
     return context;
   }
 
@@ -2193,6 +2798,10 @@ class $SnapshotsTable extends Snapshots
         DriftSqlType.string,
         data['${effectivePrefix}cell_voltages_json'],
       )!,
+      deviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_id'],
+      ),
     );
   }
 
@@ -2223,6 +2832,10 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
   /// Cell voltages as a JSON array. A column per cell would mean a schema
   /// migration every time a pack with a different cell count turns up.
   final String cellVoltagesJson;
+
+  /// Which pack this was recorded on. Null for rows written before the app
+  /// tracked packs at all -- see [BmsRepository.orphanCounts].
+  final String? deviceId;
   const Snapshot({
     required this.id,
     required this.timestamp,
@@ -2241,6 +2854,7 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
     required this.warningsMask,
     required this.balancerActive,
     required this.cellVoltagesJson,
+    this.deviceId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2266,6 +2880,9 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
     map['warnings_mask'] = Variable<int>(warningsMask);
     map['balancer_active'] = Variable<bool>(balancerActive);
     map['cell_voltages_json'] = Variable<String>(cellVoltagesJson);
+    if (!nullToAbsent || deviceId != null) {
+      map['device_id'] = Variable<String>(deviceId);
+    }
     return map;
   }
 
@@ -2292,6 +2909,9 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
       warningsMask: Value(warningsMask),
       balancerActive: Value(balancerActive),
       cellVoltagesJson: Value(cellVoltagesJson),
+      deviceId: deviceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deviceId),
     );
   }
 
@@ -2318,6 +2938,7 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
       warningsMask: serializer.fromJson<int>(json['warningsMask']),
       balancerActive: serializer.fromJson<bool>(json['balancerActive']),
       cellVoltagesJson: serializer.fromJson<String>(json['cellVoltagesJson']),
+      deviceId: serializer.fromJson<String?>(json['deviceId']),
     );
   }
   @override
@@ -2341,6 +2962,7 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
       'warningsMask': serializer.toJson<int>(warningsMask),
       'balancerActive': serializer.toJson<bool>(balancerActive),
       'cellVoltagesJson': serializer.toJson<String>(cellVoltagesJson),
+      'deviceId': serializer.toJson<String?>(deviceId),
     };
   }
 
@@ -2362,6 +2984,7 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
     int? warningsMask,
     bool? balancerActive,
     String? cellVoltagesJson,
+    Value<String?> deviceId = const Value.absent(),
   }) => Snapshot(
     id: id ?? this.id,
     timestamp: timestamp ?? this.timestamp,
@@ -2380,6 +3003,7 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
     warningsMask: warningsMask ?? this.warningsMask,
     balancerActive: balancerActive ?? this.balancerActive,
     cellVoltagesJson: cellVoltagesJson ?? this.cellVoltagesJson,
+    deviceId: deviceId.present ? deviceId.value : this.deviceId,
   );
   Snapshot copyWithCompanion(SnapshotsCompanion data) {
     return Snapshot(
@@ -2422,6 +3046,7 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
       cellVoltagesJson: data.cellVoltagesJson.present
           ? data.cellVoltagesJson.value
           : this.cellVoltagesJson,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
     );
   }
 
@@ -2444,7 +3069,8 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
           ..write('mosfetTemp: $mosfetTemp, ')
           ..write('warningsMask: $warningsMask, ')
           ..write('balancerActive: $balancerActive, ')
-          ..write('cellVoltagesJson: $cellVoltagesJson')
+          ..write('cellVoltagesJson: $cellVoltagesJson, ')
+          ..write('deviceId: $deviceId')
           ..write(')'))
         .toString();
   }
@@ -2468,6 +3094,7 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
     warningsMask,
     balancerActive,
     cellVoltagesJson,
+    deviceId,
   );
   @override
   bool operator ==(Object other) =>
@@ -2489,7 +3116,8 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
           other.mosfetTemp == this.mosfetTemp &&
           other.warningsMask == this.warningsMask &&
           other.balancerActive == this.balancerActive &&
-          other.cellVoltagesJson == this.cellVoltagesJson);
+          other.cellVoltagesJson == this.cellVoltagesJson &&
+          other.deviceId == this.deviceId);
 }
 
 class SnapshotsCompanion extends UpdateCompanion<Snapshot> {
@@ -2510,6 +3138,7 @@ class SnapshotsCompanion extends UpdateCompanion<Snapshot> {
   final Value<int> warningsMask;
   final Value<bool> balancerActive;
   final Value<String> cellVoltagesJson;
+  final Value<String?> deviceId;
   const SnapshotsCompanion({
     this.id = const Value.absent(),
     this.timestamp = const Value.absent(),
@@ -2528,6 +3157,7 @@ class SnapshotsCompanion extends UpdateCompanion<Snapshot> {
     this.warningsMask = const Value.absent(),
     this.balancerActive = const Value.absent(),
     this.cellVoltagesJson = const Value.absent(),
+    this.deviceId = const Value.absent(),
   });
   SnapshotsCompanion.insert({
     this.id = const Value.absent(),
@@ -2547,6 +3177,7 @@ class SnapshotsCompanion extends UpdateCompanion<Snapshot> {
     required int warningsMask,
     required bool balancerActive,
     required String cellVoltagesJson,
+    this.deviceId = const Value.absent(),
   }) : timestamp = Value(timestamp),
        packVoltage = Value(packVoltage),
        current = Value(current),
@@ -2579,6 +3210,7 @@ class SnapshotsCompanion extends UpdateCompanion<Snapshot> {
     Expression<int>? warningsMask,
     Expression<bool>? balancerActive,
     Expression<String>? cellVoltagesJson,
+    Expression<String>? deviceId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -2598,6 +3230,7 @@ class SnapshotsCompanion extends UpdateCompanion<Snapshot> {
       if (warningsMask != null) 'warnings_mask': warningsMask,
       if (balancerActive != null) 'balancer_active': balancerActive,
       if (cellVoltagesJson != null) 'cell_voltages_json': cellVoltagesJson,
+      if (deviceId != null) 'device_id': deviceId,
     });
   }
 
@@ -2619,6 +3252,7 @@ class SnapshotsCompanion extends UpdateCompanion<Snapshot> {
     Value<int>? warningsMask,
     Value<bool>? balancerActive,
     Value<String>? cellVoltagesJson,
+    Value<String?>? deviceId,
   }) {
     return SnapshotsCompanion(
       id: id ?? this.id,
@@ -2638,6 +3272,7 @@ class SnapshotsCompanion extends UpdateCompanion<Snapshot> {
       warningsMask: warningsMask ?? this.warningsMask,
       balancerActive: balancerActive ?? this.balancerActive,
       cellVoltagesJson: cellVoltagesJson ?? this.cellVoltagesJson,
+      deviceId: deviceId ?? this.deviceId,
     );
   }
 
@@ -2695,6 +3330,9 @@ class SnapshotsCompanion extends UpdateCompanion<Snapshot> {
     if (cellVoltagesJson.present) {
       map['cell_voltages_json'] = Variable<String>(cellVoltagesJson.value);
     }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
     return map;
   }
 
@@ -2717,7 +3355,8 @@ class SnapshotsCompanion extends UpdateCompanion<Snapshot> {
           ..write('mosfetTemp: $mosfetTemp, ')
           ..write('warningsMask: $warningsMask, ')
           ..write('balancerActive: $balancerActive, ')
-          ..write('cellVoltagesJson: $cellVoltagesJson')
+          ..write('cellVoltagesJson: $cellVoltagesJson, ')
+          ..write('deviceId: $deviceId')
           ..write(')'))
         .toString();
   }
@@ -2773,8 +3412,25 @@ class $RawFramesTable extends RawFrames
     type: DriftSqlType.blob,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, timestamp, recordType, bytes];
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    timestamp,
+    recordType,
+    bytes,
+    deviceId,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -2814,6 +3470,12 @@ class $RawFramesTable extends RawFrames
     } else if (isInserting) {
       context.missing(_bytesMeta);
     }
+    if (data.containsKey('device_id')) {
+      context.handle(
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
+      );
+    }
     return context;
   }
 
@@ -2839,6 +3501,10 @@ class $RawFramesTable extends RawFrames
         DriftSqlType.blob,
         data['${effectivePrefix}bytes'],
       )!,
+      deviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_id'],
+      ),
     );
   }
 
@@ -2853,11 +3519,16 @@ class RawFrame extends DataClass implements Insertable<RawFrame> {
   final DateTime timestamp;
   final int recordType;
   final Uint8List bytes;
+
+  /// Which pack this was recorded on. Null for rows written before the app
+  /// tracked packs at all -- see [BmsRepository.orphanCounts].
+  final String? deviceId;
   const RawFrame({
     required this.id,
     required this.timestamp,
     required this.recordType,
     required this.bytes,
+    this.deviceId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2866,6 +3537,9 @@ class RawFrame extends DataClass implements Insertable<RawFrame> {
     map['timestamp'] = Variable<DateTime>(timestamp);
     map['record_type'] = Variable<int>(recordType);
     map['bytes'] = Variable<Uint8List>(bytes);
+    if (!nullToAbsent || deviceId != null) {
+      map['device_id'] = Variable<String>(deviceId);
+    }
     return map;
   }
 
@@ -2875,6 +3549,9 @@ class RawFrame extends DataClass implements Insertable<RawFrame> {
       timestamp: Value(timestamp),
       recordType: Value(recordType),
       bytes: Value(bytes),
+      deviceId: deviceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deviceId),
     );
   }
 
@@ -2888,6 +3565,7 @@ class RawFrame extends DataClass implements Insertable<RawFrame> {
       timestamp: serializer.fromJson<DateTime>(json['timestamp']),
       recordType: serializer.fromJson<int>(json['recordType']),
       bytes: serializer.fromJson<Uint8List>(json['bytes']),
+      deviceId: serializer.fromJson<String?>(json['deviceId']),
     );
   }
   @override
@@ -2898,6 +3576,7 @@ class RawFrame extends DataClass implements Insertable<RawFrame> {
       'timestamp': serializer.toJson<DateTime>(timestamp),
       'recordType': serializer.toJson<int>(recordType),
       'bytes': serializer.toJson<Uint8List>(bytes),
+      'deviceId': serializer.toJson<String?>(deviceId),
     };
   }
 
@@ -2906,11 +3585,13 @@ class RawFrame extends DataClass implements Insertable<RawFrame> {
     DateTime? timestamp,
     int? recordType,
     Uint8List? bytes,
+    Value<String?> deviceId = const Value.absent(),
   }) => RawFrame(
     id: id ?? this.id,
     timestamp: timestamp ?? this.timestamp,
     recordType: recordType ?? this.recordType,
     bytes: bytes ?? this.bytes,
+    deviceId: deviceId.present ? deviceId.value : this.deviceId,
   );
   RawFrame copyWithCompanion(RawFramesCompanion data) {
     return RawFrame(
@@ -2920,6 +3601,7 @@ class RawFrame extends DataClass implements Insertable<RawFrame> {
           ? data.recordType.value
           : this.recordType,
       bytes: data.bytes.present ? data.bytes.value : this.bytes,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
     );
   }
 
@@ -2929,14 +3611,20 @@ class RawFrame extends DataClass implements Insertable<RawFrame> {
           ..write('id: $id, ')
           ..write('timestamp: $timestamp, ')
           ..write('recordType: $recordType, ')
-          ..write('bytes: $bytes')
+          ..write('bytes: $bytes, ')
+          ..write('deviceId: $deviceId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, timestamp, recordType, $driftBlobEquality.hash(bytes));
+  int get hashCode => Object.hash(
+    id,
+    timestamp,
+    recordType,
+    $driftBlobEquality.hash(bytes),
+    deviceId,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2944,7 +3632,8 @@ class RawFrame extends DataClass implements Insertable<RawFrame> {
           other.id == this.id &&
           other.timestamp == this.timestamp &&
           other.recordType == this.recordType &&
-          $driftBlobEquality.equals(other.bytes, this.bytes));
+          $driftBlobEquality.equals(other.bytes, this.bytes) &&
+          other.deviceId == this.deviceId);
 }
 
 class RawFramesCompanion extends UpdateCompanion<RawFrame> {
@@ -2952,17 +3641,20 @@ class RawFramesCompanion extends UpdateCompanion<RawFrame> {
   final Value<DateTime> timestamp;
   final Value<int> recordType;
   final Value<Uint8List> bytes;
+  final Value<String?> deviceId;
   const RawFramesCompanion({
     this.id = const Value.absent(),
     this.timestamp = const Value.absent(),
     this.recordType = const Value.absent(),
     this.bytes = const Value.absent(),
+    this.deviceId = const Value.absent(),
   });
   RawFramesCompanion.insert({
     this.id = const Value.absent(),
     required DateTime timestamp,
     required int recordType,
     required Uint8List bytes,
+    this.deviceId = const Value.absent(),
   }) : timestamp = Value(timestamp),
        recordType = Value(recordType),
        bytes = Value(bytes);
@@ -2971,12 +3663,14 @@ class RawFramesCompanion extends UpdateCompanion<RawFrame> {
     Expression<DateTime>? timestamp,
     Expression<int>? recordType,
     Expression<Uint8List>? bytes,
+    Expression<String>? deviceId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (timestamp != null) 'timestamp': timestamp,
       if (recordType != null) 'record_type': recordType,
       if (bytes != null) 'bytes': bytes,
+      if (deviceId != null) 'device_id': deviceId,
     });
   }
 
@@ -2985,12 +3679,14 @@ class RawFramesCompanion extends UpdateCompanion<RawFrame> {
     Value<DateTime>? timestamp,
     Value<int>? recordType,
     Value<Uint8List>? bytes,
+    Value<String?>? deviceId,
   }) {
     return RawFramesCompanion(
       id: id ?? this.id,
       timestamp: timestamp ?? this.timestamp,
       recordType: recordType ?? this.recordType,
       bytes: bytes ?? this.bytes,
+      deviceId: deviceId ?? this.deviceId,
     );
   }
 
@@ -3009,6 +3705,9 @@ class RawFramesCompanion extends UpdateCompanion<RawFrame> {
     if (bytes.present) {
       map['bytes'] = Variable<Uint8List>(bytes.value);
     }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
     return map;
   }
 
@@ -3018,7 +3717,8 @@ class RawFramesCompanion extends UpdateCompanion<RawFrame> {
           ..write('id: $id, ')
           ..write('timestamp: $timestamp, ')
           ..write('recordType: $recordType, ')
-          ..write('bytes: $bytes')
+          ..write('bytes: $bytes, ')
+          ..write('deviceId: $deviceId')
           ..write(')'))
         .toString();
   }
@@ -3192,6 +3892,17 @@ class $CapacityTestsTable extends CapacityTests
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3208,6 +3919,7 @@ class $CapacityTestsTable extends CapacityTests
     automatic,
     gapSeconds,
     note,
+    deviceId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3327,6 +4039,12 @@ class $CapacityTestsTable extends CapacityTests
         note.isAcceptableOrUnknown(data['note']!, _noteMeta),
       );
     }
+    if (data.containsKey('device_id')) {
+      context.handle(
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
+      );
+    }
     return context;
   }
 
@@ -3392,6 +4110,10 @@ class $CapacityTestsTable extends CapacityTests
         DriftSqlType.string,
         data['${effectivePrefix}note'],
       )!,
+      deviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_id'],
+      ),
     );
   }
 
@@ -3426,6 +4148,10 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
   /// Seconds of the discharge that were not observed. Zero on a clean run.
   final int gapSeconds;
   final String note;
+
+  /// Which pack this was recorded on. Null for rows written before the app
+  /// tracked packs at all -- see [BmsRepository.orphanCounts].
+  final String? deviceId;
   const CapacityTest({
     required this.id,
     required this.startedAt,
@@ -3441,6 +4167,7 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
     required this.automatic,
     required this.gapSeconds,
     required this.note,
+    this.deviceId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3461,6 +4188,9 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
     map['automatic'] = Variable<bool>(automatic);
     map['gap_seconds'] = Variable<int>(gapSeconds);
     map['note'] = Variable<String>(note);
+    if (!nullToAbsent || deviceId != null) {
+      map['device_id'] = Variable<String>(deviceId);
+    }
     return map;
   }
 
@@ -3482,6 +4212,9 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
       automatic: Value(automatic),
       gapSeconds: Value(gapSeconds),
       note: Value(note),
+      deviceId: deviceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deviceId),
     );
   }
 
@@ -3505,6 +4238,7 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
       automatic: serializer.fromJson<bool>(json['automatic']),
       gapSeconds: serializer.fromJson<int>(json['gapSeconds']),
       note: serializer.fromJson<String>(json['note']),
+      deviceId: serializer.fromJson<String?>(json['deviceId']),
     );
   }
   @override
@@ -3525,6 +4259,7 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
       'automatic': serializer.toJson<bool>(automatic),
       'gapSeconds': serializer.toJson<int>(gapSeconds),
       'note': serializer.toJson<String>(note),
+      'deviceId': serializer.toJson<String?>(deviceId),
     };
   }
 
@@ -3543,6 +4278,7 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
     bool? automatic,
     int? gapSeconds,
     String? note,
+    Value<String?> deviceId = const Value.absent(),
   }) => CapacityTest(
     id: id ?? this.id,
     startedAt: startedAt ?? this.startedAt,
@@ -3558,6 +4294,7 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
     automatic: automatic ?? this.automatic,
     gapSeconds: gapSeconds ?? this.gapSeconds,
     note: note ?? this.note,
+    deviceId: deviceId.present ? deviceId.value : this.deviceId,
   );
   CapacityTest copyWithCompanion(CapacityTestsCompanion data) {
     return CapacityTest(
@@ -3587,6 +4324,7 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
           ? data.gapSeconds.value
           : this.gapSeconds,
       note: data.note.present ? data.note.value : this.note,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
     );
   }
 
@@ -3606,7 +4344,8 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
           ..write('completed: $completed, ')
           ..write('automatic: $automatic, ')
           ..write('gapSeconds: $gapSeconds, ')
-          ..write('note: $note')
+          ..write('note: $note, ')
+          ..write('deviceId: $deviceId')
           ..write(')'))
         .toString();
   }
@@ -3627,6 +4366,7 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
     automatic,
     gapSeconds,
     note,
+    deviceId,
   );
   @override
   bool operator ==(Object other) =>
@@ -3645,7 +4385,8 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
           other.completed == this.completed &&
           other.automatic == this.automatic &&
           other.gapSeconds == this.gapSeconds &&
-          other.note == this.note);
+          other.note == this.note &&
+          other.deviceId == this.deviceId);
 }
 
 class CapacityTestsCompanion extends UpdateCompanion<CapacityTest> {
@@ -3663,6 +4404,7 @@ class CapacityTestsCompanion extends UpdateCompanion<CapacityTest> {
   final Value<bool> automatic;
   final Value<int> gapSeconds;
   final Value<String> note;
+  final Value<String?> deviceId;
   const CapacityTestsCompanion({
     this.id = const Value.absent(),
     this.startedAt = const Value.absent(),
@@ -3678,6 +4420,7 @@ class CapacityTestsCompanion extends UpdateCompanion<CapacityTest> {
     this.automatic = const Value.absent(),
     this.gapSeconds = const Value.absent(),
     this.note = const Value.absent(),
+    this.deviceId = const Value.absent(),
   });
   CapacityTestsCompanion.insert({
     this.id = const Value.absent(),
@@ -3694,6 +4437,7 @@ class CapacityTestsCompanion extends UpdateCompanion<CapacityTest> {
     this.automatic = const Value.absent(),
     this.gapSeconds = const Value.absent(),
     this.note = const Value.absent(),
+    this.deviceId = const Value.absent(),
   }) : startedAt = Value(startedAt),
        startSoc = Value(startSoc),
        endSoc = Value(endSoc),
@@ -3717,6 +4461,7 @@ class CapacityTestsCompanion extends UpdateCompanion<CapacityTest> {
     Expression<bool>? automatic,
     Expression<int>? gapSeconds,
     Expression<String>? note,
+    Expression<String>? deviceId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -3733,6 +4478,7 @@ class CapacityTestsCompanion extends UpdateCompanion<CapacityTest> {
       if (automatic != null) 'automatic': automatic,
       if (gapSeconds != null) 'gap_seconds': gapSeconds,
       if (note != null) 'note': note,
+      if (deviceId != null) 'device_id': deviceId,
     });
   }
 
@@ -3751,6 +4497,7 @@ class CapacityTestsCompanion extends UpdateCompanion<CapacityTest> {
     Value<bool>? automatic,
     Value<int>? gapSeconds,
     Value<String>? note,
+    Value<String?>? deviceId,
   }) {
     return CapacityTestsCompanion(
       id: id ?? this.id,
@@ -3767,6 +4514,7 @@ class CapacityTestsCompanion extends UpdateCompanion<CapacityTest> {
       automatic: automatic ?? this.automatic,
       gapSeconds: gapSeconds ?? this.gapSeconds,
       note: note ?? this.note,
+      deviceId: deviceId ?? this.deviceId,
     );
   }
 
@@ -3815,6 +4563,9 @@ class CapacityTestsCompanion extends UpdateCompanion<CapacityTest> {
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
     return map;
   }
 
@@ -3834,7 +4585,8 @@ class CapacityTestsCompanion extends UpdateCompanion<CapacityTest> {
           ..write('completed: $completed, ')
           ..write('automatic: $automatic, ')
           ..write('gapSeconds: $gapSeconds, ')
-          ..write('note: $note')
+          ..write('note: $note, ')
+          ..write('deviceId: $deviceId')
           ..write(')'))
         .toString();
   }
@@ -3843,6 +4595,7 @@ class CapacityTestsCompanion extends UpdateCompanion<CapacityTest> {
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
+  late final $DevicesTable devices = $DevicesTable(this);
   late final $TripsTable trips = $TripsTable(this);
   late final $TripPointsTable tripPoints = $TripPointsTable(this);
   late final $SnapshotsTable snapshots = $SnapshotsTable(this);
@@ -3853,6 +4606,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
+    devices,
     trips,
     tripPoints,
     snapshots,
@@ -3871,6 +4625,265 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   ]);
 }
 
+typedef $$DevicesTableCreateCompanionBuilder =
+    DevicesCompanion Function({
+      required String id,
+      Value<String> name,
+      Value<String> serialNumber,
+      Value<String> model,
+      Value<double> catalogueCapacityAh,
+      required DateTime firstSeenAt,
+      required DateTime lastSeenAt,
+      Value<bool> demo,
+      Value<int> rowid,
+    });
+typedef $$DevicesTableUpdateCompanionBuilder =
+    DevicesCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String> serialNumber,
+      Value<String> model,
+      Value<double> catalogueCapacityAh,
+      Value<DateTime> firstSeenAt,
+      Value<DateTime> lastSeenAt,
+      Value<bool> demo,
+      Value<int> rowid,
+    });
+
+class $$DevicesTableFilterComposer
+    extends Composer<_$AppDatabase, $DevicesTable> {
+  $$DevicesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get serialNumber => $composableBuilder(
+    column: $table.serialNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get model => $composableBuilder(
+    column: $table.model,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get catalogueCapacityAh => $composableBuilder(
+    column: $table.catalogueCapacityAh,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get firstSeenAt => $composableBuilder(
+    column: $table.firstSeenAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastSeenAt => $composableBuilder(
+    column: $table.lastSeenAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get demo => $composableBuilder(
+    column: $table.demo,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DevicesTableOrderingComposer
+    extends Composer<_$AppDatabase, $DevicesTable> {
+  $$DevicesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get serialNumber => $composableBuilder(
+    column: $table.serialNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get model => $composableBuilder(
+    column: $table.model,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get catalogueCapacityAh => $composableBuilder(
+    column: $table.catalogueCapacityAh,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get firstSeenAt => $composableBuilder(
+    column: $table.firstSeenAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastSeenAt => $composableBuilder(
+    column: $table.lastSeenAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get demo => $composableBuilder(
+    column: $table.demo,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DevicesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DevicesTable> {
+  $$DevicesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get serialNumber => $composableBuilder(
+    column: $table.serialNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get model =>
+      $composableBuilder(column: $table.model, builder: (column) => column);
+
+  GeneratedColumn<double> get catalogueCapacityAh => $composableBuilder(
+    column: $table.catalogueCapacityAh,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get firstSeenAt => $composableBuilder(
+    column: $table.firstSeenAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get lastSeenAt => $composableBuilder(
+    column: $table.lastSeenAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get demo =>
+      $composableBuilder(column: $table.demo, builder: (column) => column);
+}
+
+class $$DevicesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DevicesTable,
+          Device,
+          $$DevicesTableFilterComposer,
+          $$DevicesTableOrderingComposer,
+          $$DevicesTableAnnotationComposer,
+          $$DevicesTableCreateCompanionBuilder,
+          $$DevicesTableUpdateCompanionBuilder,
+          (Device, BaseReferences<_$AppDatabase, $DevicesTable, Device>),
+          Device,
+          PrefetchHooks Function()
+        > {
+  $$DevicesTableTableManager(_$AppDatabase db, $DevicesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DevicesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DevicesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DevicesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> serialNumber = const Value.absent(),
+                Value<String> model = const Value.absent(),
+                Value<double> catalogueCapacityAh = const Value.absent(),
+                Value<DateTime> firstSeenAt = const Value.absent(),
+                Value<DateTime> lastSeenAt = const Value.absent(),
+                Value<bool> demo = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DevicesCompanion(
+                id: id,
+                name: name,
+                serialNumber: serialNumber,
+                model: model,
+                catalogueCapacityAh: catalogueCapacityAh,
+                firstSeenAt: firstSeenAt,
+                lastSeenAt: lastSeenAt,
+                demo: demo,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                Value<String> name = const Value.absent(),
+                Value<String> serialNumber = const Value.absent(),
+                Value<String> model = const Value.absent(),
+                Value<double> catalogueCapacityAh = const Value.absent(),
+                required DateTime firstSeenAt,
+                required DateTime lastSeenAt,
+                Value<bool> demo = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DevicesCompanion.insert(
+                id: id,
+                name: name,
+                serialNumber: serialNumber,
+                model: model,
+                catalogueCapacityAh: catalogueCapacityAh,
+                firstSeenAt: firstSeenAt,
+                lastSeenAt: lastSeenAt,
+                demo: demo,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DevicesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DevicesTable,
+      Device,
+      $$DevicesTableFilterComposer,
+      $$DevicesTableOrderingComposer,
+      $$DevicesTableAnnotationComposer,
+      $$DevicesTableCreateCompanionBuilder,
+      $$DevicesTableUpdateCompanionBuilder,
+      (Device, BaseReferences<_$AppDatabase, $DevicesTable, Device>),
+      Device,
+      PrefetchHooks Function()
+    >;
 typedef $$TripsTableCreateCompanionBuilder =
     TripsCompanion Function({
       Value<int> id,
@@ -3893,6 +4906,7 @@ typedef $$TripsTableCreateCompanionBuilder =
       required double descentM,
       Value<String> note,
       Value<bool> demo,
+      Value<String?> deviceId,
     });
 typedef $$TripsTableUpdateCompanionBuilder =
     TripsCompanion Function({
@@ -3916,6 +4930,7 @@ typedef $$TripsTableUpdateCompanionBuilder =
       Value<double> descentM,
       Value<String> note,
       Value<bool> demo,
+      Value<String?> deviceId,
     });
 
 final class $$TripsTableReferences
@@ -4046,6 +5061,11 @@ class $$TripsTableFilterComposer extends Composer<_$AppDatabase, $TripsTable> {
 
   ColumnFilters<bool> get demo => $composableBuilder(
     column: $table.demo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4183,6 +5203,11 @@ class $$TripsTableOrderingComposer
     column: $table.demo,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$TripsTableAnnotationComposer
@@ -4276,6 +5301,9 @@ class $$TripsTableAnnotationComposer
   GeneratedColumn<bool> get demo =>
       $composableBuilder(column: $table.demo, builder: (column) => column);
 
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
   Expression<T> tripPointsRefs<T extends Object>(
     Expression<T> Function($$TripPointsTableAnnotationComposer a) f,
   ) {
@@ -4350,6 +5378,7 @@ class $$TripsTableTableManager
                 Value<double> descentM = const Value.absent(),
                 Value<String> note = const Value.absent(),
                 Value<bool> demo = const Value.absent(),
+                Value<String?> deviceId = const Value.absent(),
               }) => TripsCompanion(
                 id: id,
                 startedAt: startedAt,
@@ -4371,6 +5400,7 @@ class $$TripsTableTableManager
                 descentM: descentM,
                 note: note,
                 demo: demo,
+                deviceId: deviceId,
               ),
           createCompanionCallback:
               ({
@@ -4394,6 +5424,7 @@ class $$TripsTableTableManager
                 required double descentM,
                 Value<String> note = const Value.absent(),
                 Value<bool> demo = const Value.absent(),
+                Value<String?> deviceId = const Value.absent(),
               }) => TripsCompanion.insert(
                 id: id,
                 startedAt: startedAt,
@@ -4415,6 +5446,7 @@ class $$TripsTableTableManager
                 descentM: descentM,
                 note: note,
                 demo: demo,
+                deviceId: deviceId,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -4889,6 +5921,7 @@ typedef $$SnapshotsTableCreateCompanionBuilder =
       required int warningsMask,
       required bool balancerActive,
       required String cellVoltagesJson,
+      Value<String?> deviceId,
     });
 typedef $$SnapshotsTableUpdateCompanionBuilder =
     SnapshotsCompanion Function({
@@ -4909,6 +5942,7 @@ typedef $$SnapshotsTableUpdateCompanionBuilder =
       Value<int> warningsMask,
       Value<bool> balancerActive,
       Value<String> cellVoltagesJson,
+      Value<String?> deviceId,
     });
 
 class $$SnapshotsTableFilterComposer
@@ -5002,6 +6036,11 @@ class $$SnapshotsTableFilterComposer
 
   ColumnFilters<String> get cellVoltagesJson => $composableBuilder(
     column: $table.cellVoltagesJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -5099,6 +6138,11 @@ class $$SnapshotsTableOrderingComposer
     column: $table.cellVoltagesJson,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SnapshotsTableAnnotationComposer
@@ -5182,6 +6226,9 @@ class $$SnapshotsTableAnnotationComposer
     column: $table.cellVoltagesJson,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
 }
 
 class $$SnapshotsTableTableManager
@@ -5229,6 +6276,7 @@ class $$SnapshotsTableTableManager
                 Value<int> warningsMask = const Value.absent(),
                 Value<bool> balancerActive = const Value.absent(),
                 Value<String> cellVoltagesJson = const Value.absent(),
+                Value<String?> deviceId = const Value.absent(),
               }) => SnapshotsCompanion(
                 id: id,
                 timestamp: timestamp,
@@ -5247,6 +6295,7 @@ class $$SnapshotsTableTableManager
                 warningsMask: warningsMask,
                 balancerActive: balancerActive,
                 cellVoltagesJson: cellVoltagesJson,
+                deviceId: deviceId,
               ),
           createCompanionCallback:
               ({
@@ -5267,6 +6316,7 @@ class $$SnapshotsTableTableManager
                 required int warningsMask,
                 required bool balancerActive,
                 required String cellVoltagesJson,
+                Value<String?> deviceId = const Value.absent(),
               }) => SnapshotsCompanion.insert(
                 id: id,
                 timestamp: timestamp,
@@ -5285,6 +6335,7 @@ class $$SnapshotsTableTableManager
                 warningsMask: warningsMask,
                 balancerActive: balancerActive,
                 cellVoltagesJson: cellVoltagesJson,
+                deviceId: deviceId,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -5314,6 +6365,7 @@ typedef $$RawFramesTableCreateCompanionBuilder =
       required DateTime timestamp,
       required int recordType,
       required Uint8List bytes,
+      Value<String?> deviceId,
     });
 typedef $$RawFramesTableUpdateCompanionBuilder =
     RawFramesCompanion Function({
@@ -5321,6 +6373,7 @@ typedef $$RawFramesTableUpdateCompanionBuilder =
       Value<DateTime> timestamp,
       Value<int> recordType,
       Value<Uint8List> bytes,
+      Value<String?> deviceId,
     });
 
 class $$RawFramesTableFilterComposer
@@ -5349,6 +6402,11 @@ class $$RawFramesTableFilterComposer
 
   ColumnFilters<Uint8List> get bytes => $composableBuilder(
     column: $table.bytes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -5381,6 +6439,11 @@ class $$RawFramesTableOrderingComposer
     column: $table.bytes,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$RawFramesTableAnnotationComposer
@@ -5405,6 +6468,9 @@ class $$RawFramesTableAnnotationComposer
 
   GeneratedColumn<Uint8List> get bytes =>
       $composableBuilder(column: $table.bytes, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
 }
 
 class $$RawFramesTableTableManager
@@ -5439,11 +6505,13 @@ class $$RawFramesTableTableManager
                 Value<DateTime> timestamp = const Value.absent(),
                 Value<int> recordType = const Value.absent(),
                 Value<Uint8List> bytes = const Value.absent(),
+                Value<String?> deviceId = const Value.absent(),
               }) => RawFramesCompanion(
                 id: id,
                 timestamp: timestamp,
                 recordType: recordType,
                 bytes: bytes,
+                deviceId: deviceId,
               ),
           createCompanionCallback:
               ({
@@ -5451,11 +6519,13 @@ class $$RawFramesTableTableManager
                 required DateTime timestamp,
                 required int recordType,
                 required Uint8List bytes,
+                Value<String?> deviceId = const Value.absent(),
               }) => RawFramesCompanion.insert(
                 id: id,
                 timestamp: timestamp,
                 recordType: recordType,
                 bytes: bytes,
+                deviceId: deviceId,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -5495,6 +6565,7 @@ typedef $$CapacityTestsTableCreateCompanionBuilder =
       Value<bool> automatic,
       Value<int> gapSeconds,
       Value<String> note,
+      Value<String?> deviceId,
     });
 typedef $$CapacityTestsTableUpdateCompanionBuilder =
     CapacityTestsCompanion Function({
@@ -5512,6 +6583,7 @@ typedef $$CapacityTestsTableUpdateCompanionBuilder =
       Value<bool> automatic,
       Value<int> gapSeconds,
       Value<String> note,
+      Value<String?> deviceId,
     });
 
 class $$CapacityTestsTableFilterComposer
@@ -5590,6 +6662,11 @@ class $$CapacityTestsTableFilterComposer
 
   ColumnFilters<String> get note => $composableBuilder(
     column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -5672,6 +6749,11 @@ class $$CapacityTestsTableOrderingComposer
     column: $table.note,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$CapacityTestsTableAnnotationComposer
@@ -5736,6 +6818,9 @@ class $$CapacityTestsTableAnnotationComposer
 
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
 }
 
 class $$CapacityTestsTableTableManager
@@ -5783,6 +6868,7 @@ class $$CapacityTestsTableTableManager
                 Value<bool> automatic = const Value.absent(),
                 Value<int> gapSeconds = const Value.absent(),
                 Value<String> note = const Value.absent(),
+                Value<String?> deviceId = const Value.absent(),
               }) => CapacityTestsCompanion(
                 id: id,
                 startedAt: startedAt,
@@ -5798,6 +6884,7 @@ class $$CapacityTestsTableTableManager
                 automatic: automatic,
                 gapSeconds: gapSeconds,
                 note: note,
+                deviceId: deviceId,
               ),
           createCompanionCallback:
               ({
@@ -5815,6 +6902,7 @@ class $$CapacityTestsTableTableManager
                 Value<bool> automatic = const Value.absent(),
                 Value<int> gapSeconds = const Value.absent(),
                 Value<String> note = const Value.absent(),
+                Value<String?> deviceId = const Value.absent(),
               }) => CapacityTestsCompanion.insert(
                 id: id,
                 startedAt: startedAt,
@@ -5830,6 +6918,7 @@ class $$CapacityTestsTableTableManager
                 automatic: automatic,
                 gapSeconds: gapSeconds,
                 note: note,
+                deviceId: deviceId,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -5860,6 +6949,8 @@ typedef $$CapacityTestsTableProcessedTableManager =
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
+  $$DevicesTableTableManager get devices =>
+      $$DevicesTableTableManager(_db, _db.devices);
   $$TripsTableTableManager get trips =>
       $$TripsTableTableManager(_db, _db.trips);
   $$TripPointsTableTableManager get tripPoints =>

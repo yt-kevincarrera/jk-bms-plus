@@ -2581,6 +2581,18 @@ abstract class AppL10n {
   /// **'Lo que dice la etiqueta del pack. Es contra este número que se mide la salud, así que conviene que sea el real.'**
   String get settingsCatalogueHint;
 
+  /// No description provided for @settingsCatalogueForPack.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que te vendieron como {pack}. Cada batería tiene la suya, así que cambiarla aquí no toca las demás.'**
+  String settingsCatalogueForPack(String pack);
+
+  /// No description provided for @exportNoPack.
+  ///
+  /// In es, this message translates to:
+  /// **'Conecta un pack para exportar su historial.'**
+  String get exportNoPack;
+
   /// No description provided for @settingsBmsConfigured.
   ///
   /// In es, this message translates to:
@@ -2976,6 +2988,114 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Novedades'**
   String get updateNotes;
+
+  /// No description provided for @packsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Baterías'**
+  String get packsTitle;
+
+  /// No description provided for @packsIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Todo lo que la app mide —capacidad, degradación, qué celda se queda atrás, cuánto cuesta un kilómetro— es de una batería concreta. Cada pack guarda su historial aparte, así que puedes usar el mismo teléfono con varias sin que se mezclen.'**
+  String get packsIntro;
+
+  /// No description provided for @packsCurrent.
+  ///
+  /// In es, this message translates to:
+  /// **'Conectada ahora'**
+  String get packsCurrent;
+
+  /// No description provided for @packsNone.
+  ///
+  /// In es, this message translates to:
+  /// **'Ninguna conectada'**
+  String get packsNone;
+
+  /// No description provided for @packsKnown.
+  ///
+  /// In es, this message translates to:
+  /// **'Baterías conocidas'**
+  String get packsKnown;
+
+  /// No description provided for @packsLastSeen.
+  ///
+  /// In es, this message translates to:
+  /// **'Vista el {date}'**
+  String packsLastSeen(String date);
+
+  /// No description provided for @packsRename.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar nombre'**
+  String get packsRename;
+
+  /// No description provided for @packsRenameHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre de la batería'**
+  String get packsRenameHint;
+
+  /// No description provided for @packsSave.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar'**
+  String get packsSave;
+
+  /// No description provided for @packsCancel.
+  ///
+  /// In es, this message translates to:
+  /// **'Cancelar'**
+  String get packsCancel;
+
+  /// No description provided for @packsDelete.
+  ///
+  /// In es, this message translates to:
+  /// **'Borrar batería'**
+  String get packsDelete;
+
+  /// No description provided for @packsDeleteConfirm.
+  ///
+  /// In es, this message translates to:
+  /// **'Se borra {pack} y todo lo grabado con ella: viajes, recorridos, lecturas, frames crudos y mediciones de capacidad. No se puede deshacer.'**
+  String packsDeleteConfirm(String pack);
+
+  /// No description provided for @packsRides.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} viajes'**
+  String packsRides(String count);
+
+  /// No description provided for @orphansTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Historial sin batería asignada'**
+  String get orphansTitle;
+
+  /// No description provided for @orphansBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Hay {count} filas guardadas antes de que la app separara por batería, así que no consta de cuál son. Puedes asignarlas a la batería conectada o descartarlas. La app no lo adivina sola: una procedencia inventada al lado de mediciones reales es peor que un hueco.'**
+  String orphansBody(String count);
+
+  /// No description provided for @orphansAdopt.
+  ///
+  /// In es, this message translates to:
+  /// **'Asignar a esta batería'**
+  String get orphansAdopt;
+
+  /// No description provided for @orphansDiscard.
+  ///
+  /// In es, this message translates to:
+  /// **'Descartar'**
+  String get orphansDiscard;
+
+  /// No description provided for @orphansDone.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo'**
+  String get orphansDone;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

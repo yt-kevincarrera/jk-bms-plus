@@ -33,12 +33,25 @@ class BmsRepository {
   /// Set while a trip is being recorded, so readings can be attributed to it.
   int? currentTripId;
 
+  /// The pack everything is currently being recorded against, and read back
+  /// for.
+  ///
+  /// Null when nothing is connected, and in that case readings are dropped
+  /// rather than stored without a pack: a row that cannot say which battery it
+  /// came from is worse than no row, because it still counts in every average.
+  String? activeDeviceId;
+
+  /// True when the active pack is the simulated one.
+  bool activeIsDemo = false;
+
   /// Raw frame capture can be turned off, but the default is on and it should
   /// stay on: it is what makes a wrongly-decoded offset recoverable.
   bool recordRawFrames = true;
 
   /// Queues one decoded reading.
   void addSnapshot(BmsSnapshot s) {
+    final device = activeDeviceId;
+    if (device == null) return;
     final temps = <double>[
       ...s.temperatures,
       if (s.mosfetTemp != null) s.mosfetTemp!,
@@ -47,6 +60,7 @@ class BmsRepository {
       SnapshotsCompanion.insert(
         timestamp: s.timestamp,
         tripId: Value(currentTripId),
+        deviceId: Value(device),
         packVoltage: s.packVoltage,
         current: s.current,
         soc: s.soc,
@@ -69,11 +83,14 @@ class BmsRepository {
   /// Queues one raw frame, exactly as it arrived.
   void addRawFrame(JkFrame frame) {
     if (!recordRawFrames) return;
+    final device = activeDeviceId;
+    if (device == null) return;
     _pendingFrames.add(
       RawFramesCompanion.insert(
         timestamp: frame.receivedAt,
         recordType: frame.rawType,
         bytes: frameBytes(frame.bytes),
+        deviceId: Value(device),
       ),
     );
   }
@@ -106,6 +123,7 @@ class BmsRepository {
     final id = await db.insertTrip(
       TripsCompanion.insert(
         demo: Value(demo),
+        deviceId: Value(activeDeviceId),
         startedAt: startedAt,
         endedAt: startedAt,
         distanceKm: 0,
@@ -188,23 +206,18 @@ class BmsRepository {
   /// The estimator is rebuilt from these rather than kept as a running tally,
   /// so deleting a bad trip actually removes its influence instead of leaving
   /// it baked into a number nobody can unpick.
-  Future<List<Trip>> tripsForLearning({required bool demo}) async {
-    final all = await db.recentTrips(limit: 500);
+  Future<List<Trip>> tripsForLearning(String deviceId) async {
+    final all = await db.recentTrips(deviceId, limit: 500);
     final usable = all
-        .where((t) =>
-            t.demo == demo &&
-            t.distanceKm >= 0.2 &&
-            t.energyOutWh > t.energyInWh)
+        .where((t) => t.distanceKm >= 0.2 && t.energyOutWh > t.energyInWh)
         .toList()
       ..sort((a, b) => a.startedAt.compareTo(b.startedAt));
     return usable;
   }
 
-  /// Trips for one world, newest first.
-  Stream<List<Trip>> watchTrips({required bool demo, int limit = 100}) =>
-      db.watchTrips(limit: limit).map(
-            (trips) => trips.where((t) => t.demo == demo).toList(),
-          );
+  /// Trips for one pack, newest first.
+  Stream<List<Trip>> watchTrips(String deviceId, {int limit = 100}) =>
+      db.watchTrips(deviceId, limit: limit);
 
   Future<List<TripPoint>> pointsFor(int tripId) => db.pointsFor(tripId);
 
@@ -286,16 +299,17 @@ class BmsRepository {
 
   Future<void> deleteCapacityTest(int id) => db.deleteCapacityTest(id);
 
-  Future<List<CapacityTest>> capacityTests() => db.allCapacityTests();
+  Future<List<CapacityTest>> capacityTests(String deviceId) =>
+      db.allCapacityTests(deviceId);
 
-  Future<int> countCompletedCapacityTests() async {
-    final all = await db.allCapacityTests();
+  Future<int> countCompletedCapacityTests(String deviceId) async {
+    final all = await db.allCapacityTests(deviceId);
     return all.where((t) => t.completed).length;
   }
 
   /// A run that was interrupted, if there is one, so it can be picked back up.
-  Future<CapacityTest?> unfinishedCapacityTest() async {
-    final all = await db.allCapacityTests();
+  Future<CapacityTest?> unfinishedCapacityTest(String deviceId) async {
+    final all = await db.allCapacityTests(deviceId);
     for (final t in all) {
       if (!t.completed) return t;
     }
@@ -304,8 +318,12 @@ class BmsRepository {
 
   /// Records a discharge the app found in the history rather than being told
   /// about. Skips one it has already stored.
-  Future<bool> recordDetectedCycle(DetectedCycle cycle, double catalogueAh) async {
-    final existing = await db.allCapacityTests();
+  Future<bool> recordDetectedCycle(
+    String deviceId,
+    DetectedCycle cycle,
+    double catalogueAh,
+  ) async {
+    final existing = await db.allCapacityTests(deviceId);
     // Matched on the start instant: the same discharge scanned twice must not
     // become two measurements.
     if (cycleAlreadyRecorded(cycle.startedAt, existing.map((t) => t.startedAt))) {
@@ -326,16 +344,92 @@ class BmsRepository {
         completed: const Value(true),
         automatic: const Value(true),
         gapSeconds: Value(cycle.gapSeconds),
+        deviceId: Value(deviceId),
       ),
     );
     return true;
   }
 
-  /// Every reading stored, oldest first, for the cycle scan to work over.
-  Future<List<Snapshot>> allSnapshots({int days = 180}) => db.snapshotsBetween(
+  /// Every reading stored for one pack, oldest first, for the cycle scan.
+  Future<List<Snapshot>> allSnapshots(String deviceId, {int days = 180}) =>
+      db.snapshotsBetween(
+        deviceId,
         DateTime.now().toUtc().subtract(Duration(days: days)),
         DateTime.now().toUtc(),
       );
+
+  // --- Packs ---
+
+  /// Records that this pack has been seen, creating it the first time.
+  ///
+  /// Returns the stored row, whose catalogue capacity is the figure every
+  /// health number for this pack is measured against.
+  Future<Device> rememberDevice({
+    required String id,
+    required String name,
+    required bool demo,
+    String serialNumber = '',
+    String model = '',
+  }) async {
+    final now = DateTime.now().toUtc();
+    final existing = await db.device(id);
+    if (existing == null) {
+      await db.upsertDevice(
+        DevicesCompanion.insert(
+          id: id,
+          name: Value(name),
+          serialNumber: Value(serialNumber),
+          model: Value(model),
+          firstSeenAt: now,
+          lastSeenAt: now,
+          demo: Value(demo),
+        ),
+      );
+    } else {
+      await db.updateDevice(
+        id,
+        DevicesCompanion(
+          lastSeenAt: Value(now),
+          // A renamed pack keeps the rider's name; the rest catches up as the
+          // device info frame arrives.
+          name: name.isEmpty ? const Value.absent() : Value(name),
+          serialNumber: serialNumber.isEmpty
+              ? const Value.absent()
+              : Value(serialNumber),
+          model: model.isEmpty ? const Value.absent() : Value(model),
+        ),
+      );
+    }
+    return (await db.device(id))!;
+  }
+
+  Future<List<Device>> devices() => db.allDevices();
+
+  Stream<List<Device>> watchDevices() => db.watchDevices();
+
+  Future<Device?> device(String id) => db.device(id);
+
+  Future<void> setDeviceName(String id, String name) =>
+      db.updateDevice(id, DevicesCompanion(name: Value(name)));
+
+  Future<void> setDeviceCatalogue(String id, double ah) => db.updateDevice(
+        id,
+        DevicesCompanion(catalogueCapacityAh: Value(ah)),
+      );
+
+  Future<void> deleteDevice(String id) => db.deleteDevice(id);
+
+  /// How many rows predate the app tracking packs at all.
+  Future<Map<String, int>> orphanCounts() => db.orphanCounts();
+
+  Future<int> totalOrphans() async {
+    final counts = await db.orphanCounts();
+    return counts.values.fold<int>(0, (a, b) => a + b);
+  }
+
+  Future<void> adoptOrphans(String deviceId) => db.adoptOrphans(deviceId);
+
+  Future<void> discardOrphans() => db.discardOrphans();
   Future<void> dispose() async {
     _flushTimer?.cancel();
     await flush();

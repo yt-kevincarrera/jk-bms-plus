@@ -22,8 +22,13 @@ class BmsExporter {
   final BmsRepository repository;
 
   /// One row per stored ride.
-  Future<File> exportTrips() async {
-    final trips = await repository.db.recentTrips(limit: 10000);
+  /// Exports one pack's rides.
+  ///
+  /// Takes the pack explicitly, like every other read: an export that quietly
+  /// merged two batteries would be worse than useless, because a spreadsheet
+  /// full of numbers looks authoritative regardless of what went into it.
+  Future<File> exportTrips(String deviceId) async {
+    final trips = await repository.db.recentTrips(deviceId, limit: 10000);
     final rows = StringBuffer()
       ..writeln(
         'started_at,ended_at,demo,distance_km,moving_s,total_s,max_speed_kmh,'
@@ -66,9 +71,13 @@ class BmsExporter {
   ///
   /// [since] keeps the file to a size a spreadsheet can open: a month of
   /// continuous recording is millions of rows.
-  Future<File> exportReadings({Duration since = const Duration(days: 7)}) async {
+  Future<File> exportReadings(
+    String deviceId, {
+    Duration since = const Duration(days: 7),
+  }) async {
     final from = DateTime.now().toUtc().subtract(since);
     final rows = await repository.db.snapshotsBetween(
+      deviceId,
       from,
       DateTime.now().toUtc(),
     );
@@ -134,11 +143,12 @@ class BmsExporter {
   /// This is the file that makes a decoding mistake survivable: feed it back
   /// through a corrected parser and the history comes back rather than being
   /// lost.
-  Future<File> exportRawFrames({
+  Future<File> exportRawFrames(
+    String deviceId, {
     Duration since = const Duration(days: 1),
   }) async {
     final from = DateTime.now().toUtc().subtract(since);
-    final frames = await repository.db.rawFramesSince(from);
+    final frames = await repository.db.rawFramesSince(deviceId, from);
 
     final out = StringBuffer()
       ..writeln('# JK BMS raw frames, 300 bytes each, hex')

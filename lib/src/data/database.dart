@@ -9,6 +9,44 @@ import 'package:sqlite3/sqlite3.dart';
 
 part 'database.g.dart';
 
+/// One BMS this phone has connected to.
+///
+/// Everything the app concludes -- capacity, degradation, which cell lags,
+/// what a kilometre costs -- is about a specific pack. Pooling two packs into
+/// one history does not average them, it produces a third set of numbers that
+/// describes no battery that exists. So every row that records something
+/// observed carries the pack it was observed on.
+///
+/// Keyed on the BLE address, which is what identifies the module before a
+/// single frame has been parsed, and which does not rotate on a peripheral
+/// like this one.
+class Devices extends Table {
+  TextColumn get id => text()();
+
+  /// What the BMS advertises, or whatever the rider renames it to.
+  TextColumn get name => text().withDefault(const Constant(''))();
+
+  /// From the device info frame, once one has arrived.
+  TextColumn get serialNumber => text().withDefault(const Constant(''))();
+  TextColumn get model => text().withDefault(const Constant(''))();
+
+  /// What *this* pack was sold as.
+  ///
+  /// Per pack rather than global: a rider with a 45 Ah pack and a 30 Ah spare
+  /// measured against one shared figure gets a wrong answer for at least one
+  /// of them, and no warning that it happened.
+  RealColumn get catalogueCapacityAh => real().withDefault(const Constant(45))();
+
+  DateTimeColumn get firstSeenAt => dateTime()();
+  DateTimeColumn get lastSeenAt => dateTime()();
+
+  /// True for the simulated pack, so demo data stays in its own world.
+  BoolColumn get demo => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
 /// One completed ride.
 class Trips extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -40,6 +78,10 @@ class Trips extends Table {
   /// from the totals: a made-up ride teaching the real range estimate is
   /// exactly the kind of quiet wrongness this app is built to avoid.
   BoolColumn get demo => boolean().withDefault(const Constant(false))();
+  /// Which pack this was recorded on. Null for rows written before the app
+  /// tracked packs at all -- see [BmsRepository.orphanCounts].
+  TextColumn get deviceId => text().nullable()();
+
 }
 
 /// The track of a ride, one row per fix, with what the pack was doing at that
@@ -82,6 +124,10 @@ class Snapshots extends Table {
   /// Cell voltages as a JSON array. A column per cell would mean a schema
   /// migration every time a pack with a different cell count turns up.
   TextColumn get cellVoltagesJson => text()();
+  /// Which pack this was recorded on. Null for rows written before the app
+  /// tracked packs at all -- see [BmsRepository.orphanCounts].
+  TextColumn get deviceId => text().nullable()();
+
 }
 
 /// The raw 300-byte frames, exactly as they arrived.
@@ -95,6 +141,10 @@ class RawFrames extends Table {
   DateTimeColumn get timestamp => dateTime()();
   IntColumn get recordType => integer()();
   BlobColumn get bytes => blob()();
+  /// Which pack this was recorded on. Null for rows written before the app
+  /// tracked packs at all -- see [BmsRepository.orphanCounts].
+  TextColumn get deviceId => text().nullable()();
+
 }
 
 /// A guided full-discharge capacity measurement.
@@ -123,17 +173,21 @@ class CapacityTests extends Table {
   /// Seconds of the discharge that were not observed. Zero on a clean run.
   IntColumn get gapSeconds => integer().withDefault(const Constant(0))();
   TextColumn get note => text().withDefault(const Constant(''))();
+  /// Which pack this was recorded on. Null for rows written before the app
+  /// tracked packs at all -- see [BmsRepository.orphanCounts].
+  TextColumn get deviceId => text().nullable()();
+
 }
 
 @DriftDatabase(
-  tables: [Trips, TripPoints, Snapshots, RawFrames, CapacityTests],
+  tables: [Devices, Trips, TripPoints, Snapshots, RawFrames, CapacityTests],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_open());
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -147,8 +201,114 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(capacityTests, capacityTests.automatic);
             await m.addColumn(capacityTests, capacityTests.gapSeconds);
           }
+          if (from < 4) {
+            // Until now every reading landed in one pile regardless of which
+            // pack produced it. Existing rows keep a null deviceId rather than
+            // being guessed into a pack: the app can offer to adopt them, and
+            // a wrong guess here would be indistinguishable from a measurement.
+            await m.createTable(devices);
+            await m.addColumn(trips, trips.deviceId);
+            await m.addColumn(snapshots, snapshots.deviceId);
+            await m.addColumn(rawFrames, rawFrames.deviceId);
+            await m.addColumn(capacityTests, capacityTests.deviceId);
+          }
         },
       );
+
+  // --- Devices ---
+
+  Future<void> upsertDevice(DevicesCompanion device) =>
+      into(devices).insertOnConflictUpdate(device);
+
+  Future<Device?> device(String id) =>
+      (select(devices)..where((d) => d.id.equals(id))).getSingleOrNull();
+
+  /// Most recently seen first, so the pack in your hand is at the top.
+  Future<List<Device>> allDevices() =>
+      (select(devices)..orderBy([(d) => OrderingTerm.desc(d.lastSeenAt)])).get();
+
+  Stream<List<Device>> watchDevices() =>
+      (select(devices)..orderBy([(d) => OrderingTerm.desc(d.lastSeenAt)]))
+          .watch();
+
+  Future<void> updateDevice(String id, DevicesCompanion values) =>
+      (update(devices)..where((d) => d.id.equals(id))).write(values);
+
+  /// Removes a pack and everything recorded on it.
+  Future<void> deleteDevice(String id) async {
+    final rides = await (select(trips)..where((t) => t.deviceId.equals(id)))
+        .get();
+    for (final ride in rides) {
+      await (delete(tripPoints)..where((p) => p.tripId.equals(ride.id))).go();
+    }
+    await (delete(trips)..where((t) => t.deviceId.equals(id))).go();
+    await (delete(snapshots)..where((s) => s.deviceId.equals(id))).go();
+    await (delete(rawFrames)..where((f) => f.deviceId.equals(id))).go();
+    await (delete(capacityTests)..where((t) => t.deviceId.equals(id))).go();
+    await (delete(devices)..where((d) => d.id.equals(id))).go();
+  }
+
+  // --- Rows written before the app knew about packs ---
+
+  Future<int> _countOrphans(TableInfo<Table, dynamic> table, GeneratedColumn<String> col) async {
+    final row = await customSelect(
+      'SELECT COUNT(*) AS c FROM ${table.actualTableName} WHERE ${col.name} IS NULL',
+      readsFrom: {table},
+    ).getSingle();
+    return row.read<int>('c');
+  }
+
+  /// How much history has no pack attached, per table.
+  Future<Map<String, int>> orphanCounts() async => {
+        'trips': await _countOrphans(trips, trips.deviceId),
+        'snapshots': await _countOrphans(snapshots, snapshots.deviceId),
+        'rawFrames': await _countOrphans(rawFrames, rawFrames.deviceId),
+        'capacityTests':
+            await _countOrphans(capacityTests, capacityTests.deviceId),
+      };
+
+  /// Assigns every unattached row to one pack.
+  ///
+  /// Only ever done because the rider said so. The app cannot work out which
+  /// pack produced a row it recorded before it tracked packs, and inventing an
+  /// answer would put fabricated provenance next to real measurements.
+  Future<void> adoptOrphans(String deviceId) async {
+    await customUpdate(
+      'UPDATE trips SET device_id = ? WHERE device_id IS NULL',
+      variables: [Variable<String>(deviceId)],
+      updates: {trips},
+    );
+    await customUpdate(
+      'UPDATE snapshots SET device_id = ? WHERE device_id IS NULL',
+      variables: [Variable<String>(deviceId)],
+      updates: {snapshots},
+    );
+    await customUpdate(
+      'UPDATE raw_frames SET device_id = ? WHERE device_id IS NULL',
+      variables: [Variable<String>(deviceId)],
+      updates: {rawFrames},
+    );
+    await customUpdate(
+      'UPDATE capacity_tests SET device_id = ? WHERE device_id IS NULL',
+      variables: [Variable<String>(deviceId)],
+      updates: {capacityTests},
+    );
+  }
+
+  /// Discards unattached rows outright, for a rider who would rather start
+  /// clean than guess.
+  Future<void> discardOrphans() async {
+    await customUpdate('DELETE FROM trip_points WHERE trip_id IN '
+        '(SELECT id FROM trips WHERE device_id IS NULL)', updates: {tripPoints});
+    await customUpdate('DELETE FROM trips WHERE device_id IS NULL',
+        updates: {trips});
+    await customUpdate('DELETE FROM snapshots WHERE device_id IS NULL',
+        updates: {snapshots});
+    await customUpdate('DELETE FROM raw_frames WHERE device_id IS NULL',
+        updates: {rawFrames});
+    await customUpdate('DELETE FROM capacity_tests WHERE device_id IS NULL',
+        updates: {capacityTests});
+  }
 
   // --- Trips ---
 
@@ -158,15 +318,21 @@ class AppDatabase extends _$AppDatabase {
   Future<void> insertTripPoints(List<TripPointsCompanion> points) =>
       batch((b) => b.insertAll(tripPoints, points));
 
-  /// Most recent first.
-  Future<List<Trip>> recentTrips({int limit = 50}) =>
+  /// Most recent first, for one pack.
+  ///
+  /// Every read here takes a pack. There is deliberately no unscoped variant:
+  /// an accidental call to one would silently mix two batteries' histories,
+  /// which is the exact failure this table structure exists to prevent.
+  Future<List<Trip>> recentTrips(String deviceId, {int limit = 50}) =>
       (select(trips)
+            ..where((t) => t.deviceId.equals(deviceId))
             ..orderBy([(t) => OrderingTerm.desc(t.startedAt)])
             ..limit(limit))
           .get();
 
-  Stream<List<Trip>> watchTrips({int limit = 50}) =>
+  Stream<List<Trip>> watchTrips(String deviceId, {int limit = 50}) =>
       (select(trips)
+            ..where((t) => t.deviceId.equals(deviceId))
             ..orderBy([(t) => OrderingTerm.desc(t.startedAt)])
             ..limit(limit))
           .watch();
@@ -194,8 +360,13 @@ class AppDatabase extends _$AppDatabase {
   Future<void> insertSnapshots(List<SnapshotsCompanion> rows) =>
       batch((b) => b.insertAll(snapshots, rows));
 
-  Future<List<Snapshot>> snapshotsBetween(DateTime from, DateTime to) =>
+  Future<List<Snapshot>> snapshotsBetween(
+    String deviceId,
+    DateTime from,
+    DateTime to,
+  ) =>
       (select(snapshots)
+            ..where((s) => s.deviceId.equals(deviceId))
             ..where((s) => s.timestamp.isBiggerOrEqualValue(from))
             ..where((s) => s.timestamp.isSmallerOrEqualValue(to))
             ..orderBy([(s) => OrderingTerm.asc(s.timestamp)]))
@@ -214,8 +385,9 @@ class AppDatabase extends _$AppDatabase {
         .go();
   }
 
-  Future<List<RawFrame>> rawFramesSince(DateTime from) =>
+  Future<List<RawFrame>> rawFramesSince(String deviceId, DateTime from) =>
       (select(rawFrames)
+            ..where((f) => f.deviceId.equals(deviceId))
             ..where((f) => f.timestamp.isBiggerOrEqualValue(from))
             ..orderBy([(f) => OrderingTerm.asc(f.timestamp)]))
           .get();
@@ -225,6 +397,15 @@ class AppDatabase extends _$AppDatabase {
           ..addColumns([rawFrames.id.count()]))
         .getSingle();
     return row.read(rawFrames.id.count()) ?? 0;
+  }
+
+  /// Every ride on record, whatever pack it belongs to. Used for housekeeping
+  /// rather than for anything a rider reads, since a count across packs is not
+  /// a fact about any battery.
+  Future<int> totalTripCount() async {
+    final row = await (selectOnly(trips)..addColumns([trips.id.count()]))
+        .getSingle();
+    return row.read(trips.id.count()) ?? 0;
   }
 
   Future<int> countSnapshots() async {
@@ -245,8 +426,9 @@ class AppDatabase extends _$AppDatabase {
   Future<void> deleteCapacityTest(int id) =>
       (delete(capacityTests)..where((t) => t.id.equals(id))).go();
 
-  Future<List<CapacityTest>> allCapacityTests() =>
+  Future<List<CapacityTest>> allCapacityTests(String deviceId) =>
       (select(capacityTests)
+            ..where((t) => t.deviceId.equals(deviceId))
             ..orderBy([(t) => OrderingTerm.desc(t.startedAt)]))
           .get();
 

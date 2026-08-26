@@ -1397,6 +1397,14 @@ class AppL10nEn extends AppL10n {
       'What the label on the pack claims. Health is measured against this number, so it is worth getting right.';
 
   @override
+  String settingsCatalogueForPack(String pack) {
+    return 'What $pack was sold as. Each battery has its own, so changing it here does not touch the others.';
+  }
+
+  @override
+  String get exportNoPack => 'Connect a pack to export its history.';
+
+  @override
   String get settingsBmsConfigured => 'Configured in the BMS';
 
   @override
@@ -1614,4 +1622,67 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get updateNotes => 'What\'s new';
+
+  @override
+  String get packsTitle => 'Batteries';
+
+  @override
+  String get packsIntro =>
+      'Everything the app measures — capacity, degradation, which cell lags, what a kilometre costs — is about one specific battery. Each pack keeps its own history, so the same phone can be used with several without mixing them.';
+
+  @override
+  String get packsCurrent => 'Connected now';
+
+  @override
+  String get packsNone => 'None connected';
+
+  @override
+  String get packsKnown => 'Known batteries';
+
+  @override
+  String packsLastSeen(String date) {
+    return 'Seen on $date';
+  }
+
+  @override
+  String get packsRename => 'Rename';
+
+  @override
+  String get packsRenameHint => 'Battery name';
+
+  @override
+  String get packsSave => 'Save';
+
+  @override
+  String get packsCancel => 'Cancel';
+
+  @override
+  String get packsDelete => 'Delete battery';
+
+  @override
+  String packsDeleteConfirm(String pack) {
+    return 'This deletes $pack and everything recorded on it: rides, tracks, readings, raw frames and capacity measurements. It cannot be undone.';
+  }
+
+  @override
+  String packsRides(String count) {
+    return '$count rides';
+  }
+
+  @override
+  String get orphansTitle => 'History with no battery attached';
+
+  @override
+  String orphansBody(String count) {
+    return 'There are $count rows stored before the app separated by battery, so there is no record of which one they came from. You can attach them to the connected battery or discard them. The app does not guess: invented provenance sitting next to real measurements is worse than a gap.';
+  }
+
+  @override
+  String get orphansAdopt => 'Attach to this battery';
+
+  @override
+  String get orphansDiscard => 'Discard';
+
+  @override
+  String get orphansDone => 'Done';
 }

@@ -1401,6 +1401,14 @@ class AppL10nEs extends AppL10n {
       'Lo que dice la etiqueta del pack. Es contra este número que se mide la salud, así que conviene que sea el real.';
 
   @override
+  String settingsCatalogueForPack(String pack) {
+    return 'Lo que te vendieron como $pack. Cada batería tiene la suya, así que cambiarla aquí no toca las demás.';
+  }
+
+  @override
+  String get exportNoPack => 'Conecta un pack para exportar su historial.';
+
+  @override
   String get settingsBmsConfigured => 'Configurada en el BMS';
 
   @override
@@ -1620,4 +1628,67 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get updateNotes => 'Novedades';
+
+  @override
+  String get packsTitle => 'Baterías';
+
+  @override
+  String get packsIntro =>
+      'Todo lo que la app mide —capacidad, degradación, qué celda se queda atrás, cuánto cuesta un kilómetro— es de una batería concreta. Cada pack guarda su historial aparte, así que puedes usar el mismo teléfono con varias sin que se mezclen.';
+
+  @override
+  String get packsCurrent => 'Conectada ahora';
+
+  @override
+  String get packsNone => 'Ninguna conectada';
+
+  @override
+  String get packsKnown => 'Baterías conocidas';
+
+  @override
+  String packsLastSeen(String date) {
+    return 'Vista el $date';
+  }
+
+  @override
+  String get packsRename => 'Cambiar nombre';
+
+  @override
+  String get packsRenameHint => 'Nombre de la batería';
+
+  @override
+  String get packsSave => 'Guardar';
+
+  @override
+  String get packsCancel => 'Cancelar';
+
+  @override
+  String get packsDelete => 'Borrar batería';
+
+  @override
+  String packsDeleteConfirm(String pack) {
+    return 'Se borra $pack y todo lo grabado con ella: viajes, recorridos, lecturas, frames crudos y mediciones de capacidad. No se puede deshacer.';
+  }
+
+  @override
+  String packsRides(String count) {
+    return '$count viajes';
+  }
+
+  @override
+  String get orphansTitle => 'Historial sin batería asignada';
+
+  @override
+  String orphansBody(String count) {
+    return 'Hay $count filas guardadas antes de que la app separara por batería, así que no consta de cuál son. Puedes asignarlas a la batería conectada o descartarlas. La app no lo adivina sola: una procedencia inventada al lado de mediciones reales es peor que un hueco.';
+  }
+
+  @override
+  String get orphansAdopt => 'Asignar a esta batería';
+
+  @override
+  String get orphansDiscard => 'Descartar';
+
+  @override
+  String get orphansDone => 'Listo';
 }

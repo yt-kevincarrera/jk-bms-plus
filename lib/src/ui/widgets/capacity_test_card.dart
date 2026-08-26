@@ -40,7 +40,9 @@ class _CapacityTestCardState extends State<CapacityTestCard> {
   }
 
   Future<void> _load() async {
-    final tests = await widget.service.repository?.capacityTests();
+    final device = widget.service.activeDeviceId;
+    if (device == null) return;
+    final tests = await widget.service.repository?.capacityTests(device);
     if (mounted && tests != null) setState(() => _history = tests);
   }
 

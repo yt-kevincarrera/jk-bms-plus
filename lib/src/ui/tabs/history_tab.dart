@@ -25,10 +25,11 @@ class HistoryTab extends StatelessWidget {
     final t = AppL10n.of(context);
     final repository = service.repository;
 
-    if (repository == null) return _empty(t, service);
+    final device = service.activeDeviceId;
+    if (repository == null || device == null) return _empty(t, service);
 
     return StreamBuilder<List<Trip>>(
-      stream: repository.watchTrips(demo: service.isDemo),
+      stream: repository.watchTrips(device),
       builder: (context, snapshot) {
         final trips = snapshot.data ?? const <Trip>[];
         if (trips.isEmpty) return _empty(t, service);

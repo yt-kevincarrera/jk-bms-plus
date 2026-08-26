@@ -45,11 +45,18 @@ class _TrendsScreenState extends State<TrendsScreen> {
       return;
     }
 
-    final trips = await repo.db.recentTrips(limit: 500);
-    final tests = await repo.capacityTests();
+    final device = widget.service.activeDeviceId;
+    if (device == null) {
+      setState(() => _loading = false);
+      return;
+    }
+
+    final trips = await repo.db.recentTrips(device, limit: 500);
+    final tests = await repo.capacityTests(device);
     // Ninety days is enough to show a season's worth of drift without pulling
     // millions of rows into memory.
     final snapshots = await repo.db.snapshotsBetween(
+      device,
       DateTime.now().toUtc().subtract(const Duration(days: 90)),
       DateTime.now().toUtc(),
     );

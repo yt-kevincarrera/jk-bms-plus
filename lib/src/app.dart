@@ -48,9 +48,6 @@ class _JkBmsAppState extends State<JkBmsApp> {
       channelDescription:
           'Keeps a trip recording with the screen off or another app open.',
     );
-    // The range estimate is derived from stored trips, so it survives a restart
-    // and forgets a trip that gets deleted.
-    _service.relearnRangeFromTrips();
     // Cheap, and better done at every start than when the phone is already
     // full: raw frames are the biggest thing this app writes.
     _repository.pruneRawFrames();
@@ -97,10 +94,6 @@ class _JkBmsAppState extends State<JkBmsApp> {
       rawFrames: _settings.recordRawFrames,
       setByUser: _settings.catalogueSetByUser,
     );
-    await _service.resumeCapacityTest();
-    // Full discharges already in the history become measurements without
-    // anyone having had to press anything.
-    await _service.scanForCapacityCycles();
 
     if (mounted) setState(() {});
   }
