@@ -131,7 +131,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
     await _cancelScan();
     // Remember it, so the proximity watcher has something to look for later.
     await widget.proximity.remember(device.id, device.name);
-    unawaited(widget.service.connect(device.id));
+    unawaited(widget.service.connect(device.id, name: device.name));
     await _openHome(device.name);
     await widget.service.disconnect();
     _connecting = false;

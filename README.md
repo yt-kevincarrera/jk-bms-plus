@@ -61,7 +61,14 @@ checks on a timer, nothing downloads on its own, and Android's own install
 prompt appears every time. The builds are split per architecture, so the phone
 fetches ~21 MB instead of the 58 MB a universal package costs.
 
+**Several batteries, kept apart.** Everything the app concludes — capacity,
+degradation, which cell lags, what a kilometre costs — is about one specific
+pack. Each BMS the phone connects to gets its own history, its own catalogue
+capacity and its own learned consumption, keyed on the BLE address. Pooling two
+packs would not average them; it would describe a battery that does not exist.
+
 **Demo mode.**
+
  A simulated 20S pack generating real 300-byte frames through the
 real parser, so every screen can be judged with no BMS in the room. Demo rides
 are stored and learned from in their own world, so you can watch the learning
@@ -125,7 +132,7 @@ watching the first real connection, settle these:
 flutter test
 ```
 
-182 tests, no device needed. The protocol ones run against 11 real 300-byte
+191 tests, no device needed. The protocol ones run against 11 real 300-byte
 frames captured from JK hardware, with expected values taken from the reference
 implementation's byte-layout tables rather than from this parser's own output.
 

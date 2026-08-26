@@ -24,6 +24,7 @@ import '../live_console_screen.dart';
 import '../locale_controller.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/packs_card.dart';
 import '../widgets/update_card.dart';
 import '../../update/update_service.dart';
 
@@ -179,6 +180,7 @@ class _SystemTabState extends State<SystemTab> {
         if (_settings != null) _bmsSettingsSection(t, _settings!),
         if (service.repository != null)
           StorageSection(repository: service.repository!, t: t),
+        PacksCard(service: widget.service),
         _settingsSection(t),
         UpdateCard(service: widget.updateService, settings: widget.settings),
         _proximitySection(t),
@@ -349,17 +351,25 @@ class _SystemTabState extends State<SystemTab> {
   Widget _settingsSection(AppL10n t) {
     final settings = widget.settings;
     final configured = widget.service.configuredCapacityAh;
+    // The figure shown and edited is the connected pack's own, falling back to
+    // the app-wide default only when nothing is connected. A rider with two
+    // batteries editing one global number would be silently wrong about one of
+    // them.
+    final catalogue = widget.service.catalogueCapacityAh;
+    final device = widget.service.activeDevice;
     // Half an amp-hour apart is rounding; more than that is two different
     // claims about the same pack.
-    final mismatch = configured != null &&
-        (configured - settings.catalogueCapacityAh).abs() > 0.5;
+    final mismatch =
+        configured != null && (configured - catalogue).abs() > 0.5;
     return Section(
       title: t.settingsTitle,
       children: [
         InfoRow(
           t.settingsCatalogue,
-          '${settings.catalogueCapacityAh.toStringAsFixed(1)} Ah',
-          hint: t.settingsCatalogueHint,
+          '${catalogue.toStringAsFixed(1)} Ah',
+          hint: device == null
+              ? t.settingsCatalogueHint
+              : t.settingsCatalogueForPack(device.name.isEmpty ? device.id : device.name),
         ),
         // What the BMS is set to is a different claim by a different person,
         // so it sits next to the catalogue figure instead of replacing it.
@@ -375,7 +385,7 @@ class _SystemTabState extends State<SystemTab> {
             child: Text(
               t.settingsCapacityMismatch(
                 configured.toStringAsFixed(1),
-                settings.catalogueCapacityAh.toStringAsFixed(1),
+                catalogue.toStringAsFixed(1),
               ),
               style: const TextStyle(
                 fontSize: 11.5,
@@ -390,17 +400,23 @@ class _SystemTabState extends State<SystemTab> {
             children: [
               Expanded(
                 child: Slider(
-                  value: settings.catalogueCapacityAh.clamp(5, 200),
+                  value: catalogue.clamp(5, 200),
                   min: 5,
                   max: 200,
                   divisions: 195,
-                  label: settings.catalogueCapacityAh.toStringAsFixed(0),
+                  label: catalogue.toStringAsFixed(0),
                   onChanged: (v) async {
-                    await settings.setCatalogueCapacity(v.roundToDouble());
-                    widget.service.catalogueCapacityAh =
-                        settings.catalogueCapacityAh;
-                    // From here on the app stops adopting the BMS figure:
-                    // the rider has said what the pack was sold as.
+                    final ah = v.roundToDouble();
+                    if (device == null) {
+                      // Nothing connected: this is the default a new pack
+                      // starts from, not a figure about any battery.
+                      await settings.setCatalogueCapacity(ah);
+                      widget.service.fallbackCatalogueAh = ah;
+                    } else {
+                      await widget.service.repository
+                          ?.setDeviceCatalogue(device.id, ah);
+                      await widget.service.refreshActiveDevice();
+                    }
                     widget.service.catalogueSetByUser = true;
                     if (mounted) setState(() {});
                   },
@@ -480,22 +496,33 @@ class _SystemTabState extends State<SystemTab> {
       }
     }
 
+    final device = widget.service.activeDeviceId;
+    if (device == null) {
+      return Section(
+        title: t.exportTitle,
+        intro: t.exportIntro,
+        children: [
+          InfoRow(t.exportTitle, t.exportNoPack, dim: true, last: true),
+        ],
+      );
+    }
+
     return Section(
       title: t.exportTitle,
       intro: t.exportIntro,
       children: [
         TextButton.icon(
-          onPressed: () => run(exporter.exportTrips),
+          onPressed: () => run(() => exporter.exportTrips(device)),
           icon: const Icon(Icons.table_chart_outlined, size: 18),
           label: Text(t.exportTrips),
         ),
         TextButton.icon(
-          onPressed: () => run(exporter.exportReadings),
+          onPressed: () => run(() => exporter.exportReadings(device)),
           icon: const Icon(Icons.show_chart, size: 18),
           label: Text(t.exportReadings),
         ),
         TextButton.icon(
-          onPressed: () => run(exporter.exportRawFrames),
+          onPressed: () => run(() => exporter.exportRawFrames(device)),
           icon: const Icon(Icons.data_object, size: 18),
           label: Text(t.exportFrames),
         ),
