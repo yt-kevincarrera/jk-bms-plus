@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The only thing shared out of this app is a downloaded update package, from
+     the one directory it gets written to. Nothing else in app storage is
+     exposed: the ride history and the raw BMS frames stay private. -->
+<paths>
+    <files-path name="updates" path="updates/" />
+</paths>
