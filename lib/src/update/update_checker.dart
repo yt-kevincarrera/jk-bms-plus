@@ -167,6 +167,9 @@ class UpdateChecker {
       htmlUrl: decoded['html_url'] is String
           ? decoded['html_url'] as String
           : 'https://github.com/',
+      publishedAt: decoded['published_at'] is String
+          ? DateTime.tryParse(decoded['published_at'] as String)
+          : null,
     );
   }
 }

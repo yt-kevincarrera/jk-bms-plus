@@ -2857,6 +2857,18 @@ abstract class AppL10n {
   /// **'Versión instalada'**
   String get updateInstalled;
 
+  /// No description provided for @updatePublished.
+  ///
+  /// In es, this message translates to:
+  /// **'Última publicada'**
+  String get updatePublished;
+
+  /// No description provided for @updateReleasedOn.
+  ///
+  /// In es, this message translates to:
+  /// **'Publicada el {date}'**
+  String updateReleasedOn(String date);
+
   /// No description provided for @updateCheck.
   ///
   /// In es, this message translates to:
@@ -2920,7 +2932,7 @@ abstract class AppL10n {
   /// No description provided for @updateNeedsToken.
   ///
   /// In es, this message translates to:
-  /// **'El repositorio es privado, así que GitHub no entrega la release sin permiso. Pega abajo un token de acceso con permiso de lectura, o pon el repositorio en público y no hará falta.'**
+  /// **'GitHub no entregó la release. Suele ser porque el repositorio está privado, y entonces hace falta un token de lectura. Si está público, vuelve a intentarlo en un momento.'**
   String get updateNeedsToken;
 
   /// No description provided for @updateTokenLabel.
@@ -2932,7 +2944,7 @@ abstract class AppL10n {
   /// No description provided for @updateTokenHint.
   ///
   /// In es, this message translates to:
-  /// **'Se guarda solo en este teléfono y solo se manda a api.github.com. No está dentro del APK, justo para que no viaje con él.'**
+  /// **'Solo hace falta si el repositorio es privado. Se guarda en este teléfono y solo se manda a api.github.com; no está dentro del APK, justo para que no viaje con él.'**
   String get updateTokenHint;
 
   /// No description provided for @updateTokenSave.

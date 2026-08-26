@@ -1548,6 +1548,14 @@ class AppL10nEs extends AppL10n {
   String get updateInstalled => 'Versión instalada';
 
   @override
+  String get updatePublished => 'Última publicada';
+
+  @override
+  String updateReleasedOn(String date) {
+    return 'Publicada el $date';
+  }
+
+  @override
   String get updateCheck => 'Buscar actualización';
 
   @override
@@ -1588,14 +1596,14 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get updateNeedsToken =>
-      'El repositorio es privado, así que GitHub no entrega la release sin permiso. Pega abajo un token de acceso con permiso de lectura, o pon el repositorio en público y no hará falta.';
+      'GitHub no entregó la release. Suele ser porque el repositorio está privado, y entonces hace falta un token de lectura. Si está público, vuelve a intentarlo en un momento.';
 
   @override
   String get updateTokenLabel => 'Token de GitHub';
 
   @override
   String get updateTokenHint =>
-      'Se guarda solo en este teléfono y solo se manda a api.github.com. No está dentro del APK, justo para que no viaje con él.';
+      'Solo hace falta si el repositorio es privado. Se guarda en este teléfono y solo se manda a api.github.com; no está dentro del APK, justo para que no viaje con él.';
 
   @override
   String get updateTokenSave => 'Guardar';
