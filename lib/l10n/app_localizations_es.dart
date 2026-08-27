@@ -25,6 +25,13 @@ class AppL10nEs extends AppL10n {
   String get connectScanning => 'Buscando';
 
   @override
+  String get connectScanFinished => 'Búsqueda terminada';
+
+  @override
+  String get connectNothingFoundHelp =>
+      'No apareció nada. Casi siempre es una de estas:\n\n• La app oficial de JK está conectada al BMS. Mientras lo está, el BMS deja de anunciarse y ningún otro teléfono lo ve. Ciérrala del todo.\n• El pack está dormido. Enciende la moto o muévela para despertarlo.\n• Estás lejos. Acércate al pack.';
+
+  @override
   String get connectCancelScan => 'Cancelar búsqueda';
 
   @override
