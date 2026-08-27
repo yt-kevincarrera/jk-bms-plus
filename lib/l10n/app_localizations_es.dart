@@ -34,6 +34,23 @@ class AppL10nEs extends AppL10n {
   String get connectNoDevices => 'Todavía no aparece ningún BMS';
 
   @override
+  String get connectLocationOff =>
+      'La ubicación del teléfono está apagada. Android no entrega resultados de búsqueda Bluetooth sin ella, aunque le hayas dado el permiso a la app: devuelve cero dispositivos sin avisar. Enciéndela y vuelve a buscar.';
+
+  @override
+  String get connectOtherDevices => 'Otros dispositivos cerca';
+
+  @override
+  String get connectOtherDevicesHint =>
+      'La app no oculta nada. Si tu BMS tiene otro nombre —porque lo cambiaste en la app oficial, o porque ese modelo no anuncia el suyo— va a salir en esta lista. Búscalo por la señal más fuerte y pruébalo.';
+
+  @override
+  String get connectLikelyBms => 'probable BMS';
+
+  @override
+  String get connectByService => 'anuncia el servicio JK';
+
+  @override
   String get connectNoBle => 'Este teléfono no tiene Bluetooth LE.';
 
   @override
