@@ -25,6 +25,13 @@ class AppL10nEn extends AppL10n {
   String get connectScanning => 'Scanning';
 
   @override
+  String get connectScanFinished => 'Scan finished';
+
+  @override
+  String get connectNothingFoundHelp =>
+      'Nothing turned up. It is almost always one of these:\n\n• The official JK app is connected to the BMS. While it is, the BMS stops advertising and no other phone can see it. Close it fully.\n• The pack is asleep. Switch the bike on or move it to wake it.\n• You are too far away. Get closer to the pack.';
+
+  @override
   String get connectCancelScan => 'Cancel scan';
 
   @override
