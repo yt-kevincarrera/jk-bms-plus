@@ -145,6 +145,36 @@ abstract class AppL10n {
   /// **'Todavía no aparece ningún BMS'**
   String get connectNoDevices;
 
+  /// No description provided for @connectLocationOff.
+  ///
+  /// In es, this message translates to:
+  /// **'La ubicación del teléfono está apagada. Android no entrega resultados de búsqueda Bluetooth sin ella, aunque le hayas dado el permiso a la app: devuelve cero dispositivos sin avisar. Enciéndela y vuelve a buscar.'**
+  String get connectLocationOff;
+
+  /// No description provided for @connectOtherDevices.
+  ///
+  /// In es, this message translates to:
+  /// **'Otros dispositivos cerca'**
+  String get connectOtherDevices;
+
+  /// No description provided for @connectOtherDevicesHint.
+  ///
+  /// In es, this message translates to:
+  /// **'La app no oculta nada. Si tu BMS tiene otro nombre —porque lo cambiaste en la app oficial, o porque ese modelo no anuncia el suyo— va a salir en esta lista. Búscalo por la señal más fuerte y pruébalo.'**
+  String get connectOtherDevicesHint;
+
+  /// No description provided for @connectLikelyBms.
+  ///
+  /// In es, this message translates to:
+  /// **'probable BMS'**
+  String get connectLikelyBms;
+
+  /// No description provided for @connectByService.
+  ///
+  /// In es, this message translates to:
+  /// **'anuncia el servicio JK'**
+  String get connectByService;
+
   /// No description provided for @connectNoBle.
   ///
   /// In es, this message translates to:
