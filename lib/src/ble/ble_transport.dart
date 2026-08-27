@@ -22,11 +22,61 @@ class DiscoveredBms {
     required this.id,
     required this.name,
     required this.rssi,
+    this.advertisesJkService = false,
+    this.nameLooksLikeJk = false,
   });
 
   final String id;
   final String name;
   final int rssi;
+
+  /// The advertisement carried the JK service UUID. As close to proof as a
+  /// scan gets.
+  final bool advertisesJkService;
+
+  /// The advertised name contains "JK". A hint, not proof: the name is a
+  /// setting, and a renamed pack stops matching.
+  final bool nameLooksLikeJk;
+
+  /// Whether this is probably the BMS rather than a headset or a TV.
+  ///
+  /// Used to sort and to highlight, never to hide. A device that fails both
+  /// checks can still be the right one -- a JK BMS renamed in the official app
+  /// to something personal advertises neither the service UUID nor the letters
+  /// JK, and hiding it would leave a rider staring at an empty list with no
+  /// way to tell an absent pack from a filtered one.
+  bool get likelyBms => advertisesJkService || nameLooksLikeJk;
+}
+
+/// Judges one advertisement, without deciding whether to show it.
+///
+/// Pulled out of the scan so the classification can be tested: the bug this
+/// replaced was a filter that dropped anything failing both checks, and the
+/// only way to keep that from coming back is a test that names a device with
+/// neither and expects it to survive.
+DiscoveredBms classifyAdvertisement({
+  required String id,
+  required String name,
+  required int rssi,
+  required Iterable<String> serviceUuids,
+}) =>
+    DiscoveredBms(
+      id: id,
+      name: name,
+      rssi: rssi,
+      advertisesJkService:
+          serviceUuids.any((u) => u.toLowerCase().contains('ffe0')),
+      nameLooksLikeJk: name.toUpperCase().contains('JK'),
+    );
+
+/// Strongest signal of being the BMS first, then closest.
+int compareDiscovered(DiscoveredBms a, DiscoveredBms b) {
+  if (a.likelyBms != b.likelyBms) return a.likelyBms ? -1 : 1;
+  if (a.advertisesJkService != b.advertisesJkService) {
+    return a.advertisesJkService ? -1 : 1;
+  }
+  // Closest first among equals: the pack under you outshouts a neighbour's.
+  return b.rssi.compareTo(a.rssi);
 }
 
 /// Why the link is down, in words a rider can act on.
@@ -102,10 +152,17 @@ class BleTransport implements BmsLink {
   bool _wantConnection = false;
   bool _disposed = false;
 
-  /// Scans for devices exposing the JK service. Some firmware does not put the
-  /// service UUID in the advertisement, so name-matched devices are included
-  /// too rather than being invisible.
-  
+  /// Scans for BLE devices and reports every one of them.
+  ///
+  /// It reports everything on purpose. Filtering to devices that advertise the
+  /// JK service UUID or carry "JK" in the name looks tidy and is wrong: plenty
+  /// of JK firmware puts neither in the advertisement, and a pack renamed in
+  /// the official app matches nothing. The result was a scan that found the
+  /// BMS, discarded it, and showed an empty list -- a failure indistinguishable
+  /// from the pack being switched off.
+  ///
+  /// So the judgement moves to [DiscoveredBms.likelyBms], which sorts and
+  /// highlights, and the rider can still pick anything they recognise.
   @override
   Stream<List<DiscoveredBms>> scan({
     Duration timeout = const Duration(seconds: 12),
@@ -121,19 +178,22 @@ class BleTransport implements BmsLink {
         final name = r.advertisementData.advName.isNotEmpty
             ? r.advertisementData.advName
             : r.device.platformName;
-        final advertisesService = r.advertisementData.serviceUuids
-            .any((u) => u.str.toLowerCase().contains('ffe0'));
-        final looksLikeJk = name.toUpperCase().contains('JK');
-        if (!advertisesService && !looksLikeJk) continue;
-
         final id = r.device.remoteId.str;
         final existing = found[id];
         if (existing == null || existing.rssi != r.rssi) {
-          found[id] = DiscoveredBms(id: id, name: name, rssi: r.rssi);
+          found[id] = classifyAdvertisement(
+            id: id,
+            name: name,
+            rssi: r.rssi,
+            serviceUuids:
+                r.advertisementData.serviceUuids.map((u) => u.str),
+          );
           changed = true;
         }
       }
-      if (changed) controller.add(found.values.toList());
+      if (changed) {
+        controller.add(found.values.toList()..sort(compareDiscovered));
+      }
     });
 
     FlutterBluePlus.startScan(timeout: timeout).catchError((Object e) {

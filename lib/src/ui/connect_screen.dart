@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../ble/ble_transport.dart';
@@ -102,6 +103,19 @@ class _ConnectScreenState extends State<ConnectScreen> {
       return;
     }
 
+    // Android ties BLE scanning to location being switched on, not just to the
+    // permission being granted. With it off the scan succeeds and returns
+    // nothing, which looks exactly like no BMS being present -- so this is
+    // checked and named rather than left to be guessed at.
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      if (!mounted) return;
+      setState(() {
+        _scanning = false;
+        _message = t.connectLocationOff;
+      });
+      return;
+    }
+
     await _scanSub?.cancel();
     _scanSub = widget.service.scan().listen(
       (devices) {
@@ -112,6 +126,72 @@ class _ConnectScreenState extends State<ConnectScreen> {
       },
     );
   }
+
+
+  /// The scan results, with the likely ones first and everything else below.
+  ///
+  /// The "other devices" group is the whole point of the fix: a rider whose BMS
+  /// does not announce itself as a JK can still see it and tap it, instead of
+  /// being told nothing was found.
+  Widget _deviceList(AppL10n t) {
+    final likely = _devices.where((d) => d.likelyBms).toList();
+    final others = _devices.where((d) => !d.likelyBms).toList();
+
+    return ListView(
+      padding: const EdgeInsets.only(top: 12),
+      children: [
+        for (final d in likely) _deviceTile(t, d, likely: true),
+        if (others.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 18, 16, 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  t.connectOtherDevices.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    letterSpacing: 0.8,
+                    color: AppTheme.textFaint,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  t.connectOtherDevicesHint,
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    height: 1.4,
+                    color: AppTheme.textFaint,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          for (final d in others) _deviceTile(t, d, likely: false),
+        ],
+      ],
+    );
+  }
+
+  Widget _deviceTile(AppL10n t, DiscoveredBms d, {required bool likely}) =>
+      ListTile(
+        leading: Icon(
+          likely ? Icons.battery_charging_full : Icons.bluetooth,
+          color: likely ? AppTheme.good : AppTheme.textFaint,
+        ),
+        title: Text(
+          d.name.isEmpty ? d.id : d.name,
+          style: TextStyle(color: likely ? null : AppTheme.textSecondary),
+        ),
+        subtitle: Text(
+          d.advertisesJkService
+              ? '${d.id}   ${d.rssi} dBm  ·  ${t.connectByService}'
+              : '${d.id}   ${d.rssi} dBm',
+          style: const TextStyle(fontSize: 11.5),
+        ),
+        trailing: Pill('${d.rssi}', color: _rssiColour(d.rssi)),
+        onTap: () => _connect(d),
+      );
 
   /// Stops a scan the user started. Cancelling the subscription also stops the
   /// radio, so this genuinely ends the scan rather than just hiding it.
@@ -241,20 +321,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
                       ],
                     ),
                   )
-                : ListView.builder(
-                    padding: const EdgeInsets.only(top: 12),
-                    itemCount: _devices.length,
-                    itemBuilder: (context, i) {
-                      final d = _devices[i];
-                      return ListTile(
-                        leading: const Icon(Icons.battery_charging_full),
-                        title: Text(d.name.isEmpty ? d.id : d.name),
-                        subtitle: Text('${d.id}   ${d.rssi} dBm'),
-                        trailing: Pill('${d.rssi}', color: _rssiColour(d.rssi)),
-                        onTap: () => _connect(d),
-                      );
-                    },
-                  ),
+                : _deviceList(t),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),

@@ -34,6 +34,23 @@ class AppL10nEn extends AppL10n {
   String get connectNoDevices => 'No BMS found yet';
 
   @override
+  String get connectLocationOff =>
+      'The phone\'s location is switched off. Android returns no Bluetooth scan results without it, even with the permission granted: it reports zero devices and says nothing. Turn it on and scan again.';
+
+  @override
+  String get connectOtherDevices => 'Other devices nearby';
+
+  @override
+  String get connectOtherDevicesHint =>
+      'Nothing is hidden. If your BMS has a different name — renamed in the official app, or a model that does not advertise one — it is in this list. Look for the strongest signal and try it.';
+
+  @override
+  String get connectLikelyBms => 'likely BMS';
+
+  @override
+  String get connectByService => 'advertises the JK service';
+
+  @override
   String get connectNoBle => 'This phone has no Bluetooth LE.';
 
   @override
