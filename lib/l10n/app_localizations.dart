@@ -127,6 +127,18 @@ abstract class AppL10n {
   /// **'Buscando'**
   String get connectScanning;
 
+  /// No description provided for @connectScanFinished.
+  ///
+  /// In es, this message translates to:
+  /// **'Búsqueda terminada'**
+  String get connectScanFinished;
+
+  /// No description provided for @connectNothingFoundHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'No apareció nada. Casi siempre es una de estas:\n\n• La app oficial de JK está conectada al BMS. Mientras lo está, el BMS deja de anunciarse y ningún otro teléfono lo ve. Ciérrala del todo.\n• El pack está dormido. Enciende la moto o muévela para despertarlo.\n• Estás lejos. Acércate al pack.'**
+  String get connectNothingFoundHelp;
+
   /// No description provided for @connectCancelScan.
   ///
   /// In es, this message translates to:

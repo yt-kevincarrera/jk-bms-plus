@@ -79,6 +79,43 @@ int compareDiscovered(DiscoveredBms a, DiscoveredBms b) {
   return b.rssi.compareTo(a.rssi);
 }
 
+
+/// Decides when a scan is genuinely over, from the radio's own scanning flag.
+///
+/// Its own class because getting this wrong is what stranded the connect
+/// screen: `FlutterBluePlus.isScanning` reports its current value the moment
+/// you subscribe, which is `false` before the scan has started. Treating that
+/// first `false` as "finished" ends the scan instantly; ignoring every `false`
+/// leaves it running forever. Only a `false` that follows a `true` means the
+/// radio stopped.
+class ScanLifecycle {
+  bool _started = false;
+  bool _finished = false;
+
+  bool get started => _started;
+  bool get finished => _finished;
+
+  /// Returns true exactly once, on the transition that ends the scan.
+  bool onScanningChanged({required bool scanning}) {
+    if (_finished) return false;
+    if (scanning) {
+      _started = true;
+      return false;
+    }
+    if (!_started) return false;
+    _finished = true;
+    return true;
+  }
+
+  /// The backstop firing. Ends the scan whether or not the radio ever said so,
+  /// because a screen stuck on "searching" is worse than one that stops early.
+  bool onDeadline() {
+    if (_finished) return false;
+    _finished = true;
+    return true;
+  }
+}
+
 /// Why the link is down, in words a rider can act on.
 class BleLinkError {
   const BleLinkError(this.message, {this.likelyBusy = false});
@@ -165,14 +202,32 @@ class BleTransport implements BmsLink {
   /// highlights, and the rider can still pick anything they recognise.
   @override
   Stream<List<DiscoveredBms>> scan({
-    Duration timeout = const Duration(seconds: 12),
+    Duration timeout = const Duration(seconds: 20),
   }) {
     _setState(BleLinkState.scanning);
     final found = <String, DiscoveredBms>{};
     final controller = StreamController<List<DiscoveredBms>>();
+    final lifecycle = ScanLifecycle();
 
-    late StreamSubscription<List<ScanResult>> sub;
-    sub = FlutterBluePlus.scanResults.listen((results) {
+    StreamSubscription<List<ScanResult>>? resultsSub;
+    StreamSubscription<bool>? scanningSub;
+    Timer? deadline;
+
+    Future<void> finish() async {
+      deadline?.cancel();
+      await resultsSub?.cancel();
+      await scanningSub?.cancel();
+      resultsSub = null;
+      scanningSub = null;
+      if (_currentState == BleLinkState.scanning) _setState(BleLinkState.idle);
+      // Closing is the whole point: it is what makes onDone fire, which is
+      // what turns the screen's spinner off. Without it the radio stopped at
+      // the timeout and the screen said "searching" indefinitely -- over a
+      // scan that had already ended and could no longer find anything.
+      if (!controller.isClosed) await controller.close();
+    }
+
+    resultsSub = FlutterBluePlus.scanResults.listen((results) {
       var changed = false;
       for (final r in results) {
         final name = r.advertisementData.advName.isNotEmpty
@@ -185,8 +240,7 @@ class BleTransport implements BmsLink {
             id: id,
             name: name,
             rssi: r.rssi,
-            serviceUuids:
-                r.advertisementData.serviceUuids.map((u) => u.str),
+            serviceUuids: r.advertisementData.serviceUuids.map((u) => u.str),
           );
           changed = true;
         }
@@ -196,12 +250,28 @@ class BleTransport implements BmsLink {
       }
     });
 
+    // The radio stops itself when the timeout expires; this is how the app
+    // hears about it.
+    scanningSub = FlutterBluePlus.isScanning.listen((scanning) {
+      if (lifecycle.onScanningChanged(scanning: scanning)) unawaited(finish());
+    });
+
+    // And a backstop, in case that flag never arrives. Whatever else goes
+    // wrong, the search has to end where the rider can see it end.
+    deadline = Timer(timeout + const Duration(seconds: 3), () {
+      if (lifecycle.onDeadline()) unawaited(finish());
+    });
+
     FlutterBluePlus.startScan(timeout: timeout).catchError((Object e) {
       _errorController.add(BleLinkError('Could not start scanning: $e'));
+      if (lifecycle.onDeadline()) unawaited(finish());
     });
 
     controller.onCancel = () async {
-      await sub.cancel();
+      lifecycle.onDeadline();
+      deadline?.cancel();
+      await resultsSub?.cancel();
+      await scanningSub?.cancel();
       await FlutterBluePlus.stopScan();
       if (_currentState == BleLinkState.scanning) _setState(BleLinkState.idle);
     };

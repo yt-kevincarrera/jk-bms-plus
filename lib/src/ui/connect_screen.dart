@@ -44,6 +44,11 @@ class _ConnectScreenState extends State<ConnectScreen> {
   bool _connecting = false;
   List<DiscoveredBms> _devices = const [];
   bool _scanning = false;
+
+  /// Whether a scan has been run and finished. Distinguishes "you have not
+  /// looked yet" from "we looked and found nothing", which need different
+  /// things said to them.
+  bool _searched = false;
   String? _message;
   bool _busyMessage = false;
 
@@ -80,6 +85,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
     final t = AppL10n.of(context);
     setState(() {
       _scanning = true;
+      _searched = false;
       _message = null;
       _devices = const [];
     });
@@ -122,7 +128,12 @@ class _ConnectScreenState extends State<ConnectScreen> {
         if (mounted) setState(() => _devices = devices);
       },
       onDone: () {
-        if (mounted) setState(() => _scanning = false);
+        if (mounted) {
+          setState(() {
+            _scanning = false;
+            _searched = true;
+          });
+        }
       },
     );
   }
@@ -313,11 +324,27 @@ class _ConnectScreenState extends State<ConnectScreen> {
                           const SizedBox(height: 14),
                         ],
                         Text(
-                          _scanning ? t.connectScanning : t.connectNoDevices,
+                          _scanning ? t.connectScanning : t.connectScanFinished,
                           style: const TextStyle(
                             color: AppTheme.textSecondary,
                           ),
                         ),
+                        // Only once the search has actually ended. While it is
+                        // running there is nothing to explain yet, and the
+                        // whole bug this replaced was a screen that could
+                        // never reach this state at all.
+                        if (!_scanning && _searched)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(24, 14, 24, 0),
+                            child: Text(
+                              t.connectNothingFoundHelp,
+                              style: const TextStyle(
+                                fontSize: 12.5,
+                                height: 1.5,
+                                color: AppTheme.textFaint,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   )

@@ -1,12 +1,12 @@
 {
   "@@locale": "en",
-
   "appTitle": "JK BMS +",
-
   "connectTitle": "Connect",
   "connectOneConnectionWarning": "The JK BMS accepts one Bluetooth connection at a time. Close the official JK app before connecting here.",
   "connectScan": "Scan for a BMS",
   "connectScanning": "Scanning",
+  "connectScanFinished": "Scan finished",
+  "connectNothingFoundHelp": "Nothing turned up. It is almost always one of these:\n\n• The official JK app is connected to the BMS. While it is, the BMS stops advertising and no other phone can see it. Close it fully.\n• The pack is asleep. Switch the bike on or move it to wake it.\n• You are too far away. Get closer to the pack.",
   "connectCancelScan": "Cancel scan",
   "connectScanCancelled": "Scan cancelled",
   "connectNoDevices": "No BMS found yet",
@@ -19,13 +19,11 @@
   "connectBluetoothOff": "Bluetooth is off. Turn it on and scan again.",
   "connectDemoButton": "Open demo mode",
   "connectDemoHint": "Demo mode runs a simulated 20S pack through the real parser, so you can see every screen with no BMS in the room.",
-
   "tabNow": "Now",
   "tabCells": "Cells",
   "tabThermal": "Thermal",
   "tabHistory": "Trips",
   "tabSystem": "System",
-
   "demoBanner": "DEMO — simulated pack, no BMS connected",
   "demoTitle": "Demo mode",
   "demoExplanation": "A simulated 20S pack is generating real 300-byte frames. They go through the same checksum, reassembly and parser the hardware will, so these screens are wired exactly as they will be in the field. The values themselves are modelled, not measured.",
@@ -38,17 +36,20 @@
   "demoScenarioWeakCell": "Weak cell",
   "demoScenarioWeakCellDesc": "Cell 7 sagging hard, balancer working, warnings raised",
   "demoPackName": "Demo pack",
-
   "healthGood": "All good",
   "healthWatch": "Watch",
   "healthBad": "Problem",
-
   "waitingFor": "Waiting for {what}",
-  "@waitingFor": { "placeholders": { "what": { "type": "String" } } },
+  "@waitingFor": {
+    "placeholders": {
+      "what": {
+        "type": "String"
+      }
+    }
+  },
   "waitingFirstReading": "the first reading",
   "waitingCellVoltages": "cell voltages",
   "waitingTemperatures": "temperatures",
-
   "soc": "Charge",
   "range": "Range",
   "rangeDisclaimer": "Rough estimate from remaining energy. The real number comes from Wh/km measured against GPS.",
@@ -60,7 +61,6 @@
   "charging": "charging",
   "discharging": "discharging",
   "resting": "at rest",
-
   "sessionTitle": "This session",
   "sessionEnergy": "Energy through pack",
   "sessionDistance": "Distance",
@@ -69,11 +69,19 @@
   "needsGps": "needs an active trip",
   "needsDatabase": "needs more history",
   "needsSteps": "needs current steps",
-
   "packTitle": "Pack",
   "packRemaining": "Remaining",
   "packRemainingValue": "{remaining} of {nominal} Ah",
-  "@packRemainingValue": { "placeholders": { "remaining": { "type": "String" }, "nominal": { "type": "String" } } },
+  "@packRemainingValue": {
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      },
+      "nominal": {
+        "type": "String"
+      }
+    }
+  },
   "packCycles": "Cycles",
   "packSoh": "Health",
   "packSag": "Sag under load",
@@ -83,14 +91,30 @@
   "mosfetChargeOff": "charge off",
   "mosfetDischargeOn": "discharge on",
   "mosfetDischargeOff": "discharge off",
-
   "cellsLowest": "Lowest: cell {index} at {voltage} V",
-  "@cellsLowest": { "placeholders": { "index": { "type": "int" }, "voltage": { "type": "String" } } },
+  "@cellsLowest": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "voltage": {
+        "type": "String"
+      }
+    }
+  },
   "cellsHighest": "Highest: cell {index} at {voltage} V",
-  "@cellsHighest": { "placeholders": { "index": { "type": "int" }, "voltage": { "type": "String" } } },
+  "@cellsHighest": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "voltage": {
+        "type": "String"
+      }
+    }
+  },
   "cellsSpreadTitle": "Spread",
   "cellsDeviationHint": "The bars show deviation from the average, not absolute voltage: at 3.9 V nominal, twenty identical full bars would tell you nothing.",
-
   "balancingTitle": "Balancing",
   "balancerState": "Balancer",
   "balancerBadge": "Balancing",
@@ -105,21 +129,37 @@
   "balanceWhichCells": "Which cells",
   "balanceWhichCellsValue": "inferred, the BMS does not report it",
   "balanceRanking": "Weak-cell ranking",
-
   "resistanceTitle": "Resistance",
   "resistanceSource": "Source",
   "resistanceSourceValue": "the BMS's own wire measurement",
   "resistanceEstimated": "Estimated internal resistance",
   "resistanceWireWarnings": "Wire resistance warnings",
   "none": "none",
-
   "thermalProbe": "Probe {index}",
-  "@thermalProbe": { "placeholders": { "index": { "type": "int" } } },
+  "@thermalProbe": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
   "thermalMosfet": "MOSFET",
   "thermalLastMinutes": "Last {minutes} minutes",
-  "@thermalLastMinutes": { "placeholders": { "minutes": { "type": "int" } } },
+  "@thermalLastMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "thermalSamples": "{count} samples",
-  "@thermalSamples": { "placeholders": { "count": { "type": "int" } } },
+  "@thermalSamples": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "thermalCollecting": "Collecting samples",
   "thermalLegendHottest": "Hottest probe",
   "thermalLegendCurrent": "Current (|A|)",
@@ -134,7 +174,6 @@
   "on": "on",
   "off": "off",
   "thermalMaskNote": "The bitmask is shown raw and no reading is hidden because of it. The reference implementation calls it an \"absent\" sensor mask, but real captures set bits for probes that are plainly working. See docs/PROTOCOL.md.",
-
   "historyEmptyTitle": "Nothing recorded yet",
   "historyEmptyBody": "Trips you record are stored with their track, and the degradation curves draw themselves over the weeks.",
   "historyWhatGoesHere": "WHAT WILL LIVE HERE",
@@ -143,7 +182,6 @@
   "historyItemDelta": "Delta plotted against pack voltage, which is where a short cell gives itself away",
   "historyItemSag": "Sag at a given current, and how it worsens over time",
   "historyItemBalance": "Which cells the balancer works hardest on",
-
   "systemDeviceTitle": "Device",
   "systemModel": "Model",
   "systemHardware": "Hardware",
@@ -161,7 +199,13 @@
   "systemConnectionTitle": "Connection",
   "systemMtu": "MTU",
   "systemMtuValue": "{bytes} bytes",
-  "@systemMtuValue": { "placeholders": { "bytes": { "type": "int" } } },
+  "@systemMtuValue": {
+    "placeholders": {
+      "bytes": {
+        "type": "int"
+      }
+    }
+  },
   "unknown": "unknown",
   "systemFramesOk": "Frames accepted",
   "systemFramesBadChecksum": "Bad checksum",
@@ -176,7 +220,6 @@
   "systemLanguageSpanish": "Español",
   "systemLanguageEnglish": "English",
   "systemLanguageSystem": "System default",
-
   "settingCellCount": "Cell count",
   "settingNominalCapacity": "Nominal capacity",
   "settingCellOvp": "Cell overvoltage",
@@ -194,13 +237,11 @@
   "settingChargeUtp": "Charge undertemperature",
   "settingMosfetOtp": "MOSFET overtemperature",
   "settingSwitches": "Switches",
-
   "consoleTitle": "Raw frames",
   "consoleFollow": "Following",
   "consolePaused": "Paused",
   "consoleCopy": "Copy log",
   "consoleCopied": "Log copied",
-
   "tabHealth": "Health",
   "healthTitle": "What the manufacturer would rather not show you",
   "healthIntro": "These come from what the BMS already reports, cross-checked against itself. None of them is a figure the manufacturer publishes.",
@@ -217,19 +258,29 @@
   "healthImbalanceHint": "The pack cuts off when the lowest cell hits its limit, not when the average does. Today's delta translates into the Ah left stranded in every other cell.",
   "healthWeakestCell": "The cell in charge",
   "healthWeakestCellValue": "cell {index}",
-  "@healthWeakestCellValue": { "placeholders": { "index": { "type": "int" } } },
+  "@healthWeakestCellValue": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
   "healthWeakestCellHint": "A pack is worth what its worst cell is worth. That cell reaches cutoff first and sets your real range.",
   "healthResistanceSpread": "Resistance spread",
   "healthResistanceSpreadValue": "the worst sits {percent}% above the median",
-  "@healthResistanceSpreadValue": { "placeholders": { "percent": { "type": "String" } } },
+  "@healthResistanceSpreadValue": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
   "healthSohReported": "Health the BMS reports",
   "healthSohSuspect": "Plenty of firmwares leave this number fixed and never recompute it. Treat it as decorative until you see it move.",
   "healthNeedsHistoryTitle": "Needs history",
   "healthNeedsHistoryBody": "Measured degradation, estimated remaining life and how sag evolves all need months of stored readings. They fill in on their own as you ride.",
   "healthNotEnoughData": "not enough data",
-  "healthCapacityUnavailable": "At very low or very high charge this calculation turns into noise, so it is not shown."
-,
-
+  "healthCapacityUnavailable": "At very low or very high charge this calculation turns into noise, so it is not shown.",
   "rangeLearning": "learning",
   "rangeEstimatorTitle": "Adaptive range",
   "rangeEstimatorIntro": "The app measures the Wh actually leaving the pack and divides them by the kilometres from the phone's GPS. Every ride corrects the estimate, so the number settles onto how you ride, on your terrain, with your load.",
@@ -241,18 +292,23 @@
   "rangeConfidenceMedium": "medium",
   "rangeConfidenceHigh": "high",
   "rangeBand": "between {low} and {high} km",
-  "@rangeBand": { "placeholders": { "low": { "type": "String" }, "high": { "type": "String" } } },
+  "@rangeBand": {
+    "placeholders": {
+      "low": {
+        "type": "String"
+      },
+      "high": {
+        "type": "String"
+      }
+    }
+  },
   "rangeUsableEnergy": "Usable energy",
   "rangeUsableHint": "Discounts what the lowest cell strands: the pack cuts off when that cell hits its limit, not when the average does.",
   "rangeNeedsGps": "Distance comes from the phone's GPS while a trip is recording. The BMS does not report position: the protocol has GPS lock bits, but no coordinate fields at all.",
-  "rangeDemoNote": "In demo mode the distance is simulated too, so you can watch how the estimator behaves."
-,
-
+  "rangeDemoNote": "In demo mode the distance is simulated too, so you can watch how the estimator behaves.",
   "systemPasscode": "Passcode the BMS hands out",
   "systemPasscodeHint": "The BMS includes its own passcode, in clear text, inside the device info frame. Any Bluetooth client that connects can read it: there is no authentication anywhere in this protocol. This app only reads, but it is worth knowing.",
-  "systemPasscodeEmpty": "not reported"
-,
-
+  "systemPasscodeEmpty": "not reported",
   "linkIdle": "idle",
   "linkScanning": "scanning",
   "linkConnecting": "connecting",
@@ -260,16 +316,39 @@
   "linkConnected": "connected",
   "linkReconnecting": "reconnecting",
   "linkFailed": "failed",
-
   "variantReasonUnreadable": "Could not read a major version out of \"{version}\" on model {model}.",
   "variantReasonModern": "Firmware {version} (major {major} >= 11).",
-  "variantReasonLegacy": "Firmware {version} (major {major} < 11) implies JK02_24S, but the JK04 balancer family also reports versions below 11. Confirm the decoded values look sane before trusting them."
-,
-  "@variantReasonUnreadable": { "placeholders": { "version": { "type": "String" }, "model": { "type": "String" } } },
-  "@variantReasonModern": { "placeholders": { "version": { "type": "String" }, "major": { "type": "int" } } },
-  "@variantReasonLegacy": { "placeholders": { "version": { "type": "String" }, "major": { "type": "int" } } }
-,
-
+  "variantReasonLegacy": "Firmware {version} (major {major} < 11) implies JK02_24S, but the JK04 balancer family also reports versions below 11. Confirm the decoded values look sane before trusting them.",
+  "@variantReasonUnreadable": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      },
+      "model": {
+        "type": "String"
+      }
+    }
+  },
+  "@variantReasonModern": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      },
+      "major": {
+        "type": "int"
+      }
+    }
+  },
+  "@variantReasonLegacy": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      },
+      "major": {
+        "type": "int"
+      }
+    }
+  },
   "healthGaugeLabel": "Health",
   "healthGaugeMeasured": "measured",
   "healthGaugeReported": "as the BMS reports it",
@@ -286,9 +365,7 @@
   "healthCardSpread": "Worst resistance",
   "healthCardUsable": "Usable energy",
   "healthCardConsumption": "Consumption",
-  "healthCardLearnedKm": "Kilometres learned"
-,
-
+  "healthCardLearnedKm": "Kilometres learned",
   "tripTitle": "Trip",
   "tripOpen": "Trip mode",
   "tripStart": "Start trip",
@@ -322,9 +399,7 @@
   "tripClose": "Close",
   "locationDisabled": "Phone location is off. Turn it on to record distance.",
   "locationDenied": "Without location permission there is no distance and no speed.",
-  "locationDeniedForever": "Location permission is blocked. Enable it in Android settings."
-,
-
+  "locationDeniedForever": "Location permission is blocked. Enable it in Android settings.",
   "historyTitle": "History",
   "historyEmpty": "No trips recorded yet",
   "historyEmptyHint": "Start a trip from the Now tab and it lands here when you finish, track and all.",
@@ -339,7 +414,13 @@
   "historyUndo": "Undo",
   "historyDetail": "Trip detail",
   "historyPoints": "{count} track points",
-  "@historyPoints": { "placeholders": { "count": { "type": "int" } } },
+  "@historyPoints": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "historyNoPoints": "No track stored",
   "historyProfile": "Trip profile",
   "historyLegendSpeed": "Speed",
@@ -348,58 +429,146 @@
   "historyStorageSnapshots": "Readings stored",
   "historyStorageFrames": "Raw frames",
   "historyStorageSize": "On disk",
-  "historyStorageNote": "Raw frames are kept for 30 days and then dropped. They exist so the history can be re-read if one of the protocol offsets turns out to have been wrong."
-,
-
+  "historyStorageNote": "Raw frames are kept for 30 days and then dropped. They exist so the history can be re-read if one of the protocol offsets turns out to have been wrong.",
   "adviceTitle": "What I would do about this",
   "adviceNone": "Nothing to flag. The pack is behaving.",
   "adviceImbalanceAtRestTitle": "The cells sit apart even at rest",
   "adviceImbalanceAtRestBody": "With the bike still, the delta reaches {delta} V. With no current involved that is not resistance: the cells simply hold different amounts of charge. Charge to full and leave it sitting for a few hours so the balancer can work; if several charges do not close it, cell {cell} has less capacity than the rest.",
-  "@adviceImbalanceAtRestBody": { "placeholders": { "delta": { "type": "String" }, "cell": { "type": "int" } } },
+  "@adviceImbalanceAtRestBody": {
+    "placeholders": {
+      "delta": {
+        "type": "String"
+      },
+      "cell": {
+        "type": "int"
+      }
+    }
+  },
   "adviceImbalanceUnderLoadTitle": "The delta only opens under current",
   "adviceImbalanceUnderLoadBody": "At rest the cells are even, but under load they spread {delta} V further apart. That is resistance, and nine times out of ten it is a loose or corroded connection rather than a bad cell. Check the bolt and busbar on cell {cell} before replacing anything.",
-  "@adviceImbalanceUnderLoadBody": { "placeholders": { "delta": { "type": "String" }, "cell": { "type": "int" } } },
+  "@adviceImbalanceUnderLoadBody": {
+    "placeholders": {
+      "delta": {
+        "type": "String"
+      },
+      "cell": {
+        "type": "int"
+      }
+    }
+  },
   "adviceWeakCellTitle": "It is always the same cell",
   "adviceWeakCellBody": "Cell {cell} has been the lowest in {percent}% of readings. That is not noise: this is the cell that sets your real range and reaches cutoff first.",
-  "@adviceWeakCellBody": { "placeholders": { "cell": { "type": "int" }, "percent": { "type": "String" } } },
+  "@adviceWeakCellBody": {
+    "placeholders": {
+      "cell": {
+        "type": "int"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
   "adviceCycleInflatedTitle": "The cycle counter flatters the pack",
   "adviceCycleInflatedBody": "The BMS claims {factor} times more cycles than the charge actually put through the pack justifies. It counts partial charges as whole ones. If you are buying or selling a pack, the honest number is the equivalent-cycle figure.",
-  "@adviceCycleInflatedBody": { "placeholders": { "factor": { "type": "String" } } },
+  "@adviceCycleInflatedBody": {
+    "placeholders": {
+      "factor": {
+        "type": "String"
+      }
+    }
+  },
   "adviceHealthDecorativeTitle": "The BMS health figure never moves",
   "adviceHealthDecorativeBody": "It is still pinned at 100% with real cycles behind it. Plenty of firmwares never recompute it. Ignore it and go by measured capacity.",
   "adviceCapacityBelowTitle": "There is less capacity here than the label claims",
   "adviceCapacityBelowBody": "The numbers the BMS reports imply {percent}% less than the pack is rated for. That could be real degradation, or a coulomb counter that has drifted. A full capacity test settles it either way.",
-  "@adviceCapacityBelowBody": { "placeholders": { "percent": { "type": "String" } } },
+  "@adviceCapacityBelowBody": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
   "adviceNoCapacityTestTitle": "You have never actually measured the capacity",
   "adviceNoCapacityTestBody": "It is the only way to know whether you got what the box said. Charge to full, ride until it cuts off, and let the app integrate the amp-hours that came out. Everything else is an estimate.",
   "adviceRunningHotTitle": "The pack is running hot",
   "adviceRunningHotBody": "It reached {temp} °C. Ease off and check nothing is blocking airflow. Heat is what ages a lithium cell fastest.",
-  "@adviceRunningHotBody": { "placeholders": { "temp": { "type": "String" } } },
+  "@adviceRunningHotBody": {
+    "placeholders": {
+      "temp": {
+        "type": "String"
+      }
+    }
+  },
   "adviceBalancerNeverSeenTitle": "The balancer has never started",
   "adviceBalancerNeverSeenBody": "The cells are uneven but the balancer has not worked all session. Either it is switched off, or its start voltage ({voltage} V) sits above where your cells ever reach. Check it in the BMS settings with the official app: this app writes nothing.",
-  "@adviceBalancerNeverSeenBody": { "placeholders": { "voltage": { "type": "String" } } },
+  "@adviceBalancerNeverSeenBody": {
+    "placeholders": {
+      "voltage": {
+        "type": "String"
+      }
+    }
+  },
   "adviceOvervoltageHighTitle": "The overvoltage limit is set high",
   "adviceOvervoltageHighBody": "It is at {voltage} V per cell. For NMC, every tenth above 4.20 is paid for in cycles. Dropping it slightly costs a little range and returns a lot of life.",
-  "@adviceOvervoltageHighBody": { "placeholders": { "voltage": { "type": "String" } } },
+  "@adviceOvervoltageHighBody": {
+    "placeholders": {
+      "voltage": {
+        "type": "String"
+      }
+    }
+  },
   "adviceRangeLearningTitle": "The range figure is still a guess",
   "adviceRangeLearningBody": "It has {km} km behind it so far. Record a few full rides and the number settles onto how you actually ride.",
-  "@adviceRangeLearningBody": { "placeholders": { "km": { "type": "String" } } },
+  "@adviceRangeLearningBody": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
   "adviceImbalanceCostingTitle": "The imbalance is costing you range",
   "adviceImbalanceCostingBody": "{percent}% of the energy the pack still holds is stranded above cutoff, because the lowest cell gets there before the others. Closing the delta gives those kilometres back without replacing a single cell.",
-  "@adviceImbalanceCostingBody": { "placeholders": { "percent": { "type": "String" } } }
-,
-
+  "@adviceImbalanceCostingBody": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
   "statusAllClear": "All good",
   "statusExplain": "This band watches three things: that the BMS has raised no alarms, that the cells are not far apart from each other, and that nothing is too hot. It does not watch how much charge is left: an empty battery is not a sick one.",
   "statusSpreadWatch": "Cells {delta} V apart",
-  "@statusSpreadWatch": { "placeholders": { "delta": { "type": "String" } } },
+  "@statusSpreadWatch": {
+    "placeholders": {
+      "delta": {
+        "type": "String"
+      }
+    }
+  },
   "statusSpreadBad": "Cells far apart: {delta} V",
-  "@statusSpreadBad": { "placeholders": { "delta": { "type": "String" } } },
+  "@statusSpreadBad": {
+    "placeholders": {
+      "delta": {
+        "type": "String"
+      }
+    }
+  },
   "statusTempWatch": "Running warm: {temp} °C",
-  "@statusTempWatch": { "placeholders": { "temp": { "type": "String" } } },
+  "@statusTempWatch": {
+    "placeholders": {
+      "temp": {
+        "type": "String"
+      }
+    }
+  },
   "statusTempBad": "Too hot: {temp} °C",
-  "@statusTempBad": { "placeholders": { "temp": { "type": "String" } } },
-
+  "@statusTempBad": {
+    "placeholders": {
+      "temp": {
+        "type": "String"
+      }
+    }
+  },
   "tripStartFromHistory": "Start a trip",
   "tripDeleteConfirmTitle": "Delete this trip?",
   "tripDeleteConfirmBody": "The trip and its track are removed. The consumption the range estimator learned is recalculated without it.",
@@ -407,16 +576,41 @@
   "cancel": "Cancel",
   "tripSwipeHint": "Swipe a trip left to delete it.",
   "rangeRelearned": "Range relearned from {count} trips",
-  "@rangeRelearned": { "placeholders": { "count": { "type": "int" } } }
-,
-
+  "@rangeRelearned": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "tripLearnedTitle": "What this ride taught",
   "tripLearnedFirst": "First ride with usable data, so the learned consumption becomes this one: {after} Wh/km.",
-  "@tripLearnedFirst": { "placeholders": { "after": { "type": "String" } } },
+  "@tripLearnedFirst": {
+    "placeholders": {
+      "after": {
+        "type": "String"
+      }
+    }
+  },
   "tripLearnedChanged": "Learned consumption moved from {before} to {after} Wh/km.",
-  "@tripLearnedChanged": { "placeholders": { "before": { "type": "String" }, "after": { "type": "String" } } },
+  "@tripLearnedChanged": {
+    "placeholders": {
+      "before": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      }
+    }
+  },
   "tripLearnedUnchanged": "This ride confirmed what it already knew: {after} Wh/km.",
-  "@tripLearnedUnchanged": { "placeholders": { "after": { "type": "String" } } },
+  "@tripLearnedUnchanged": {
+    "placeholders": {
+      "after": {
+        "type": "String"
+      }
+    }
+  },
   "tripLearnedTooShort": "Too short to learn anything. It needs at least 500 metres with real consumption.",
   "tripLearnedRange": "Range now",
   "tripLearnedTotalKm": "Learned from",
@@ -424,30 +618,41 @@
   "tripDeepDischargeTip": "This ride took the charge a long way down, which is exactly what helps most: the more of the battery a ride covers, the less room for error is left in the estimate.",
   "tripShallowTip": "Tip: a ride that uses little charge leaves more room for error. To sharpen the range figure, one long ride teaches far more than several short ones.",
   "tripHotTip": "The pack reached {temp} °C on this ride. Worth a look at the Thermal tab if it happens again.",
-  "@tripHotTip": { "placeholders": { "temp": { "type": "String" } } },
+  "@tripHotTip": {
+    "placeholders": {
+      "temp": {
+        "type": "String"
+      }
+    }
+  },
   "tripDeltaTip": "The delta reached {delta} V under load. If the cells are even at rest, that points at a connection rather than a bad cell.",
-  "@tripDeltaTip": { "placeholders": { "delta": { "type": "String" } } },
-  "tripThirstyTip": "This ride used {percent}% more than your average. Wind, hills, load or right hand: if it repeats, the average will follow on its own."
-,
-  "@tripThirstyTip": { "placeholders": { "percent": { "type": "String" } } }
-,
-
+  "@tripDeltaTip": {
+    "placeholders": {
+      "delta": {
+        "type": "String"
+      }
+    }
+  },
+  "tripThirstyTip": "This ride used {percent}% more than your average. Wind, hills, load or right hand: if it repeats, the average will follow on its own.",
+  "@tripThirstyTip": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
   "tripStopped": "Stopped",
   "tripNotificationTitle": "Trip recording",
   "tripNotificationChannel": "Trip recording",
   "tripNotificationChannelDesc": "Keeps a trip recording with the screen off or another app open.",
-  "tripNotificationDenied": "Without notification permission the trip stops when you leave the app. It can be enabled in Android settings."
-,
-
+  "tripNotificationDenied": "Without notification permission the trip stops when you leave the app. It can be enabled in Android settings.",
   "proximityTitle": "Connect when I get close",
   "proximityBody": "While this is on, the app looks for your BMS every half minute and connects on its own the moment it appears. Meant to be left on for a stretch while a new battery is being calibrated, not forever: while it is connected the official JK app cannot get in, and scanning costs some phone battery.",
   "proximityLimit": "Works with the app open or backgrounded. If Android kills the process it stops looking until you open it again.",
   "proximityRemembered": "Watching for",
   "proximityNoDevice": "Connect to your BMS once and it will be remembered here.",
   "proximityFound": "BMS found, connecting",
-  "proximityScanning": "looking"
-,
-
+  "proximityScanning": "looking",
   "capacityTitle": "Capacity test",
   "capacityIntro": "The one real measurement in this app. Everything else is arithmetic on what the BMS says about itself; this counts the amp-hours that actually come out between full and cutoff, and compares them with what you were sold.",
   "capacityStart": "Start test",
@@ -467,13 +672,27 @@
   "capacityAutoNote": "You do not have to remember anything: the app reads back the stored readings and takes any complete discharge that already happened as a measurement. The button is for doing one deliberately, with live progress.",
   "capacityAutoTag": "found",
   "capacityGapWarning": "{minutes} min of it went unwatched, so the figure reads low.",
-  "@capacityGapWarning": { "placeholders": { "minutes": { "type": "String" } } },
-
+  "@capacityGapWarning": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
   "chargeReportTitle": "Last charge",
   "chargeReportIntro": "Above 4.0 V per cell the curve turns steep, so a small difference in charge between cells shows up as a large difference in voltage. It is the best window the pack offers, and the one nobody watches because charging happens overnight.",
   "chargeAdded": "Put in",
   "chargeFrom": "From {start}% to {end}%",
-  "@chargeFrom": { "placeholders": { "start": { "type": "String" }, "end": { "type": "String" } } },
+  "@chargeFrom": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
   "chargeDeltaStart": "Delta at the start",
   "chargeDeltaTop": "Delta at the top",
   "chargeWorstDelta": "Worst delta up top",
@@ -481,24 +700,40 @@
   "chargeBalancerTime": "Balancer working",
   "chargeNeverReachedTop": "This charge never got above 4.0 V per cell, so it says nothing about imbalance. It has to reach the top to be useful.",
   "chargeOpensAtTop": "The cells were even and came apart at the end. That pattern is capacity mismatch rather than a loose connection: cell {cell} fills before the others.",
-  "@chargeOpensAtTop": { "placeholders": { "cell": { "type": "int" } } },
+  "@chargeOpensAtTop": {
+    "placeholders": {
+      "cell": {
+        "type": "int"
+      }
+    }
+  },
   "chargeNone": "No charge has been recorded yet",
-
   "trendsTitle": "Over time",
   "trendsConsumption": "Consumption per ride",
   "trendsCapacity": "Measured capacity",
   "trendsSag": "Sag under load",
   "trendsDeltaVsCharge": "Delta against charge",
   "trendsSpan": "{days} days of history",
-  "@trendsSpan": { "placeholders": { "days": { "type": "int" } } },
+  "@trendsSpan": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "trendsNotEnough": "This needs more history before it means anything. It fills in on its own.",
   "trendsPerMonth": "{value} per month",
-  "@trendsPerMonth": { "placeholders": { "value": { "type": "String" } } },
+  "@trendsPerMonth": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "trendsLegendLoaded": "Under load",
   "trendsLegendResting": "At rest",
   "trendsDeltaHint": "A delta that is flat and jumps near the top means a cell with less capacity. One that grows with current is resistance: almost always a connection.",
   "trendsSagHint": "The same current producing a bigger drop as the months pass means internal resistance is climbing. It shows long before capacity loss does.",
-
   "alertTitle": "Alert",
   "alertBmsFault": "The BMS raised an alarm",
   "alertCellSpread": "The cells have drifted far apart",
@@ -506,22 +741,35 @@
   "alertLowCharge": "Charge is getting low",
   "alertCriticalCharge": "Charge is nearly gone",
   "alertCellNearCutoff": "A cell is close to cutoff",
-
   "settingsTitle": "Settings",
   "settingsCatalogue": "Catalogue capacity",
   "settingsCatalogueHint": "What the label on the pack claims. Health is measured against this number, so it is worth getting right.",
   "settingsCatalogueForPack": "What {pack} was sold as. Each battery has its own, so changing it here does not touch the others.",
-  "@settingsCatalogueForPack": { "placeholders": { "pack": { "type": "String" } } },
+  "@settingsCatalogueForPack": {
+    "placeholders": {
+      "pack": {
+        "type": "String"
+      }
+    }
+  },
   "exportNoPack": "Connect a pack to export its history.",
   "settingsBmsConfigured": "Configured in the BMS",
   "settingsCapacityMismatch": "The BMS is configured for {bms} Ah and the pack was sold as {sold} Ah. The BMS figure is not a measurement: it is what whoever assembled the pack typed in, and it is what the charge percentage is scaled against. The disagreement is itself a finding, so the app does not copy it over yours.",
-  "@settingsCapacityMismatch": { "placeholders": { "bms": { "type": "String" }, "sold": { "type": "String" } } },
+  "@settingsCapacityMismatch": {
+    "placeholders": {
+      "bms": {
+        "type": "String"
+      },
+      "sold": {
+        "type": "String"
+      }
+    }
+  },
   "settingsHaptics": "Buzz on alerts",
   "settingsHapticsHint": "Nobody looks at the screen while riding. This makes the phone speak up from a pocket.",
   "settingsRawFrames": "Keep raw frames",
   "settingsRawFramesHint": "Leave this on. It is what allows the history to be re-read if a protocol offset turns out to have been wrong.",
   "settingsSave": "Save",
-
   "exportTitle": "Export",
   "exportIntro": "Data you cannot get out is not really yours.",
   "exportTrips": "Trips (CSV)",
@@ -529,9 +777,14 @@
   "exportFrames": "Last day of raw frames",
   "exportTrack": "Track (GPX)",
   "exportDone": "Saved to {path}",
-  "@exportDone": { "placeholders": { "path": { "type": "String" } } },
+  "@exportDone": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "exportFailed": "Could not export",
-
   "warnWireResistance": "High wire resistance",
   "warnMosfetOvertemp": "MOSFET overheating",
   "warnCellCountMismatch": "Cell count differs from settings",
@@ -560,27 +813,59 @@
   "warnDischargeOcp3": "Discharge overcurrent (level 3)",
   "warnDischargeUndertemp": "Too cold while discharging",
   "warnGpsRemoteLock": "Remote GPS lock",
-
   "updateTitle": "Updates",
   "updateIntro": "This app is not on a store, so it updates from GitHub releases. It never checks or downloads on its own: you ask.",
   "updateInstalled": "Installed version",
   "updatePublished": "Latest published",
   "updateReleasedOn": "Published on {date}",
-  "@updateReleasedOn": { "placeholders": { "date": { "type": "String" } } },
+  "@updateReleasedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "updateCheck": "Check for update",
   "updateChecking": "Checking...",
   "updateUpToDate": "You are on the latest version.",
   "updateAvailable": "Version {version} is available ({size} MB).",
-  "@updateAvailable": { "placeholders": { "version": { "type": "String" }, "size": { "type": "String" } } },
+  "@updateAvailable": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "updateDownload": "Download",
   "updateDownloading": "Downloading... {percent}%",
-  "@updateDownloading": { "placeholders": { "percent": { "type": "String" } } },
+  "@updateDownloading": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
   "updateInstall": "Install",
   "updateReady": "Downloaded. Android will ask you to confirm the install.",
   "updateNoAsset": "Version {version} exists, but has no build for this phone's processor.",
-  "@updateNoAsset": { "placeholders": { "version": { "type": "String" } } },
+  "@updateNoAsset": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "updateFailed": "Could not check: {error}",
-  "@updateFailed": { "placeholders": { "error": { "type": "String" } } },
+  "@updateFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "updateNeedsToken": "GitHub did not serve the release. Usually that means the repository is private, which needs a read-only token. If it is public, try again in a moment.",
   "updateTokenLabel": "GitHub token",
   "updateTokenHint": "Only needed while the repository is private. Kept on this phone and sent only to api.github.com; it is not inside the APK, precisely so it does not travel with it.",
@@ -589,26 +874,49 @@
   "updateNeedsPermission": "Android does not let this app install packages yet. Grant it the permission and come back.",
   "updateOpenPermission": "Open settings",
   "updateNotes": "What's new",
-
   "packsTitle": "Batteries",
   "packsIntro": "Everything the app measures — capacity, degradation, which cell lags, what a kilometre costs — is about one specific battery. Each pack keeps its own history, so the same phone can be used with several without mixing them.",
   "packsCurrent": "Connected now",
   "packsNone": "None connected",
   "packsKnown": "Known batteries",
   "packsLastSeen": "Seen on {date}",
-  "@packsLastSeen": { "placeholders": { "date": { "type": "String" } } },
+  "@packsLastSeen": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "packsRename": "Rename",
   "packsRenameHint": "Battery name",
   "packsSave": "Save",
   "packsCancel": "Cancel",
   "packsDelete": "Delete battery",
   "packsDeleteConfirm": "This deletes {pack} and everything recorded on it: rides, tracks, readings, raw frames and capacity measurements. It cannot be undone.",
-  "@packsDeleteConfirm": { "placeholders": { "pack": { "type": "String" } } },
+  "@packsDeleteConfirm": {
+    "placeholders": {
+      "pack": {
+        "type": "String"
+      }
+    }
+  },
   "packsRides": "{count} rides",
-  "@packsRides": { "placeholders": { "count": { "type": "String" } } },
+  "@packsRides": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "orphansTitle": "History with no battery attached",
   "orphansBody": "There are {count} rows stored before the app separated by battery, so there is no record of which one they came from. You can attach them to the connected battery or discard them. The app does not guess: invented provenance sitting next to real measurements is worse than a gap.",
-  "@orphansBody": { "placeholders": { "count": { "type": "String" } } },
+  "@orphansBody": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "orphansAdopt": "Attach to this battery",
   "orphansDiscard": "Discard",
   "orphansDone": "Done"
