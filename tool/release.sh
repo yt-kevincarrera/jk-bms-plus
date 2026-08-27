@@ -67,6 +67,15 @@ for abi in arm64-v8a armeabi-v7a x86_64; do
 done
 
 echo "==> Publishing v$VERSION"
+
+# The branch goes up before the tag. Tagging and pushing only the tag leaves the
+# commits reachable from the tag but absent from the branch on the remote, and
+# the next merge rebases them into different hashes -- at which point the
+# release tag names a commit that is on no branch. Happened once; hence this.
+BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+echo "    pushing $BRANCH"
+git push origin "$BRANCH"
+
 git tag -a "v$VERSION" -m "v$VERSION"
 git push origin "v$VERSION"
 
