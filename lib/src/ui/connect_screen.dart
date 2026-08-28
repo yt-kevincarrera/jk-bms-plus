@@ -122,6 +122,25 @@ class _ConnectScreenState extends State<ConnectScreen> {
       return;
     }
 
+    // And the permission, not just the service. This app declares
+    // BLUETOOTH_SCAN without `neverForLocation`, so Android 12+ will not
+    // return a single scan result without it -- the scan reports success and
+    // hands back nothing. Asked here, with a reason, rather than left to fail
+    // silently.
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      if (!mounted) return;
+      setState(() {
+        _scanning = false;
+        _message = t.connectLocationDenied;
+      });
+      return;
+    }
+
     await _scanSub?.cancel();
     _scanSub = widget.service.scan().listen(
       (devices) {
@@ -333,6 +352,18 @@ class _ConnectScreenState extends State<ConnectScreen> {
                         // running there is nothing to explain yet, and the
                         // whole bug this replaced was a screen that could
                         // never reach this state at all.
+                        if (!_scanning && _searched) ...[
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(
+                              t.connectSeenCount('${_devices.length}'),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppTheme.textFaint,
+                              ),
+                            ),
+                          ),
+                        ],
                         if (!_scanning && _searched)
                           Padding(
                             padding: const EdgeInsets.fromLTRB(24, 14, 24, 0),

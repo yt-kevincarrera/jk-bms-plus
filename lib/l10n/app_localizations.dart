@@ -133,6 +133,24 @@ abstract class AppL10n {
   /// **'Búsqueda terminada'**
   String get connectScanFinished;
 
+  /// No description provided for @connectLocationDenied.
+  ///
+  /// In es, this message translates to:
+  /// **'Android no entrega resultados de búsqueda Bluetooth si la app no tiene permiso de ubicación. Es una regla del sistema, no algo que necesite la app para rastrearte: la ubicación solo se usa cuando grabas un viaje. Sin ese permiso la búsqueda termina sin encontrar nada y sin decir por qué.'**
+  String get connectLocationDenied;
+
+  /// No description provided for @connectGrantLocation.
+  ///
+  /// In es, this message translates to:
+  /// **'Dar permiso'**
+  String get connectGrantLocation;
+
+  /// No description provided for @connectSeenCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} dispositivos Bluetooth vistos'**
+  String connectSeenCount(String count);
+
   /// No description provided for @connectNothingFoundHelp.
   ///
   /// In es, this message translates to:
