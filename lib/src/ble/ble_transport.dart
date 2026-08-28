@@ -262,7 +262,17 @@ class BleTransport implements BmsLink {
       if (lifecycle.onDeadline()) unawaited(finish());
     });
 
-    FlutterBluePlus.startScan(timeout: timeout).catchError((Object e) {
+    // androidUsesFineLocation is not decoration. This app declares
+    // BLUETOOTH_SCAN without `neverForLocation`, and Android 12+ then requires
+    // ACCESS_FINE_LOCATION before it will hand over any scan result at all.
+    // The plugin defaults this to false, so it asked for the Bluetooth
+    // permissions, never asked for location, and Android returned an empty
+    // list from a scan that reported success -- a BMS advertising three feet
+    // away, invisible, with nothing anywhere saying why.
+    FlutterBluePlus.startScan(
+      timeout: timeout,
+      androidUsesFineLocation: true,
+    ).catchError((Object e) {
       _errorController.add(BleLinkError('Could not start scanning: $e'));
       if (lifecycle.onDeadline()) unawaited(finish());
     });

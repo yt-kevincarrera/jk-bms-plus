@@ -28,6 +28,18 @@ class AppL10nEn extends AppL10n {
   String get connectScanFinished => 'Scan finished';
 
   @override
+  String get connectLocationDenied =>
+      'Android does not hand over Bluetooth scan results unless the app holds location permission. That is a system rule, not something the app needs to track you: location is only used while recording a ride. Without it the scan finishes empty and says nothing about why.';
+
+  @override
+  String get connectGrantLocation => 'Grant permission';
+
+  @override
+  String connectSeenCount(String count) {
+    return '$count Bluetooth devices seen';
+  }
+
+  @override
   String get connectNothingFoundHelp =>
       'Nothing turned up. It is almost always one of these:\n\n• The official JK app is connected to the BMS. While it is, the BMS stops advertising and no other phone can see it. Close it fully.\n• The pack is asleep. Switch the bike on or move it to wake it.\n• You are too far away. Get closer to the pack.';
 
