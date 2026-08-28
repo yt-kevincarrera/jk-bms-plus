@@ -148,6 +148,9 @@ class ProximityWatcher {
       await FlutterBluePlus.startScan(
         timeout: scanDuration,
         androidScanMode: AndroidScanMode.lowPower,
+        // Same reason as in BleTransport.scan: without this Android 12+ hands
+        // back an empty result set and says nothing.
+        androidUsesFineLocation: true,
       );
     } on Exception catch (_) {
       // Another scan may already be running; the next sweep will try again.
