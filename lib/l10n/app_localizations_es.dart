@@ -2020,4 +2020,22 @@ class AppL10nEs extends AppL10n {
   String updateDialogBody(String current, String size) {
     return 'Tienes la $current. La nueva pesa $size MB. No se descarga nada hasta que lo pidas.';
   }
+
+  @override
+  String get widgetJustNow => 'ahora mismo';
+
+  @override
+  String widgetMinutes(String n) {
+    return 'hace $n min';
+  }
+
+  @override
+  String widgetHours(String n) {
+    return 'hace $n h';
+  }
+
+  @override
+  String widgetDays(String n) {
+    return 'hace $n d';
+  }
 }

@@ -1115,5 +1115,30 @@
         "type": "String"
       }
     }
+  },
+  "widgetJustNow": "ahora mismo",
+  "widgetMinutes": "hace {n} min",
+  "widgetHours": "hace {n} h",
+  "widgetDays": "hace {n} d",
+  "@widgetMinutes": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "@widgetHours": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "@widgetDays": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
   }
 }
