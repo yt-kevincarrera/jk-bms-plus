@@ -1164,5 +1164,22 @@
       }
     }
   },
-  "trendsMaintMarks": "The dotted lines are things you noted in the maintenance log."
+  "trendsMaintMarks": "The dotted lines are things you noted in the maintenance log.",
+  "chargeWatchTitle": "Watch the charge",
+  "chargeWatchHint": "While the app is in the background Android cuts the Bluetooth link within minutes. With this on, it raises a foreground service as soon as charging starts and holds the link, which is what the alerts need to reach you overnight. It costs phone battery while it runs.",
+  "chargeWatchNotifTitle": "Charging",
+  "chargeWatchNotifText": "{soc} % · {volts} V · {amps} A",
+  "@chargeWatchNotifText": {
+    "placeholders": {
+      "soc": {
+        "type": "String"
+      },
+      "volts": {
+        "type": "String"
+      },
+      "amps": {
+        "type": "String"
+      }
+    }
+  }
 }
