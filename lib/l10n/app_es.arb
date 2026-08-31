@@ -1163,5 +1163,6 @@
         "type": "String"
       }
     }
-  }
+  },
+  "trendsMaintMarks": "Las líneas de puntos son cosas que anotaste en el mantenimiento."
 }

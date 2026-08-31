@@ -1163,5 +1163,6 @@
         "type": "String"
       }
     }
-  }
+  },
+  "trendsMaintMarks": "The dotted lines are things you noted in the maintenance log."
 }
