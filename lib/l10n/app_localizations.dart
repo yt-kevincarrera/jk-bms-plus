@@ -3528,6 +3528,132 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Trabajando...'**
   String get backupWorking;
+
+  /// No description provided for @chargeAlertsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Avisos de carga'**
+  String get chargeAlertsTitle;
+
+  /// No description provided for @chargeAlertsIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Se carga de noche y nadie lo mira. Estos avisos existen para eso. Parar antes del tope no es superstición: la parte alta del rango es donde una celda de litio envejece más, así que si mañana no necesitas el pack entero, te conviene quedarte antes.'**
+  String get chargeAlertsIntro;
+
+  /// No description provided for @chargeTarget.
+  ///
+  /// In es, this message translates to:
+  /// **'Avisar al llegar a'**
+  String get chargeTarget;
+
+  /// No description provided for @chargeTargetOff.
+  ///
+  /// In es, this message translates to:
+  /// **'Desactivado'**
+  String get chargeTargetOff;
+
+  /// No description provided for @chargeAlertTargetReached.
+  ///
+  /// In es, this message translates to:
+  /// **'La batería llegó al {soc} %'**
+  String chargeAlertTargetReached(String soc);
+
+  /// No description provided for @chargeAlertComplete.
+  ///
+  /// In es, this message translates to:
+  /// **'Carga terminada'**
+  String get chargeAlertComplete;
+
+  /// No description provided for @chargeAlertHot.
+  ///
+  /// In es, this message translates to:
+  /// **'Se está calentando cargando'**
+  String get chargeAlertHot;
+
+  /// No description provided for @chargeAlertSpread.
+  ///
+  /// In es, this message translates to:
+  /// **'Las celdas se separan arriba'**
+  String get chargeAlertSpread;
+
+  /// No description provided for @compareTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Comparar baterías'**
+  String get compareTitle;
+
+  /// No description provided for @compareIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Las mismas cifras de siempre, pero juntas. En verde la mejor de cada fila, y solo cuando hay diferencia de verdad.'**
+  String get compareIntro;
+
+  /// No description provided for @compareNeedsTwo.
+  ///
+  /// In es, this message translates to:
+  /// **'Hace falta haberse conectado a por lo menos dos baterías para poder compararlas.'**
+  String get compareNeedsTwo;
+
+  /// No description provided for @compareHealth.
+  ///
+  /// In es, this message translates to:
+  /// **'Salud medida'**
+  String get compareHealth;
+
+  /// No description provided for @compareHonestCycles.
+  ///
+  /// In es, this message translates to:
+  /// **'Ciclos reales'**
+  String get compareHonestCycles;
+
+  /// No description provided for @compareConsumption.
+  ///
+  /// In es, this message translates to:
+  /// **'Consumo'**
+  String get compareConsumption;
+
+  /// No description provided for @compareWorstDelta.
+  ///
+  /// In es, this message translates to:
+  /// **'Peor delta visto'**
+  String get compareWorstDelta;
+
+  /// No description provided for @compareOpen.
+  ///
+  /// In es, this message translates to:
+  /// **'Comparar baterías'**
+  String get compareOpen;
+
+  /// No description provided for @driftTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Celda que se está yendo'**
+  String get driftTitle;
+
+  /// No description provided for @driftNone.
+  ///
+  /// In es, this message translates to:
+  /// **'Ninguna celda se está separando del resto.'**
+  String get driftNone;
+
+  /// No description provided for @driftNotEnough.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía no hay historial suficiente. Hacen falta unas semanas de lecturas en reposo para distinguir una celda que empeora de una que siempre estuvo algo baja.'**
+  String get driftNotEnough;
+
+  /// No description provided for @driftFound.
+  ///
+  /// In es, this message translates to:
+  /// **'La celda {cell} se está separando: {now} V por debajo de la media, y baja unos {rate} V al mes.'**
+  String driftFound(String cell, String now, String rate);
+
+  /// No description provided for @driftWhy.
+  ///
+  /// In es, this message translates to:
+  /// **'Una celda que siempre estuvo baja es un pack que se armó así. Una que hace seis semanas iba a la par y ahora va por debajo es una celda en camino de irse, y esa es la diferencia entre cambiar una celda y cambiar un pack.'**
+  String get driftWhy;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

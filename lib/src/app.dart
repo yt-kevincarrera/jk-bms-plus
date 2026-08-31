@@ -91,6 +91,7 @@ class _JkBmsAppState extends State<JkBmsApp> {
     _service.applySettings(
       haptics: _settings.hapticAlerts,
       rawFrames: _settings.recordRawFrames,
+      chargeTargetSoc: _settings.chargeTargetSoc,
     );
 
     if (mounted) setState(() {});

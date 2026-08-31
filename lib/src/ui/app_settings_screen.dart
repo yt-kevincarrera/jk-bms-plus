@@ -57,6 +57,39 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
             PacksCard(service: widget.service),
             BackupCard(service: widget.service),
             Section(
+              title: t.chargeAlertsTitle,
+              intro: t.chargeAlertsIntro,
+              children: [
+                InfoRow(
+                  t.chargeTarget,
+                  settings.chargeTargetSoc == null
+                      ? t.chargeTargetOff
+                      : '${settings.chargeTargetSoc!.toStringAsFixed(0)} %',
+                  dim: settings.chargeTargetSoc == null,
+                ),
+                Slider(
+                  // 50 is the off position rather than a level anybody wants
+                  // announced: below that the alert would fire on the way up
+                  // from every ride.
+                  value: (settings.chargeTargetSoc ?? 50).clamp(50, 100),
+                  min: 50,
+                  max: 100,
+                  divisions: 50,
+                  label: settings.chargeTargetSoc == null
+                      ? t.chargeTargetOff
+                      : settings.chargeTargetSoc!.toStringAsFixed(0),
+                  onChanged: (v) async {
+                    final soc = v.roundToDouble();
+                    await settings.setChargeTarget(soc <= 50 ? null : soc);
+                    widget.service.chargeAlerts.targetSoc =
+                        settings.chargeTargetSoc;
+                    if (mounted) setState(() {});
+                  },
+                ),
+                const SizedBox(height: 4),
+              ],
+            ),
+            Section(
               title: t.settingsSectionApp,
               children: [
                 SwitchListTile(
