@@ -1029,5 +1029,39 @@
         "type": "String"
       }
     }
-  }
+  },
+  "thermalProbeAbsent": "not connected",
+  "thermalAbsentNote": "Unconnected probes report impossible values, around -200 C. That is not cold, it is nothing wired to that input. They are shown separately so they cannot skew the maximum or trip an alert.",
+  "backupTitle": "Backup",
+  "backupIntro": "The whole database in one file, and back again. The CSV and GPX exports are for reading the data elsewhere; this is for not losing it. If you change phones or lose one, this is the only thing that brings back months of readings, the rides with their tracks, and the raw frames.",
+  "backupExport": "Create backup",
+  "backupExportLight": "Create backup without raw frames",
+  "backupImport": "Restore from a file",
+  "backupImportMerge": "Add to what is here",
+  "backupImportReplace": "Replace everything",
+  "backupImportChoose": "What should happen to what is already stored?",
+  "backupReplaceWarning": "Replacing deletes everything on the phone before restoring. It cannot be undone.",
+  "backupDone": "Restored: {trips} rides, {readings} readings, {packs} batteries.",
+  "@backupDone": {
+    "placeholders": {
+      "trips": {
+        "type": "String"
+      },
+      "readings": {
+        "type": "String"
+      },
+      "packs": {
+        "type": "String"
+      }
+    }
+  },
+  "backupFailed": "Could not restore: {reason}",
+  "@backupFailed": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "backupWorking": "Working..."
 }

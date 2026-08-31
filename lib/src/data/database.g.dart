@@ -2501,6 +2501,18 @@ class $SnapshotsTable extends Snapshots
     type: DriftSqlType.double,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _cycleCapacityAhMeta = const VerificationMeta(
+    'cycleCapacityAh',
+  );
+  @override
+  late final GeneratedColumn<double> cycleCapacityAh = GeneratedColumn<double>(
+    'cycle_capacity_ah',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _deltaVoltsMeta = const VerificationMeta(
     'deltaVolts',
   );
@@ -2614,6 +2626,7 @@ class $SnapshotsTable extends Snapshots
     soh,
     remainingAh,
     cycleCount,
+    cycleCapacityAh,
     deltaVolts,
     minCellVoltage,
     maxCellVoltage,
@@ -2706,6 +2719,15 @@ class $SnapshotsTable extends Snapshots
       );
     } else if (isInserting) {
       context.missing(_cycleCountMeta);
+    }
+    if (data.containsKey('cycle_capacity_ah')) {
+      context.handle(
+        _cycleCapacityAhMeta,
+        cycleCapacityAh.isAcceptableOrUnknown(
+          data['cycle_capacity_ah']!,
+          _cycleCapacityAhMeta,
+        ),
+      );
     }
     if (data.containsKey('delta_volts')) {
       context.handle(
@@ -2838,6 +2860,10 @@ class $SnapshotsTable extends Snapshots
         DriftSqlType.double,
         data['${effectivePrefix}cycle_count'],
       )!,
+      cycleCapacityAh: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}cycle_capacity_ah'],
+      )!,
       deltaVolts: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}delta_volts'],
@@ -2893,6 +2919,15 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
   final double soh;
   final double remainingAh;
   final double cycleCount;
+
+  /// Total charge that has ever passed through the pack, in amp-hours.
+  ///
+  /// Stored because without it the honest cycle count cannot be worked out
+  /// from history: throughput divided by capacity is the real figure, and the
+  /// BMS's own counter increments on partial charges so it always reads
+  /// higher. Missing this column meant the offline summary could only repeat
+  /// the inflated number it exists to correct.
+  final double cycleCapacityAh;
   final double deltaVolts;
   final double minCellVoltage;
   final double maxCellVoltage;
@@ -2918,6 +2953,7 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
     required this.soh,
     required this.remainingAh,
     required this.cycleCount,
+    required this.cycleCapacityAh,
     required this.deltaVolts,
     required this.minCellVoltage,
     required this.maxCellVoltage,
@@ -2942,6 +2978,7 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
     map['soh'] = Variable<double>(soh);
     map['remaining_ah'] = Variable<double>(remainingAh);
     map['cycle_count'] = Variable<double>(cycleCount);
+    map['cycle_capacity_ah'] = Variable<double>(cycleCapacityAh);
     map['delta_volts'] = Variable<double>(deltaVolts);
     map['min_cell_voltage'] = Variable<double>(minCellVoltage);
     map['max_cell_voltage'] = Variable<double>(maxCellVoltage);
@@ -2971,6 +3008,7 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
       soh: Value(soh),
       remainingAh: Value(remainingAh),
       cycleCount: Value(cycleCount),
+      cycleCapacityAh: Value(cycleCapacityAh),
       deltaVolts: Value(deltaVolts),
       minCellVoltage: Value(minCellVoltage),
       maxCellVoltage: Value(maxCellVoltage),
@@ -3002,6 +3040,7 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
       soh: serializer.fromJson<double>(json['soh']),
       remainingAh: serializer.fromJson<double>(json['remainingAh']),
       cycleCount: serializer.fromJson<double>(json['cycleCount']),
+      cycleCapacityAh: serializer.fromJson<double>(json['cycleCapacityAh']),
       deltaVolts: serializer.fromJson<double>(json['deltaVolts']),
       minCellVoltage: serializer.fromJson<double>(json['minCellVoltage']),
       maxCellVoltage: serializer.fromJson<double>(json['maxCellVoltage']),
@@ -3026,6 +3065,7 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
       'soh': serializer.toJson<double>(soh),
       'remainingAh': serializer.toJson<double>(remainingAh),
       'cycleCount': serializer.toJson<double>(cycleCount),
+      'cycleCapacityAh': serializer.toJson<double>(cycleCapacityAh),
       'deltaVolts': serializer.toJson<double>(deltaVolts),
       'minCellVoltage': serializer.toJson<double>(minCellVoltage),
       'maxCellVoltage': serializer.toJson<double>(maxCellVoltage),
@@ -3048,6 +3088,7 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
     double? soh,
     double? remainingAh,
     double? cycleCount,
+    double? cycleCapacityAh,
     double? deltaVolts,
     double? minCellVoltage,
     double? maxCellVoltage,
@@ -3067,6 +3108,7 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
     soh: soh ?? this.soh,
     remainingAh: remainingAh ?? this.remainingAh,
     cycleCount: cycleCount ?? this.cycleCount,
+    cycleCapacityAh: cycleCapacityAh ?? this.cycleCapacityAh,
     deltaVolts: deltaVolts ?? this.deltaVolts,
     minCellVoltage: minCellVoltage ?? this.minCellVoltage,
     maxCellVoltage: maxCellVoltage ?? this.maxCellVoltage,
@@ -3094,6 +3136,9 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
       cycleCount: data.cycleCount.present
           ? data.cycleCount.value
           : this.cycleCount,
+      cycleCapacityAh: data.cycleCapacityAh.present
+          ? data.cycleCapacityAh.value
+          : this.cycleCapacityAh,
       deltaVolts: data.deltaVolts.present
           ? data.deltaVolts.value
           : this.deltaVolts,
@@ -3134,6 +3179,7 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
           ..write('soh: $soh, ')
           ..write('remainingAh: $remainingAh, ')
           ..write('cycleCount: $cycleCount, ')
+          ..write('cycleCapacityAh: $cycleCapacityAh, ')
           ..write('deltaVolts: $deltaVolts, ')
           ..write('minCellVoltage: $minCellVoltage, ')
           ..write('maxCellVoltage: $maxCellVoltage, ')
@@ -3158,6 +3204,7 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
     soh,
     remainingAh,
     cycleCount,
+    cycleCapacityAh,
     deltaVolts,
     minCellVoltage,
     maxCellVoltage,
@@ -3181,6 +3228,7 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
           other.soh == this.soh &&
           other.remainingAh == this.remainingAh &&
           other.cycleCount == this.cycleCount &&
+          other.cycleCapacityAh == this.cycleCapacityAh &&
           other.deltaVolts == this.deltaVolts &&
           other.minCellVoltage == this.minCellVoltage &&
           other.maxCellVoltage == this.maxCellVoltage &&
@@ -3202,6 +3250,7 @@ class SnapshotsCompanion extends UpdateCompanion<Snapshot> {
   final Value<double> soh;
   final Value<double> remainingAh;
   final Value<double> cycleCount;
+  final Value<double> cycleCapacityAh;
   final Value<double> deltaVolts;
   final Value<double> minCellVoltage;
   final Value<double> maxCellVoltage;
@@ -3221,6 +3270,7 @@ class SnapshotsCompanion extends UpdateCompanion<Snapshot> {
     this.soh = const Value.absent(),
     this.remainingAh = const Value.absent(),
     this.cycleCount = const Value.absent(),
+    this.cycleCapacityAh = const Value.absent(),
     this.deltaVolts = const Value.absent(),
     this.minCellVoltage = const Value.absent(),
     this.maxCellVoltage = const Value.absent(),
@@ -3241,6 +3291,7 @@ class SnapshotsCompanion extends UpdateCompanion<Snapshot> {
     required double soh,
     required double remainingAh,
     required double cycleCount,
+    this.cycleCapacityAh = const Value.absent(),
     required double deltaVolts,
     required double minCellVoltage,
     required double maxCellVoltage,
@@ -3274,6 +3325,7 @@ class SnapshotsCompanion extends UpdateCompanion<Snapshot> {
     Expression<double>? soh,
     Expression<double>? remainingAh,
     Expression<double>? cycleCount,
+    Expression<double>? cycleCapacityAh,
     Expression<double>? deltaVolts,
     Expression<double>? minCellVoltage,
     Expression<double>? maxCellVoltage,
@@ -3294,6 +3346,7 @@ class SnapshotsCompanion extends UpdateCompanion<Snapshot> {
       if (soh != null) 'soh': soh,
       if (remainingAh != null) 'remaining_ah': remainingAh,
       if (cycleCount != null) 'cycle_count': cycleCount,
+      if (cycleCapacityAh != null) 'cycle_capacity_ah': cycleCapacityAh,
       if (deltaVolts != null) 'delta_volts': deltaVolts,
       if (minCellVoltage != null) 'min_cell_voltage': minCellVoltage,
       if (maxCellVoltage != null) 'max_cell_voltage': maxCellVoltage,
@@ -3316,6 +3369,7 @@ class SnapshotsCompanion extends UpdateCompanion<Snapshot> {
     Value<double>? soh,
     Value<double>? remainingAh,
     Value<double>? cycleCount,
+    Value<double>? cycleCapacityAh,
     Value<double>? deltaVolts,
     Value<double>? minCellVoltage,
     Value<double>? maxCellVoltage,
@@ -3336,6 +3390,7 @@ class SnapshotsCompanion extends UpdateCompanion<Snapshot> {
       soh: soh ?? this.soh,
       remainingAh: remainingAh ?? this.remainingAh,
       cycleCount: cycleCount ?? this.cycleCount,
+      cycleCapacityAh: cycleCapacityAh ?? this.cycleCapacityAh,
       deltaVolts: deltaVolts ?? this.deltaVolts,
       minCellVoltage: minCellVoltage ?? this.minCellVoltage,
       maxCellVoltage: maxCellVoltage ?? this.maxCellVoltage,
@@ -3377,6 +3432,9 @@ class SnapshotsCompanion extends UpdateCompanion<Snapshot> {
     }
     if (cycleCount.present) {
       map['cycle_count'] = Variable<double>(cycleCount.value);
+    }
+    if (cycleCapacityAh.present) {
+      map['cycle_capacity_ah'] = Variable<double>(cycleCapacityAh.value);
     }
     if (deltaVolts.present) {
       map['delta_volts'] = Variable<double>(deltaVolts.value);
@@ -3420,6 +3478,7 @@ class SnapshotsCompanion extends UpdateCompanion<Snapshot> {
           ..write('soh: $soh, ')
           ..write('remainingAh: $remainingAh, ')
           ..write('cycleCount: $cycleCount, ')
+          ..write('cycleCapacityAh: $cycleCapacityAh, ')
           ..write('deltaVolts: $deltaVolts, ')
           ..write('minCellVoltage: $minCellVoltage, ')
           ..write('maxCellVoltage: $maxCellVoltage, ')
@@ -6010,6 +6069,7 @@ typedef $$SnapshotsTableCreateCompanionBuilder =
       required double soh,
       required double remainingAh,
       required double cycleCount,
+      Value<double> cycleCapacityAh,
       required double deltaVolts,
       required double minCellVoltage,
       required double maxCellVoltage,
@@ -6031,6 +6091,7 @@ typedef $$SnapshotsTableUpdateCompanionBuilder =
       Value<double> soh,
       Value<double> remainingAh,
       Value<double> cycleCount,
+      Value<double> cycleCapacityAh,
       Value<double> deltaVolts,
       Value<double> minCellVoltage,
       Value<double> maxCellVoltage,
@@ -6093,6 +6154,11 @@ class $$SnapshotsTableFilterComposer
 
   ColumnFilters<double> get cycleCount => $composableBuilder(
     column: $table.cycleCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get cycleCapacityAh => $composableBuilder(
+    column: $table.cycleCapacityAh,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6196,6 +6262,11 @@ class $$SnapshotsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get cycleCapacityAh => $composableBuilder(
+    column: $table.cycleCapacityAh,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get deltaVolts => $composableBuilder(
     column: $table.deltaVolts,
     builder: (column) => ColumnOrderings(column),
@@ -6284,6 +6355,11 @@ class $$SnapshotsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<double> get cycleCapacityAh => $composableBuilder(
+    column: $table.cycleCapacityAh,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<double> get deltaVolts => $composableBuilder(
     column: $table.deltaVolts,
     builder: (column) => column,
@@ -6365,6 +6441,7 @@ class $$SnapshotsTableTableManager
                 Value<double> soh = const Value.absent(),
                 Value<double> remainingAh = const Value.absent(),
                 Value<double> cycleCount = const Value.absent(),
+                Value<double> cycleCapacityAh = const Value.absent(),
                 Value<double> deltaVolts = const Value.absent(),
                 Value<double> minCellVoltage = const Value.absent(),
                 Value<double> maxCellVoltage = const Value.absent(),
@@ -6384,6 +6461,7 @@ class $$SnapshotsTableTableManager
                 soh: soh,
                 remainingAh: remainingAh,
                 cycleCount: cycleCount,
+                cycleCapacityAh: cycleCapacityAh,
                 deltaVolts: deltaVolts,
                 minCellVoltage: minCellVoltage,
                 maxCellVoltage: maxCellVoltage,
@@ -6405,6 +6483,7 @@ class $$SnapshotsTableTableManager
                 required double soh,
                 required double remainingAh,
                 required double cycleCount,
+                Value<double> cycleCapacityAh = const Value.absent(),
                 required double deltaVolts,
                 required double minCellVoltage,
                 required double maxCellVoltage,
@@ -6424,6 +6503,7 @@ class $$SnapshotsTableTableManager
                 soh: soh,
                 remainingAh: remainingAh,
                 cycleCount: cycleCount,
+                cycleCapacityAh: cycleCapacityAh,
                 deltaVolts: deltaVolts,
                 minCellVoltage: minCellVoltage,
                 maxCellVoltage: maxCellVoltage,

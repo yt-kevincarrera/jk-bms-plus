@@ -6,6 +6,7 @@ import '../bms_service.dart';
 import '../update/update_service.dart';
 import 'locale_controller.dart';
 import 'theme.dart';
+import 'widgets/backup_card.dart';
 import 'widgets/packs_card.dart';
 import 'widgets/common.dart';
 import 'widgets/update_card.dart';
@@ -54,6 +55,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               settings: settings,
             ),
             PacksCard(service: widget.service),
+            BackupCard(service: widget.service),
             Section(
               title: t.settingsSectionApp,
               children: [

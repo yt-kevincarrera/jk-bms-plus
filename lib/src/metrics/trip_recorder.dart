@@ -337,7 +337,7 @@ class TripRecorder {
       _maxDischargeCurrent = math.max(_maxDischargeCurrent, -s.current);
     }
     final temps = <double>[
-      ...s.temperatures,
+      ...s.plausibleTemperatures,
       if (s.mosfetTemp != null) s.mosfetTemp!,
     ];
     if (temps.isNotEmpty) {

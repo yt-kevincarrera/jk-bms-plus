@@ -103,7 +103,7 @@ class RideAlerts {
     }
 
     final temps = <double>[
-      ...s.temperatures,
+      ...s.plausibleTemperatures,
       if (s.mosfetTemp != null) s.mosfetTemp!,
     ];
     final hottest =
