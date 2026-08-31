@@ -1825,4 +1825,62 @@ class AppL10nEs extends AppL10n {
   @override
   String get storedManageHint =>
       'Mantén pulsada una batería para renombrarla o borrarla.';
+
+  @override
+  String get offlineHealthTitle => 'Salud guardada';
+
+  @override
+  String get offlineMeasuredHealth => 'Salud medida';
+
+  @override
+  String get offlineImplied => 'Capacidad total';
+
+  @override
+  String get offlineImpliedHint =>
+      'Ah restantes divididos entre la carga que reporta el BMS. Es la capacidad que implica su propio contador, no una medición independiente.';
+
+  @override
+  String get offlineImpliedUnusable =>
+      'La última lectura fue con la carga muy alta o muy baja, y ahí esa división es solo ruido.';
+
+  @override
+  String get offlineSoh => 'Salud que reporta el BMS';
+
+  @override
+  String get offlineCycles => 'Ciclos que cuenta el BMS';
+
+  @override
+  String get offlineWeakest => 'Celda más floja';
+
+  @override
+  String offlineWeakestValue(String index, String volts) {
+    return 'celda $index, $volts V';
+  }
+
+  @override
+  String get offlineMaxTemp => 'Temperatura';
+
+  @override
+  String get offlineHistorySince => 'Historial desde';
+
+  @override
+  String offlineReadings(String count) {
+    return '$count lecturas guardadas';
+  }
+
+  @override
+  String get offlineBestMeasured => 'Mejor medición real';
+
+  @override
+  String get connectWaitingFirst =>
+      'Conectando y esperando la primera lectura...';
+
+  @override
+  String get connectNotABms =>
+      'Se conectó, pero no llegó ninguna lectura de BMS. Casi seguro que ese dispositivo no es un BMS JK. Si crees que sí lo es, mira la consola de frames crudos en Ajustes.';
+
+  @override
+  String storedCount(String count) {
+    return '$count guardadas';
+  }
 }

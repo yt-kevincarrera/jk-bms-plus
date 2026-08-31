@@ -282,9 +282,26 @@ class BmsService {
 
   Future<void> connect(String deviceId, {String name = ''}) async {
     _assembler.reset();
-    await _activate(id: deviceId, name: name, demo: false);
+    // Held, not stored. A device only becomes a battery on record once it has
+    // sent a frame this app can parse: connecting is not proof of anything,
+    // and a tapped pair of headphones used to be filed away as a pack, with a
+    // history folder and a place in the saved list.
+    _pendingDeviceId = deviceId;
+    _pendingDeviceName = name;
     _armSilenceWatchdog();
     await _transport.connect(deviceId);
+  }
+
+  String? _pendingDeviceId;
+  String _pendingDeviceName = '';
+
+  /// Promotes the connected device to a stored battery, on the first frame
+  /// that decodes. Does nothing on later frames.
+  Future<void> _activatePending() async {
+    final id = _pendingDeviceId;
+    if (id == null) return;
+    _pendingDeviceId = null;
+    await _activate(id: id, name: _pendingDeviceName, demo: false);
   }
 
   /// Complains if the link comes up but stays quiet.
@@ -302,6 +319,7 @@ class BmsService {
   }
 
   Future<void> disconnect() async {
+    _pendingDeviceId = null;
     _silenceTimer?.cancel();
     await _transport.disconnect();
     _assembler.reset();
@@ -333,7 +351,7 @@ class BmsService {
         case JkRecordType.deviceInfo:
           _handleDeviceInfo(_parser.parseDeviceInfo(frame));
         case JkRecordType.cellInfo:
-          _handleCellInfo(frame);
+          unawaited(_handleCellInfo(frame));
         case JkRecordType.settings:
           _handleSettings(frame);
         case JkRecordType.logbook:
@@ -368,7 +386,7 @@ class BmsService {
     }
   }
 
-  void _handleCellInfo(JkFrame frame) {
+  Future<void> _handleCellInfo(JkFrame frame) async {
     final variant = _variant;
     if (variant == null) {
       // Refusing to decode is the correct behaviour here. Guessing the variant
@@ -380,6 +398,12 @@ class BmsService {
     }
     final snapshot = _parser.parseCellInfo(frame, variant);
     _silenceTimer?.cancel();
+    // A frame that decodes into cell voltages is the proof that this is a BMS,
+    // and the first moment it is honest to file the device away as a battery.
+    // Everything below writes to that battery's history, so it has to come
+    // first, and is awaited so the very first reading is not dropped for want
+    // of a battery to file it under.
+    await _activatePending();
     _lastSnapshot = snapshot;
     history.add(snapshot);
     trip.addSnapshot(snapshot);

@@ -979,5 +979,45 @@
   "catalogueConfirm": "Confirmar que se vendió así",
   "catalogueFromBmsHint": "Tomado de la configuración del BMS, que es un número sobre este pack pero lo escribió quien lo armó. Si te lo vendieron con otra capacidad, ponla: la diferencia entre las dos cifras es justo lo que la salud mide.",
   "connectRetry": "Reintentar búsqueda",
-  "storedManageHint": "Mantén pulsada una batería para renombrarla o borrarla."
+  "storedManageHint": "Mantén pulsada una batería para renombrarla o borrarla.",
+  "offlineHealthTitle": "Salud guardada",
+  "offlineMeasuredHealth": "Salud medida",
+  "offlineImplied": "Capacidad total",
+  "offlineImpliedHint": "Ah restantes divididos entre la carga que reporta el BMS. Es la capacidad que implica su propio contador, no una medición independiente.",
+  "offlineImpliedUnusable": "La última lectura fue con la carga muy alta o muy baja, y ahí esa división es solo ruido.",
+  "offlineSoh": "Salud que reporta el BMS",
+  "offlineCycles": "Ciclos que cuenta el BMS",
+  "offlineWeakest": "Celda más floja",
+  "offlineWeakestValue": "celda {index}, {volts} V",
+  "@offlineWeakestValue": {
+    "placeholders": {
+      "index": {
+        "type": "String"
+      },
+      "volts": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineMaxTemp": "Temperatura",
+  "offlineHistorySince": "Historial desde",
+  "offlineReadings": "{count} lecturas guardadas",
+  "@offlineReadings": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineBestMeasured": "Mejor medición real",
+  "connectWaitingFirst": "Conectando y esperando la primera lectura...",
+  "connectNotABms": "Se conectó, pero no llegó ninguna lectura de BMS. Casi seguro que ese dispositivo no es un BMS JK. Si crees que sí lo es, mira la consola de frames crudos en Ajustes.",
+  "storedCount": "{count} guardadas",
+  "@storedCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  }
 }

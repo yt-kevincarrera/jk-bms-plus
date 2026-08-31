@@ -3330,6 +3330,102 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Mantén pulsada una batería para renombrarla o borrarla.'**
   String get storedManageHint;
+
+  /// No description provided for @offlineHealthTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Salud guardada'**
+  String get offlineHealthTitle;
+
+  /// No description provided for @offlineMeasuredHealth.
+  ///
+  /// In es, this message translates to:
+  /// **'Salud medida'**
+  String get offlineMeasuredHealth;
+
+  /// No description provided for @offlineImplied.
+  ///
+  /// In es, this message translates to:
+  /// **'Capacidad total'**
+  String get offlineImplied;
+
+  /// No description provided for @offlineImpliedHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Ah restantes divididos entre la carga que reporta el BMS. Es la capacidad que implica su propio contador, no una medición independiente.'**
+  String get offlineImpliedHint;
+
+  /// No description provided for @offlineImpliedUnusable.
+  ///
+  /// In es, this message translates to:
+  /// **'La última lectura fue con la carga muy alta o muy baja, y ahí esa división es solo ruido.'**
+  String get offlineImpliedUnusable;
+
+  /// No description provided for @offlineSoh.
+  ///
+  /// In es, this message translates to:
+  /// **'Salud que reporta el BMS'**
+  String get offlineSoh;
+
+  /// No description provided for @offlineCycles.
+  ///
+  /// In es, this message translates to:
+  /// **'Ciclos que cuenta el BMS'**
+  String get offlineCycles;
+
+  /// No description provided for @offlineWeakest.
+  ///
+  /// In es, this message translates to:
+  /// **'Celda más floja'**
+  String get offlineWeakest;
+
+  /// No description provided for @offlineWeakestValue.
+  ///
+  /// In es, this message translates to:
+  /// **'celda {index}, {volts} V'**
+  String offlineWeakestValue(String index, String volts);
+
+  /// No description provided for @offlineMaxTemp.
+  ///
+  /// In es, this message translates to:
+  /// **'Temperatura'**
+  String get offlineMaxTemp;
+
+  /// No description provided for @offlineHistorySince.
+  ///
+  /// In es, this message translates to:
+  /// **'Historial desde'**
+  String get offlineHistorySince;
+
+  /// No description provided for @offlineReadings.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} lecturas guardadas'**
+  String offlineReadings(String count);
+
+  /// No description provided for @offlineBestMeasured.
+  ///
+  /// In es, this message translates to:
+  /// **'Mejor medición real'**
+  String get offlineBestMeasured;
+
+  /// No description provided for @connectWaitingFirst.
+  ///
+  /// In es, this message translates to:
+  /// **'Conectando y esperando la primera lectura...'**
+  String get connectWaitingFirst;
+
+  /// No description provided for @connectNotABms.
+  ///
+  /// In es, this message translates to:
+  /// **'Se conectó, pero no llegó ninguna lectura de BMS. Casi seguro que ese dispositivo no es un BMS JK. Si crees que sí lo es, mira la consola de frames crudos en Ajustes.'**
+  String get connectNotABms;
+
+  /// No description provided for @storedCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} guardadas'**
+  String storedCount(String count);
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {
