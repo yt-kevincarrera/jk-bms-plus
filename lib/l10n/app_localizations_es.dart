@@ -2108,4 +2108,18 @@ class AppL10nEs extends AppL10n {
   String chargeWatchNotifText(String soc, String volts, String amps) {
     return '$soc % · $volts V · $amps A';
   }
+
+  @override
+  String get alertSilence => 'Silenciar este aviso';
+
+  @override
+  String get alertSilenced =>
+      'Silenciado. Puedes volver a activarlo en Ajustes.';
+
+  @override
+  String get alertsSectionTitle => 'Qué avisos quieres';
+
+  @override
+  String get alertsSectionHint =>
+      'Cada uno por separado. Apagar el que te molesta no debería costarte los que sí quieres.';
 }
