@@ -89,6 +89,28 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                   },
                 ),
                 SwitchListTile(
+                  value: settings.autoTripEnabled,
+                  onChanged: (v) async {
+                    await settings.setAutoTrip(v);
+                    widget.service.autoTripEnabled = v;
+                    if (mounted) setState(() {});
+                  },
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    t.autoTripTitle,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                  subtitle: Text(
+                    t.autoTripHint,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      height: 1.4,
+                      color: AppTheme.textFaint,
+                    ),
+                  ),
+                ),
+                SwitchListTile(
                   value: settings.chargeWatchEnabled,
                   onChanged: (v) async {
                     await settings.setChargeWatch(v);

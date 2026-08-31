@@ -26,6 +26,7 @@ import 'metrics/charge_alerts.dart';
 import 'metrics/charge_session.dart';
 import 'metrics/range_estimator.dart';
 import 'metrics/ride_alerts.dart';
+import 'metrics/trip_autostart.dart';
 import 'metrics/trip_recorder.dart';
 import 'metrics/snapshot_history.dart';
 import 'protocol/protocol_variant.dart';
@@ -282,6 +283,7 @@ class BmsService {
     _lastDeviceInfo = null;
     _lastSettings = null;
     chargeAlerts.reset();
+    tripAutoStart.reset();
   }
 
   Future<void> connect(String deviceId, {String name = ''}) async {
@@ -415,6 +417,7 @@ class BmsService {
     _checkAlerts(snapshot);
     _checkChargeAlerts(snapshot);
     unawaited(_updateChargeWatch(snapshot));
+    unawaited(_updateAutoTrip(snapshot));
     _updateCapacityTest(snapshot);
     _watchCharging(snapshot);
     _learnFromSnapshot(snapshot);
@@ -549,7 +552,15 @@ class BmsService {
     final problem = await source.start();
     if (problem != null) return problem;
 
-    _fixSub = source.fixes.listen(trip.addFix);
+    _fixSub = source.fixes.listen((fix) {
+      // While a trip is open the recorder owns the fixes; before one, they
+      // exist only so the auto-start detector has a speed to judge.
+      if (trip.isRecording) {
+        trip.addFix(fix);
+      } else {
+        _lastAutoSpeedKmh = fix.speedKmh;
+      }
+    });
     return null;
   }
 
@@ -668,6 +679,83 @@ class BmsService {
       }
     }
   }
+
+  // --- Automatic trip recording ---
+  //
+  // Consumption is learned from recorded rides, so a ride nobody recorded
+  // teaches the app nothing. And the rides people forget to record are not a
+  // random sample: they are the short ones, the rushed ones, the ones where
+  // you were late.
+
+  final TripAutoStart tripAutoStart = TripAutoStart();
+
+  /// Whether to open and close trips without being asked.
+  bool autoTripEnabled = true;
+
+  /// Fires when a trip was started or stopped without anybody pressing
+  /// anything, so a screen can say so rather than leaving the rider to work
+  /// out why it is suddenly recording.
+  final _autoTripController = StreamController<AutoTripAction>.broadcast();
+
+  Stream<AutoTripAction> get autoTripEvents => _autoTripController.stream;
+
+  Future<void> _updateAutoTrip(BmsSnapshot snapshot) async {
+    // Never against the simulated pack: a demo ride that opened itself would
+    // be teaching the demo world things nobody asked for.
+    if (!autoTripEnabled || isDemo || activeDevice == null) return;
+
+    // The radio is not on until the pack is drawing, which is what keeps this
+    // from being a GPS listener running all day. Current is cheap to watch and
+    // already arriving; satellites are not.
+    await _armLocationForAutoTrip(snapshot);
+
+    final action = tripAutoStart.evaluate(
+      at: snapshot.timestamp,
+      current: snapshot.current,
+      // Null until there is a fix, which the detector treats as not moving.
+      speedKmh: trip.isRecording ? trip.speedKmh : _lastAutoSpeedKmh,
+      recording: trip.isRecording,
+    );
+
+    switch (action) {
+      case AutoTripAction.start:
+        final problem = await startTrip();
+        // No location, no ride: distance is the whole point, and a trip with
+        // no track would poison the consumption figure with a divide by zero.
+        if (problem == null) _autoTripController.add(AutoTripAction.start);
+      case AutoTripAction.stop:
+        await stopTrip();
+        _autoTripController.add(AutoTripAction.stop);
+      case AutoTripAction.none:
+        break;
+    }
+  }
+
+  /// Turns the GPS on once the pack is drawing, and off again when it stops.
+  ///
+  /// Auto-start needs movement as well as current, and movement needs a fix.
+  /// Holding a location stream open all day to catch the moment somebody sets
+  /// off would cost more battery than the feature saves, so the current does
+  /// the waiting and the GPS only joins in once there is something to confirm.
+  Future<void> _armLocationForAutoTrip(BmsSnapshot snapshot) async {
+    if (trip.isRecording) return;
+
+    final drawing = snapshot.current <= -tripAutoStart.minCurrentAmps;
+    if (drawing && _location == null) {
+      await _ensureLocation();
+    } else if (!drawing && _location != null && !tripAutoStart.looksLikeRiding) {
+      // Stood down. The speed goes with it: a stale one would let a later
+      // burst of current start a ride on a fix from an hour ago.
+      _lastAutoSpeedKmh = null;
+      await _stopLocation();
+    }
+  }
+
+  /// Speed while no trip is open, so the detector has something to judge.
+  double? _lastAutoSpeedKmh;
+
+  /// Fed by the UI from the location stream when nothing is recording.
+  set idleSpeedKmh(double? kmh) => _lastAutoSpeedKmh = kmh;
 
   // --- Charge watch ---
   //
@@ -911,9 +999,11 @@ class BmsService {
     required bool rawFrames,
     double? chargeTargetSoc,
     bool watchCharge = false,
+    bool autoTrip = true,
     Set<String> muted = const {},
   }) {
     chargeWatchEnabled = watchCharge;
+    autoTripEnabled = autoTrip;
     mutedAlerts = muted;
     chargeAlerts.targetSoc = chargeTargetSoc;
     hapticAlerts = haptics;

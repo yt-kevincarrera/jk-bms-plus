@@ -1185,5 +1185,9 @@
   "alertSilence": "Silenciar este aviso",
   "alertSilenced": "Silenciado. Puedes volver a activarlo en Ajustes.",
   "alertsSectionTitle": "Qué avisos quieres",
-  "alertsSectionHint": "Cada uno por separado. Apagar el que te molesta no debería costarte los que sí quieres."
+  "alertsSectionHint": "Cada uno por separado. Apagar el que te molesta no debería costarte los que sí quieres.",
+  "autoTripTitle": "Empezar viajes solo",
+  "autoTripHint": "Abre y cierra el viaje al detectar que estás rodando: hace falta consumo del pack y movimiento del GPS a la vez, sostenidos. Sin esto el aprendizaje depende de que te acuerdes de darle a empezar, y los viajes que se olvidan no son al azar: son los cortos y los que llevabas prisa. Usa GPS mientras rueda.",
+  "autoTripStarted": "Viaje iniciado solo",
+  "autoTripStopped": "Viaje guardado"
 }
