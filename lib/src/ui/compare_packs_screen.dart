@@ -45,7 +45,9 @@ class _ComparePacksScreenState extends State<ComparePacksScreen> {
       summaries.add(
         PackSummary.from(
           device: d,
-          readings: await repo.allSnapshots(d.id, days: 3650),
+          // Bounded, like the offline summary: the comparison needs recent
+          // figures, not every reading ever taken.
+          readings: await repo.allSnapshots(d.id, days: 180),
           trips: await repo.db.recentTrips(d.id, limit: 500),
           tests: await repo.capacityTests(d.id),
         ),
