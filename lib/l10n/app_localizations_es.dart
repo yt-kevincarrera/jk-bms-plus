@@ -2015,4 +2015,9 @@ class AppL10nEs extends AppL10n {
   @override
   String get driftWhy =>
       'Una celda que siempre estuvo baja es un pack que se armó así. Una que hace seis semanas iba a la par y ahora va por debajo es una celda en camino de irse, y esa es la diferencia entre cambiar una celda y cambiar un pack.';
+
+  @override
+  String updateDialogBody(String current, String size) {
+    return 'Tienes la $current. La nueva pesa $size MB. No se descarga nada hasta que lo pidas.';
+  }
 }

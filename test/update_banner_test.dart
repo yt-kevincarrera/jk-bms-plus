@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -115,6 +116,108 @@ void main() {
       // And a failed check does not count as having checked, so it will retry
       // on the next launch rather than going quiet for a day.
       expect(recorded, isFalse);
+    });
+  });
+
+  group('before the app knows its own version', () {
+    test('does not check, rather than comparing against nothing', () async {
+      // The bug this pins: the version is read from the platform
+      // asynchronously while the startup check fires immediately. It used to
+      // start at 0.0.0, so every published release looked newer and the app
+      // announced an update to somebody already running it.
+      final calls = <Uri>[];
+      final s = UpdateService(
+        checker: UpdateChecker(
+          owner: 'o',
+          repo: 'r',
+          fetcher: (uri, headers) async {
+            calls.add(uri);
+            return releaseJson('v1.4.0');
+          },
+        ),
+      );
+
+      var finished = false;
+      unawaited(
+        s
+            .checkQuietly(
+              lastCheckedAt: null,
+              interval: const Duration(hours: 24),
+              onChecked: (_) async {},
+            )
+            .then((_) => finished = true),
+      );
+
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(calls, isEmpty, reason: 'asked before knowing what it is');
+      expect(finished, isFalse);
+    });
+
+    test('and does not record a check it never made', () async {
+      var recorded = false;
+      final s = UpdateService(
+        checker: UpdateChecker(
+          owner: 'o',
+          repo: 'r',
+          fetcher: (uri, headers) async => releaseJson('v1.4.0'),
+        ),
+      );
+
+      unawaited(
+        s.checkQuietly(
+          lastCheckedAt: null,
+          interval: const Duration(hours: 24),
+          onChecked: (_) async => recorded = true,
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      // Recording it would keep the wrong answer alive for a whole day.
+      expect(recorded, isFalse);
+    });
+
+    test('runs as soon as the version arrives', () async {
+      final calls = <Uri>[];
+      final s = UpdateService(
+        checker: UpdateChecker(
+          owner: 'o',
+          repo: 'r',
+          fetcher: (uri, headers) async {
+            calls.add(uri);
+            return releaseJson('v1.4.0');
+          },
+        ),
+      );
+
+      final pending = s.checkQuietly(
+        lastCheckedAt: null,
+        interval: const Duration(hours: 24),
+        onChecked: (_) async {},
+      );
+      s.version = const AppVersion(1, 0, 0);
+
+      expect(await pending, isTrue);
+      expect(calls, hasLength(1));
+    });
+
+    test('and then compares against the real one', () async {
+      // Already on 1.4.0: there is nothing to announce.
+      final s = UpdateService(
+        checker: UpdateChecker(
+          owner: 'o',
+          repo: 'r',
+          fetcher: (uri, headers) async => releaseJson('v1.4.0'),
+        ),
+      );
+
+      final pending = s.checkQuietly(
+        lastCheckedAt: null,
+        interval: const Duration(hours: 24),
+        onChecked: (_) async {},
+      );
+      s.version = const AppVersion(1, 4, 0);
+
+      expect(await pending, isFalse);
     });
   });
 }
