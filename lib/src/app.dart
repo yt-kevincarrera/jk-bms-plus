@@ -8,6 +8,7 @@ import 'data/repository.dart';
 import 'ui/connect_screen.dart';
 import 'ui/locale_controller.dart';
 import 'ui/theme.dart';
+import 'platform/pack_widget.dart';
 import 'update/app_version.dart';
 import 'update/update_service.dart';
 
@@ -117,12 +118,25 @@ class _JkBmsAppState extends State<JkBmsApp> {
           }
           return const Locale('es');
         },
-        home: ConnectScreen(
-          service: _service,
-          localeController: _locale,
-          proximity: _proximity,
-          settings: _settings,
-          updateService: _updates,
+        home: Builder(
+          builder: (context) {
+            // The widget's age line is written in the app's language, so the
+            // strings are handed down once the localisations exist.
+            final t = AppL10n.of(context);
+            _service.widgetStrings = PackWidgetStrings(
+              justNow: t.widgetJustNow,
+              minutesAgo: (n) => t.widgetMinutes('$n'),
+              hoursAgo: (n) => t.widgetHours('$n'),
+              daysAgo: (n) => t.widgetDays('$n'),
+            );
+            return ConnectScreen(
+              service: _service,
+              localeController: _locale,
+              proximity: _proximity,
+              settings: _settings,
+              updateService: _updates,
+            );
+          },
         ),
       ),
     );
