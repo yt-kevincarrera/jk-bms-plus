@@ -1943,4 +1943,76 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get backupWorking => 'Trabajando...';
+
+  @override
+  String get chargeAlertsTitle => 'Avisos de carga';
+
+  @override
+  String get chargeAlertsIntro =>
+      'Se carga de noche y nadie lo mira. Estos avisos existen para eso. Parar antes del tope no es superstición: la parte alta del rango es donde una celda de litio envejece más, así que si mañana no necesitas el pack entero, te conviene quedarte antes.';
+
+  @override
+  String get chargeTarget => 'Avisar al llegar a';
+
+  @override
+  String get chargeTargetOff => 'Desactivado';
+
+  @override
+  String chargeAlertTargetReached(String soc) {
+    return 'La batería llegó al $soc %';
+  }
+
+  @override
+  String get chargeAlertComplete => 'Carga terminada';
+
+  @override
+  String get chargeAlertHot => 'Se está calentando cargando';
+
+  @override
+  String get chargeAlertSpread => 'Las celdas se separan arriba';
+
+  @override
+  String get compareTitle => 'Comparar baterías';
+
+  @override
+  String get compareIntro =>
+      'Las mismas cifras de siempre, pero juntas. En verde la mejor de cada fila, y solo cuando hay diferencia de verdad.';
+
+  @override
+  String get compareNeedsTwo =>
+      'Hace falta haberse conectado a por lo menos dos baterías para poder compararlas.';
+
+  @override
+  String get compareHealth => 'Salud medida';
+
+  @override
+  String get compareHonestCycles => 'Ciclos reales';
+
+  @override
+  String get compareConsumption => 'Consumo';
+
+  @override
+  String get compareWorstDelta => 'Peor delta visto';
+
+  @override
+  String get compareOpen => 'Comparar baterías';
+
+  @override
+  String get driftTitle => 'Celda que se está yendo';
+
+  @override
+  String get driftNone => 'Ninguna celda se está separando del resto.';
+
+  @override
+  String get driftNotEnough =>
+      'Todavía no hay historial suficiente. Hacen falta unas semanas de lecturas en reposo para distinguir una celda que empeora de una que siempre estuvo algo baja.';
+
+  @override
+  String driftFound(String cell, String now, String rate) {
+    return 'La celda $cell se está separando: $now V por debajo de la media, y baja unos $rate V al mes.';
+  }
+
+  @override
+  String get driftWhy =>
+      'Una celda que siempre estuvo baja es un pack que se armó así. Una que hace seis semanas iba a la par y ahora va por debajo es una celda en camino de irse, y esa es la diferencia entre cambiar una celda y cambiar un pack.';
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../bms_service.dart';
 import '../data/database.dart';
+import '../metrics/cell_drift.dart';
 import '../metrics/range_estimator.dart';
 import 'theme.dart';
 import 'trends_screen.dart';
@@ -40,6 +41,8 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
   double? _rangeKm;
   DateTime? _firstAt;
   int _readingCount = 0;
+  CellDrift? _drift;
+  List<CellDrift> _driftRanking = const [];
 
   @override
   void initState() {
@@ -87,6 +90,10 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
       _tests = tests;
       _firstAt = readings.isEmpty ? null : readings.first.timestamp;
       _readingCount = readings.length;
+      _driftRanking = const CellDriftAnalysis().analyse(readings);
+      _drift = _driftRanking.isNotEmpty && _driftRanking.first.isWorsening
+          ? _driftRanking.first
+          : null;
       _rangeKm = estimator.hasLearned && usableWh != null
           ? estimator.rangeKm(usableWh)
           : null;
@@ -266,6 +273,41 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
             hint: t.offlineReadings('$_readingCount'),
             last: true,
           ),
+        ],
+      ),
+      Section(
+        title: t.driftTitle,
+        intro: t.driftWhy,
+        children: [
+          if (_drift == null)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text(
+                _driftRanking.isEmpty ? t.driftNotEnough : t.driftNone,
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  height: 1.45,
+                  color: AppTheme.textFaint,
+                ),
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text(
+                t.driftFound(
+                  '${_drift!.index + 1}',
+                  _drift!.currentDeviationVolts.toStringAsFixed(3),
+                  _drift!.changeVoltsPerMonth.toStringAsFixed(3),
+                ),
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  height: 1.45,
+                  color: AppTheme.watch,
+                ),
+              ),
+            ),
+          const SizedBox(height: 4),
         ],
       ),
       Section(

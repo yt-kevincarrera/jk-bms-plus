@@ -20,6 +20,7 @@ import 'package:flutter/services.dart';
 
 import 'metrics/capacity_cycle_detector.dart';
 import 'metrics/capacity_test_runner.dart';
+import 'metrics/charge_alerts.dart';
 import 'metrics/charge_session.dart';
 import 'metrics/range_estimator.dart';
 import 'metrics/ride_alerts.dart';
@@ -278,6 +279,7 @@ class BmsService {
     _lastSnapshot = null;
     _lastDeviceInfo = null;
     _lastSettings = null;
+    chargeAlerts.reset();
   }
 
   Future<void> connect(String deviceId, {String name = ''}) async {
@@ -409,6 +411,7 @@ class BmsService {
     trip.addSnapshot(snapshot);
     repository?.addSnapshot(snapshot);
     _checkAlerts(snapshot);
+    _checkChargeAlerts(snapshot);
     _updateCapacityTest(snapshot);
     _watchCharging(snapshot);
     _learnFromSnapshot(snapshot);
@@ -661,7 +664,34 @@ class BmsService {
     }
   }
 
+  // --- Charge alerts ---
+  //
+  // Charging happens overnight, which is exactly why nobody sees any of it.
+
+  final ChargeAlerts chargeAlerts = ChargeAlerts();
+  final _chargeAlertController = StreamController<ChargeAlert>.broadcast();
+
+  Stream<ChargeAlert> get chargeAlertStream => _chargeAlertController.stream;
+
+  void _checkChargeAlerts(BmsSnapshot snapshot) {
+    for (final alert in chargeAlerts.evaluate(snapshot)) {
+      _chargeAlertController.add(alert);
+      // The notification the trip service already owns is the only way any of
+      // this reaches a phone in another room. It is only running during a
+      // ride, so on the bench this is a buzz and a banner; plugged in with the
+      // service up, it is a notification.
+      if (hapticAlerts) {
+        if (alert.isProblem) {
+          HapticFeedback.heavyImpact();
+        } else {
+          HapticFeedback.mediumImpact();
+        }
+      }
+    }
+  }
+
   // --- Capacity test ---
+
   //
   // The one measurement in this app, as opposed to the inferences. It runs for
   // hours, so its progress is written to the database as it goes and picked
@@ -771,7 +801,9 @@ class BmsService {
   void applySettings({
     required bool haptics,
     required bool rawFrames,
+    double? chargeTargetSoc,
   }) {
+    chargeAlerts.targetSoc = chargeTargetSoc;
     hapticAlerts = haptics;
     repository?.recordRawFrames = rawFrames;
   }

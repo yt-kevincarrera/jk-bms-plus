@@ -1063,5 +1063,46 @@
       }
     }
   },
-  "backupWorking": "Working..."
+  "backupWorking": "Working...",
+  "chargeAlertsTitle": "Charge alerts",
+  "chargeAlertsIntro": "Charging happens overnight and nobody watches it. That is what these are for. Stopping short of full is not superstition: the top of the range is where a lithium cell ages fastest, so if you do not need the whole pack tomorrow you are better off stopping early.",
+  "chargeTarget": "Tell me at",
+  "chargeTargetOff": "Off",
+  "chargeAlertTargetReached": "The battery reached {soc} %",
+  "chargeAlertComplete": "Charging finished",
+  "chargeAlertHot": "Getting hot while charging",
+  "chargeAlertSpread": "Cells spreading apart at the top",
+  "@chargeAlertTargetReached": {
+    "placeholders": {
+      "soc": {
+        "type": "String"
+      }
+    }
+  },
+  "compareTitle": "Compare batteries",
+  "compareIntro": "The same figures as everywhere else, side by side. The best in each row is green, and only when there is a real difference.",
+  "compareNeedsTwo": "You need to have connected to at least two batteries before they can be compared.",
+  "compareHealth": "Measured health",
+  "compareHonestCycles": "Real cycles",
+  "compareConsumption": "Consumption",
+  "compareWorstDelta": "Worst delta seen",
+  "compareOpen": "Compare batteries",
+  "driftTitle": "Cell drifting away",
+  "driftNone": "No cell is drifting away from the rest.",
+  "driftNotEnough": "Not enough history yet. It takes a few weeks of resting readings to tell a cell that is getting worse from one that was always a little low.",
+  "driftFound": "Cell {cell} is drifting: {now} V below the average, falling about {rate} V a month.",
+  "driftWhy": "A cell that was always low is a pack that was built that way. One that was level six weeks ago and is under now is on its way out, and that is the difference between replacing a cell and replacing a pack.",
+  "@driftFound": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      },
+      "now": {
+        "type": "String"
+      },
+      "rate": {
+        "type": "String"
+      }
+    }
+  }
 }

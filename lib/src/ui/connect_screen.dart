@@ -118,35 +118,61 @@ class _ConnectScreenState extends State<ConnectScreen> {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: AppTheme.cool.withValues(alpha: 0.5)),
         ),
-        padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
-        child: Row(
+        padding: const EdgeInsets.fromLTRB(14, 12, 10, 6),
+        // A column, not a row. With the text and both buttons on one line the
+        // Expanded was squeezed to a couple of pixels and the message wrapped
+        // one letter per line. Any translation longer than the English would
+        // have done it again, so the layout stops depending on how long the
+        // words are.
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.system_update_alt, size: 18, color: AppTheme.cool),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                t.updateBannerTitle(version),
-                style: const TextStyle(fontSize: 13.5, color: AppTheme.cool),
-              ),
+            Row(
+              children: [
+                const Icon(
+                  Icons.system_update_alt,
+                  size: 18,
+                  color: AppTheme.cool,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    t.updateBannerTitle(version),
+                    style: const TextStyle(
+                      fontSize: 13.5,
+                      color: AppTheme.cool,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            TextButton(
-              onPressed: () async {
-                await widget.settings.dismissUpdate(version);
-                if (mounted) setState(() {});
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: AppTheme.textFaint,
-                textStyle: const TextStyle(fontSize: 12.5),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextButton(
+                    onPressed: () async {
+                      await widget.settings.dismissUpdate(version);
+                      if (mounted) setState(() {});
+                    },
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppTheme.textFaint,
+                      textStyle: const TextStyle(fontSize: 12.5),
+                    ),
+                    child: Text(t.updateBannerDismiss),
+                  ),
+                  const SizedBox(width: 6),
+                  FilledButton(
+                    onPressed: _openSettings,
+                    style: FilledButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      textStyle: const TextStyle(fontSize: 12.5),
+                    ),
+                    child: Text(t.updateBannerAction),
+                  ),
+                ],
               ),
-              child: Text(t.updateBannerDismiss),
-            ),
-            FilledButton(
-              onPressed: _openSettings,
-              style: FilledButton.styleFrom(
-                visualDensity: VisualDensity.compact,
-                textStyle: const TextStyle(fontSize: 12.5),
-              ),
-              child: Text(t.updateBannerAction),
             ),
           ],
         ),

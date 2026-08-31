@@ -4,6 +4,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../bms_service.dart';
 import '../../data/database.dart';
 import '../theme.dart';
+import '../compare_packs_screen.dart';
 import 'common.dart';
 
 /// The batteries this phone has seen, and what belongs to each.
@@ -65,6 +66,19 @@ class _PacksCardState extends State<PacksCard> {
           const SizedBox(height: 4),
           for (final d in _devices) _deviceRow(t, d, d.id == active?.id),
         ],
+        if (_devices.where((d) => !d.demo).length > 1)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: OutlinedButton.icon(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => ComparePacksScreen(service: widget.service),
+                ),
+              ),
+              icon: const Icon(Icons.compare_arrows, size: 18),
+              label: Text(t.compareOpen),
+            ),
+          ),
         if (_orphans > 0) ..._orphanBlock(t, active),
         const SizedBox(height: 6),
       ],

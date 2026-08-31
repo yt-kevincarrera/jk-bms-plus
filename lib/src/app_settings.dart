@@ -12,6 +12,7 @@ class AppSettings extends ChangeNotifier {
   static const _updateTokenKey = 'github_update_token';
   static const _lastCheckKey = 'update_last_checked_at';
   static const _dismissedKey = 'update_dismissed_version';
+  static const _chargeTargetKey = 'charge_target_soc';
 
 
 
@@ -35,6 +36,13 @@ class AppSettings extends ChangeNotifier {
   /// until there is a newer one. Dismissing is an answer, not a snooze.
   String dismissedUpdateVersion = '';
 
+  /// Charge level to announce, or null for only telling you when it is done.
+  ///
+  /// Defaults to 80: the top of the range is where calendar ageing happens,
+  /// and a rider who does not need the whole pack tomorrow is better off
+  /// stopping there. The app suggests it rather than enforcing it.
+  double? chargeTargetSoc = 80;
+
   /// Whether the phone buzzes when something crosses a line.
 
 
@@ -55,6 +63,10 @@ class AppSettings extends ChangeNotifier {
       lastUpdateCheck =
           at == null ? null : DateTime.fromMillisecondsSinceEpoch(at, isUtc: true);
       dismissedUpdateVersion = prefs.getString(_dismissedKey) ?? '';
+      // A stored -1 means the rider turned it off, which is different from
+      // never having chosen.
+      final target = prefs.getDouble(_chargeTargetKey);
+      chargeTargetSoc = target == null ? 80 : (target < 0 ? null : target);
       notifyListeners();
     } on Exception catch (_) {
       // Defaults are usable; a broken preference store is not worth failing on.
@@ -94,7 +106,19 @@ class AppSettings extends ChangeNotifier {
     }
   }
 
+  Future<void> setChargeTarget(double? soc) async {
+    chargeTargetSoc = soc;
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble(_chargeTargetKey, soc ?? -1);
+    } on Exception catch (_) {
+      // Kept for this session at least.
+    }
+  }
+
   Future<void> setHapticAlerts(bool value) async {
+
 
 
     hapticAlerts = value;

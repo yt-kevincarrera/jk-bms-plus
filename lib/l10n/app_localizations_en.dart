@@ -1937,4 +1937,76 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get backupWorking => 'Working...';
+
+  @override
+  String get chargeAlertsTitle => 'Charge alerts';
+
+  @override
+  String get chargeAlertsIntro =>
+      'Charging happens overnight and nobody watches it. That is what these are for. Stopping short of full is not superstition: the top of the range is where a lithium cell ages fastest, so if you do not need the whole pack tomorrow you are better off stopping early.';
+
+  @override
+  String get chargeTarget => 'Tell me at';
+
+  @override
+  String get chargeTargetOff => 'Off';
+
+  @override
+  String chargeAlertTargetReached(String soc) {
+    return 'The battery reached $soc %';
+  }
+
+  @override
+  String get chargeAlertComplete => 'Charging finished';
+
+  @override
+  String get chargeAlertHot => 'Getting hot while charging';
+
+  @override
+  String get chargeAlertSpread => 'Cells spreading apart at the top';
+
+  @override
+  String get compareTitle => 'Compare batteries';
+
+  @override
+  String get compareIntro =>
+      'The same figures as everywhere else, side by side. The best in each row is green, and only when there is a real difference.';
+
+  @override
+  String get compareNeedsTwo =>
+      'You need to have connected to at least two batteries before they can be compared.';
+
+  @override
+  String get compareHealth => 'Measured health';
+
+  @override
+  String get compareHonestCycles => 'Real cycles';
+
+  @override
+  String get compareConsumption => 'Consumption';
+
+  @override
+  String get compareWorstDelta => 'Worst delta seen';
+
+  @override
+  String get compareOpen => 'Compare batteries';
+
+  @override
+  String get driftTitle => 'Cell drifting away';
+
+  @override
+  String get driftNone => 'No cell is drifting away from the rest.';
+
+  @override
+  String get driftNotEnough =>
+      'Not enough history yet. It takes a few weeks of resting readings to tell a cell that is getting worse from one that was always a little low.';
+
+  @override
+  String driftFound(String cell, String now, String rate) {
+    return 'Cell $cell is drifting: $now V below the average, falling about $rate V a month.';
+  }
+
+  @override
+  String get driftWhy =>
+      'A cell that was always low is a pack that was built that way. One that was level six weeks ago and is under now is on its way out, and that is the difference between replacing a cell and replacing a pack.';
 }
