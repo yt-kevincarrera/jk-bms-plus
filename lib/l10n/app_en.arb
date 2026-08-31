@@ -979,5 +979,45 @@
   "catalogueConfirm": "Confirm it was sold as this",
   "catalogueFromBmsHint": "Taken from the BMS configuration. That is a number about this pack, but whoever assembled it typed it in. If you were sold a different capacity, set it: the gap between the two is exactly what health measures.",
   "connectRetry": "Search again",
-  "storedManageHint": "Long-press a battery to rename or delete it."
+  "storedManageHint": "Long-press a battery to rename or delete it.",
+  "offlineHealthTitle": "Stored health",
+  "offlineMeasuredHealth": "Measured health",
+  "offlineImplied": "Total capacity",
+  "offlineImpliedHint": "Remaining amp-hours divided by the charge the BMS reports. It is the capacity its own counter implies, not an independent measurement.",
+  "offlineImpliedUnusable": "The last reading was at a very high or very low charge, where that division is only noise.",
+  "offlineSoh": "Health the BMS claims",
+  "offlineCycles": "Cycles the BMS counts",
+  "offlineWeakest": "Weakest cell",
+  "offlineWeakestValue": "cell {index}, {volts} V",
+  "@offlineWeakestValue": {
+    "placeholders": {
+      "index": {
+        "type": "String"
+      },
+      "volts": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineMaxTemp": "Temperature",
+  "offlineHistorySince": "History since",
+  "offlineReadings": "{count} stored readings",
+  "@offlineReadings": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineBestMeasured": "Best real measurement",
+  "connectWaitingFirst": "Connecting and waiting for the first reading...",
+  "connectNotABms": "It connected, but no BMS reading arrived. That device is almost certainly not a JK BMS. If you believe it is, check the raw frame console in Settings.",
+  "storedCount": "{count} stored",
+  "@storedCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  }
 }

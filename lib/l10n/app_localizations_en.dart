@@ -1818,4 +1818,62 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get storedManageHint => 'Long-press a battery to rename or delete it.';
+
+  @override
+  String get offlineHealthTitle => 'Stored health';
+
+  @override
+  String get offlineMeasuredHealth => 'Measured health';
+
+  @override
+  String get offlineImplied => 'Total capacity';
+
+  @override
+  String get offlineImpliedHint =>
+      'Remaining amp-hours divided by the charge the BMS reports. It is the capacity its own counter implies, not an independent measurement.';
+
+  @override
+  String get offlineImpliedUnusable =>
+      'The last reading was at a very high or very low charge, where that division is only noise.';
+
+  @override
+  String get offlineSoh => 'Health the BMS claims';
+
+  @override
+  String get offlineCycles => 'Cycles the BMS counts';
+
+  @override
+  String get offlineWeakest => 'Weakest cell';
+
+  @override
+  String offlineWeakestValue(String index, String volts) {
+    return 'cell $index, $volts V';
+  }
+
+  @override
+  String get offlineMaxTemp => 'Temperature';
+
+  @override
+  String get offlineHistorySince => 'History since';
+
+  @override
+  String offlineReadings(String count) {
+    return '$count stored readings';
+  }
+
+  @override
+  String get offlineBestMeasured => 'Best real measurement';
+
+  @override
+  String get connectWaitingFirst =>
+      'Connecting and waiting for the first reading...';
+
+  @override
+  String get connectNotABms =>
+      'It connected, but no BMS reading arrived. That device is almost certainly not a JK BMS. If you believe it is, check the raw frame console in Settings.';
+
+  @override
+  String storedCount(String count) {
+    return '$count stored';
+  }
 }

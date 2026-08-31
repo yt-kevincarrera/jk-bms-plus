@@ -108,62 +108,109 @@ class _ConnectScreenState extends State<ConnectScreen> {
   /// which pack you care about, and half the reasons to open this app -- how
   /// is it doing, how far does it go, what did the last rides cost -- need no
   /// radio at all.
+  /// One row, not a list.
+  ///
+  /// Scanning is why this screen exists. The stored batteries are for the
+  /// occasional "how is it doing" from the sofa, and a list of them was
+  /// pushing the thing everybody actually came for down the screen.
   Widget _storedPacks(AppL10n t) {
     if (_stored.isEmpty) return const SizedBox.shrink();
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            t.storedTitle.toUpperCase(),
-            style: const TextStyle(
-              fontSize: 11,
-              letterSpacing: 0.8,
-              color: AppTheme.textFaint,
+    return ListTile(
+      dense: true,
+      visualDensity: VisualDensity.compact,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+      leading: const Icon(Icons.history, size: 20, color: AppTheme.textFaint),
+      title: Text(
+        t.storedTitle,
+        style: const TextStyle(fontSize: 13.5, color: AppTheme.textSecondary),
+      ),
+      trailing: Text(
+        t.storedCount('${_stored.length}'),
+        style: const TextStyle(fontSize: 12, color: AppTheme.textFaint),
+      ),
+      onTap: () => _openStoredSheet(t),
+    );
+  }
+
+  Future<void> _openStoredSheet(AppL10n t) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 2),
+              child: Row(
+                children: [
+                  Text(
+                    t.storedTitle,
+                    style: const TextStyle(fontSize: 15),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Text(
-            t.storedManageHint,
-            style: const TextStyle(
-              fontSize: 11.5,
-              height: 1.4,
-              color: AppTheme.textFaint,
-            ),
-          ),
-          const SizedBox(height: 4),
-          for (final d in _stored)
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              dense: true,
-              leading: Icon(
-                d.demo ? Icons.science_outlined : Icons.history,
-                size: 20,
-                color: AppTheme.textSecondary,
-              ),
-              title: Text(
-                d.name.isEmpty ? d.id : d.name,
-                style: const TextStyle(fontSize: 14),
-              ),
-              subtitle: Text(
-                t.storedLastSeen(_shortDate(d.lastSeenAt)),
-                style: const TextStyle(fontSize: 11.5),
-              ),
-              trailing: const Icon(Icons.chevron_right, size: 20),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => OfflinePackScreen(
-                    service: widget.service,
-                    device: d,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  t.storedManageHint,
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    height: 1.4,
+                    color: AppTheme.textFaint,
                   ),
                 ),
               ),
-              onLongPress: () => _managePack(t, d),
             ),
-        ],
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  for (final d in _stored)
+                    ListTile(
+                      leading: Icon(
+                        d.demo ? Icons.science_outlined : Icons.battery_full,
+                        size: 20,
+                        color: AppTheme.textSecondary,
+                      ),
+                      title: Text(
+                        d.name.isEmpty ? d.id : d.name,
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                      subtitle: Text(
+                        t.storedLastSeen(_shortDate(d.lastSeenAt)),
+                        style: const TextStyle(fontSize: 11.5),
+                      ),
+                      trailing: const Icon(Icons.chevron_right, size: 20),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        Navigator.of(this.context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => OfflinePackScreen(
+                              service: widget.service,
+                              device: d,
+                            ),
+                          ),
+                        );
+                      },
+                      onLongPress: () {
+                        Navigator.of(context).pop();
+                        _managePack(t, d);
+                      },
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
+    await _loadStored();
   }
 
 
@@ -426,13 +473,53 @@ class _ConnectScreenState extends State<ConnectScreen> {
 
   Future<void> _connect(DiscoveredBms device) async {
     await _cancelScan();
-    // Remember it, so the proximity watcher has something to look for later.
-    await widget.proximity.remember(device.id, device.name);
+    if (mounted) {
+      setState(() {
+        _connecting = true;
+        _message = t0(context).connectWaitingFirst;
+        _busyMessage = true;
+      });
+    }
+
     unawaited(widget.service.connect(device.id, name: device.name));
+
+    // Wait for proof that this is actually a BMS before opening anything.
+    // Tapping a pair of headphones used to connect, open the live screens, and
+    // sit on "waiting for the first reading" for as long as you let it: a
+    // dead end with no way to tell a slow pack from the wrong device.
+    var isBms = true;
+    try {
+      await widget.service.snapshots.first
+          .timeout(const Duration(seconds: 14));
+    } on Object catch (_) {
+      isBms = false;
+    }
+
+    if (!isBms) {
+      await widget.service.disconnect();
+      _connecting = false;
+      if (mounted) {
+        setState(() {
+          _message = t0(context).connectNotABms;
+          _busyMessage = false;
+        });
+      }
+      return;
+    }
+
+    // Only now is it worth remembering: the proximity watcher exists to
+    // reconnect to a BMS, and remembering whatever was tapped last would have
+    // it chasing a speaker.
+    await widget.proximity.remember(device.id, device.name);
+    if (mounted) setState(() => _message = null);
+
     await _openHome(device.name);
     await widget.service.disconnect();
     _connecting = false;
   }
+
+  /// Localisations without needing them threaded through every helper.
+  AppL10n t0(BuildContext context) => AppL10n.of(context);
 
   Future<void> _startDemo() async {
     final t = AppL10n.of(context);
