@@ -1181,5 +1181,9 @@
         "type": "String"
       }
     }
-  }
+  },
+  "alertSilence": "Silenciar este aviso",
+  "alertSilenced": "Silenciado. Puedes volver a activarlo en Ajustes.",
+  "alertsSectionTitle": "Qué avisos quieres",
+  "alertsSectionHint": "Cada uno por separado. Apagar el que te molesta no debería costarte los que sí quieres."
 }

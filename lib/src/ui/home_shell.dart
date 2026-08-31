@@ -94,7 +94,11 @@ class _HomeShellState extends State<HomeShell> {
         child: IndexedStack(
           index: _index,
           children: [
-            NowTab(service: service, snapshot: _snapshot),
+            NowTab(
+              service: service,
+              snapshot: _snapshot,
+              settings: widget.settings,
+            ),
             CellsTab(service: service, snapshot: _snapshot),
             ThermalTab(service: service, snapshot: _snapshot),
             HealthTab(service: service, snapshot: _snapshot),
