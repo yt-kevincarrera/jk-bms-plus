@@ -351,7 +351,10 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
           OutlinedButton.icon(
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => TrendsScreen(service: widget.service),
+                builder: (_) => TrendsScreen(
+                  service: widget.service,
+                  deviceId: widget.device.id,
+                ),
               ),
             ),
             icon: const Icon(Icons.show_chart, size: 18),

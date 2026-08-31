@@ -3780,6 +3780,12 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Historial desde el cambio de celda: {date}'**
   String maintSince(String date);
+
+  /// No description provided for @trendsMaintMarks.
+  ///
+  /// In es, this message translates to:
+  /// **'Las líneas de puntos son cosas que anotaste en el mantenimiento.'**
+  String get trendsMaintMarks;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

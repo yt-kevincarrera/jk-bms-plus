@@ -2083,4 +2083,8 @@ class AppL10nEn extends AppL10n {
   String maintSince(String date) {
     return 'History since the cell was replaced: $date';
   }
+
+  @override
+  String get trendsMaintMarks =>
+      'The dotted lines are things you noted in the maintenance log.';
 }
