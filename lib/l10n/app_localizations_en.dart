@@ -1876,4 +1876,15 @@ class AppL10nEn extends AppL10n {
   String storedCount(String count) {
     return '$count stored';
   }
+
+  @override
+  String updateBannerTitle(String version) {
+    return 'Version $version is out';
+  }
+
+  @override
+  String get updateBannerAction => 'View';
+
+  @override
+  String get updateBannerDismiss => 'Not now';
 }

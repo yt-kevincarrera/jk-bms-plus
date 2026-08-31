@@ -10,6 +10,8 @@ class AppSettings extends ChangeNotifier {
   static const _hapticKey = 'haptic_alerts';
   static const _rawFramesKey = 'record_raw_frames';
   static const _updateTokenKey = 'github_update_token';
+  static const _lastCheckKey = 'update_last_checked_at';
+  static const _dismissedKey = 'update_dismissed_version';
 
 
 
@@ -22,7 +24,19 @@ class AppSettings extends ChangeNotifier {
   /// and nowhere else.
   String updateToken = '';
 
+  /// When the app last asked GitHub whether there is a newer build.
+  ///
+  /// Used to keep the quiet check to once a day. This is the only thing this
+  /// app does on the network without being asked, and it is one request that
+  /// sends nothing about the pack, the rides or where you are.
+  DateTime? lastUpdateCheck;
+
+  /// A version the rider has already waved away, so the banner stays gone
+  /// until there is a newer one. Dismissing is an answer, not a snooze.
+  String dismissedUpdateVersion = '';
+
   /// Whether the phone buzzes when something crosses a line.
+
 
   bool hapticAlerts = true;
 
@@ -37,6 +51,10 @@ class AppSettings extends ChangeNotifier {
       hapticAlerts = prefs.getBool(_hapticKey) ?? true;
       recordRawFrames = prefs.getBool(_rawFramesKey) ?? true;
       updateToken = prefs.getString(_updateTokenKey) ?? '';
+      final at = prefs.getInt(_lastCheckKey);
+      lastUpdateCheck =
+          at == null ? null : DateTime.fromMillisecondsSinceEpoch(at, isUtc: true);
+      dismissedUpdateVersion = prefs.getString(_dismissedKey) ?? '';
       notifyListeners();
     } on Exception catch (_) {
       // Defaults are usable; a broken preference store is not worth failing on.
@@ -55,7 +73,29 @@ class AppSettings extends ChangeNotifier {
     }
   }
 
+  Future<void> markUpdateChecked(DateTime at) async {
+    lastUpdateCheck = at;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_lastCheckKey, at.millisecondsSinceEpoch);
+    } on Exception catch (_) {
+      // Worst case it checks again sooner than it needed to.
+    }
+  }
+
+  Future<void> dismissUpdate(String version) async {
+    dismissedUpdateVersion = version;
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_dismissedKey, version);
+    } on Exception catch (_) {
+      // The banner comes back next launch, which is a tolerable failure.
+    }
+  }
+
   Future<void> setHapticAlerts(bool value) async {
+
 
     hapticAlerts = value;
     notifyListeners();
