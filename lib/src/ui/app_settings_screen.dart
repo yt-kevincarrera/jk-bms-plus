@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../app_settings.dart';
 import '../bms_service.dart';
+import '../metrics/charge_alerts.dart';
+import '../metrics/ride_alerts.dart';
 import '../update/update_service.dart';
 import 'locale_controller.dart';
 import 'theme.dart';
@@ -111,6 +113,31 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                 const SizedBox(height: 4),
               ],
             ),
+            // Every alert, each with its own switch, in one place that is
+            // easy to find. The alternative people reach for when they cannot
+            // find this is switching the whole app's notifications off.
+            Section(
+              title: t.alertsSectionTitle,
+              intro: t.alertsSectionHint,
+              children: [
+                for (final a in _alertSwitches(t))
+                  SwitchListTile(
+                    value: !settings.isMuted(a.name),
+                    onChanged: (on) async {
+                      await settings.setAlertMuted(a.name, !on);
+                      widget.service.mutedAlerts = settings.mutedAlerts;
+                      if (mounted) setState(() {});
+                    },
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      a.label,
+                      style: const TextStyle(fontSize: 13.5),
+                    ),
+                  ),
+                const SizedBox(height: 4),
+              ],
+            ),
             Section(
               title: t.settingsSectionApp,
               children: [
@@ -181,6 +208,20 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
       ),
     );
   }
+
+  /// Every alert the app can raise, by the name it is stored under.
+  List<({String name, String label})> _alertSwitches(AppL10n t) => [
+        (name: ChargeAlert.targetReached.name, label: t.chargeAlertTargetReached('%')),
+        (name: ChargeAlert.chargeComplete.name, label: t.chargeAlertComplete),
+        (name: ChargeAlert.hotWhileCharging.name, label: t.chargeAlertHot),
+        (name: ChargeAlert.spreadAtTop.name, label: t.chargeAlertSpread),
+        (name: RideAlert.bmsFault.name, label: t.alertBmsFault),
+        (name: RideAlert.cellSpread.name, label: t.alertCellSpread),
+        (name: RideAlert.temperature.name, label: t.alertTemperature),
+        (name: RideAlert.lowCharge.name, label: t.alertLowCharge),
+        (name: RideAlert.criticalCharge.name, label: t.alertCriticalCharge),
+        (name: RideAlert.cellNearCutoff.name, label: t.alertCellNearCutoff),
+      ];
 
   Widget _localeChip(String label, LanguageChoice choice) => ChoiceChip(
         label: Text(label),

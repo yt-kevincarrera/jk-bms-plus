@@ -655,6 +655,7 @@ class BmsService {
       cutoffVoltagePerCell: cutoffVoltagePerCell,
     );
     for (final alert in firing) {
+      if (mutedAlerts.contains(alert.name)) continue;
       _alertController.add(alert);
       if (hapticAlerts) {
         // Riding is exactly when nobody is looking at the screen, so the phone
@@ -769,6 +770,11 @@ class BmsService {
   //
   // Charging happens overnight, which is exactly why nobody sees any of it.
 
+  /// Alert names the rider has switched off. Checked at the moment of firing
+  /// rather than inside the detectors, so muting never changes what the app
+  /// knows -- only what it says out loud.
+  Set<String> mutedAlerts = const {};
+
   final ChargeAlerts chargeAlerts = ChargeAlerts();
   final _chargeAlertController = StreamController<ChargeAlert>.broadcast();
 
@@ -776,6 +782,7 @@ class BmsService {
 
   void _checkChargeAlerts(BmsSnapshot snapshot) {
     for (final alert in chargeAlerts.evaluate(snapshot)) {
+      if (mutedAlerts.contains(alert.name)) continue;
       _chargeAlertController.add(alert);
       // The notification the trip service already owns is the only way any of
       // this reaches a phone in another room. It is only running during a
@@ -904,8 +911,10 @@ class BmsService {
     required bool rawFrames,
     double? chargeTargetSoc,
     bool watchCharge = false,
+    Set<String> muted = const {},
   }) {
     chargeWatchEnabled = watchCharge;
+    mutedAlerts = muted;
     chargeAlerts.targetSoc = chargeTargetSoc;
     hapticAlerts = haptics;
     repository?.recordRawFrames = rawFrames;

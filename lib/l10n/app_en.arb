@@ -1181,5 +1181,9 @@
         "type": "String"
       }
     }
-  }
+  },
+  "alertSilence": "Silence this alert",
+  "alertSilenced": "Silenced. You can switch it back on in Settings.",
+  "alertsSectionTitle": "Which alerts you want",
+  "alertsSectionHint": "One by one. Switching off the one that annoys you should not cost you the ones you want."
 }

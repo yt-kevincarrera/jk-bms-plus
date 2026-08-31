@@ -17,6 +17,7 @@ class AppSettings extends ChangeNotifier {
   static const _dismissedKey = 'update_dismissed_version';
   static const _chargeTargetKey = 'charge_target_soc';
   static const _chargeWatchKey = 'charge_watch_enabled';
+  static const _mutedKey = 'muted_alerts';
 
 
 
@@ -54,6 +55,15 @@ class AppSettings extends ChangeNotifier {
   /// the app open, this is only for reaching you with it closed.
   bool chargeWatchEnabled = false;
 
+  /// Alerts the rider has switched off, by name.
+  ///
+  /// Individually rather than all at once. Somebody who does not care that the
+  /// charger runs warm still wants to know the charge finished, and an app
+  /// whose only option is silence gets silenced entirely.
+  Set<String> mutedAlerts = <String>{};
+
+  bool isMuted(String alert) => mutedAlerts.contains(alert);
+
   /// Whether the phone buzzes when something crosses a line.
 
 
@@ -79,6 +89,7 @@ class AppSettings extends ChangeNotifier {
       final target = prefs.getDouble(_chargeTargetKey);
       chargeTargetSoc = target == null ? 80 : (target < 0 ? null : target);
       chargeWatchEnabled = prefs.getBool(_chargeWatchKey) ?? false;
+      mutedAlerts = (prefs.getStringList(_mutedKey) ?? const []).toSet();
       notifyListeners();
     } on Exception catch (_) {
       // Defaults are usable; a broken preference store is not worth failing on.
@@ -133,6 +144,21 @@ class AppSettings extends ChangeNotifier {
     chargeWatchEnabled = value;
     notifyListeners();
     await _writeBool(_chargeWatchKey, value);
+  }
+
+  Future<void> setAlertMuted(String alert, bool muted) async {
+    if (muted) {
+      mutedAlerts.add(alert);
+    } else {
+      mutedAlerts.remove(alert);
+    }
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(_mutedKey, mutedAlerts.toList());
+    } on Exception catch (_) {
+      // Silenced for this session at least.
+    }
   }
 
   Future<void> setHapticAlerts(bool value) async {

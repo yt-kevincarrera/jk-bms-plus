@@ -3810,6 +3810,30 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'{soc} % · {volts} V · {amps} A'**
   String chargeWatchNotifText(String soc, String volts, String amps);
+
+  /// No description provided for @alertSilence.
+  ///
+  /// In es, this message translates to:
+  /// **'Silenciar este aviso'**
+  String get alertSilence;
+
+  /// No description provided for @alertSilenced.
+  ///
+  /// In es, this message translates to:
+  /// **'Silenciado. Puedes volver a activarlo en Ajustes.'**
+  String get alertSilenced;
+
+  /// No description provided for @alertsSectionTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Qué avisos quieres'**
+  String get alertsSectionTitle;
+
+  /// No description provided for @alertsSectionHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada uno por separado. Apagar el que te molesta no debería costarte los que sí quieres.'**
+  String get alertsSectionHint;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

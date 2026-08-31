@@ -95,6 +95,7 @@ class _JkBmsAppState extends State<JkBmsApp> {
       rawFrames: _settings.recordRawFrames,
       chargeTargetSoc: _settings.chargeTargetSoc,
       watchCharge: _settings.chargeWatchEnabled,
+      muted: _settings.mutedAlerts,
     );
 
     if (mounted) setState(() {});

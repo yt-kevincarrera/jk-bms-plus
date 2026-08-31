@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../../app_settings.dart';
 import '../../bms_service.dart';
 import '../../metrics/range_estimator.dart';
 import '../../model/bms_snapshot.dart';
@@ -18,10 +19,16 @@ import '../widgets/gauges.dart';
 /// The riding screen. One glance should answer two questions: can I keep going,
 /// and is anything wrong.
 class NowTab extends StatefulWidget {
-  const NowTab({required this.service, required this.snapshot, super.key});
+  const NowTab({
+    required this.service,
+    required this.snapshot,
+    required this.settings,
+    super.key,
+  });
 
   final BmsService service;
   final BmsSnapshot? snapshot;
+  final AppSettings settings;
 
   @override
   State<NowTab> createState() => _NowTabState();
@@ -83,7 +90,7 @@ class _NowTabState extends State<NowTab> {
               ? Pill(t.balancerBadge, color: AppTheme.cool, icon: Icons.bolt)
               : null,
         ),
-        _AlertBanner(service: service),
+        _AlertBanner(service: service, settings: widget.settings),
         _TripStrip(service: service),
         const SizedBox(height: 6),
         Row(
@@ -436,9 +443,10 @@ String _statusMessage(AppL10n t, PackStatus status) {
 /// The buzz is what reaches you while riding; this is what tells you what the
 /// buzz was about when you next look down.
 class _AlertBanner extends StatefulWidget {
-  const _AlertBanner({required this.service});
+  const _AlertBanner({required this.service, required this.settings});
 
   final BmsService service;
+  final AppSettings settings;
 
   @override
   State<_AlertBanner> createState() => _AlertBannerState();
@@ -471,6 +479,16 @@ class _AlertBannerState extends State<_AlertBanner> {
     super.dispose();
   }
 
+  Future<void> _silence(AppL10n t, RideAlert alert) async {
+    await widget.settings.setAlertMuted(alert.name, true);
+    widget.service.mutedAlerts = widget.settings.mutedAlerts;
+    if (!mounted) return;
+    setState(() => _latest = null);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(t.alertSilenced)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final alert = _latest;
@@ -493,13 +511,33 @@ class _AlertBannerState extends State<_AlertBanner> {
             Icon(Icons.warning_amber_rounded, size: 19, color: tone),
             const SizedBox(width: 10),
             Expanded(
-              child: Text(
-                _label(t, alert),
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: tone,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _label(t, alert),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: tone,
+                    ),
+                  ),
+                  // The moment an alert annoys somebody is the moment they
+                  // want it gone, and it is the only moment they know exactly
+                  // which one it was. Making them find it in a settings list
+                  // later is how an app ends up with every alert switched off.
+                  GestureDetector(
+                    onTap: () => _silence(t, alert),
+                    child: Text(
+                      t.alertSilence,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        decoration: TextDecoration.underline,
+                        color: tone.withValues(alpha: 0.85),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             IconButton(
