@@ -1887,4 +1887,54 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get updateBannerDismiss => 'Not now';
+
+  @override
+  String get thermalProbeAbsent => 'not connected';
+
+  @override
+  String get thermalAbsentNote =>
+      'Unconnected probes report impossible values, around -200 C. That is not cold, it is nothing wired to that input. They are shown separately so they cannot skew the maximum or trip an alert.';
+
+  @override
+  String get backupTitle => 'Backup';
+
+  @override
+  String get backupIntro =>
+      'The whole database in one file, and back again. The CSV and GPX exports are for reading the data elsewhere; this is for not losing it. If you change phones or lose one, this is the only thing that brings back months of readings, the rides with their tracks, and the raw frames.';
+
+  @override
+  String get backupExport => 'Create backup';
+
+  @override
+  String get backupExportLight => 'Create backup without raw frames';
+
+  @override
+  String get backupImport => 'Restore from a file';
+
+  @override
+  String get backupImportMerge => 'Add to what is here';
+
+  @override
+  String get backupImportReplace => 'Replace everything';
+
+  @override
+  String get backupImportChoose =>
+      'What should happen to what is already stored?';
+
+  @override
+  String get backupReplaceWarning =>
+      'Replacing deletes everything on the phone before restoring. It cannot be undone.';
+
+  @override
+  String backupDone(String trips, String readings, String packs) {
+    return 'Restored: $trips rides, $readings readings, $packs batteries.';
+  }
+
+  @override
+  String backupFailed(String reason) {
+    return 'Could not restore: $reason';
+  }
+
+  @override
+  String get backupWorking => 'Working...';
 }

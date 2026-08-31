@@ -39,14 +39,18 @@ class ThermalTab extends StatelessWidget {
             spacing: 10,
             runSpacing: 10,
             children: [
-              for (var i = 0; i < s.temperatures.length; i++)
+              // Only the probes that are wired to something. An unconnected
+              // one reads about -200 C, which is not a cold battery, and a
+              // tile saying so is worse than no tile: it invites you to worry
+              // about a number that means "no sensor here".
+              for (final probe in s.connectedTemperatures)
                 SizedBox(
                   width: 108,
                   child: MetricTile(
-                    label: t.thermalProbe(i + 1),
-                    value: s.temperatures[i].toStringAsFixed(1),
+                    label: t.thermalProbe(probe.index + 1),
+                    value: probe.celsius.toStringAsFixed(1),
                     unit: '°C',
-                    color: _tempColour(s.temperatures[i]),
+                    color: _tempColour(probe.celsius),
                   ),
                 ),
               if (s.mosfetTemp != null)
@@ -97,7 +101,23 @@ class ThermalTab extends StatelessWidget {
         Section(
           title: t.thermalSensorsTitle,
           children: [
-            InfoRow(t.thermalProbesReported, '${s.temperatures.length}'),
+            InfoRow(
+              t.thermalProbesReported,
+              s.absentTemperatureProbes.isEmpty
+                  ? '${s.temperatures.length}'
+                  : '${s.connectedTemperatures.length} / ${s.temperatures.length}',
+              hint: s.absentTemperatureProbes.isEmpty
+                  ? null
+                  : t.thermalAbsentNote,
+            ),
+            if (s.absentTemperatureProbes.isNotEmpty)
+              for (final i in s.absentTemperatureProbes)
+                InfoRow(
+                  t.thermalProbe(i + 1),
+                  t.thermalProbeAbsent,
+                  dim: true,
+                ),
+
             InfoRow(
               t.thermalMosfetSensor,
               s.mosfetTemp == null ? t.notReported : t.reported,

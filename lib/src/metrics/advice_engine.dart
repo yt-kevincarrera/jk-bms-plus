@@ -186,7 +186,7 @@ class AdviceEngine {
 
     // --- Right now ---
     final temps = <double>[
-      ...snapshot.temperatures,
+      ...snapshot.plausibleTemperatures,
       if (snapshot.mosfetTemp != null) snapshot.mosfetTemp!,
     ];
     if (temps.isNotEmpty) {
