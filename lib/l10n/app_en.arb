@@ -754,6 +754,18 @@
   "settingsTitle": "Settings",
   "settingsCatalogue": "Catalogue capacity",
   "settingsCatalogueHint": "What the label on the pack claims. Health is measured against this number, so it is worth getting right.",
+  "catalogueUnset": "Not set",
+  "catalogueUnsetHint": "Nobody has said how many amp-hours this battery was sold as, and the app does not invent one. Until you set it, health and degradation cannot be worked out: there is nothing to measure them against.",
+  "catalogueSetIt": "Set capacity",
+  "catalogueUseBms": "Use the BMS figure, {ah} Ah",
+  "@catalogueUseBms": {
+    "placeholders": {
+      "ah": {
+        "type": "String"
+      }
+    }
+  },
+  "catalogueNotComparable": "not compared",
   "settingsCatalogueForPack": "What {pack} was sold as. Each battery has its own, so changing it here does not touch the others.",
   "@settingsCatalogueForPack": {
     "placeholders": {
@@ -929,5 +941,39 @@
   },
   "orphansAdopt": "Attach to this battery",
   "orphansDiscard": "Discard",
-  "orphansDone": "Done"
+  "orphansDone": "Done",
+  "storedTitle": "Stored batteries",
+  "storedOpen": "View history",
+  "storedNone": "You have not connected a battery yet.",
+  "storedLastSeen": "Last reading {when}",
+  "@storedLastSeen": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "storedNever": "no stored readings",
+  "offlineTitle": "Stored summary",
+  "offlineBanner": "Offline — all of this comes from what was already stored, not from the BMS right now.",
+  "offlineLastReading": "Last reading",
+  "offlineStateOfCharge": "Charge then",
+  "offlineTrips": "Rides",
+  "offlineTripsCount": "{count} stored",
+  "@offlineTripsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineTotalKm": "Total distance",
+  "offlineRange": "Learned range",
+  "offlineRangeUnknown": "not learned yet",
+  "offlineNoData": "No stored readings for this battery yet. Connect once and it will be here.",
+  "appSettingsTitle": "Settings",
+  "settingsSectionApp": "App",
+  "settingsSectionPack": "This battery",
+  "agoPrefix": "",
+  "agoSuffix": "ago"
 }

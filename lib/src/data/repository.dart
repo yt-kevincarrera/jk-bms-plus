@@ -244,7 +244,7 @@ class BmsRepository {
     required DateTime startedAt,
     required double startSoc,
     required double startPackVoltage,
-    required double catalogueAh,
+    required double? catalogueAh,
   }) =>
       db.insertCapacityTest(
         CapacityTestsCompanion.insert(
@@ -255,7 +255,7 @@ class BmsRepository {
           endPackVoltage: startPackVoltage,
           measuredAh: 0,
           measuredWh: 0,
-          catalogueAh: catalogueAh,
+          catalogueAh: Value(catalogueAh),
         ),
       );
 
@@ -321,7 +321,7 @@ class BmsRepository {
   Future<bool> recordDetectedCycle(
     String deviceId,
     DetectedCycle cycle,
-    double catalogueAh,
+    double? catalogueAh,
   ) async {
     final existing = await db.allCapacityTests(deviceId);
     // Matched on the start instant: the same discharge scanned twice must not
@@ -340,7 +340,7 @@ class BmsRepository {
         endPackVoltage: cycle.endPackVoltage,
         measuredAh: cycle.measuredAh,
         measuredWh: cycle.measuredWh,
-        catalogueAh: catalogueAh,
+        catalogueAh: Value(catalogueAh),
         completed: const Value(true),
         automatic: const Value(true),
         gapSeconds: Value(cycle.gapSeconds),

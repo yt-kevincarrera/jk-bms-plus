@@ -93,7 +93,7 @@ class _PacksCardState extends State<PacksCard> {
                     ),
                   ),
                   Text(
-                    '${d.catalogueCapacityAh.toStringAsFixed(0)} Ah  ·  '
+                    '${d.catalogueCapacityAh?.toStringAsFixed(0) ?? t.catalogueUnset} Ah  ·  '
                     '${t.packsLastSeen(_date(d.lastSeenAt))}',
                     style: const TextStyle(
                       fontSize: 11,

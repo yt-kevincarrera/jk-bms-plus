@@ -157,10 +157,10 @@ void main() {
 
     tearDown(() async => db.close());
 
-    test('the migration runs and the schema lands on 4', () async {
+    test('the migration runs and the schema lands on the current version', () async {
       // Any query forces drift to open the database and run the upgrade.
       await db.allDevices();
-      expect(raw.userVersion, 4);
+      expect(raw.userVersion, 5);
     });
 
     test('nothing that was stored is lost', () async {
@@ -244,6 +244,77 @@ void main() {
       );
       expect(stored, hasLength(1));
       expect(stored.single.soc, 90);
+    });
+  });
+
+  group('upgrading from version 4, where every pack held 45 Ah', () {
+    late Database raw;
+    late AppDatabase db;
+
+    setUp(() {
+      raw = sqlite3.openInMemory();
+      for (final statement in _v3Schema) {
+        raw.execute(statement);
+      }
+      // The v4 shape: a devices table, and deviceId on the observation tables.
+      raw.execute('''
+        CREATE TABLE devices (
+          id TEXT NOT NULL PRIMARY KEY,
+          name TEXT NOT NULL DEFAULT '',
+          serial_number TEXT NOT NULL DEFAULT '',
+          model TEXT NOT NULL DEFAULT '',
+          catalogue_capacity_ah REAL NOT NULL DEFAULT 45,
+          first_seen_at INTEGER NOT NULL,
+          last_seen_at INTEGER NOT NULL,
+          demo INTEGER NOT NULL DEFAULT 0 CHECK (demo IN (0, 1))
+        )''');
+      for (final table in ['trips', 'snapshots', 'raw_frames', 'capacity_tests']) {
+        raw.execute('ALTER TABLE $table ADD COLUMN device_id TEXT');
+      }
+      final now = _epoch(DateTime.utc(2026, 6, 1));
+      // Two bikes. One really is 45 Ah; the other is 35 and was never told so,
+      // which is exactly the case that went wrong.
+      raw.execute(
+        "INSERT INTO devices (id, name, catalogue_capacity_ah, first_seen_at, "
+        "last_seen_at) VALUES ('AA:BB', 'Moto', 45, ?, ?)",
+        [now, now],
+      );
+      raw.execute(
+        "INSERT INTO devices (id, name, catalogue_capacity_ah, first_seen_at, "
+        "last_seen_at) VALUES ('CC:DD', 'La otra', 45, ?, ?)",
+        [now, now],
+      );
+      raw.execute('PRAGMA user_version = 4');
+      db = AppDatabase.forTesting(NativeDatabase.opened(raw));
+    });
+
+    tearDown(() async => db.close());
+
+    test('clears the capacity on every pack rather than trusting it', () async {
+      // Nothing recorded whether 45 was entered or defaulted, so both are
+      // cleared. Losing a figure the rider can re-enter in one tap beats
+      // keeping one that might be fiction and silently rescales every health
+      // number for that battery.
+      final devices = await db.allDevices();
+      expect(devices, hasLength(2));
+      expect(devices.every((d) => d.catalogueCapacityAh == null), isTrue);
+    });
+
+    test('keeps everything else about the packs', () async {
+      final devices = await db.allDevices();
+      expect(
+        devices.map((d) => d.name).toSet(),
+        {'Moto', 'La otra'},
+      );
+    });
+
+    test('a capacity can be set again afterwards, per pack', () async {
+      await db.updateDevice(
+        'CC:DD',
+        const DevicesCompanion(catalogueCapacityAh: Value(35)),
+      );
+      expect((await db.device('CC:DD'))!.catalogueCapacityAh, 35);
+      expect((await db.device('AA:BB'))!.catalogueCapacityAh, isNull);
     });
   });
 }

@@ -13,6 +13,9 @@ import '../bms_service.dart';
 import 'home_shell.dart';
 import 'locale_controller.dart';
 import 'theme.dart';
+import '../data/database.dart';
+import 'app_settings_screen.dart';
+import 'offline_pack_screen.dart';
 import 'widgets/common.dart';
 import '../update/update_service.dart';
 
@@ -49,6 +52,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
   /// looked yet" from "we looked and found nothing", which need different
   /// things said to them.
   bool _searched = false;
+
+  /// Packs already on record, so their history is reachable with nothing
+  /// connected.
+  List<Device> _stored = const [];
   String? _message;
   bool _busyMessage = false;
 
@@ -61,6 +68,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
       if (!mounted || _connecting) return;
       _connecting = true;
       _connect(device);
+    _loadStored();
     });
 
     _errorSub = widget.service.linkErrors.listen((e) {
@@ -79,6 +87,73 @@ class _ConnectScreenState extends State<ConnectScreen> {
     _errorSub?.cancel();
     _foundSub?.cancel();
     super.dispose();
+  }
+
+  Future<void> _loadStored() async {
+    final devices = await widget.service.repository?.devices();
+    if (mounted && devices != null) setState(() => _stored = devices);
+  }
+
+
+  /// The batteries already on record, openable with nothing connected.
+  ///
+  /// Sits above the scan results because most of the time you already know
+  /// which pack you care about, and half the reasons to open this app -- how
+  /// is it doing, how far does it go, what did the last rides cost -- need no
+  /// radio at all.
+  Widget _storedPacks(AppL10n t) {
+    if (_stored.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            t.storedTitle.toUpperCase(),
+            style: const TextStyle(
+              fontSize: 11,
+              letterSpacing: 0.8,
+              color: AppTheme.textFaint,
+            ),
+          ),
+          const SizedBox(height: 4),
+          for (final d in _stored)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              leading: Icon(
+                d.demo ? Icons.science_outlined : Icons.history,
+                size: 20,
+                color: AppTheme.textSecondary,
+              ),
+              title: Text(
+                d.name.isEmpty ? d.id : d.name,
+                style: const TextStyle(fontSize: 14),
+              ),
+              subtitle: Text(
+                t.storedLastSeen(_shortDate(d.lastSeenAt)),
+                style: const TextStyle(fontSize: 11.5),
+              ),
+              trailing: const Icon(Icons.chevron_right, size: 20),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => OfflinePackScreen(
+                    service: widget.service,
+                    device: d,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  static String _shortDate(DateTime utc) {
+    final d = utc.toLocal();
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${two(d.day)}/${two(d.month)}/${d.year}';
   }
 
   Future<void> _startScan() async {
@@ -276,7 +351,27 @@ class _ConnectScreenState extends State<ConnectScreen> {
     final t = AppL10n.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(t.appTitle)),
+      appBar: AppBar(
+        title: Text(t.appTitle),
+        actions: [
+          IconButton(
+            tooltip: t.appSettingsTitle,
+            icon: const Icon(Icons.tune),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => AppSettingsScreen(
+                  service: widget.service,
+                  settings: widget.settings,
+                  localeController: widget.localeController,
+                  updateService: widget.updateService,
+                ),
+              ),
+            ).then((_) {
+              if (mounted) setState(() {});
+            }),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -325,6 +420,9 @@ class _ConnectScreenState extends State<ConnectScreen> {
                 ),
               ),
             ),
+          // Above the scan results: the pack you already know about is
+          // usually the one you came for, and opening it needs no radio.
+          if (!_scanning && _devices.isEmpty) _storedPacks(t),
           Expanded(
             child: _devices.isEmpty
                 ? Center(
@@ -396,24 +494,19 @@ class _ConnectScreenState extends State<ConnectScreen> {
                     label: Text(t.connectScan),
                   ),
           ),
+          // Demo is a way to look around with no hardware, not something a
+          // rider with a bike outside wants competing with the scan button.
+          // A quiet text link, and the paragraph explaining it moves into the
+          // screen it opens.
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-            child: OutlinedButton.icon(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: TextButton(
               onPressed: _startDemo,
-              icon: const Icon(Icons.play_circle_outline, size: 19),
-              label: Text(t.connectDemoButton),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 18),
-            child: Text(
-              t.connectDemoHint,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 11.5,
-                height: 1.4,
-                color: AppTheme.textFaint,
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.textFaint,
+                textStyle: const TextStyle(fontSize: 12.5),
               ),
+              child: Text(t.connectDemoButton),
             ),
           ),
         ],

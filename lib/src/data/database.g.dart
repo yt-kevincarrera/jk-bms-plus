@@ -56,10 +56,9 @@ class $DevicesTable extends Devices with TableInfo<$DevicesTable, Device> {
       GeneratedColumn<double>(
         'catalogue_capacity_ah',
         aliasedName,
-        false,
+        true,
         type: DriftSqlType.double,
         requiredDuringInsert: false,
-        defaultValue: const Constant(45),
       );
   static const VerificationMeta _firstSeenAtMeta = const VerificationMeta(
     'firstSeenAt',
@@ -210,7 +209,7 @@ class $DevicesTable extends Devices with TableInfo<$DevicesTable, Device> {
       catalogueCapacityAh: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}catalogue_capacity_ah'],
-      )!,
+      ),
       firstSeenAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}first_seen_at'],
@@ -242,12 +241,14 @@ class Device extends DataClass implements Insertable<Device> {
   final String serialNumber;
   final String model;
 
-  /// What *this* pack was sold as.
+  /// What *this* pack was sold as, or null when nobody has said.
   ///
-  /// Per pack rather than global: a rider with a 45 Ah pack and a 30 Ah spare
-  /// measured against one shared figure gets a wrong answer for at least one
-  /// of them, and no warning that it happened.
-  final double catalogueCapacityAh;
+  /// Nullable, with no default, because a default here is a claim about a
+  /// battery nobody made. A new pack used to be born holding 45 Ah -- so
+  /// connecting to a 35 Ah bike produced a health figure measured against a
+  /// number this app invented, indistinguishable on screen from one the rider
+  /// had entered. Unknown has to look like unknown.
+  final double? catalogueCapacityAh;
   final DateTime firstSeenAt;
   final DateTime lastSeenAt;
 
@@ -258,7 +259,7 @@ class Device extends DataClass implements Insertable<Device> {
     required this.name,
     required this.serialNumber,
     required this.model,
-    required this.catalogueCapacityAh,
+    this.catalogueCapacityAh,
     required this.firstSeenAt,
     required this.lastSeenAt,
     required this.demo,
@@ -270,7 +271,9 @@ class Device extends DataClass implements Insertable<Device> {
     map['name'] = Variable<String>(name);
     map['serial_number'] = Variable<String>(serialNumber);
     map['model'] = Variable<String>(model);
-    map['catalogue_capacity_ah'] = Variable<double>(catalogueCapacityAh);
+    if (!nullToAbsent || catalogueCapacityAh != null) {
+      map['catalogue_capacity_ah'] = Variable<double>(catalogueCapacityAh);
+    }
     map['first_seen_at'] = Variable<DateTime>(firstSeenAt);
     map['last_seen_at'] = Variable<DateTime>(lastSeenAt);
     map['demo'] = Variable<bool>(demo);
@@ -283,7 +286,9 @@ class Device extends DataClass implements Insertable<Device> {
       name: Value(name),
       serialNumber: Value(serialNumber),
       model: Value(model),
-      catalogueCapacityAh: Value(catalogueCapacityAh),
+      catalogueCapacityAh: catalogueCapacityAh == null && nullToAbsent
+          ? const Value.absent()
+          : Value(catalogueCapacityAh),
       firstSeenAt: Value(firstSeenAt),
       lastSeenAt: Value(lastSeenAt),
       demo: Value(demo),
@@ -300,7 +305,7 @@ class Device extends DataClass implements Insertable<Device> {
       name: serializer.fromJson<String>(json['name']),
       serialNumber: serializer.fromJson<String>(json['serialNumber']),
       model: serializer.fromJson<String>(json['model']),
-      catalogueCapacityAh: serializer.fromJson<double>(
+      catalogueCapacityAh: serializer.fromJson<double?>(
         json['catalogueCapacityAh'],
       ),
       firstSeenAt: serializer.fromJson<DateTime>(json['firstSeenAt']),
@@ -316,7 +321,7 @@ class Device extends DataClass implements Insertable<Device> {
       'name': serializer.toJson<String>(name),
       'serialNumber': serializer.toJson<String>(serialNumber),
       'model': serializer.toJson<String>(model),
-      'catalogueCapacityAh': serializer.toJson<double>(catalogueCapacityAh),
+      'catalogueCapacityAh': serializer.toJson<double?>(catalogueCapacityAh),
       'firstSeenAt': serializer.toJson<DateTime>(firstSeenAt),
       'lastSeenAt': serializer.toJson<DateTime>(lastSeenAt),
       'demo': serializer.toJson<bool>(demo),
@@ -328,7 +333,7 @@ class Device extends DataClass implements Insertable<Device> {
     String? name,
     String? serialNumber,
     String? model,
-    double? catalogueCapacityAh,
+    Value<double?> catalogueCapacityAh = const Value.absent(),
     DateTime? firstSeenAt,
     DateTime? lastSeenAt,
     bool? demo,
@@ -337,7 +342,9 @@ class Device extends DataClass implements Insertable<Device> {
     name: name ?? this.name,
     serialNumber: serialNumber ?? this.serialNumber,
     model: model ?? this.model,
-    catalogueCapacityAh: catalogueCapacityAh ?? this.catalogueCapacityAh,
+    catalogueCapacityAh: catalogueCapacityAh.present
+        ? catalogueCapacityAh.value
+        : this.catalogueCapacityAh,
     firstSeenAt: firstSeenAt ?? this.firstSeenAt,
     lastSeenAt: lastSeenAt ?? this.lastSeenAt,
     demo: demo ?? this.demo,
@@ -408,7 +415,7 @@ class DevicesCompanion extends UpdateCompanion<Device> {
   final Value<String> name;
   final Value<String> serialNumber;
   final Value<String> model;
-  final Value<double> catalogueCapacityAh;
+  final Value<double?> catalogueCapacityAh;
   final Value<DateTime> firstSeenAt;
   final Value<DateTime> lastSeenAt;
   final Value<bool> demo;
@@ -467,7 +474,7 @@ class DevicesCompanion extends UpdateCompanion<Device> {
     Value<String>? name,
     Value<String>? serialNumber,
     Value<String>? model,
-    Value<double>? catalogueCapacityAh,
+    Value<double?>? catalogueCapacityAh,
     Value<DateTime>? firstSeenAt,
     Value<DateTime>? lastSeenAt,
     Value<bool>? demo,
@@ -3836,9 +3843,9 @@ class $CapacityTestsTable extends CapacityTests
   late final GeneratedColumn<double> catalogueAh = GeneratedColumn<double>(
     'catalogue_ah',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.double,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _completedMeta = const VerificationMeta(
     'completed',
@@ -4012,8 +4019,6 @@ class $CapacityTestsTable extends CapacityTests
           _catalogueAhMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_catalogueAhMeta);
     }
     if (data.containsKey('completed')) {
       context.handle(
@@ -4093,7 +4098,7 @@ class $CapacityTestsTable extends CapacityTests
       catalogueAh: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}catalogue_ah'],
-      )!,
+      ),
       completed: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}completed'],
@@ -4136,8 +4141,11 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
   final double measuredAh;
   final double measuredWh;
 
-  /// What the pack was sold as, so the comparison survives a settings change.
-  final double catalogueAh;
+  /// What the pack was sold as at the time, or null if it was never stated.
+  ///
+  /// The amp-hours measured are worth keeping either way: the measurement is
+  /// the fact, the comparison is the opinion.
+  final double? catalogueAh;
   final bool completed;
 
   /// True when the app found this cycle in the history rather than the rider
@@ -4162,7 +4170,7 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
     required this.endPackVoltage,
     required this.measuredAh,
     required this.measuredWh,
-    required this.catalogueAh,
+    this.catalogueAh,
     required this.completed,
     required this.automatic,
     required this.gapSeconds,
@@ -4183,7 +4191,9 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
     map['end_pack_voltage'] = Variable<double>(endPackVoltage);
     map['measured_ah'] = Variable<double>(measuredAh);
     map['measured_wh'] = Variable<double>(measuredWh);
-    map['catalogue_ah'] = Variable<double>(catalogueAh);
+    if (!nullToAbsent || catalogueAh != null) {
+      map['catalogue_ah'] = Variable<double>(catalogueAh);
+    }
     map['completed'] = Variable<bool>(completed);
     map['automatic'] = Variable<bool>(automatic);
     map['gap_seconds'] = Variable<int>(gapSeconds);
@@ -4207,7 +4217,9 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
       endPackVoltage: Value(endPackVoltage),
       measuredAh: Value(measuredAh),
       measuredWh: Value(measuredWh),
-      catalogueAh: Value(catalogueAh),
+      catalogueAh: catalogueAh == null && nullToAbsent
+          ? const Value.absent()
+          : Value(catalogueAh),
       completed: Value(completed),
       automatic: Value(automatic),
       gapSeconds: Value(gapSeconds),
@@ -4233,7 +4245,7 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
       endPackVoltage: serializer.fromJson<double>(json['endPackVoltage']),
       measuredAh: serializer.fromJson<double>(json['measuredAh']),
       measuredWh: serializer.fromJson<double>(json['measuredWh']),
-      catalogueAh: serializer.fromJson<double>(json['catalogueAh']),
+      catalogueAh: serializer.fromJson<double?>(json['catalogueAh']),
       completed: serializer.fromJson<bool>(json['completed']),
       automatic: serializer.fromJson<bool>(json['automatic']),
       gapSeconds: serializer.fromJson<int>(json['gapSeconds']),
@@ -4254,7 +4266,7 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
       'endPackVoltage': serializer.toJson<double>(endPackVoltage),
       'measuredAh': serializer.toJson<double>(measuredAh),
       'measuredWh': serializer.toJson<double>(measuredWh),
-      'catalogueAh': serializer.toJson<double>(catalogueAh),
+      'catalogueAh': serializer.toJson<double?>(catalogueAh),
       'completed': serializer.toJson<bool>(completed),
       'automatic': serializer.toJson<bool>(automatic),
       'gapSeconds': serializer.toJson<int>(gapSeconds),
@@ -4273,7 +4285,7 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
     double? endPackVoltage,
     double? measuredAh,
     double? measuredWh,
-    double? catalogueAh,
+    Value<double?> catalogueAh = const Value.absent(),
     bool? completed,
     bool? automatic,
     int? gapSeconds,
@@ -4289,7 +4301,7 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
     endPackVoltage: endPackVoltage ?? this.endPackVoltage,
     measuredAh: measuredAh ?? this.measuredAh,
     measuredWh: measuredWh ?? this.measuredWh,
-    catalogueAh: catalogueAh ?? this.catalogueAh,
+    catalogueAh: catalogueAh.present ? catalogueAh.value : this.catalogueAh,
     completed: completed ?? this.completed,
     automatic: automatic ?? this.automatic,
     gapSeconds: gapSeconds ?? this.gapSeconds,
@@ -4399,7 +4411,7 @@ class CapacityTestsCompanion extends UpdateCompanion<CapacityTest> {
   final Value<double> endPackVoltage;
   final Value<double> measuredAh;
   final Value<double> measuredWh;
-  final Value<double> catalogueAh;
+  final Value<double?> catalogueAh;
   final Value<bool> completed;
   final Value<bool> automatic;
   final Value<int> gapSeconds;
@@ -4432,7 +4444,7 @@ class CapacityTestsCompanion extends UpdateCompanion<CapacityTest> {
     required double endPackVoltage,
     required double measuredAh,
     required double measuredWh,
-    required double catalogueAh,
+    this.catalogueAh = const Value.absent(),
     this.completed = const Value.absent(),
     this.automatic = const Value.absent(),
     this.gapSeconds = const Value.absent(),
@@ -4444,8 +4456,7 @@ class CapacityTestsCompanion extends UpdateCompanion<CapacityTest> {
        startPackVoltage = Value(startPackVoltage),
        endPackVoltage = Value(endPackVoltage),
        measuredAh = Value(measuredAh),
-       measuredWh = Value(measuredWh),
-       catalogueAh = Value(catalogueAh);
+       measuredWh = Value(measuredWh);
   static Insertable<CapacityTest> custom({
     Expression<int>? id,
     Expression<DateTime>? startedAt,
@@ -4492,7 +4503,7 @@ class CapacityTestsCompanion extends UpdateCompanion<CapacityTest> {
     Value<double>? endPackVoltage,
     Value<double>? measuredAh,
     Value<double>? measuredWh,
-    Value<double>? catalogueAh,
+    Value<double?>? catalogueAh,
     Value<bool>? completed,
     Value<bool>? automatic,
     Value<int>? gapSeconds,
@@ -4631,7 +4642,7 @@ typedef $$DevicesTableCreateCompanionBuilder =
       Value<String> name,
       Value<String> serialNumber,
       Value<String> model,
-      Value<double> catalogueCapacityAh,
+      Value<double?> catalogueCapacityAh,
       required DateTime firstSeenAt,
       required DateTime lastSeenAt,
       Value<bool> demo,
@@ -4643,7 +4654,7 @@ typedef $$DevicesTableUpdateCompanionBuilder =
       Value<String> name,
       Value<String> serialNumber,
       Value<String> model,
-      Value<double> catalogueCapacityAh,
+      Value<double?> catalogueCapacityAh,
       Value<DateTime> firstSeenAt,
       Value<DateTime> lastSeenAt,
       Value<bool> demo,
@@ -4824,7 +4835,7 @@ class $$DevicesTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<String> serialNumber = const Value.absent(),
                 Value<String> model = const Value.absent(),
-                Value<double> catalogueCapacityAh = const Value.absent(),
+                Value<double?> catalogueCapacityAh = const Value.absent(),
                 Value<DateTime> firstSeenAt = const Value.absent(),
                 Value<DateTime> lastSeenAt = const Value.absent(),
                 Value<bool> demo = const Value.absent(),
@@ -4846,7 +4857,7 @@ class $$DevicesTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<String> serialNumber = const Value.absent(),
                 Value<String> model = const Value.absent(),
-                Value<double> catalogueCapacityAh = const Value.absent(),
+                Value<double?> catalogueCapacityAh = const Value.absent(),
                 required DateTime firstSeenAt,
                 required DateTime lastSeenAt,
                 Value<bool> demo = const Value.absent(),
@@ -6560,7 +6571,7 @@ typedef $$CapacityTestsTableCreateCompanionBuilder =
       required double endPackVoltage,
       required double measuredAh,
       required double measuredWh,
-      required double catalogueAh,
+      Value<double?> catalogueAh,
       Value<bool> completed,
       Value<bool> automatic,
       Value<int> gapSeconds,
@@ -6578,7 +6589,7 @@ typedef $$CapacityTestsTableUpdateCompanionBuilder =
       Value<double> endPackVoltage,
       Value<double> measuredAh,
       Value<double> measuredWh,
-      Value<double> catalogueAh,
+      Value<double?> catalogueAh,
       Value<bool> completed,
       Value<bool> automatic,
       Value<int> gapSeconds,
@@ -6863,7 +6874,7 @@ class $$CapacityTestsTableTableManager
                 Value<double> endPackVoltage = const Value.absent(),
                 Value<double> measuredAh = const Value.absent(),
                 Value<double> measuredWh = const Value.absent(),
-                Value<double> catalogueAh = const Value.absent(),
+                Value<double?> catalogueAh = const Value.absent(),
                 Value<bool> completed = const Value.absent(),
                 Value<bool> automatic = const Value.absent(),
                 Value<int> gapSeconds = const Value.absent(),
@@ -6897,7 +6908,7 @@ class $$CapacityTestsTableTableManager
                 required double endPackVoltage,
                 required double measuredAh,
                 required double measuredWh,
-                required double catalogueAh,
+                Value<double?> catalogueAh = const Value.absent(),
                 Value<bool> completed = const Value.absent(),
                 Value<bool> automatic = const Value.absent(),
                 Value<int> gapSeconds = const Value.absent(),

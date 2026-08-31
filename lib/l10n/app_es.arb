@@ -754,6 +754,18 @@
   "settingsTitle": "Ajustes",
   "settingsCatalogue": "Capacidad de catálogo",
   "settingsCatalogueHint": "Lo que dice la etiqueta del pack. Es contra este número que se mide la salud, así que conviene que sea el real.",
+  "catalogueUnset": "Sin definir",
+  "catalogueUnsetHint": "Nadie ha dicho todavía con cuántos amperios-hora se vendió esta batería, y la app no se lo inventa. Hasta que lo pongas, la salud y la degradación no se pueden calcular: no hay contra qué compararlas.",
+  "catalogueSetIt": "Definir capacidad",
+  "catalogueUseBms": "Usar {ah} Ah del BMS",
+  "@catalogueUseBms": {
+    "placeholders": {
+      "ah": {
+        "type": "String"
+      }
+    }
+  },
+  "catalogueNotComparable": "sin comparar",
   "settingsCatalogueForPack": "Lo que te vendieron como {pack}. Cada batería tiene la suya, así que cambiarla aquí no toca las demás.",
   "@settingsCatalogueForPack": {
     "placeholders": {
@@ -929,5 +941,39 @@
   },
   "orphansAdopt": "Asignar a esta batería",
   "orphansDiscard": "Descartar",
-  "orphansDone": "Listo"
+  "orphansDone": "Listo",
+  "storedTitle": "Baterías guardadas",
+  "storedOpen": "Ver historial",
+  "storedNone": "Todavía no has conectado ninguna batería.",
+  "storedLastSeen": "Última lectura {when}",
+  "@storedLastSeen": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "storedNever": "sin lecturas guardadas",
+  "offlineTitle": "Resumen guardado",
+  "offlineBanner": "Sin conexión — todo esto sale de lo que ya estaba guardado, no del BMS ahora mismo.",
+  "offlineLastReading": "Última lectura",
+  "offlineStateOfCharge": "Carga entonces",
+  "offlineTrips": "Viajes",
+  "offlineTripsCount": "{count} guardados",
+  "@offlineTripsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineTotalKm": "Distancia total",
+  "offlineRange": "Autonomía aprendida",
+  "offlineRangeUnknown": "aún sin aprender",
+  "offlineNoData": "No hay lecturas guardadas de esta batería todavía. Conéctate una vez y quedará aquí.",
+  "appSettingsTitle": "Ajustes",
+  "settingsSectionApp": "Aplicación",
+  "settingsSectionPack": "Esta batería",
+  "agoPrefix": "hace",
+  "agoSuffix": ""
 }

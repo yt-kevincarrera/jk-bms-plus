@@ -73,9 +73,16 @@ class _CapacityTestCardState extends State<CapacityTestCard> {
                   ? '${_date(test.endedAt ?? test.startedAt)}  ·  '
                       '${t.capacityAutoTag}'
                   : _date(test.endedAt ?? test.startedAt),
-              '${test.measuredAh.toStringAsFixed(1)} Ah  ·  '
-              '${(test.measuredAh / test.catalogueAh * 100).toStringAsFixed(0)} %',
-              valueColor: _resultTone(test.measuredAh / test.catalogueAh),
+              // The amp-hours measured are the fact; the percentage is a
+              // comparison against a claim, so it only appears when a claim
+              // exists.
+              test.catalogueAh == null
+                  ? '${test.measuredAh.toStringAsFixed(1)} Ah'
+                  : '${test.measuredAh.toStringAsFixed(1)} Ah  ·  '
+                      '${(test.measuredAh / test.catalogueAh! * 100).toStringAsFixed(0)} %',
+              valueColor: test.catalogueAh == null
+                  ? null
+                  : _resultTone(test.measuredAh / test.catalogueAh!),
               last: test == completed.last && test.gapSeconds < 120,
             ),
             if (test.gapSeconds >= 120)

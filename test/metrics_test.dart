@@ -204,6 +204,7 @@ void main() {
       final r = PackHealthReport.from(
         // 2843.5 Ah through a 45 Ah pack is about 63 full cycles...
         snapshot: snapshot(cycles: 63, cycleCapacityAh: 2843.5, nominalAh: 45),
+        catalogueCapacityAh: null,
       );
       expect(r.equivalentFullCycles, closeTo(63.2, 0.1));
       expect(r.cycleInflation, closeTo(1.0, 0.02));
@@ -213,6 +214,7 @@ void main() {
       final r = PackHealthReport.from(
         // The BMS claims 200 cycles, but only 45 pack-fulls have gone through.
         snapshot: snapshot(cycles: 200, cycleCapacityAh: 2025, nominalAh: 45),
+        catalogueCapacityAh: null,
       );
       expect(r.equivalentFullCycles, closeTo(45, 0.1));
       expect(r.cycleInflation, closeTo(200 / 45, 0.05));
@@ -224,6 +226,7 @@ void main() {
       final r = PackHealthReport.from(
         snapshot: snapshot(cells: cells, remainingAh: 30),
         cutoffVoltagePerCell: 3.0,
+        catalogueCapacityAh: null,
       );
       expect(r.weakestCellIndex, 7);
       expect(r.imbalanceLossFraction, greaterThan(0.3));
@@ -235,17 +238,20 @@ void main() {
       resistances[6] = 0.0050;
       final r = PackHealthReport.from(
         snapshot: snapshot(resistances: resistances),
+        catalogueCapacityAh: null,
       );
       expect(r.resistanceSpreadPercent, closeTo(100, 1));
     });
 
     test('flags a health figure that never moves', () {
       final decorative = PackHealthReport.from(
+        catalogueCapacityAh: null,
         snapshot: snapshot(soh: 100, cycleCapacityAh: 2843.5),
       );
       expect(decorative.sohLooksDecorative, isTrue);
 
       final plausible = PackHealthReport.from(
+        catalogueCapacityAh: null,
         snapshot: snapshot(soh: 97, cycleCapacityAh: 2843.5),
       );
       expect(plausible.sohLooksDecorative, isFalse);
