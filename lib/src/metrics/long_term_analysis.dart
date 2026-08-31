@@ -35,9 +35,13 @@ class CapacityPoint {
 
   final DateTime at;
   final double measuredAh;
-  final double catalogueAh;
+  /// What the pack was sold as at the time, or null if it was never stated.
+  final double? catalogueAh;
 
-  double get fraction => catalogueAh <= 0 ? 0 : measuredAh / catalogueAh;
+  /// Measured against the claim, or null when there is no claim to measure
+  /// against. Zero used to stand in for that, and plotted as a pack at 0%.
+  double? get fraction =>
+      (catalogueAh ?? 0) <= 0 ? null : measuredAh / catalogueAh!;
 }
 
 /// Sag observed at a given current.

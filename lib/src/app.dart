@@ -89,10 +89,8 @@ class _JkBmsAppState extends State<JkBmsApp> {
     await _settings.load();
     _updates.token = _settings.updateToken;
     _service.applySettings(
-      catalogueAh: _settings.catalogueCapacityAh,
       haptics: _settings.hapticAlerts,
       rawFrames: _settings.recordRawFrames,
-      setByUser: _settings.catalogueSetByUser,
     );
 
     if (mounted) setState(() {});
