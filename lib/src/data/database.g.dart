@@ -4727,6 +4727,351 @@ class CapacityTestsCompanion extends UpdateCompanion<CapacityTest> {
   }
 }
 
+class $MaintenanceEventsTable extends MaintenanceEvents
+    with TableInfo<$MaintenanceEventsTable, MaintenanceEvent> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MaintenanceEventsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _atMeta = const VerificationMeta('at');
+  @override
+  late final GeneratedColumn<DateTime> at = GeneratedColumn<DateTime>(
+    'at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, deviceId, at, kind, note];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'maintenance_events';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MaintenanceEvent> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_deviceIdMeta);
+    }
+    if (data.containsKey('at')) {
+      context.handle(_atMeta, at.isAcceptableOrUnknown(data['at']!, _atMeta));
+    } else if (isInserting) {
+      context.missing(_atMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  MaintenanceEvent map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MaintenanceEvent(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      deviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_id'],
+      )!,
+      at: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}at'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      )!,
+    );
+  }
+
+  @override
+  $MaintenanceEventsTable createAlias(String alias) {
+    return $MaintenanceEventsTable(attachedDatabase, alias);
+  }
+}
+
+class MaintenanceEvent extends DataClass
+    implements Insertable<MaintenanceEvent> {
+  final int id;
+
+  /// Which pack it was done to. Not nullable: an event with no battery is a
+  /// note about nothing.
+  final String deviceId;
+
+  /// When it happened, which is the rider's answer and not necessarily when
+  /// they wrote it down.
+  final DateTime at;
+
+  /// One of [MaintenanceKind], stored by name so a reordered enum cannot
+  /// silently relabel history.
+  final String kind;
+  final String note;
+  const MaintenanceEvent({
+    required this.id,
+    required this.deviceId,
+    required this.at,
+    required this.kind,
+    required this.note,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['device_id'] = Variable<String>(deviceId);
+    map['at'] = Variable<DateTime>(at);
+    map['kind'] = Variable<String>(kind);
+    map['note'] = Variable<String>(note);
+    return map;
+  }
+
+  MaintenanceEventsCompanion toCompanion(bool nullToAbsent) {
+    return MaintenanceEventsCompanion(
+      id: Value(id),
+      deviceId: Value(deviceId),
+      at: Value(at),
+      kind: Value(kind),
+      note: Value(note),
+    );
+  }
+
+  factory MaintenanceEvent.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MaintenanceEvent(
+      id: serializer.fromJson<int>(json['id']),
+      deviceId: serializer.fromJson<String>(json['deviceId']),
+      at: serializer.fromJson<DateTime>(json['at']),
+      kind: serializer.fromJson<String>(json['kind']),
+      note: serializer.fromJson<String>(json['note']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'deviceId': serializer.toJson<String>(deviceId),
+      'at': serializer.toJson<DateTime>(at),
+      'kind': serializer.toJson<String>(kind),
+      'note': serializer.toJson<String>(note),
+    };
+  }
+
+  MaintenanceEvent copyWith({
+    int? id,
+    String? deviceId,
+    DateTime? at,
+    String? kind,
+    String? note,
+  }) => MaintenanceEvent(
+    id: id ?? this.id,
+    deviceId: deviceId ?? this.deviceId,
+    at: at ?? this.at,
+    kind: kind ?? this.kind,
+    note: note ?? this.note,
+  );
+  MaintenanceEvent copyWithCompanion(MaintenanceEventsCompanion data) {
+    return MaintenanceEvent(
+      id: data.id.present ? data.id.value : this.id,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      at: data.at.present ? data.at.value : this.at,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      note: data.note.present ? data.note.value : this.note,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MaintenanceEvent(')
+          ..write('id: $id, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('at: $at, ')
+          ..write('kind: $kind, ')
+          ..write('note: $note')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, deviceId, at, kind, note);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MaintenanceEvent &&
+          other.id == this.id &&
+          other.deviceId == this.deviceId &&
+          other.at == this.at &&
+          other.kind == this.kind &&
+          other.note == this.note);
+}
+
+class MaintenanceEventsCompanion extends UpdateCompanion<MaintenanceEvent> {
+  final Value<int> id;
+  final Value<String> deviceId;
+  final Value<DateTime> at;
+  final Value<String> kind;
+  final Value<String> note;
+  const MaintenanceEventsCompanion({
+    this.id = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.at = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.note = const Value.absent(),
+  });
+  MaintenanceEventsCompanion.insert({
+    this.id = const Value.absent(),
+    required String deviceId,
+    required DateTime at,
+    required String kind,
+    this.note = const Value.absent(),
+  }) : deviceId = Value(deviceId),
+       at = Value(at),
+       kind = Value(kind);
+  static Insertable<MaintenanceEvent> custom({
+    Expression<int>? id,
+    Expression<String>? deviceId,
+    Expression<DateTime>? at,
+    Expression<String>? kind,
+    Expression<String>? note,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (deviceId != null) 'device_id': deviceId,
+      if (at != null) 'at': at,
+      if (kind != null) 'kind': kind,
+      if (note != null) 'note': note,
+    });
+  }
+
+  MaintenanceEventsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? deviceId,
+    Value<DateTime>? at,
+    Value<String>? kind,
+    Value<String>? note,
+  }) {
+    return MaintenanceEventsCompanion(
+      id: id ?? this.id,
+      deviceId: deviceId ?? this.deviceId,
+      at: at ?? this.at,
+      kind: kind ?? this.kind,
+      note: note ?? this.note,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (at.present) {
+      map['at'] = Variable<DateTime>(at.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MaintenanceEventsCompanion(')
+          ..write('id: $id, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('at: $at, ')
+          ..write('kind: $kind, ')
+          ..write('note: $note')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4736,6 +5081,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SnapshotsTable snapshots = $SnapshotsTable(this);
   late final $RawFramesTable rawFrames = $RawFramesTable(this);
   late final $CapacityTestsTable capacityTests = $CapacityTestsTable(this);
+  late final $MaintenanceEventsTable maintenanceEvents =
+      $MaintenanceEventsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4747,6 +5094,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     snapshots,
     rawFrames,
     capacityTests,
+    maintenanceEvents,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -7122,6 +7470,213 @@ typedef $$CapacityTestsTableProcessedTableManager =
       CapacityTest,
       PrefetchHooks Function()
     >;
+typedef $$MaintenanceEventsTableCreateCompanionBuilder =
+    MaintenanceEventsCompanion Function({
+      Value<int> id,
+      required String deviceId,
+      required DateTime at,
+      required String kind,
+      Value<String> note,
+    });
+typedef $$MaintenanceEventsTableUpdateCompanionBuilder =
+    MaintenanceEventsCompanion Function({
+      Value<int> id,
+      Value<String> deviceId,
+      Value<DateTime> at,
+      Value<String> kind,
+      Value<String> note,
+    });
+
+class $$MaintenanceEventsTableFilterComposer
+    extends Composer<_$AppDatabase, $MaintenanceEventsTable> {
+  $$MaintenanceEventsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get at => $composableBuilder(
+    column: $table.at,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MaintenanceEventsTableOrderingComposer
+    extends Composer<_$AppDatabase, $MaintenanceEventsTable> {
+  $$MaintenanceEventsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get at => $composableBuilder(
+    column: $table.at,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MaintenanceEventsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MaintenanceEventsTable> {
+  $$MaintenanceEventsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get at =>
+      $composableBuilder(column: $table.at, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+}
+
+class $$MaintenanceEventsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MaintenanceEventsTable,
+          MaintenanceEvent,
+          $$MaintenanceEventsTableFilterComposer,
+          $$MaintenanceEventsTableOrderingComposer,
+          $$MaintenanceEventsTableAnnotationComposer,
+          $$MaintenanceEventsTableCreateCompanionBuilder,
+          $$MaintenanceEventsTableUpdateCompanionBuilder,
+          (
+            MaintenanceEvent,
+            BaseReferences<
+              _$AppDatabase,
+              $MaintenanceEventsTable,
+              MaintenanceEvent
+            >,
+          ),
+          MaintenanceEvent,
+          PrefetchHooks Function()
+        > {
+  $$MaintenanceEventsTableTableManager(
+    _$AppDatabase db,
+    $MaintenanceEventsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MaintenanceEventsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MaintenanceEventsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MaintenanceEventsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> deviceId = const Value.absent(),
+                Value<DateTime> at = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> note = const Value.absent(),
+              }) => MaintenanceEventsCompanion(
+                id: id,
+                deviceId: deviceId,
+                at: at,
+                kind: kind,
+                note: note,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String deviceId,
+                required DateTime at,
+                required String kind,
+                Value<String> note = const Value.absent(),
+              }) => MaintenanceEventsCompanion.insert(
+                id: id,
+                deviceId: deviceId,
+                at: at,
+                kind: kind,
+                note: note,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MaintenanceEventsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MaintenanceEventsTable,
+      MaintenanceEvent,
+      $$MaintenanceEventsTableFilterComposer,
+      $$MaintenanceEventsTableOrderingComposer,
+      $$MaintenanceEventsTableAnnotationComposer,
+      $$MaintenanceEventsTableCreateCompanionBuilder,
+      $$MaintenanceEventsTableUpdateCompanionBuilder,
+      (
+        MaintenanceEvent,
+        BaseReferences<
+          _$AppDatabase,
+          $MaintenanceEventsTable,
+          MaintenanceEvent
+        >,
+      ),
+      MaintenanceEvent,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -7138,4 +7693,6 @@ class $AppDatabaseManager {
       $$RawFramesTableTableManager(_db, _db.rawFrames);
   $$CapacityTestsTableTableManager get capacityTests =>
       $$CapacityTestsTableTableManager(_db, _db.capacityTests);
+  $$MaintenanceEventsTableTableManager get maintenanceEvents =>
+      $$MaintenanceEventsTableTableManager(_db, _db.maintenanceEvents);
 }

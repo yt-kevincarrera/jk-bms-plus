@@ -61,6 +61,30 @@ class Devices extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
+/// Something the rider did to a pack.
+///
+/// The point is the charts. A capacity that jumps, a delta that collapses or a
+/// consumption that shifts all look like noise until you can see that a cell
+/// was replaced that week. Without this the history records what the pack did
+/// and forgets everything that was done to it, which is half the story.
+class MaintenanceEvents extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// Which pack it was done to. Not nullable: an event with no battery is a
+  /// note about nothing.
+  TextColumn get deviceId => text()();
+
+  /// When it happened, which is the rider's answer and not necessarily when
+  /// they wrote it down.
+  DateTimeColumn get at => dateTime()();
+
+  /// One of [MaintenanceKind], stored by name so a reordered enum cannot
+  /// silently relabel history.
+  TextColumn get kind => text()();
+
+  TextColumn get note => text().withDefault(const Constant(''))();
+}
+
 /// One completed ride.
 class Trips extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -206,14 +230,22 @@ class CapacityTests extends Table {
 }
 
 @DriftDatabase(
-  tables: [Devices, Trips, TripPoints, Snapshots, RawFrames, CapacityTests],
+  tables: [
+    Devices,
+    Trips,
+    TripPoints,
+    Snapshots,
+    RawFrames,
+    CapacityTests,
+    MaintenanceEvents,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_open());
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -264,10 +296,35 @@ class AppDatabase extends _$AppDatabase {
           if (from < 7) {
             await m.addColumn(snapshots, snapshots.cycleCapacityAh);
           }
+          if (from < 8) {
+            await m.createTable(maintenanceEvents);
+          }
         },
       );
 
+  // --- Maintenance ---
+
+  Future<int> insertMaintenance(MaintenanceEventsCompanion e) =>
+      into(maintenanceEvents).insert(e);
+
+  Future<void> deleteMaintenance(int id) =>
+      (delete(maintenanceEvents)..where((e) => e.id.equals(id))).go();
+
+  Future<void> updateMaintenance(int id, MaintenanceEventsCompanion values) =>
+      (update(maintenanceEvents)..where((e) => e.id.equals(id))).write(values);
+
+  /// Newest first, for one pack.
+  Future<List<MaintenanceEvent>> maintenanceFor(String deviceId) =>
+      (select(maintenanceEvents)
+            ..where((e) => e.deviceId.equals(deviceId))
+            ..orderBy([(e) => OrderingTerm.desc(e.at)]))
+          .get();
+
+  Future<List<MaintenanceEvent>> allMaintenanceForBackup() =>
+      select(maintenanceEvents).get();
+
   // --- Backup ---
+
   //
   // Unscoped on purpose, unlike every other read here: a backup is the whole
   // database, not one battery's history.
@@ -287,6 +344,7 @@ class AppDatabase extends _$AppDatabase {
     await delete(snapshots).go();
     await delete(rawFrames).go();
     await delete(capacityTests).go();
+    await delete(maintenanceEvents).go();
     await delete(devices).go();
   }
 
@@ -320,6 +378,7 @@ class AppDatabase extends _$AppDatabase {
     await (delete(snapshots)..where((s) => s.deviceId.equals(id))).go();
     await (delete(rawFrames)..where((f) => f.deviceId.equals(id))).go();
     await (delete(capacityTests)..where((t) => t.deviceId.equals(id))).go();
+    await (delete(maintenanceEvents)..where((e) => e.deviceId.equals(id))).go();
     await (delete(devices)..where((d) => d.id.equals(id))).go();
   }
 

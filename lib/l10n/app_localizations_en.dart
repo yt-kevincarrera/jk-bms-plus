@@ -2032,4 +2032,55 @@ class AppL10nEn extends AppL10n {
   String widgetDays(String n) {
     return '$n d ago';
   }
+
+  @override
+  String get maintTitle => 'Maintenance';
+
+  @override
+  String get maintIntro =>
+      'What you have done to the pack, with dates. The history records what the battery did and forgets what was done to it, which is the other half. A capacity that jumps or a delta that collapses looks like noise until you can see a cell was replaced that week.';
+
+  @override
+  String get maintNone => 'Nothing noted yet.';
+
+  @override
+  String get maintAdd => 'Note something';
+
+  @override
+  String get maintDate => 'Date';
+
+  @override
+  String get maintKind => 'What you did';
+
+  @override
+  String get maintNote => 'Detail (optional)';
+
+  @override
+  String get maintSave => 'Save';
+
+  @override
+  String get maintDelete => 'Delete';
+
+  @override
+  String get maintKindCellReplaced => 'Replaced a cell';
+
+  @override
+  String get maintKindManualBalance => 'Balanced by hand';
+
+  @override
+  String get maintKindConnections => 'Cleaned or tightened connections';
+
+  @override
+  String get maintKindCharger => 'Changed charger';
+
+  @override
+  String get maintKindBmsSettings => 'Changed BMS settings';
+
+  @override
+  String get maintKindOther => 'Something else';
+
+  @override
+  String maintSince(String date) {
+    return 'History since the cell was replaced: $date';
+  }
 }
