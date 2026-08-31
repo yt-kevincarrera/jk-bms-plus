@@ -127,6 +127,15 @@ class Snapshots extends Table {
   RealColumn get soh => real()();
   RealColumn get remainingAh => real()();
   RealColumn get cycleCount => real()();
+
+  /// Total charge that has ever passed through the pack, in amp-hours.
+  ///
+  /// Stored because without it the honest cycle count cannot be worked out
+  /// from history: throughput divided by capacity is the real figure, and the
+  /// BMS's own counter increments on partial charges so it always reads
+  /// higher. Missing this column meant the offline summary could only repeat
+  /// the inflated number it exists to correct.
+  RealColumn get cycleCapacityAh => real().withDefault(const Constant(0))();
   RealColumn get deltaVolts => real()();
   RealColumn get minCellVoltage => real()();
   RealColumn get maxCellVoltage => real()();
@@ -204,7 +213,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -252,8 +261,34 @@ class AppDatabase extends _$AppDatabase {
           if (from == 5) {
             await m.addColumn(devices, devices.catalogueFromBms);
           }
+          if (from < 7) {
+            await m.addColumn(snapshots, snapshots.cycleCapacityAh);
+          }
         },
       );
+
+  // --- Backup ---
+  //
+  // Unscoped on purpose, unlike every other read here: a backup is the whole
+  // database, not one battery's history.
+
+  Future<List<Trip>> allTripsForBackup() => select(trips).get();
+  Future<List<TripPoint>> allTripPointsForBackup() => select(tripPoints).get();
+  Future<List<Snapshot>> allSnapshotsForBackup() => select(snapshots).get();
+  Future<List<RawFrame>> allRawFramesForBackup() => select(rawFrames).get();
+  Future<List<CapacityTest>> allCapacityTestsForBackup() =>
+      select(capacityTests).get();
+
+  /// Empties every table, for a restore that is meant to replace rather than
+  /// merge. Order matters only for the tracks, which reference their ride.
+  Future<void> wipeEverything() async {
+    await delete(tripPoints).go();
+    await delete(trips).go();
+    await delete(snapshots).go();
+    await delete(rawFrames).go();
+    await delete(capacityTests).go();
+    await delete(devices).go();
+  }
 
   // --- Devices ---
 

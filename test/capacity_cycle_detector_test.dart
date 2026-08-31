@@ -21,6 +21,7 @@ Snapshot reading(
       soh: 97,
       remainingAh: 45 * soc / 100,
       cycleCount: 60,
+      cycleCapacityAh: 0,
       deltaVolts: 0.01,
       minCellVoltage: cellVolts - 0.005,
       maxCellVoltage: cellVolts,

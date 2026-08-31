@@ -3444,6 +3444,90 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Ahora no'**
   String get updateBannerDismiss;
+
+  /// No description provided for @thermalProbeAbsent.
+  ///
+  /// In es, this message translates to:
+  /// **'sin conectar'**
+  String get thermalProbeAbsent;
+
+  /// No description provided for @thermalAbsentNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Las sondas sin conectar reportan valores imposibles, del orden de -200 °C. No son frío: no hay nada cableado a esa entrada. Se muestran aparte para que no ensucien ni el máximo ni los avisos.'**
+  String get thermalAbsentNote;
+
+  /// No description provided for @backupTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Copia de seguridad'**
+  String get backupTitle;
+
+  /// No description provided for @backupIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Toda la base de datos en un archivo, y de vuelta. Las exportaciones a CSV y GPX son para leer los datos en otro sitio; esto es para no perderlos. Si cambias de teléfono o lo pierdes, es lo único que trae de vuelta meses de lecturas, los viajes con su recorrido y los frames crudos.'**
+  String get backupIntro;
+
+  /// No description provided for @backupExport.
+  ///
+  /// In es, this message translates to:
+  /// **'Crear copia'**
+  String get backupExport;
+
+  /// No description provided for @backupExportLight.
+  ///
+  /// In es, this message translates to:
+  /// **'Crear copia sin frames crudos'**
+  String get backupExportLight;
+
+  /// No description provided for @backupImport.
+  ///
+  /// In es, this message translates to:
+  /// **'Restaurar desde un archivo'**
+  String get backupImport;
+
+  /// No description provided for @backupImportMerge.
+  ///
+  /// In es, this message translates to:
+  /// **'Añadir a lo que ya hay'**
+  String get backupImportMerge;
+
+  /// No description provided for @backupImportReplace.
+  ///
+  /// In es, this message translates to:
+  /// **'Reemplazar todo'**
+  String get backupImportReplace;
+
+  /// No description provided for @backupImportChoose.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Qué hacer con lo que ya está guardado?'**
+  String get backupImportChoose;
+
+  /// No description provided for @backupReplaceWarning.
+  ///
+  /// In es, this message translates to:
+  /// **'Reemplazar borra todo lo que hay ahora en el teléfono antes de restaurar. No se puede deshacer.'**
+  String get backupReplaceWarning;
+
+  /// No description provided for @backupDone.
+  ///
+  /// In es, this message translates to:
+  /// **'Restaurado: {trips} viajes, {readings} lecturas, {packs} baterías.'**
+  String backupDone(String trips, String readings, String packs);
+
+  /// No description provided for @backupFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo restaurar: {reason}'**
+  String backupFailed(String reason);
+
+  /// No description provided for @backupWorking.
+  ///
+  /// In es, this message translates to:
+  /// **'Trabajando...'**
+  String get backupWorking;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

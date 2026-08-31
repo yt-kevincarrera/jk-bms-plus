@@ -72,7 +72,44 @@ class BmsSnapshot {
   /// Celsius, one entry per probe slot the frame carries for this variant, in
   /// sensor order (index 0 = "Temperature Sensor 1"). Slots the BMS flags as
   /// absent are still included; use [isTemperatureSensorPresent] to filter.
+  /// Every temperature the frame carried, including probes that are not
+  /// connected. Filter with [connectedTemperatures] before showing them.
   final List<double> temperatures;
+
+  /// The range a probe on a battery can physically be in.
+  ///
+  /// An unconnected JK probe reads far outside it: real packs report values
+  /// like -200 C, which is not cold, it is nothing wired to that input. The
+  /// bounds are deliberately generous, so a genuinely frozen or genuinely
+  /// overheating pack still reads rather than being hidden as a fault.
+  static const double minPlausibleTemp = -40;
+  static const double maxPlausibleTemp = 150;
+
+  static bool isPlausibleTemperature(double c) =>
+      c >= minPlausibleTemp && c <= maxPlausibleTemp;
+
+  /// The probes that are actually wired up, with their position kept.
+  ///
+  /// Position matters: probe 3 reading nothing must not make probe 4 look like
+  /// probe 3. The index is the sensor number the BMS reported it at.
+  List<({int index, double celsius})> get connectedTemperatures => [
+        for (var i = 0; i < temperatures.length; i++)
+          if (isPlausibleTemperature(temperatures[i]))
+            (index: i, celsius: temperatures[i]),
+      ];
+
+  /// Just the readings from probes that exist, for anything computing a
+  /// maximum, a minimum or an alert. Using the raw list would let a -200 C
+  /// non-reading trip a cold-battery warning.
+  List<double> get plausibleTemperatures =>
+      [for (final c in temperatures) if (isPlausibleTemperature(c)) c];
+
+  /// Probes the frame carried that are not wired to anything.
+
+  List<int> get absentTemperatureProbes => [
+        for (var i = 0; i < temperatures.length; i++)
+          if (!isPlausibleTemperature(temperatures[i])) i,
+      ];
 
   /// Raw bitmask at byte 182+offset.
   ///

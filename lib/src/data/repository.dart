@@ -53,7 +53,7 @@ class BmsRepository {
     final device = activeDeviceId;
     if (device == null) return;
     final temps = <double>[
-      ...s.temperatures,
+      ...s.plausibleTemperatures,
       if (s.mosfetTemp != null) s.mosfetTemp!,
     ];
     _pendingSnapshots.add(
@@ -67,6 +67,7 @@ class BmsRepository {
         soh: s.soh,
         remainingAh: s.remainingCapacityAh,
         cycleCount: s.cycleCount.toDouble(),
+        cycleCapacityAh: Value(s.cycleCapacityAh),
         deltaVolts: s.deltaCellVoltage,
         minCellVoltage: s.minCellVoltage,
         maxCellVoltage: s.maxCellVoltage,

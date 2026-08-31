@@ -170,7 +170,7 @@ class ChargeSessionRecorder {
     _peakCurrent = math.max(_peakCurrent, s.current);
 
     final temps = <double>[
-      ...s.temperatures,
+      ...s.plausibleTemperatures,
       if (s.mosfetTemp != null) s.mosfetTemp!,
     ];
     if (temps.isNotEmpty) {

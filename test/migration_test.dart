@@ -161,7 +161,7 @@ void main() {
     test('the migration runs and the schema lands on the current version', () async {
       // Any query forces drift to open the database and run the upgrade.
       await db.allDevices();
-      expect(raw.userVersion, 6);
+      expect(raw.userVersion, 7);
     });
 
     test('nothing that was stored is lost', () async {

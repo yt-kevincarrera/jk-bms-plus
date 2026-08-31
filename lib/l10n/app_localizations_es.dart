@@ -1894,4 +1894,53 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get updateBannerDismiss => 'Ahora no';
+
+  @override
+  String get thermalProbeAbsent => 'sin conectar';
+
+  @override
+  String get thermalAbsentNote =>
+      'Las sondas sin conectar reportan valores imposibles, del orden de -200 °C. No son frío: no hay nada cableado a esa entrada. Se muestran aparte para que no ensucien ni el máximo ni los avisos.';
+
+  @override
+  String get backupTitle => 'Copia de seguridad';
+
+  @override
+  String get backupIntro =>
+      'Toda la base de datos en un archivo, y de vuelta. Las exportaciones a CSV y GPX son para leer los datos en otro sitio; esto es para no perderlos. Si cambias de teléfono o lo pierdes, es lo único que trae de vuelta meses de lecturas, los viajes con su recorrido y los frames crudos.';
+
+  @override
+  String get backupExport => 'Crear copia';
+
+  @override
+  String get backupExportLight => 'Crear copia sin frames crudos';
+
+  @override
+  String get backupImport => 'Restaurar desde un archivo';
+
+  @override
+  String get backupImportMerge => 'Añadir a lo que ya hay';
+
+  @override
+  String get backupImportReplace => 'Reemplazar todo';
+
+  @override
+  String get backupImportChoose => '¿Qué hacer con lo que ya está guardado?';
+
+  @override
+  String get backupReplaceWarning =>
+      'Reemplazar borra todo lo que hay ahora en el teléfono antes de restaurar. No se puede deshacer.';
+
+  @override
+  String backupDone(String trips, String readings, String packs) {
+    return 'Restaurado: $trips viajes, $readings lecturas, $packs baterías.';
+  }
+
+  @override
+  String backupFailed(String reason) {
+    return 'No se pudo restaurar: $reason';
+  }
+
+  @override
+  String get backupWorking => 'Trabajando...';
 }
