@@ -36,7 +36,7 @@ CapacityTestsCompanion measurement(String? deviceId, DateTime at, double ah) =>
       endPackVoltage: 60,
       measuredAh: ah,
       measuredWh: ah * 72,
-      catalogueAh: 45,
+      catalogueAh: const Value(45),
       completed: const Value(true),
     );
 
@@ -93,16 +93,39 @@ void main() {
       expect(second.single.measuredAh, 27);
     });
 
+    test('a new pack has no catalogue capacity at all', () async {
+      // The bug this pins: every pack used to be born holding 45 Ah, so
+      // connecting to a 35 Ah bike produced health measured against a figure
+      // the app made up, indistinguishable on screen from one the rider had
+      // entered. Unknown has to stay unknown until somebody says otherwise.
+      await addPack('AA:BB');
+      expect((await db.device('AA:BB'))!.catalogueCapacityAh, isNull);
+    });
+
     test('each pack carries its own catalogue capacity', () async {
       await addPack('AA:BB');
       await addPack('CC:DD');
       await db.updateDevice(
+        'AA:BB',
+        const DevicesCompanion(catalogueCapacityAh: Value(45)),
+      );
+      await db.updateDevice(
         'CC:DD',
-        const DevicesCompanion(catalogueCapacityAh: Value(30)),
+        const DevicesCompanion(catalogueCapacityAh: Value(35)),
       );
 
       expect((await db.device('AA:BB'))!.catalogueCapacityAh, 45);
-      expect((await db.device('CC:DD'))!.catalogueCapacityAh, 30);
+      expect((await db.device('CC:DD'))!.catalogueCapacityAh, 35);
+    });
+
+    test('a measurement can be recorded with no claim to compare it to', () {
+      // The amp-hours that came out are a fact; the percentage is an opinion
+      // about a claim. Refusing to record the fact for want of the opinion
+      // would throw away the only honest number in the app.
+      expect(
+        () => measurement('AA:BB', DateTime.utc(2026, 3), 41),
+        returnsNormally,
+      );
     });
 
     test('the demo pack is a pack like any other', () async {

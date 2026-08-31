@@ -53,11 +53,15 @@ class HealthTab extends StatelessWidget {
 
     // Prefer the health that can actually be measured over the one the BMS
     // asserts. A firmware reporting a fixed 100% forever is telling you nothing.
-    final measured =
-        report.impliedCapacityAh != null && service.catalogueCapacityAh > 0
-            ? (report.impliedCapacityAh! / service.catalogueCapacityAh * 100)
-                .clamp(0.0, 120.0)
-            : null;
+    // Only when there is a stated capacity to measure against. With none, the
+    // app falls back to what the BMS claims rather than to a percentage of an
+    // invented figure.
+    final catalogue = service.catalogueCapacityAh;
+    final measured = report.impliedCapacityAh != null &&
+            catalogue != null &&
+            catalogue > 0
+        ? (report.impliedCapacityAh! / catalogue * 100).clamp(0.0, 120.0)
+        : null;
     final healthPercent = measured ?? s.soh;
     final tone = _healthTone(healthPercent);
 
@@ -103,8 +107,9 @@ class HealthTab extends StatelessWidget {
                           report.impliedCapacityAh?.toStringAsFixed(1) ?? '--',
                       unit: 'Ah',
                       size: 30,
-                      footnote:
-                          '/ ${service.catalogueCapacityAh.toStringAsFixed(0)} Ah',
+                      footnote: catalogue == null
+                          ? t.catalogueNotComparable
+                          : '/ ${catalogue.toStringAsFixed(0)} Ah',
                     ),
                   ],
                 ),

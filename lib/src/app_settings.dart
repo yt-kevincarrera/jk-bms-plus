@@ -7,22 +7,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Kept out of the code because the moment someone else's pack is involved,
 /// a constant compiled into the binary becomes a lie about their battery.
 class AppSettings extends ChangeNotifier {
-  static const _catalogueKey = 'catalogue_capacity_ah';
   static const _hapticKey = 'haptic_alerts';
   static const _rawFramesKey = 'record_raw_frames';
-  static const _catalogueByUserKey = 'catalogue_set_by_user';
   static const _updateTokenKey = 'github_update_token';
 
-  /// What the pack was sold as. The comparison every health figure leans on.
-  double catalogueCapacityAh = 45;
-
-  /// Whether the rider has stated what the pack was sold as.
-  ///
-  /// The catalogue capacity is outside information: it is the seller's claim,
-  /// and nothing in the BMS records it. What the BMS is configured for is a
-  /// different number with a different meaning, and is shown separately
-  /// rather than substituted in here.
-  bool catalogueSetByUser = false;
 
 
   /// A GitHub token, only for checking and fetching updates.
@@ -46,25 +34,13 @@ class AppSettings extends ChangeNotifier {
   Future<void> load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      catalogueCapacityAh = prefs.getDouble(_catalogueKey) ?? 45;
       hapticAlerts = prefs.getBool(_hapticKey) ?? true;
       recordRawFrames = prefs.getBool(_rawFramesKey) ?? true;
-      catalogueSetByUser = prefs.getBool(_catalogueByUserKey) ?? false;
       updateToken = prefs.getString(_updateTokenKey) ?? '';
       notifyListeners();
     } on Exception catch (_) {
       // Defaults are usable; a broken preference store is not worth failing on.
     }
-  }
-
-  /// The rider setting the figure by hand. Sticks.
-  Future<void> setCatalogueCapacity(double ah) async {
-    if (ah <= 0 || ah > 2000) return;
-    catalogueCapacityAh = ah;
-    catalogueSetByUser = true;
-    notifyListeners();
-    await _writeDouble(_catalogueKey, ah);
-    await _writeBool(_catalogueByUserKey, true);
   }
 
 
@@ -90,15 +66,6 @@ class AppSettings extends ChangeNotifier {
     recordRawFrames = value;
     notifyListeners();
     await _writeBool(_rawFramesKey, value);
-  }
-
-  Future<void> _writeDouble(String key, double value) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setDouble(key, value);
-    } on Exception catch (_) {
-      // Applies to this session even if it does not survive a restart.
-    }
   }
 
   Future<void> _writeBool(String key, bool value) async {

@@ -32,7 +32,7 @@ class PackHealthReport {
   factory PackHealthReport.from({
     required BmsSnapshot snapshot,
     JkSettings? settings,
-    double catalogueCapacityAh = 45.0,
+    required double? catalogueCapacityAh,
     double cutoffVoltagePerCell = 3.0,
   }) {
     final configured = settings?.nominalCapacityAh ?? snapshot.nominalCapacityAh;
@@ -46,7 +46,9 @@ class PackHealthReport {
         ? snapshot.remainingCapacityAh / socFraction
         : null;
 
-    final loss = (implied != null && catalogueCapacityAh > 0)
+    final loss = (implied != null &&
+            catalogueCapacityAh != null &&
+            catalogueCapacityAh > 0)
         ? (1 - implied / catalogueCapacityAh).clamp(-1.0, 1.0)
         : null;
 
@@ -107,7 +109,10 @@ class PackHealthReport {
   final double configuredCapacityAh;
 
   /// What the pack was sold as.
-  final double catalogueCapacityAh;
+  /// What the pack was sold as, or null when nobody has said. Null is not a
+  /// missing input to work around: it is the answer to a question only the
+  /// rider can answer, and every figure derived from it stays null too.
+  final double? catalogueCapacityAh;
 
   /// Fraction lost against the catalogue figure. Negative means it measures
   /// *better* than advertised, which does happen with conservative ratings.

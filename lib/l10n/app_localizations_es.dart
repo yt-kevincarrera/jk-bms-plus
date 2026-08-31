@@ -1437,6 +1437,24 @@ class AppL10nEs extends AppL10n {
       'Lo que dice la etiqueta del pack. Es contra este número que se mide la salud, así que conviene que sea el real.';
 
   @override
+  String get catalogueUnset => 'Sin definir';
+
+  @override
+  String get catalogueUnsetHint =>
+      'Nadie ha dicho todavía con cuántos amperios-hora se vendió esta batería, y la app no se lo inventa. Hasta que lo pongas, la salud y la degradación no se pueden calcular: no hay contra qué compararlas.';
+
+  @override
+  String get catalogueSetIt => 'Definir capacidad';
+
+  @override
+  String catalogueUseBms(String ah) {
+    return 'Usar $ah Ah del BMS';
+  }
+
+  @override
+  String get catalogueNotComparable => 'sin comparar';
+
+  @override
   String settingsCatalogueForPack(String pack) {
     return 'Lo que te vendieron como $pack. Cada batería tiene la suya, así que cambiarla aquí no toca las demás.';
   }
@@ -1727,4 +1745,70 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get orphansDone => 'Listo';
+
+  @override
+  String get storedTitle => 'Baterías guardadas';
+
+  @override
+  String get storedOpen => 'Ver historial';
+
+  @override
+  String get storedNone => 'Todavía no has conectado ninguna batería.';
+
+  @override
+  String storedLastSeen(String when) {
+    return 'Última lectura $when';
+  }
+
+  @override
+  String get storedNever => 'sin lecturas guardadas';
+
+  @override
+  String get offlineTitle => 'Resumen guardado';
+
+  @override
+  String get offlineBanner =>
+      'Sin conexión — todo esto sale de lo que ya estaba guardado, no del BMS ahora mismo.';
+
+  @override
+  String get offlineLastReading => 'Última lectura';
+
+  @override
+  String get offlineStateOfCharge => 'Carga entonces';
+
+  @override
+  String get offlineTrips => 'Viajes';
+
+  @override
+  String offlineTripsCount(String count) {
+    return '$count guardados';
+  }
+
+  @override
+  String get offlineTotalKm => 'Distancia total';
+
+  @override
+  String get offlineRange => 'Autonomía aprendida';
+
+  @override
+  String get offlineRangeUnknown => 'aún sin aprender';
+
+  @override
+  String get offlineNoData =>
+      'No hay lecturas guardadas de esta batería todavía. Conéctate una vez y quedará aquí.';
+
+  @override
+  String get appSettingsTitle => 'Ajustes';
+
+  @override
+  String get settingsSectionApp => 'Aplicación';
+
+  @override
+  String get settingsSectionPack => 'Esta batería';
+
+  @override
+  String get agoPrefix => 'hace';
+
+  @override
+  String get agoSuffix => '';
 }

@@ -2641,6 +2641,36 @@ abstract class AppL10n {
   /// **'Lo que dice la etiqueta del pack. Es contra este número que se mide la salud, así que conviene que sea el real.'**
   String get settingsCatalogueHint;
 
+  /// No description provided for @catalogueUnset.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin definir'**
+  String get catalogueUnset;
+
+  /// No description provided for @catalogueUnsetHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Nadie ha dicho todavía con cuántos amperios-hora se vendió esta batería, y la app no se lo inventa. Hasta que lo pongas, la salud y la degradación no se pueden calcular: no hay contra qué compararlas.'**
+  String get catalogueUnsetHint;
+
+  /// No description provided for @catalogueSetIt.
+  ///
+  /// In es, this message translates to:
+  /// **'Definir capacidad'**
+  String get catalogueSetIt;
+
+  /// No description provided for @catalogueUseBms.
+  ///
+  /// In es, this message translates to:
+  /// **'Usar {ah} Ah del BMS'**
+  String catalogueUseBms(String ah);
+
+  /// No description provided for @catalogueNotComparable.
+  ///
+  /// In es, this message translates to:
+  /// **'sin comparar'**
+  String get catalogueNotComparable;
+
   /// No description provided for @settingsCatalogueForPack.
   ///
   /// In es, this message translates to:
@@ -3156,6 +3186,126 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Listo'**
   String get orphansDone;
+
+  /// No description provided for @storedTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Baterías guardadas'**
+  String get storedTitle;
+
+  /// No description provided for @storedOpen.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver historial'**
+  String get storedOpen;
+
+  /// No description provided for @storedNone.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía no has conectado ninguna batería.'**
+  String get storedNone;
+
+  /// No description provided for @storedLastSeen.
+  ///
+  /// In es, this message translates to:
+  /// **'Última lectura {when}'**
+  String storedLastSeen(String when);
+
+  /// No description provided for @storedNever.
+  ///
+  /// In es, this message translates to:
+  /// **'sin lecturas guardadas'**
+  String get storedNever;
+
+  /// No description provided for @offlineTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Resumen guardado'**
+  String get offlineTitle;
+
+  /// No description provided for @offlineBanner.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin conexión — todo esto sale de lo que ya estaba guardado, no del BMS ahora mismo.'**
+  String get offlineBanner;
+
+  /// No description provided for @offlineLastReading.
+  ///
+  /// In es, this message translates to:
+  /// **'Última lectura'**
+  String get offlineLastReading;
+
+  /// No description provided for @offlineStateOfCharge.
+  ///
+  /// In es, this message translates to:
+  /// **'Carga entonces'**
+  String get offlineStateOfCharge;
+
+  /// No description provided for @offlineTrips.
+  ///
+  /// In es, this message translates to:
+  /// **'Viajes'**
+  String get offlineTrips;
+
+  /// No description provided for @offlineTripsCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} guardados'**
+  String offlineTripsCount(String count);
+
+  /// No description provided for @offlineTotalKm.
+  ///
+  /// In es, this message translates to:
+  /// **'Distancia total'**
+  String get offlineTotalKm;
+
+  /// No description provided for @offlineRange.
+  ///
+  /// In es, this message translates to:
+  /// **'Autonomía aprendida'**
+  String get offlineRange;
+
+  /// No description provided for @offlineRangeUnknown.
+  ///
+  /// In es, this message translates to:
+  /// **'aún sin aprender'**
+  String get offlineRangeUnknown;
+
+  /// No description provided for @offlineNoData.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay lecturas guardadas de esta batería todavía. Conéctate una vez y quedará aquí.'**
+  String get offlineNoData;
+
+  /// No description provided for @appSettingsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Ajustes'**
+  String get appSettingsTitle;
+
+  /// No description provided for @settingsSectionApp.
+  ///
+  /// In es, this message translates to:
+  /// **'Aplicación'**
+  String get settingsSectionApp;
+
+  /// No description provided for @settingsSectionPack.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta batería'**
+  String get settingsSectionPack;
+
+  /// No description provided for @agoPrefix.
+  ///
+  /// In es, this message translates to:
+  /// **'hace'**
+  String get agoPrefix;
+
+  /// No description provided for @agoSuffix.
+  ///
+  /// In es, this message translates to:
+  /// **''**
+  String get agoSuffix;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

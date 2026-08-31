@@ -72,7 +72,7 @@ class CapacityTestRunner {
   double _endSoc = 0;
   double _startPackVoltage = 0;
   double _endPackVoltage = 0;
-  double _catalogueAh = 0;
+  double? _catalogueAh;
 
   /// Amp-hours drawn out so far.
   double get measuredAh => _ah;
@@ -81,7 +81,7 @@ class CapacityTestRunner {
   double get endSoc => _endSoc;
   double get startPackVoltage => _startPackVoltage;
   double get endPackVoltage => _endPackVoltage;
-  double get catalogueAh => _catalogueAh;
+  double? get catalogueAh => _catalogueAh;
   DateTime? get startedAt => _startedAt;
 
   /// How far through, as a fraction, using charge as the yardstick. Rough, but
@@ -94,7 +94,7 @@ class CapacityTestRunner {
 
   /// The result against what the pack was sold as, once there is enough to say.
   double? get fractionOfCatalogue =>
-      _catalogueAh > 0 && _ah > 0 ? _ah / _catalogueAh : null;
+      (_catalogueAh ?? 0) > 0 && _ah > 0 ? _ah / _catalogueAh! : null;
 
   /// Whether a run could start right now.
   CapacityTestBlock? blockedBy(BmsSnapshot? snapshot) {
@@ -110,7 +110,7 @@ class CapacityTestRunner {
   /// Begins a run against a pack that is already full.
   void begin({
     required BmsSnapshot snapshot,
-    required double catalogueAh,
+    required double? catalogueAh,
     required int rowId,
   }) {
     _reset();
@@ -132,7 +132,7 @@ class CapacityTestRunner {
     required double wh,
     required double startSoc,
     required double startPackVoltage,
-    required double catalogueAh,
+    required double? catalogueAh,
   }) {
     _reset();
     _rowId = rowId;

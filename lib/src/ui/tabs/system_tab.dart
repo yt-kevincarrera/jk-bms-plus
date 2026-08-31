@@ -24,8 +24,6 @@ import '../live_console_screen.dart';
 import '../locale_controller.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
-import '../widgets/packs_card.dart';
-import '../widgets/update_card.dart';
 import '../../update/update_service.dart';
 
 /// Device identity, BMS settings, link quality, language, and the variant
@@ -180,9 +178,7 @@ class _SystemTabState extends State<SystemTab> {
         if (_settings != null) _bmsSettingsSection(t, _settings!),
         if (service.repository != null)
           StorageSection(repository: service.repository!, t: t),
-        PacksCard(service: widget.service),
         _settingsSection(t),
-        UpdateCard(service: widget.updateService, settings: widget.settings),
         _proximitySection(t),
         _exportSection(t),
         _languageSection(t),
@@ -348,29 +344,64 @@ class _SystemTabState extends State<SystemTab> {
   }
 
 
+
+  /// Stores what this pack was sold as.
+  ///
+  /// Always against a specific pack. There is no app-wide version of this
+  /// figure any more: one number shared by two batteries has to be wrong about
+  /// at least one of them.
+  Future<void> _setCatalogue(String deviceId, double ah) async {
+    await widget.service.repository?.setDeviceCatalogue(deviceId, ah);
+    await widget.service.refreshActiveDevice();
+    widget.service.catalogueSetByUser = true;
+    if (mounted) setState(() {});
+  }
   Widget _settingsSection(AppL10n t) {
-    final settings = widget.settings;
     final configured = widget.service.configuredCapacityAh;
-    // The figure shown and edited is the connected pack's own, falling back to
-    // the app-wide default only when nothing is connected. A rider with two
-    // batteries editing one global number would be silently wrong about one of
-    // them.
+    // The connected pack's own figure, or null when nobody has stated it.
+    // There is deliberately no fallback: an unstated capacity that quietly
+    // became 45 Ah is what made a 35 Ah battery report health against a number
+    // this app invented.
     final catalogue = widget.service.catalogueCapacityAh;
     final device = widget.service.activeDevice;
     // Half an amp-hour apart is rounding; more than that is two different
     // claims about the same pack.
-    final mismatch =
-        configured != null && (configured - catalogue).abs() > 0.5;
+    final mismatch = configured != null &&
+        catalogue != null &&
+        (configured - catalogue).abs() > 0.5;
+
+    // Where the slider starts when there is nothing stated yet. A starting
+    // position, not a stored value: nothing is written until it is moved.
+    final sliderValue = catalogue ?? configured ?? 45.0;
+
     return Section(
-      title: t.settingsTitle,
+      title: t.settingsSectionPack,
       children: [
         InfoRow(
           t.settingsCatalogue,
-          '${catalogue.toStringAsFixed(1)} Ah',
+          catalogue == null
+              ? t.catalogueUnset
+              : '${catalogue.toStringAsFixed(1)} Ah',
+          dim: catalogue == null,
+          valueColor: catalogue == null ? AppTheme.watch : null,
           hint: device == null
               ? t.settingsCatalogueHint
-              : t.settingsCatalogueForPack(device.name.isEmpty ? device.id : device.name),
+              : t.settingsCatalogueForPack(
+                  device.name.isEmpty ? device.id : device.name,
+                ),
         ),
+        if (catalogue == null)
+          Padding(
+            padding: const EdgeInsets.only(top: 2, bottom: 6),
+            child: Text(
+              t.catalogueUnsetHint,
+              style: const TextStyle(
+                fontSize: 11.5,
+                height: 1.45,
+                color: AppTheme.watch,
+              ),
+            ),
+          ),
         // What the BMS is set to is a different claim by a different person,
         // so it sits next to the catalogue figure instead of replacing it.
         if (configured != null)
@@ -394,71 +425,36 @@ class _SystemTabState extends State<SystemTab> {
               ),
             ),
           ),
+        // A one-tap way to adopt the BMS's own configured figure, offered only
+        // while nothing has been stated. It is a better starting point than a
+        // guess, and still the rider's decision rather than the app's.
+        if (catalogue == null && configured != null && device != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 6, bottom: 2),
+            child: OutlinedButton(
+              onPressed: () => _setCatalogue(device.id, configured),
+              child: Text(t.catalogueUseBms(configured.toStringAsFixed(0))),
+            ),
+          ),
         Padding(
           padding: const EdgeInsets.only(top: 4, bottom: 12),
           child: Row(
             children: [
               Expanded(
                 child: Slider(
-                  value: catalogue.clamp(5, 200),
+                  value: sliderValue.clamp(5, 200),
                   min: 5,
                   max: 200,
                   divisions: 195,
-                  label: catalogue.toStringAsFixed(0),
-                  onChanged: (v) async {
-                    final ah = v.roundToDouble();
-                    if (device == null) {
-                      // Nothing connected: this is the default a new pack
-                      // starts from, not a figure about any battery.
-                      await settings.setCatalogueCapacity(ah);
-                      widget.service.fallbackCatalogueAh = ah;
-                    } else {
-                      await widget.service.repository
-                          ?.setDeviceCatalogue(device.id, ah);
-                      await widget.service.refreshActiveDevice();
-                    }
-                    widget.service.catalogueSetByUser = true;
-                    if (mounted) setState(() {});
-                  },
+                  label: sliderValue.toStringAsFixed(0),
+                  // Disabled with no pack connected: this figure describes a
+                  // specific battery, and there is nowhere to put it otherwise.
+                  onChanged: device == null
+                      ? null
+                      : (v) => _setCatalogue(device.id, v.roundToDouble()),
                 ),
               ),
             ],
-          ),
-        ),
-        SwitchListTile(
-          value: settings.hapticAlerts,
-          onChanged: (v) async {
-            await settings.setHapticAlerts(v);
-            widget.service.hapticAlerts = v;
-            if (mounted) setState(() {});
-          },
-          dense: true,
-          contentPadding: EdgeInsets.zero,
-          title: Text(
-            t.settingsHaptics,
-            style: const TextStyle(fontSize: 14),
-          ),
-          subtitle: Text(
-            t.settingsHapticsHint,
-            style: const TextStyle(fontSize: 11.5, color: AppTheme.textFaint),
-          ),
-        ),
-        SwitchListTile(
-          value: settings.recordRawFrames,
-          onChanged: (v) async {
-            await settings.setRecordRawFrames(v);
-            widget.service.repository?.recordRawFrames = v;
-            if (mounted) setState(() {});
-          },
-          dense: true,
-          contentPadding: EdgeInsets.zero,
-          title: Text(
-            t.settingsRawFrames,
-            style: const TextStyle(fontSize: 14),
-          ),
-          subtitle: Text(
-            t.settingsRawFramesHint,
-            style: const TextStyle(fontSize: 11.5, color: AppTheme.textFaint),
           ),
         ),
         const SizedBox(height: 6),

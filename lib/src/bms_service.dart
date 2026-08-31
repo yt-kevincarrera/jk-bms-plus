@@ -77,17 +77,13 @@ class BmsService {
 
   String? get activeDeviceId => activeDevice?.id;
 
-  /// Used only while no pack is known, so the screens have a sane number to
-  /// show before the first connection.
-  double fallbackCatalogueAh = 45.0;
-
-  /// What *this* pack was sold as, in amp-hours.
+  /// What *this* pack was sold as, in amp-hours, or null when nobody has said.
   ///
-  /// Per pack, not global. The BMS has no idea what was on the box, so it has
-  /// to be told, and telling it once for a rider with two batteries would make
-  /// at least one of the two health readings quietly wrong.
-  double get catalogueCapacityAh =>
-      activeDevice?.catalogueCapacityAh ?? fallbackCatalogueAh;
+  /// Per pack, not global, and with no fallback. There used to be one, and it
+  /// meant an unstated capacity silently became 45 Ah -- every health figure
+  /// for a 35 Ah pack then measured against a number this app made up. Null
+  /// travels all the way to the screen, where it reads as unknown.
+  double? get catalogueCapacityAh => activeDevice?.catalogueCapacityAh;
 
   /// Volts per cell at which the pack cuts off. Taken from the BMS's own
   /// undervoltage setting once the settings frame arrives, so the usable-energy
@@ -746,15 +742,9 @@ class BmsService {
   /// Applies the user's settings. Called once at startup and whenever they
   /// change, so nothing here has to reach into the settings object itself.
   void applySettings({
-    required double catalogueAh,
     required bool haptics,
     required bool rawFrames,
-    bool setByUser = false,
   }) {
-    // Only the fallback: a connected pack carries its own figure, and a
-    // global setting must not reach in and overwrite it.
-    fallbackCatalogueAh = catalogueAh;
-    catalogueSetByUser = setByUser;
     hapticAlerts = haptics;
     repository?.recordRawFrames = rawFrames;
   }

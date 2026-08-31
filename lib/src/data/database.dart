@@ -30,12 +30,14 @@ class Devices extends Table {
   TextColumn get serialNumber => text().withDefault(const Constant(''))();
   TextColumn get model => text().withDefault(const Constant(''))();
 
-  /// What *this* pack was sold as.
+  /// What *this* pack was sold as, or null when nobody has said.
   ///
-  /// Per pack rather than global: a rider with a 45 Ah pack and a 30 Ah spare
-  /// measured against one shared figure gets a wrong answer for at least one
-  /// of them, and no warning that it happened.
-  RealColumn get catalogueCapacityAh => real().withDefault(const Constant(45))();
+  /// Nullable, with no default, because a default here is a claim about a
+  /// battery nobody made. A new pack used to be born holding 45 Ah -- so
+  /// connecting to a 35 Ah bike produced a health figure measured against a
+  /// number this app invented, indistinguishable on screen from one the rider
+  /// had entered. Unknown has to look like unknown.
+  RealColumn get catalogueCapacityAh => real().nullable()();
 
   DateTimeColumn get firstSeenAt => dateTime()();
   DateTimeColumn get lastSeenAt => dateTime()();
@@ -161,8 +163,11 @@ class CapacityTests extends Table {
   RealColumn get measuredAh => real()();
   RealColumn get measuredWh => real()();
 
-  /// What the pack was sold as, so the comparison survives a settings change.
-  RealColumn get catalogueAh => real()();
+  /// What the pack was sold as at the time, or null if it was never stated.
+  ///
+  /// The amp-hours measured are worth keeping either way: the measurement is
+  /// the fact, the comparison is the opinion.
+  RealColumn get catalogueAh => real().nullable()();
   BoolColumn get completed => boolean().withDefault(const Constant(false))();
 
   /// True when the app found this cycle in the history rather than the rider
@@ -187,7 +192,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -211,6 +216,16 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(snapshots, snapshots.deviceId);
             await m.addColumn(rawFrames, rawFrames.deviceId);
             await m.addColumn(capacityTests, capacityTests.deviceId);
+          }
+          if (from < 5) {
+            // The catalogue capacity becomes nullable, and every existing row
+            // is cleared. Nothing recorded whether a value had been entered or
+            // was the old 45 Ah default, and a wrong catalogue does not fail
+            // loudly -- it quietly rescales every health figure for that pack.
+            // Asking once beats carrying a number that might be fiction.
+            await m.alterTable(TableMigration(devices));
+            await m.alterTable(TableMigration(capacityTests));
+            await customStatement('UPDATE devices SET catalogue_capacity_ah = NULL');
           }
         },
       );
