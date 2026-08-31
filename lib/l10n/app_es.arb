@@ -1063,5 +1063,46 @@
       }
     }
   },
-  "backupWorking": "Trabajando..."
+  "backupWorking": "Trabajando...",
+  "chargeAlertsTitle": "Avisos de carga",
+  "chargeAlertsIntro": "Se carga de noche y nadie lo mira. Estos avisos existen para eso. Parar antes del tope no es superstición: la parte alta del rango es donde una celda de litio envejece más, así que si mañana no necesitas el pack entero, te conviene quedarte antes.",
+  "chargeTarget": "Avisar al llegar a",
+  "chargeTargetOff": "Desactivado",
+  "chargeAlertTargetReached": "La batería llegó al {soc} %",
+  "chargeAlertComplete": "Carga terminada",
+  "chargeAlertHot": "Se está calentando cargando",
+  "chargeAlertSpread": "Las celdas se separan arriba",
+  "@chargeAlertTargetReached": {
+    "placeholders": {
+      "soc": {
+        "type": "String"
+      }
+    }
+  },
+  "compareTitle": "Comparar baterías",
+  "compareIntro": "Las mismas cifras de siempre, pero juntas. En verde la mejor de cada fila, y solo cuando hay diferencia de verdad.",
+  "compareNeedsTwo": "Hace falta haberse conectado a por lo menos dos baterías para poder compararlas.",
+  "compareHealth": "Salud medida",
+  "compareHonestCycles": "Ciclos reales",
+  "compareConsumption": "Consumo",
+  "compareWorstDelta": "Peor delta visto",
+  "compareOpen": "Comparar baterías",
+  "driftTitle": "Celda que se está yendo",
+  "driftNone": "Ninguna celda se está separando del resto.",
+  "driftNotEnough": "Todavía no hay historial suficiente. Hacen falta unas semanas de lecturas en reposo para distinguir una celda que empeora de una que siempre estuvo algo baja.",
+  "driftFound": "La celda {cell} se está separando: {now} V por debajo de la media, y baja unos {rate} V al mes.",
+  "driftWhy": "Una celda que siempre estuvo baja es un pack que se armó así. Una que hace seis semanas iba a la par y ahora va por debajo es una celda en camino de irse, y esa es la diferencia entre cambiar una celda y cambiar un pack.",
+  "@driftFound": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      },
+      "now": {
+        "type": "String"
+      },
+      "rate": {
+        "type": "String"
+      }
+    }
+  }
 }
