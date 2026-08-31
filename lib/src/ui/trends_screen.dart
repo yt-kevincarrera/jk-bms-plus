@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../bms_service.dart';
 import '../data/database.dart';
+import '../metrics/chart_markers.dart';
 import '../metrics/long_term_analysis.dart';
+import '../metrics/maintenance.dart';
 import 'theme.dart';
 import 'widgets/common.dart';
 
@@ -16,9 +18,14 @@ import 'widgets/common.dart';
 /// thirty points spread over a year, and only one of them means anything. Each
 /// section says how much history is behind it.
 class TrendsScreen extends StatefulWidget {
-  const TrendsScreen({required this.service, super.key});
+  const TrendsScreen({required this.service, this.deviceId, super.key});
 
   final BmsService service;
+
+  /// Which pack to chart. Defaults to whatever is connected, but the offline
+  /// summary opens this with nothing connected at all, and it used to show an
+  /// empty screen there.
+  final String? deviceId;
 
   @override
   State<TrendsScreen> createState() => _TrendsScreenState();
@@ -26,6 +33,8 @@ class TrendsScreen extends StatefulWidget {
 
 class _TrendsScreenState extends State<TrendsScreen> {
   static const _analysis = LongTermAnalysis();
+
+  List<MaintenanceEvent> _maintenance = const [];
 
   List<Trip> _trips = const [];
   List<Snapshot> _snapshots = const [];
@@ -45,7 +54,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
       return;
     }
 
-    final device = widget.service.activeDeviceId;
+    final device = widget.deviceId ?? widget.service.activeDeviceId;
     if (device == null) {
       setState(() => _loading = false);
       return;
@@ -53,6 +62,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
 
     final trips = await repo.db.recentTrips(device, limit: 500);
     final tests = await repo.capacityTests(device);
+    final maintenance = await MaintenanceLog(repo.db).forPack(device);
     // Ninety days is enough to show a season's worth of drift without pulling
     // millions of rows into memory.
     final snapshots = await repo.db.snapshotsBetween(
@@ -66,6 +76,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
       _trips = trips;
       _snapshots = snapshots;
       _tests = tests;
+      _maintenance = maintenance;
       _loading = false;
     });
   }
@@ -120,6 +131,10 @@ class _TrendsScreenState extends State<TrendsScreen> {
           FlSpot(i.toDouble(), points[i].whPerKm),
       ],
       unit: 'Wh/km',
+      markers: ChartMarkers.place(
+        pointDates: [for (final p in points) p.at],
+        events: _maintenance,
+      ),
       t: t,
     );
   }
@@ -143,6 +158,10 @@ class _TrendsScreenState extends State<TrendsScreen> {
           FlSpot(i.toDouble(), points[i].measuredAh),
       ],
       unit: 'Ah',
+      markers: ChartMarkers.place(
+        pointDates: [for (final p in points) p.at],
+        events: _maintenance,
+      ),
       t: t,
     );
   }
@@ -281,6 +300,7 @@ class _TrendSection extends StatelessWidget {
     required this.spots,
     required this.unit,
     required this.t,
+    this.markers = const [],
     this.trendLabel,
     this.trendIsBad = false,
     this.hint,
@@ -292,6 +312,10 @@ class _TrendSection extends StatelessWidget {
   final List<FlSpot> spots;
   final String unit;
   final AppL10n t;
+
+  /// Work done to the pack, drawn over the line. A capacity that jumps reads
+  /// as noise until a marker says a cell was replaced that week.
+  final List<ChartMarker> markers;
   final String? trendLabel;
   final bool trendIsBad;
   final String? hint;
@@ -316,6 +340,20 @@ class _TrendSection extends StatelessWidget {
         style: const TextStyle(fontSize: 11, color: AppTheme.textFaint),
       ),
       children: [
+        // Only when there is something to explain. A legend for lines that
+        // are not on the chart is noise.
+        if (markers.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Text(
+              t.trendsMaintMarks,
+              style: const TextStyle(
+                fontSize: 11,
+                height: 1.4,
+                color: AppTheme.textFaint,
+              ),
+            ),
+          ),
         SizedBox(
           height: 150,
           child: LineChart(
@@ -341,6 +379,18 @@ class _TrendSection extends StatelessWidget {
               ),
               borderData: FlBorderData(show: false),
               lineTouchData: const LineTouchData(enabled: false),
+              // Work done to the pack, over the line it explains.
+              extraLinesData: ExtraLinesData(
+                verticalLines: [
+                  for (final m in markers)
+                    VerticalLine(
+                      x: m.x,
+                      color: AppTheme.watch.withValues(alpha: 0.55),
+                      strokeWidth: 1.5,
+                      dashArray: const [4, 3],
+                    ),
+                ],
+              ),
               lineBarsData: [
                 LineChartBarData(
                   spots: spots,

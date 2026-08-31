@@ -2089,4 +2089,8 @@ class AppL10nEs extends AppL10n {
   String maintSince(String date) {
     return 'Historial desde el cambio de celda: $date';
   }
+
+  @override
+  String get trendsMaintMarks =>
+      'Las líneas de puntos son cosas que anotaste en el mantenimiento.';
 }
