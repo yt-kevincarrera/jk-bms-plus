@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -30,13 +31,36 @@ enum UpdatePhase { idle, checking, downloading, readyToInstall, failed }
 /// system's own prompt. An app that installs packages is exactly the kind of
 /// thing that should not be doing anything clever on its own.
 class UpdateService extends ChangeNotifier {
-  UpdateService({required this.currentVersion, UpdateChecker? checker})
+  UpdateService({this.currentVersion, UpdateChecker? checker})
       : _checker = checker ??
-            UpdateChecker(owner: kUpdateOwner, repo: kUpdateRepo);
+            UpdateChecker(owner: kUpdateOwner, repo: kUpdateRepo) {
+    // Tests hand the version in directly; the app reads it from the platform
+    // and completes this later.
+    if (currentVersion != null) _versionKnown.complete();
+  }
 
   static const _channel = MethodChannel('dev.selector.jk_bms/installer');
 
-  AppVersion currentVersion;
+  /// The version actually installed, once the platform has been asked.
+  ///
+  /// Null until then, and nothing checks for an update while it is null. It
+  /// used to start at 0.0.0 and be filled in asynchronously, which raced the
+  /// check that runs at startup: the comparison ran against 0.0.0, every
+  /// published release looked newer, and the app announced an update to
+  /// somebody already running it. Recording that as a check made the wrong
+  /// answer stick for a day.
+  AppVersion? currentVersion;
+
+  final Completer<void> _versionKnown = Completer<void>();
+
+  set version(AppVersion v) {
+    currentVersion = v;
+    if (!_versionKnown.isCompleted) _versionKnown.complete();
+  }
+
+  /// Completes once the installed version is known. Nothing can sensibly
+  /// compare against a release before this.
+  Future<void> get ready => _versionKnown.future;
   final UpdateChecker _checker;
 
   UpdatePhase phase = UpdatePhase.idle;
@@ -80,6 +104,10 @@ class UpdateService extends ChangeNotifier {
     required Future<void> Function(DateTime) onChecked,
   }) async {
     if (busy) return false;
+    // Never against a version the app has not read yet.
+    await ready;
+    final current = currentVersion;
+    if (current == null) return false;
     final now = DateTime.now().toUtc();
     if (lastCheckedAt != null && now.difference(lastCheckedAt) < interval) {
       // Already asked recently. Reuse whatever the last answer was.
@@ -88,7 +116,7 @@ class UpdateService extends ChangeNotifier {
 
     try {
       final result = await _checker.check(
-        current: currentVersion,
+        current: current,
         supportedAbis: await _supportedAbis(),
         token: token,
       );
@@ -122,8 +150,13 @@ class UpdateService extends ChangeNotifier {
     error = null;
     notifyListeners();
 
+    // The installed version has to be known before anything can be compared
+    // against it.
+    await ready;
+    final current = currentVersion!;
+
     final result = await _checker.check(
-      current: currentVersion,
+      current: current,
       supportedAbis: await _supportedAbis(),
       token: token,
     );

@@ -36,7 +36,7 @@ class _JkBmsAppState extends State<JkBmsApp> {
   /// Seeded with 0.0.0 until the platform reports the real one, so a failed
   /// lookup can never make a stale build look newer than what is published.
   final UpdateService _updates =
-      UpdateService(currentVersion: const AppVersion(0, 0, 0));
+      UpdateService();
 
   @override
   void initState() {
@@ -63,7 +63,7 @@ class _JkBmsAppState extends State<JkBmsApp> {
       final info = await PackageInfo.fromPlatform();
       final parsed = AppVersion.tryParse(info.version);
       if (parsed != null && mounted) {
-        setState(() => _updates.currentVersion = parsed);
+        setState(() => _updates.version = parsed);
       }
     } on Object catch (_) {
       // Leaves 0.0.0, which shows every release as newer. Visibly wrong beats

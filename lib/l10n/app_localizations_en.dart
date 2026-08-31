@@ -2009,4 +2009,9 @@ class AppL10nEn extends AppL10n {
   @override
   String get driftWhy =>
       'A cell that was always low is a pack that was built that way. One that was level six weeks ago and is under now is on its way out, and that is the difference between replacing a cell and replacing a pack.';
+
+  @override
+  String updateDialogBody(String current, String size) {
+    return 'You are on $current. The new one is $size MB. Nothing downloads until you ask.';
+  }
 }

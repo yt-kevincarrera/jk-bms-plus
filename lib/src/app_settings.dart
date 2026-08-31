@@ -10,7 +10,10 @@ class AppSettings extends ChangeNotifier {
   static const _hapticKey = 'haptic_alerts';
   static const _rawFramesKey = 'record_raw_frames';
   static const _updateTokenKey = 'github_update_token';
-  static const _lastCheckKey = 'update_last_checked_at';
+  // Key bumped: timestamps written before the version race was fixed record a
+  // check that compared against 0.0.0, and honouring one would keep the wrong
+  // answer alive for a day.
+  static const _lastCheckKey = 'update_last_checked_at_v2';
   static const _dismissedKey = 'update_dismissed_version';
   static const _chargeTargetKey = 'charge_target_soc';
 
