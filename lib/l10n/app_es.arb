@@ -1104,5 +1104,16 @@
         "type": "String"
       }
     }
+  },
+  "updateDialogBody": "Tienes la {current}. La nueva pesa {size} MB. No se descarga nada hasta que lo pidas.",
+  "@updateDialogBody": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
   }
 }

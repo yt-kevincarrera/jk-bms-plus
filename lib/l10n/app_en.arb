@@ -1104,5 +1104,16 @@
         "type": "String"
       }
     }
+  },
+  "updateDialogBody": "You are on {current}. The new one is {size} MB. Nothing downloads until you ask.",
+  "@updateDialogBody": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
   }
 }

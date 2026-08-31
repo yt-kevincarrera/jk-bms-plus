@@ -56,6 +56,9 @@ class _ConnectScreenState extends State<ConnectScreen> {
   /// Packs already on record, so their history is reachable with nothing
   /// connected.
   List<Device> _stored = const [];
+
+  /// Whether the update dialog has already been offered this launch.
+  bool _offeredUpdate = false;
   String? _message;
   bool _busyMessage = false;
 
@@ -97,87 +100,77 @@ class _ConnectScreenState extends State<ConnectScreen> {
     super.dispose();
   }
 
-  /// Announces a new build, once a day at most, and only until waved away.
+  /// Announces a new build as a dialog, once, when one is found.
   ///
-  /// Deliberately a banner and not a dialog: nothing here is urgent, and an app
-  /// that interrupts you to talk about itself is an app you stop opening.
-  Widget _updateBanner(AppL10n t) {
+  /// It was an inline banner and looked like part of the page. A dialog is
+  /// what an announcement should be: it arrives, it is answered, it goes away.
+  /// Still only after a check that happened at most once a day, still never
+  /// downloading anything, and still dismissible for good.
+  Future<void> _offerUpdate(AppL10n t) async {
     final check = widget.updateService.lastCheck;
-    if (check == null || !check.hasUpdate) return const SizedBox.shrink();
+    if (!mounted || check == null || !check.hasUpdate) return;
 
-    final version = check.release!.version.toString();
-    if (widget.settings.dismissedUpdateVersion == version) {
-      return const SizedBox.shrink();
-    }
+    final release = check.release!;
+    final version = release.version.toString();
+    if (widget.settings.dismissedUpdateVersion == version) return;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceRaised,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppTheme.cool.withValues(alpha: 0.5)),
-        ),
-        padding: const EdgeInsets.fromLTRB(14, 12, 10, 6),
-        // A column, not a row. With the text and both buttons on one line the
-        // Expanded was squeezed to a couple of pixels and the message wrapped
-        // one letter per line. Any translation longer than the English would
-        // have done it again, so the layout stops depending on how long the
-        // words are.
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.system_update_alt,
-                  size: 18,
-                  color: AppTheme.cool,
+    // Once per launch. Answering "not now" and then having it reappear on the
+    // next rebuild would make it an argument rather than a question.
+    if (_offeredUpdate) return;
+    _offeredUpdate = true;
+
+    final notes = release.notes.trim();
+    final go = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.system_update_alt, color: AppTheme.cool),
+        title: Text(t.updateBannerTitle(version)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                t.updateDialogBody(
+                  widget.updateService.currentVersion?.toString() ?? '--',
+                  check.asset?.sizeMb.toStringAsFixed(1) ?? '--',
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    t.updateBannerTitle(version),
-                    style: const TextStyle(
-                      fontSize: 13.5,
-                      color: AppTheme.cool,
-                    ),
+                style: const TextStyle(fontSize: 13, height: 1.45),
+              ),
+              if (notes.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text(
+                  notes,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    height: 1.45,
+                    color: AppTheme.textFaint,
                   ),
                 ),
               ],
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextButton(
-                    onPressed: () async {
-                      await widget.settings.dismissUpdate(version);
-                      if (mounted) setState(() {});
-                    },
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppTheme.textFaint,
-                      textStyle: const TextStyle(fontSize: 12.5),
-                    ),
-                    child: Text(t.updateBannerDismiss),
-                  ),
-                  const SizedBox(width: 6),
-                  FilledButton(
-                    onPressed: _openSettings,
-                    style: FilledButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                      textStyle: const TextStyle(fontSize: 12.5),
-                    ),
-                    child: Text(t.updateBannerAction),
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(t.updateBannerDismiss),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(t.updateBannerAction),
+          ),
+        ],
       ),
     );
+
+    if (!mounted) return;
+    if (go ?? false) {
+      await _openSettings();
+    } else {
+      // "Not now" is an answer about this version, not a snooze.
+      await widget.settings.dismissUpdate(version);
+    }
   }
 
   Future<void> _checkForUpdateQuietly() async {
@@ -187,7 +180,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
       interval: const Duration(hours: 24),
       onChecked: widget.settings.markUpdateChecked,
     );
-    if (found && mounted) setState(() {});
+    if (found && mounted) await _offerUpdate(AppL10n.of(context));
   }
 
   Future<void> _openSettings() async {
@@ -716,7 +709,6 @@ class _ConnectScreenState extends State<ConnectScreen> {
                 ),
               ),
             ),
-          _updateBanner(t),
           // Always, not only when the scan came up empty. A battery you have
           // already used outranks whatever headphones happen to be in the
           // room, and opening its history needs no radio at all.
