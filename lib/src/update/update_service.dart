@@ -66,6 +66,48 @@ class UpdateService extends ChangeNotifier {
     return const ['arm64-v8a'];
   }
 
+  /// Asks once a day, in the background, so a new build can announce itself.
+  ///
+  /// The only thing this app does on the network unasked. It is one request to
+  /// api.github.com that sends nothing about the pack, the rides or where you
+  /// are, it never downloads anything, and a failure is swallowed: a banner
+  /// that did not appear is not worth an error message.
+  ///
+  /// Returns true if there is an update worth showing.
+  Future<bool> checkQuietly({
+    required DateTime? lastCheckedAt,
+    required Duration interval,
+    required Future<void> Function(DateTime) onChecked,
+  }) async {
+    if (busy) return false;
+    final now = DateTime.now().toUtc();
+    if (lastCheckedAt != null && now.difference(lastCheckedAt) < interval) {
+      // Already asked recently. Reuse whatever the last answer was.
+      return lastCheck?.hasUpdate ?? false;
+    }
+
+    try {
+      final result = await _checker.check(
+        current: currentVersion,
+        supportedAbis: await _supportedAbis(),
+        token: token,
+      );
+      lastCheck = result;
+      // A check that could not reach GitHub is not a check. Recording it would
+      // stand the app down for a day over a moment without signal, which is
+      // exactly when this runs: the app opens, the radio is busy, the request
+      // fails, and the update stays invisible until tomorrow.
+      if (result.status != UpdateStatus.failed &&
+          result.status != UpdateStatus.needsToken) {
+        await onChecked(now);
+      }
+      notifyListeners();
+      return result.hasUpdate;
+    } on Object catch (_) {
+      return false;
+    }
+  }
+
   Future<UpdateCheck> check() async {
     // Clears any package left from a previous run. This is the only safe
     // moment to do it: the system installer reads the file asynchronously

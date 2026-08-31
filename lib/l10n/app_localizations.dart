@@ -3426,6 +3426,24 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'{count} guardadas'**
   String storedCount(String count);
+
+  /// No description provided for @updateBannerTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Hay una versión {version}'**
+  String updateBannerTitle(String version);
+
+  /// No description provided for @updateBannerAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver'**
+  String get updateBannerAction;
+
+  /// No description provided for @updateBannerDismiss.
+  ///
+  /// In es, this message translates to:
+  /// **'Ahora no'**
+  String get updateBannerDismiss;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {
