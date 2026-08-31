@@ -2116,4 +2116,17 @@ class AppL10nEn extends AppL10n {
   @override
   String get alertsSectionHint =>
       'One by one. Switching off the one that annoys you should not cost you the ones you want.';
+
+  @override
+  String get autoTripTitle => 'Start rides on their own';
+
+  @override
+  String get autoTripHint =>
+      'Opens and closes the ride when it detects you are riding: it needs pack current and GPS movement together, sustained. Without it the learning depends on remembering to press start, and the rides people forget are not a random sample: they are the short ones and the ones you were late for. Uses GPS while riding.';
+
+  @override
+  String get autoTripStarted => 'Ride started automatically';
+
+  @override
+  String get autoTripStopped => 'Ride saved';
 }

@@ -3834,6 +3834,30 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Cada uno por separado. Apagar el que te molesta no debería costarte los que sí quieres.'**
   String get alertsSectionHint;
+
+  /// No description provided for @autoTripTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Empezar viajes solo'**
+  String get autoTripTitle;
+
+  /// No description provided for @autoTripHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Abre y cierra el viaje al detectar que estás rodando: hace falta consumo del pack y movimiento del GPS a la vez, sostenidos. Sin esto el aprendizaje depende de que te acuerdes de darle a empezar, y los viajes que se olvidan no son al azar: son los cortos y los que llevabas prisa. Usa GPS mientras rueda.'**
+  String get autoTripHint;
+
+  /// No description provided for @autoTripStarted.
+  ///
+  /// In es, this message translates to:
+  /// **'Viaje iniciado solo'**
+  String get autoTripStarted;
+
+  /// No description provided for @autoTripStopped.
+  ///
+  /// In es, this message translates to:
+  /// **'Viaje guardado'**
+  String get autoTripStopped;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {
