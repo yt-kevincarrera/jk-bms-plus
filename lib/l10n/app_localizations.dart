@@ -3684,6 +3684,102 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'hace {n} d'**
   String widgetDays(String n);
+
+  /// No description provided for @maintTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Mantenimiento'**
+  String get maintTitle;
+
+  /// No description provided for @maintIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que le has hecho al pack, con fecha. El historial guarda lo que la batería hizo y se olvida de lo que le hiciste tú, que es la otra mitad. Una capacidad que da un salto o un delta que se desploma parecen ruido hasta que ves que esa semana cambiaste una celda.'**
+  String get maintIntro;
+
+  /// No description provided for @maintNone.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía no has anotado nada.'**
+  String get maintNone;
+
+  /// No description provided for @maintAdd.
+  ///
+  /// In es, this message translates to:
+  /// **'Anotar algo'**
+  String get maintAdd;
+
+  /// No description provided for @maintDate.
+  ///
+  /// In es, this message translates to:
+  /// **'Fecha'**
+  String get maintDate;
+
+  /// No description provided for @maintKind.
+  ///
+  /// In es, this message translates to:
+  /// **'Qué hiciste'**
+  String get maintKind;
+
+  /// No description provided for @maintNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Detalle (opcional)'**
+  String get maintNote;
+
+  /// No description provided for @maintSave.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar'**
+  String get maintSave;
+
+  /// No description provided for @maintDelete.
+  ///
+  /// In es, this message translates to:
+  /// **'Borrar'**
+  String get maintDelete;
+
+  /// No description provided for @maintKindCellReplaced.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambié una celda'**
+  String get maintKindCellReplaced;
+
+  /// No description provided for @maintKindManualBalance.
+  ///
+  /// In es, this message translates to:
+  /// **'Balanceé a mano'**
+  String get maintKindManualBalance;
+
+  /// No description provided for @maintKindConnections.
+  ///
+  /// In es, this message translates to:
+  /// **'Limpié o apreté conexiones'**
+  String get maintKindConnections;
+
+  /// No description provided for @maintKindCharger.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambié de cargador'**
+  String get maintKindCharger;
+
+  /// No description provided for @maintKindBmsSettings.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambié ajustes del BMS'**
+  String get maintKindBmsSettings;
+
+  /// No description provided for @maintKindOther.
+  ///
+  /// In es, this message translates to:
+  /// **'Otra cosa'**
+  String get maintKindOther;
+
+  /// No description provided for @maintSince.
+  ///
+  /// In es, this message translates to:
+  /// **'Historial desde el cambio de celda: {date}'**
+  String maintSince(String date);
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

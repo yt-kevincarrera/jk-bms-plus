@@ -105,6 +105,14 @@ void main() {
         completed: const Value(true),
       ),
     );
+    await db.insertMaintenance(
+      MaintenanceEventsCompanion.insert(
+        deviceId: 'AA:BB',
+        at: now,
+        kind: 'cellReplaced',
+        note: const Value('celda 7'),
+      ),
+    );
     await db.insertRawFrames([
       RawFramesCompanion.insert(
         deviceId: const Value('AA:BB'),
@@ -242,6 +250,21 @@ void main() {
         () => BackupCodec(source).import(f),
         throwsA(isA<BackupFormatException>()),
       );
+    });
+  });
+
+  group('the maintenance log', () {
+    test('comes back with everything else', () async {
+      // It is the one part of the history the app cannot reconstruct from
+      // anything: nothing in the BMS records what the rider did to the pack.
+      await seed(source);
+      final target = await restoreInto(await BackupCodec(source).export(into: tmp));
+      addTearDown(target.close);
+
+      final events = await target.maintenanceFor('AA:BB');
+      expect(events, hasLength(1));
+      expect(events.single.kind, 'cellReplaced');
+      expect(events.single.note, 'celda 7');
     });
   });
 }

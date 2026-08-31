@@ -1140,5 +1140,28 @@
         "type": "String"
       }
     }
+  },
+  "maintTitle": "Maintenance",
+  "maintIntro": "What you have done to the pack, with dates. The history records what the battery did and forgets what was done to it, which is the other half. A capacity that jumps or a delta that collapses looks like noise until you can see a cell was replaced that week.",
+  "maintNone": "Nothing noted yet.",
+  "maintAdd": "Note something",
+  "maintDate": "Date",
+  "maintKind": "What you did",
+  "maintNote": "Detail (optional)",
+  "maintSave": "Save",
+  "maintDelete": "Delete",
+  "maintKindCellReplaced": "Replaced a cell",
+  "maintKindManualBalance": "Balanced by hand",
+  "maintKindConnections": "Cleaned or tightened connections",
+  "maintKindCharger": "Changed charger",
+  "maintKindBmsSettings": "Changed BMS settings",
+  "maintKindOther": "Something else",
+  "maintSince": "History since the cell was replaced: {date}",
+  "@maintSince": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   }
 }

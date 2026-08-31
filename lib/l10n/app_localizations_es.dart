@@ -2038,4 +2038,55 @@ class AppL10nEs extends AppL10n {
   String widgetDays(String n) {
     return 'hace $n d';
   }
+
+  @override
+  String get maintTitle => 'Mantenimiento';
+
+  @override
+  String get maintIntro =>
+      'Lo que le has hecho al pack, con fecha. El historial guarda lo que la batería hizo y se olvida de lo que le hiciste tú, que es la otra mitad. Una capacidad que da un salto o un delta que se desploma parecen ruido hasta que ves que esa semana cambiaste una celda.';
+
+  @override
+  String get maintNone => 'Todavía no has anotado nada.';
+
+  @override
+  String get maintAdd => 'Anotar algo';
+
+  @override
+  String get maintDate => 'Fecha';
+
+  @override
+  String get maintKind => 'Qué hiciste';
+
+  @override
+  String get maintNote => 'Detalle (opcional)';
+
+  @override
+  String get maintSave => 'Guardar';
+
+  @override
+  String get maintDelete => 'Borrar';
+
+  @override
+  String get maintKindCellReplaced => 'Cambié una celda';
+
+  @override
+  String get maintKindManualBalance => 'Balanceé a mano';
+
+  @override
+  String get maintKindConnections => 'Limpié o apreté conexiones';
+
+  @override
+  String get maintKindCharger => 'Cambié de cargador';
+
+  @override
+  String get maintKindBmsSettings => 'Cambié ajustes del BMS';
+
+  @override
+  String get maintKindOther => 'Otra cosa';
+
+  @override
+  String maintSince(String date) {
+    return 'Historial desde el cambio de celda: $date';
+  }
 }

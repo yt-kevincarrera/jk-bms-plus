@@ -1140,5 +1140,28 @@
         "type": "String"
       }
     }
+  },
+  "maintTitle": "Mantenimiento",
+  "maintIntro": "Lo que le has hecho al pack, con fecha. El historial guarda lo que la batería hizo y se olvida de lo que le hiciste tú, que es la otra mitad. Una capacidad que da un salto o un delta que se desploma parecen ruido hasta que ves que esa semana cambiaste una celda.",
+  "maintNone": "Todavía no has anotado nada.",
+  "maintAdd": "Anotar algo",
+  "maintDate": "Fecha",
+  "maintKind": "Qué hiciste",
+  "maintNote": "Detalle (opcional)",
+  "maintSave": "Guardar",
+  "maintDelete": "Borrar",
+  "maintKindCellReplaced": "Cambié una celda",
+  "maintKindManualBalance": "Balanceé a mano",
+  "maintKindConnections": "Limpié o apreté conexiones",
+  "maintKindCharger": "Cambié de cargador",
+  "maintKindBmsSettings": "Cambié ajustes del BMS",
+  "maintKindOther": "Otra cosa",
+  "maintSince": "Historial desde el cambio de celda: {date}",
+  "@maintSince": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   }
 }

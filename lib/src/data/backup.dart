@@ -46,6 +46,7 @@ class BackupCodec {
     final points = await db.allTripPointsForBackup();
     final snapshots = await db.allSnapshotsForBackup();
     final tests = await db.allCapacityTestsForBackup();
+    final maintenance = await db.allMaintenanceForBackup();
     final frames = includeRawFrames
         ? await db.allRawFramesForBackup()
         : const <RawFrame>[];
@@ -61,6 +62,7 @@ class BackupCodec {
       'tripPoints': points.map(_point).toList(),
       'snapshots': snapshots.map(_snapshot).toList(),
       'capacityTests': tests.map(_test).toList(),
+      'maintenance': maintenance.map(_maintenance).toList(),
       'rawFrames': frames.map(_frame).toList(),
     };
 
@@ -117,6 +119,7 @@ class BackupCodec {
     final snapshots = _list(decoded['snapshots']);
     final tests = _list(decoded['capacityTests']);
     final frames = _list(decoded['rawFrames']);
+    final maintenance = _list(decoded['maintenance']);
 
     for (final d in devices) {
       await db.upsertDevice(
@@ -160,6 +163,21 @@ class BackupCodec {
       await db.insertCapacityTest(_testCompanion(t));
     }
 
+    for (final m in maintenance) {
+      final deviceId = m['deviceId'];
+      final at = _time(m['at']);
+      // An event with no pack or no date is a note about nothing.
+      if (deviceId is! String || at == null) continue;
+      await db.insertMaintenance(
+        MaintenanceEventsCompanion.insert(
+          deviceId: deviceId,
+          at: at,
+          kind: m['kind'] as String? ?? 'other',
+          note: Value(m['note'] as String? ?? ''),
+        ),
+      );
+    }
+
     final frameRows = [for (final f in frames) _frameCompanion(f)];
     if (frameRows.isNotEmpty) await db.insertRawFrames(frameRows);
 
@@ -170,6 +188,7 @@ class BackupCodec {
       snapshots: snapshotRows.length,
       capacityTests: tests.length,
       rawFrames: frameRows.length,
+      maintenance: maintenance.length,
       exportedAt: _time(decoded['exportedAt']),
     );
   }
@@ -260,6 +279,13 @@ class BackupCodec {
         'automatic': t.automatic,
         'gapSeconds': t.gapSeconds,
         'note': t.note,
+      };
+
+  static Map<String, Object?> _maintenance(MaintenanceEvent e) => {
+        'deviceId': e.deviceId,
+        'at': e.at.toIso8601String(),
+        'kind': e.kind,
+        'note': e.note,
       };
 
   static Map<String, Object?> _frame(RawFrame f) => {
@@ -398,6 +424,7 @@ class BackupImportResult {
     required this.snapshots,
     required this.capacityTests,
     required this.rawFrames,
+    this.maintenance = 0,
     this.exportedAt,
   });
 
@@ -407,6 +434,7 @@ class BackupImportResult {
   final int snapshots;
   final int capacityTests;
   final int rawFrames;
+  final int maintenance;
   final DateTime? exportedAt;
 }
 
