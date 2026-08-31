@@ -47,9 +47,6 @@ class AppL10nEn extends AppL10n {
   String get connectCancelScan => 'Cancel scan';
 
   @override
-  String get connectScanCancelled => 'Scan cancelled';
-
-  @override
   String get connectNoDevices => 'No BMS found yet';
 
   @override
@@ -1805,4 +1802,20 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get agoSuffix => 'ago';
+
+  @override
+  String get catalogueFromBmsTag => 'from the BMS';
+
+  @override
+  String get catalogueConfirm => 'Confirm it was sold as this';
+
+  @override
+  String get catalogueFromBmsHint =>
+      'Taken from the BMS configuration. That is a number about this pack, but whoever assembled it typed it in. If you were sold a different capacity, set it: the gap between the two is exactly what health measures.';
+
+  @override
+  String get connectRetry => 'Search again';
+
+  @override
+  String get storedManageHint => 'Long-press a battery to rename or delete it.';
 }
