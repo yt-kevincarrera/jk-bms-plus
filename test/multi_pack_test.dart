@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jk_bms/src/data/database.dart';
+import 'package:jk_bms/src/data/repository.dart';
 
 /// Builds a ride on one pack.
 TripsCompanion ride(String? deviceId, DateTime at, {double km = 10}) =>
@@ -224,6 +225,63 @@ void main() {
 
       expect(await db.totalTripCount(), 1);
       expect((await db.orphanCounts()).values.every((c) => c == 0), isTrue);
+    });
+  });
+
+  group('taking the capacity from the BMS', () {
+    test('fills a blank so a new pack works without being told anything',
+        () async {
+      await addPack('AA:BB');
+      final repo = BmsRepository(database: db);
+
+      expect(await repo.adoptDeviceCatalogueFromBms('AA:BB', 35), isTrue);
+
+      final d = await db.device('AA:BB');
+      expect(d!.catalogueCapacityAh, 35);
+      // And it is marked as borrowed, not as something the rider said.
+      expect(d.catalogueFromBms, isTrue);
+    });
+
+    test('never overwrites what the rider stated', () async {
+      // The case this protects: a pack sold as 45 Ah whose BMS is configured
+      // to 40. The gap is the finding. Adopting the 40 would erase it and
+      // report the pack as perfectly healthy.
+      await addPack('AA:BB');
+      final repo = BmsRepository(database: db);
+      await repo.setDeviceCatalogue('AA:BB', 45);
+
+      expect(await repo.adoptDeviceCatalogueFromBms('AA:BB', 40), isFalse);
+      final d = await db.device('AA:BB');
+      expect(d!.catalogueCapacityAh, 45);
+      expect(d.catalogueFromBms, isFalse);
+    });
+
+    test('a stated figure outranks an adopted one, permanently', () async {
+      await addPack('AA:BB');
+      final repo = BmsRepository(database: db);
+      await repo.adoptDeviceCatalogueFromBms('AA:BB', 35);
+      await repo.setDeviceCatalogue('AA:BB', 40);
+
+      // Reconnecting must not pull it back to the BMS figure.
+      expect(await repo.adoptDeviceCatalogueFromBms('AA:BB', 35), isFalse);
+      expect((await db.device('AA:BB'))!.catalogueCapacityAh, 40);
+    });
+
+    test('an adopted figure can be updated by the BMS changing', () async {
+      await addPack('AA:BB');
+      final repo = BmsRepository(database: db);
+      await repo.adoptDeviceCatalogueFromBms('AA:BB', 35);
+
+      expect(await repo.adoptDeviceCatalogueFromBms('AA:BB', 38), isTrue);
+      expect((await db.device('AA:BB'))!.catalogueCapacityAh, 38);
+    });
+
+    test('refuses a nonsense figure rather than storing it', () async {
+      await addPack('AA:BB');
+      final repo = BmsRepository(database: db);
+      expect(await repo.adoptDeviceCatalogueFromBms('AA:BB', 0), isFalse);
+      expect(await repo.adoptDeviceCatalogueFromBms('AA:BB', 9999), isFalse);
+      expect((await db.device('AA:BB'))!.catalogueCapacityAh, isNull);
     });
   });
 }

@@ -47,9 +47,6 @@ class AppL10nEs extends AppL10n {
   String get connectCancelScan => 'Cancelar búsqueda';
 
   @override
-  String get connectScanCancelled => 'Búsqueda cancelada';
-
-  @override
   String get connectNoDevices => 'Todavía no aparece ningún BMS';
 
   @override
@@ -61,7 +58,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get connectOtherDevicesHint =>
-      'La app no oculta nada. Si tu BMS tiene otro nombre —porque lo cambiaste en la app oficial, o porque ese modelo no anuncia el suyo— va a salir en esta lista. Búscalo por la señal más fuerte y pruébalo.';
+      'La app no oculta nada. Si tu BMS tiene otro nombre, porque lo cambiaste en la app oficial o porque ese modelo no anuncia el suyo, va a salir en esta lista. Búscalo por la señal más fuerte y pruébalo.';
 
   @override
   String get connectLikelyBms => 'probable BMS';
@@ -99,7 +96,7 @@ class AppL10nEs extends AppL10n {
   String get tabSystem => 'Sistema';
 
   @override
-  String get demoBanner => 'DEMO — pack simulado, sin BMS conectado';
+  String get demoBanner => 'DEMO: pack simulado, sin BMS conectado';
 
   @override
   String get demoTitle => 'Modo demo';
@@ -1688,7 +1685,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get packsIntro =>
-      'Todo lo que la app mide —capacidad, degradación, qué celda se queda atrás, cuánto cuesta un kilómetro— es de una batería concreta. Cada pack guarda su historial aparte, así que puedes usar el mismo teléfono con varias sin que se mezclen.';
+      'Todo lo que la app mide (capacidad, degradación, qué celda se queda atrás, cuánto cuesta un kilómetro) es de una batería concreta. Cada pack guarda su historial aparte, así que puedes usar el mismo teléfono con varias sin que se mezclen.';
 
   @override
   String get packsCurrent => 'Conectada ahora';
@@ -1768,7 +1765,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get offlineBanner =>
-      'Sin conexión — todo esto sale de lo que ya estaba guardado, no del BMS ahora mismo.';
+      'Sin conexión. Todo esto sale de lo que ya estaba guardado, no del BMS ahora mismo.';
 
   @override
   String get offlineLastReading => 'Última lectura';
@@ -1811,4 +1808,21 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get agoSuffix => '';
+
+  @override
+  String get catalogueFromBmsTag => 'del BMS';
+
+  @override
+  String get catalogueConfirm => 'Confirmar que se vendió así';
+
+  @override
+  String get catalogueFromBmsHint =>
+      'Tomado de la configuración del BMS, que es un número sobre este pack pero lo escribió quien lo armó. Si te lo vendieron con otra capacidad, ponla: la diferencia entre las dos cifras es justo lo que la salud mide.';
+
+  @override
+  String get connectRetry => 'Reintentar búsqueda';
+
+  @override
+  String get storedManageHint =>
+      'Mantén pulsada una batería para renombrarla o borrarla.';
 }

@@ -39,6 +39,18 @@ class Devices extends Table {
   /// had entered. Unknown has to look like unknown.
   RealColumn get catalogueCapacityAh => real().nullable()();
 
+  /// True when the figure above was taken from the BMS's own configuration
+  /// rather than stated by the rider.
+  ///
+  /// Tracked rather than hidden. Adopting the BMS nominal makes the app useful
+  /// the moment it connects, but it is still somebody else's number: whoever
+  /// assembled the pack typed it. Keeping the provenance means the health
+  /// figures can work immediately without the app ever passing that number off
+  /// as what the pack was sold as -- which is the comparison the whole health
+  /// section is built on, and the one place a borrowed figure would quietly
+  /// erase a real finding.
+  BoolColumn get catalogueFromBms => boolean().withDefault(const Constant(false))();
+
   DateTimeColumn get firstSeenAt => dateTime()();
   DateTimeColumn get lastSeenAt => dateTime()();
 
@@ -192,7 +204,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -217,15 +229,28 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(rawFrames, rawFrames.deviceId);
             await m.addColumn(capacityTests, capacityTests.deviceId);
           }
+          // Each step has to work from every older version, not just the one
+          // before it. Recreating a table always builds it from the *current*
+          // schema, so a later column has to be declared as new here or the
+          // copy fails looking for a column the old table never had.
           if (from < 5) {
             // The catalogue capacity becomes nullable, and every existing row
             // is cleared. Nothing recorded whether a value had been entered or
             // was the old 45 Ah default, and a wrong catalogue does not fail
             // loudly -- it quietly rescales every health figure for that pack.
             // Asking once beats carrying a number that might be fiction.
-            await m.alterTable(TableMigration(devices));
+            await m.alterTable(
+              TableMigration(devices, newColumns: [devices.catalogueFromBms]),
+            );
             await m.alterTable(TableMigration(capacityTests));
             await customStatement('UPDATE devices SET catalogue_capacity_ah = NULL');
+          }
+          // Only from exactly 5: anything older has already been handed the
+          // column, either by createTable or by the recreation above. Adding
+          // it twice fails with a duplicate-column error that stops the app
+          // opening at all.
+          if (from == 5) {
+            await m.addColumn(devices, devices.catalogueFromBms);
           }
         },
       );

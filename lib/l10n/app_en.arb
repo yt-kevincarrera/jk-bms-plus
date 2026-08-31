@@ -18,7 +18,6 @@
   },
   "connectNothingFoundHelp": "Nothing turned up. It is almost always one of these:\n\n• The official JK app is connected to the BMS. While it is, the BMS stops advertising and no other phone can see it. Close it fully.\n• The pack is asleep. Switch the bike on or move it to wake it.\n• You are too far away. Get closer to the pack.",
   "connectCancelScan": "Cancel scan",
-  "connectScanCancelled": "Scan cancelled",
   "connectNoDevices": "No BMS found yet",
   "connectLocationOff": "The phone's location is switched off. Android returns no Bluetooth scan results without it, even with the permission granted: it reports zero devices and says nothing. Turn it on and scan again.",
   "connectOtherDevices": "Other devices nearby",
@@ -975,5 +974,10 @@
   "settingsSectionApp": "App",
   "settingsSectionPack": "This battery",
   "agoPrefix": "",
-  "agoSuffix": "ago"
+  "agoSuffix": "ago",
+  "catalogueFromBmsTag": "from the BMS",
+  "catalogueConfirm": "Confirm it was sold as this",
+  "catalogueFromBmsHint": "Taken from the BMS configuration. That is a number about this pack, but whoever assembled it typed it in. If you were sold a different capacity, set it: the gap between the two is exactly what health measures.",
+  "connectRetry": "Search again",
+  "storedManageHint": "Long-press a battery to rename or delete it."
 }
