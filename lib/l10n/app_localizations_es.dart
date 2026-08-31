@@ -2093,4 +2093,19 @@ class AppL10nEs extends AppL10n {
   @override
   String get trendsMaintMarks =>
       'Las líneas de puntos son cosas que anotaste en el mantenimiento.';
+
+  @override
+  String get chargeWatchTitle => 'Vigilar la carga';
+
+  @override
+  String get chargeWatchHint =>
+      'Mientras la app está en segundo plano Android corta la conexión Bluetooth a los pocos minutos. Con esto activado, en cuanto detecta que estás cargando levanta un servicio en primer plano y mantiene la conexión, que es lo que hace falta para que los avisos lleguen de noche. Cuesta batería del teléfono mientras dura.';
+
+  @override
+  String get chargeWatchNotifTitle => 'Cargando';
+
+  @override
+  String chargeWatchNotifText(String soc, String volts, String amps) {
+    return '$soc % · $volts V · $amps A';
+  }
 }

@@ -2087,4 +2087,19 @@ class AppL10nEn extends AppL10n {
   @override
   String get trendsMaintMarks =>
       'The dotted lines are things you noted in the maintenance log.';
+
+  @override
+  String get chargeWatchTitle => 'Watch the charge';
+
+  @override
+  String get chargeWatchHint =>
+      'While the app is in the background Android cuts the Bluetooth link within minutes. With this on, it raises a foreground service as soon as charging starts and holds the link, which is what the alerts need to reach you overnight. It costs phone battery while it runs.';
+
+  @override
+  String get chargeWatchNotifTitle => 'Charging';
+
+  @override
+  String chargeWatchNotifText(String soc, String volts, String amps) {
+    return '$soc % · $volts V · $amps A';
+  }
 }

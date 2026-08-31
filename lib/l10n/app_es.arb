@@ -1164,5 +1164,22 @@
       }
     }
   },
-  "trendsMaintMarks": "Las líneas de puntos son cosas que anotaste en el mantenimiento."
+  "trendsMaintMarks": "Las líneas de puntos son cosas que anotaste en el mantenimiento.",
+  "chargeWatchTitle": "Vigilar la carga",
+  "chargeWatchHint": "Mientras la app está en segundo plano Android corta la conexión Bluetooth a los pocos minutos. Con esto activado, en cuanto detecta que estás cargando levanta un servicio en primer plano y mantiene la conexión, que es lo que hace falta para que los avisos lleguen de noche. Cuesta batería del teléfono mientras dura.",
+  "chargeWatchNotifTitle": "Cargando",
+  "chargeWatchNotifText": "{soc} % · {volts} V · {amps} A",
+  "@chargeWatchNotifText": {
+    "placeholders": {
+      "soc": {
+        "type": "String"
+      },
+      "volts": {
+        "type": "String"
+      },
+      "amps": {
+        "type": "String"
+      }
+    }
+  }
 }
