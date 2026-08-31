@@ -2122,4 +2122,17 @@ class AppL10nEs extends AppL10n {
   @override
   String get alertsSectionHint =>
       'Cada uno por separado. Apagar el que te molesta no debería costarte los que sí quieres.';
+
+  @override
+  String get autoTripTitle => 'Empezar viajes solo';
+
+  @override
+  String get autoTripHint =>
+      'Abre y cierra el viaje al detectar que estás rodando: hace falta consumo del pack y movimiento del GPS a la vez, sostenidos. Sin esto el aprendizaje depende de que te acuerdes de darle a empezar, y los viajes que se olvidan no son al azar: son los cortos y los que llevabas prisa. Usa GPS mientras rueda.';
+
+  @override
+  String get autoTripStarted => 'Viaje iniciado solo';
+
+  @override
+  String get autoTripStopped => 'Viaje guardado';
 }

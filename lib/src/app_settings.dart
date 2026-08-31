@@ -18,6 +18,7 @@ class AppSettings extends ChangeNotifier {
   static const _chargeTargetKey = 'charge_target_soc';
   static const _chargeWatchKey = 'charge_watch_enabled';
   static const _mutedKey = 'muted_alerts';
+  static const _autoTripKey = 'auto_trip_enabled';
 
 
 
@@ -55,6 +56,13 @@ class AppSettings extends ChangeNotifier {
   /// the app open, this is only for reaching you with it closed.
   bool chargeWatchEnabled = false;
 
+  /// Whether rides open and close themselves.
+  ///
+  /// On by default, unlike the charge watch. The whole reason it exists is not
+  /// having to remember, and a feature that solves forgetting only once you
+  /// remember to switch it on solves nothing.
+  bool autoTripEnabled = true;
+
   /// Alerts the rider has switched off, by name.
   ///
   /// Individually rather than all at once. Somebody who does not care that the
@@ -90,6 +98,7 @@ class AppSettings extends ChangeNotifier {
       chargeTargetSoc = target == null ? 80 : (target < 0 ? null : target);
       chargeWatchEnabled = prefs.getBool(_chargeWatchKey) ?? false;
       mutedAlerts = (prefs.getStringList(_mutedKey) ?? const []).toSet();
+      autoTripEnabled = prefs.getBool(_autoTripKey) ?? true;
       notifyListeners();
     } on Exception catch (_) {
       // Defaults are usable; a broken preference store is not worth failing on.
@@ -159,6 +168,12 @@ class AppSettings extends ChangeNotifier {
     } on Exception catch (_) {
       // Silenced for this session at least.
     }
+  }
+
+  Future<void> setAutoTrip(bool value) async {
+    autoTripEnabled = value;
+    notifyListeners();
+    await _writeBool(_autoTripKey, value);
   }
 
   Future<void> setHapticAlerts(bool value) async {
