@@ -3786,6 +3786,30 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Las líneas de puntos son cosas que anotaste en el mantenimiento.'**
   String get trendsMaintMarks;
+
+  /// No description provided for @chargeWatchTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Vigilar la carga'**
+  String get chargeWatchTitle;
+
+  /// No description provided for @chargeWatchHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Mientras la app está en segundo plano Android corta la conexión Bluetooth a los pocos minutos. Con esto activado, en cuanto detecta que estás cargando levanta un servicio en primer plano y mantiene la conexión, que es lo que hace falta para que los avisos lleguen de noche. Cuesta batería del teléfono mientras dura.'**
+  String get chargeWatchHint;
+
+  /// No description provided for @chargeWatchNotifTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cargando'**
+  String get chargeWatchNotifTitle;
+
+  /// No description provided for @chargeWatchNotifText.
+  ///
+  /// In es, this message translates to:
+  /// **'{soc} % · {volts} V · {amps} A'**
+  String chargeWatchNotifText(String soc, String volts, String amps);
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

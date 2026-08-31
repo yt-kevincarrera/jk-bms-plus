@@ -16,6 +16,7 @@ class AppSettings extends ChangeNotifier {
   static const _lastCheckKey = 'update_last_checked_at_v2';
   static const _dismissedKey = 'update_dismissed_version';
   static const _chargeTargetKey = 'charge_target_soc';
+  static const _chargeWatchKey = 'charge_watch_enabled';
 
 
 
@@ -46,6 +47,13 @@ class AppSettings extends ChangeNotifier {
   /// stopping there. The app suggests it rather than enforcing it.
   double? chargeTargetSoc = 80;
 
+  /// Whether to hold the Bluetooth link open while the pack charges.
+  ///
+  /// Off by default. It costs phone battery for as long as a charge lasts, and
+  /// that is a trade nobody should be opted into: the alerts still work with
+  /// the app open, this is only for reaching you with it closed.
+  bool chargeWatchEnabled = false;
+
   /// Whether the phone buzzes when something crosses a line.
 
 
@@ -70,6 +78,7 @@ class AppSettings extends ChangeNotifier {
       // never having chosen.
       final target = prefs.getDouble(_chargeTargetKey);
       chargeTargetSoc = target == null ? 80 : (target < 0 ? null : target);
+      chargeWatchEnabled = prefs.getBool(_chargeWatchKey) ?? false;
       notifyListeners();
     } on Exception catch (_) {
       // Defaults are usable; a broken preference store is not worth failing on.
@@ -118,6 +127,12 @@ class AppSettings extends ChangeNotifier {
     } on Exception catch (_) {
       // Kept for this session at least.
     }
+  }
+
+  Future<void> setChargeWatch(bool value) async {
+    chargeWatchEnabled = value;
+    notifyListeners();
+    await _writeBool(_chargeWatchKey, value);
   }
 
   Future<void> setHapticAlerts(bool value) async {

@@ -86,6 +86,28 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                     if (mounted) setState(() {});
                   },
                 ),
+                SwitchListTile(
+                  value: settings.chargeWatchEnabled,
+                  onChanged: (v) async {
+                    await settings.setChargeWatch(v);
+                    widget.service.chargeWatchEnabled = v;
+                    if (mounted) setState(() {});
+                  },
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    t.chargeWatchTitle,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                  subtitle: Text(
+                    t.chargeWatchHint,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      height: 1.4,
+                      color: AppTheme.textFaint,
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 4),
               ],
             ),

@@ -94,6 +94,7 @@ class _JkBmsAppState extends State<JkBmsApp> {
       haptics: _settings.hapticAlerts,
       rawFrames: _settings.recordRawFrames,
       chargeTargetSoc: _settings.chargeTargetSoc,
+      watchCharge: _settings.chargeWatchEnabled,
     );
 
     if (mounted) setState(() {});
@@ -130,6 +131,12 @@ class _JkBmsAppState extends State<JkBmsApp> {
               hoursAgo: (n) => t.widgetHours('$n'),
               daysAgo: (n) => t.widgetDays('$n'),
             );
+            _service.chargeWatchTitle = t.chargeWatchNotifTitle;
+            _service.chargeWatchText = (s) => t.chargeWatchNotifText(
+                  s.soc.toStringAsFixed(0),
+                  s.packVoltage.toStringAsFixed(1),
+                  s.current.toStringAsFixed(1),
+                );
             return ConnectScreen(
               service: _service,
               localeController: _locale,

@@ -414,6 +414,7 @@ class BmsService {
     repository?.addSnapshot(snapshot);
     _checkAlerts(snapshot);
     _checkChargeAlerts(snapshot);
+    unawaited(_updateChargeWatch(snapshot));
     _updateCapacityTest(snapshot);
     _watchCharging(snapshot);
     _learnFromSnapshot(snapshot);
@@ -667,6 +668,60 @@ class BmsService {
     }
   }
 
+  // --- Charge watch ---
+  //
+  // Charge alerts were useless without this. Android throttles a backgrounded
+  // app off the radio within minutes, so overnight there were no readings and
+  // therefore no alerts -- exactly the case the alerts were built for.
+
+  /// Whether to hold a foreground service open while the pack is charging.
+  bool chargeWatchEnabled = false;
+
+  /// Wording for the charging notification, supplied by the UI.
+  String chargeWatchTitle = 'Charging';
+  String Function(BmsSnapshot)? chargeWatchText;
+
+  bool _chargeServiceUp = false;
+
+  /// True while the app is holding the link open for a charge.
+  bool get isWatchingCharge => _chargeServiceUp;
+
+  Future<void> _updateChargeWatch(BmsSnapshot snapshot) async {
+    // A trip already owns the service, and its notification is the more
+    // useful one. Never fight it for the slot.
+    if (trip.isRecording) return;
+    if (!chargeWatchEnabled) {
+      if (_chargeServiceUp) await _stopChargeWatch();
+      return;
+    }
+
+    if (chargeAlerts.isCharging) {
+      final text = chargeWatchText?.call(snapshot) ?? '';
+      if (_chargeServiceUp) {
+        await notifications.update(title: chargeWatchTitle, text: text);
+        return;
+      }
+      if (!await notifications.requestPermission()) return;
+      // dataSync, not location: this has nothing to do with where the bike is,
+      // and asking for a location-typed service without needing it is how an
+      // app gets refused on Android 14.
+      _chargeServiceUp = await notifications.start(
+        title: chargeWatchTitle,
+        text: text,
+        usesRealLocation: false,
+      );
+    } else if (_chargeServiceUp) {
+      await _stopChargeWatch();
+    }
+  }
+
+  Future<void> _stopChargeWatch() async {
+    _chargeServiceUp = false;
+    // Only if a trip is not relying on it. Stopping the service out from under
+    // a ride would end the recording.
+    if (!trip.isRecording) await notifications.stop();
+  }
+
   // --- Home screen widget ---
   //
   // Shows the last reading, never a live one: the app holds the link for a few
@@ -848,7 +903,9 @@ class BmsService {
     required bool haptics,
     required bool rawFrames,
     double? chargeTargetSoc,
+    bool watchCharge = false,
   }) {
+    chargeWatchEnabled = watchCharge;
     chargeAlerts.targetSoc = chargeTargetSoc;
     hapticAlerts = haptics;
     repository?.recordRawFrames = rawFrames;
