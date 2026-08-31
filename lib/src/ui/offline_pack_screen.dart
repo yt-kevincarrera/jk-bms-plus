@@ -8,6 +8,7 @@ import '../metrics/range_estimator.dart';
 import 'theme.dart';
 import 'trends_screen.dart';
 import 'widgets/common.dart';
+import 'widgets/maintenance_card.dart';
 
 /// What is known about one battery without talking to it.
 ///
@@ -310,6 +311,12 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
           const SizedBox(height: 4),
         ],
       ),
+      if (widget.service.repository != null)
+        MaintenanceCard(
+          db: widget.service.repository!.db,
+          deviceId: widget.device.id,
+          onChanged: _load,
+        ),
       Section(
         title: t.offlineTrips,
         children: [
