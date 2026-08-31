@@ -38,6 +38,8 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
   List<Trip> _trips = const [];
   List<CapacityTest> _tests = const [];
   double? _rangeKm;
+  DateTime? _firstAt;
+  int _readingCount = 0;
 
   @override
   void initState() {
@@ -83,6 +85,8 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
       _last = readings.isEmpty ? null : readings.last;
       _trips = trips;
       _tests = tests;
+      _firstAt = readings.isEmpty ? null : readings.first.timestamp;
+      _readingCount = readings.length;
       _rangeKm = estimator.hasLearned && usableWh != null
           ? estimator.rangeKm(usableWh)
           : null;
@@ -134,6 +138,40 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
     final totalKm = _trips.fold<double>(0, (a, b) => a + b.distanceKm);
     final completed = _tests.where((x) => x.completed).toList();
 
+    // The capacity the BMS's own coulomb counter implies: remaining divided by
+    // the charge it reports. Only meaningful away from the extremes, where
+    // dividing by a rounded percentage is noise rather than a figure.
+    final socFraction = last == null ? 0.0 : last.soc / 100.0;
+    final implied = last != null && socFraction >= 0.15 && socFraction <= 0.95
+        ? last.remainingAh / socFraction
+        : null;
+
+    final catalogue = widget.device.catalogueCapacityAh;
+    final healthPercent = implied != null && catalogue != null && catalogue > 0
+        ? (implied / catalogue * 100).clamp(0.0, 120.0)
+        : null;
+
+    // Which cell sat lowest in the last reading. Not the same as the one that
+    // is always lowest, but it is what the stored row can answer.
+    (int, double)? weakest;
+    if (last != null) {
+      final cells = decodeCellVoltages(last.cellVoltagesJson);
+      if (cells.isNotEmpty) {
+        var idx = 0;
+        for (var i = 1; i < cells.length; i++) {
+          if (cells[i] < cells[idx]) idx = i;
+        }
+        weakest = (idx, cells[idx]);
+      }
+    }
+
+    // The one figure here that is a measurement rather than arithmetic on what
+    // the BMS says about itself.
+    final measured = completed.map((x) => x.measuredAh).toList();
+    final bestMeasured = measured.isEmpty
+        ? null
+        : measured.reduce((a, b) => a > b ? a : b);
+
     return [
       Section(
         title: t.offlineTitle,
@@ -176,6 +214,56 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
             valueColor: widget.device.catalogueCapacityAh == null
                 ? AppTheme.watch
                 : null,
+            last: true,
+          ),
+        ],
+      ),
+      Section(
+        title: t.offlineHealthTitle,
+        children: [
+          InfoRow(
+            t.offlineMeasuredHealth,
+            healthPercent == null
+                ? '--'
+                : '${healthPercent.toStringAsFixed(0)} %',
+            dim: healthPercent == null,
+            valueColor: healthPercent == null ? null : _healthTone(healthPercent),
+          ),
+          InfoRow(
+            t.offlineImplied,
+            implied == null ? '--' : '${implied.toStringAsFixed(1)} Ah',
+            dim: implied == null,
+            hint: implied == null
+                ? t.offlineImpliedUnusable
+                : t.offlineImpliedHint,
+          ),
+          if (last != null) ...[
+            InfoRow(t.offlineSoh, '${last.soh.toStringAsFixed(0)} %'),
+            InfoRow(t.offlineCycles, last.cycleCount.toStringAsFixed(0)),
+            if (weakest != null)
+              InfoRow(
+                t.offlineWeakest,
+                t.offlineWeakestValue(
+                  '${weakest.$1 + 1}',
+                  weakest.$2.toStringAsFixed(3),
+                ),
+              ),
+            InfoRow(
+              t.offlineMaxTemp,
+              '${last.maxTemperature.toStringAsFixed(0)} °C',
+            ),
+          ],
+          if (bestMeasured != null)
+            InfoRow(
+              t.offlineBestMeasured,
+              '${bestMeasured.toStringAsFixed(1)} Ah',
+              valueColor: AppTheme.good,
+            ),
+          InfoRow(
+            t.offlineHistorySince,
+            _firstAt == null ? '--' : _date(_firstAt!),
+            dim: _firstAt == null,
+            hint: t.offlineReadings('$_readingCount'),
             last: true,
           ),
         ],
@@ -237,6 +325,12 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
       return '${t.agoPrefix} ${gap.inHours} h ${t.agoSuffix}'.trim();
     }
     return _date(utc);
+  }
+
+  static Color _healthTone(double percent) {
+    if (percent >= 92) return AppTheme.good;
+    if (percent >= 80) return AppTheme.watch;
+    return AppTheme.bad;
   }
 
   static String _date(DateTime utc) {
