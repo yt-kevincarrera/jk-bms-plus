@@ -302,6 +302,75 @@ class AppDatabase extends _$AppDatabase {
         },
       );
 
+  /// Thins old readings down to one per bucket.
+  ///
+  /// At 1 Hz an hour of riding a day is over a million rows a year, and
+  /// nothing was ever removing them. The screens that read a pack's whole
+  /// history would have taken seconds to open and eventually run out of
+  /// memory.
+  ///
+  /// It thins rather than averages. An averaged row would be a reading that
+  /// never happened, sitting in the same table as real ones, and this app does
+  /// not do that anywhere else either. What survives is genuinely observed.
+  ///
+  /// The cost is that peaks between kept readings are lost once a period is
+  /// compacted. That is acceptable because peaks are already preserved where
+  /// they matter: every ride stores its own maximum delta, temperature and
+  /// current in the trips table, and those rows are never thinned.
+  ///
+  /// Returns how many rows went.
+  Future<int> compactSnapshots({
+    Duration keepFullResolution = const Duration(days: 30),
+    Duration bucket = const Duration(minutes: 1),
+  }) async {
+    final cutoff = DateTime.now().toUtc().subtract(keepFullResolution);
+    final cutoffSeconds = cutoff.millisecondsSinceEpoch ~/ 1000;
+    final bucketSeconds = bucket.inSeconds;
+    if (bucketSeconds <= 0) return 0;
+
+    // Drift stores DateTime as unix seconds, so integer division buckets them.
+    // Grouping by device as well as bucket keeps two packs read in the same
+    // minute from collapsing into one row.
+    return customUpdate(
+      'DELETE FROM snapshots WHERE timestamp < ?1 AND id NOT IN ('
+      '  SELECT MAX(id) FROM snapshots WHERE timestamp < ?1'
+      '  GROUP BY device_id, timestamp / ?2'
+      ')',
+      variables: [
+        Variable<int>(cutoffSeconds),
+        Variable<int>(bucketSeconds),
+      ],
+      updates: {snapshots},
+    );
+  }
+
+  /// How many readings are stored for one pack, without loading any of them.
+  Future<int> snapshotCountFor(String deviceId) async {
+    final row = await (selectOnly(snapshots)
+          ..addColumns([snapshots.id.count()])
+          ..where(snapshots.deviceId.equals(deviceId)))
+        .getSingle();
+    return row.read(snapshots.id.count()) ?? 0;
+  }
+
+  /// The oldest reading for a pack, for saying how far the history goes back
+  /// without reading the history.
+  Future<DateTime?> firstSnapshotAt(String deviceId) async {
+    final row = await (select(snapshots)
+          ..where((s) => s.deviceId.equals(deviceId))
+          ..orderBy([(s) => OrderingTerm.asc(s.timestamp)])
+          ..limit(1))
+        .getSingleOrNull();
+    return row?.timestamp;
+  }
+
+  /// The most recent reading for a pack.
+  Future<Snapshot?> lastSnapshotFor(String deviceId) => (select(snapshots)
+        ..where((s) => s.deviceId.equals(deviceId))
+        ..orderBy([(s) => OrderingTerm.desc(s.timestamp)])
+        ..limit(1))
+      .getSingleOrNull();
+
   // --- Maintenance ---
 
   Future<int> insertMaintenance(MaintenanceEventsCompanion e) =>

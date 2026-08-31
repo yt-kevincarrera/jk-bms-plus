@@ -59,7 +59,15 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
     }
 
     final id = widget.device.id;
-    final readings = await repo.allSnapshots(id, days: 3650);
+    // A bounded window. This used to ask for ten years of readings just to
+    // find the last one and count them, which at 1 Hz is hundreds of thousands
+    // of rows pulled into memory to answer two questions that are one SQL
+    // query each. Six months is what the cell-drift analysis needs, and that
+    // one genuinely needs the readings themselves.
+    final readings = await repo.allSnapshots(id, days: 180);
+    final totalReadings = await repo.db.snapshotCountFor(id);
+    final oldest = await repo.db.firstSnapshotAt(id);
+    final newest = await repo.db.lastSnapshotFor(id);
     final trips = await repo.db.recentTrips(id, limit: 500);
     final tests = await repo.capacityTests(id);
 
@@ -79,18 +87,18 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
     // one. With none, there is no usable-energy figure to divide, so the range
     // stays unknown rather than being invented from a nominal voltage.
     final catalogue = widget.device.catalogueCapacityAh;
-    final usableWh = catalogue == null || readings.isEmpty
+    final usableWh = catalogue == null || newest == null
         ? null
-        : catalogue * readings.last.packVoltage;
+        : catalogue * newest.packVoltage;
 
     if (!mounted) return;
     setState(() {
       _loading = false;
-      _last = readings.isEmpty ? null : readings.last;
+      _last = newest;
       _trips = trips;
       _tests = tests;
-      _firstAt = readings.isEmpty ? null : readings.first.timestamp;
-      _readingCount = readings.length;
+      _firstAt = oldest;
+      _readingCount = totalReadings;
       _driftRanking = const CellDriftAnalysis().analyse(readings);
       _drift = _driftRanking.isNotEmpty && _driftRanking.first.isWorsening
           ? _driftRanking.first

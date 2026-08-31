@@ -232,6 +232,13 @@ class BmsRepository {
   Future<int> pruneRawFrames() =>
       db.pruneRawFrames(keep: rawFrameRetention);
 
+  /// Thins readings older than a month down to one a minute.
+  ///
+  /// Cheap, and worth doing at every start rather than when the phone is
+  /// already full: at 1 Hz this table is the second biggest thing the app
+  /// writes, and nothing was ever removing from it.
+  Future<int> compactSnapshots() => db.compactSnapshots();
+
   Future<StorageStats> storageStats() async => StorageStats(
         snapshots: await db.countSnapshots(),
         rawFrames: await db.countRawFrames(),

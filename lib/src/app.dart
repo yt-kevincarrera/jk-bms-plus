@@ -52,6 +52,7 @@ class _JkBmsAppState extends State<JkBmsApp> {
     // Cheap, and better done at every start than when the phone is already
     // full: raw frames are the biggest thing this app writes.
     _repository.pruneRawFrames();
+    _repository.compactSnapshots();
     _proximity.load();
     _loadSettings();
     _loadVersion();
