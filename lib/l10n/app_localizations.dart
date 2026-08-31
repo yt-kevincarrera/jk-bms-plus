@@ -3660,6 +3660,30 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Tienes la {current}. La nueva pesa {size} MB. No se descarga nada hasta que lo pidas.'**
   String updateDialogBody(String current, String size);
+
+  /// No description provided for @widgetJustNow.
+  ///
+  /// In es, this message translates to:
+  /// **'ahora mismo'**
+  String get widgetJustNow;
+
+  /// No description provided for @widgetMinutes.
+  ///
+  /// In es, this message translates to:
+  /// **'hace {n} min'**
+  String widgetMinutes(String n);
+
+  /// No description provided for @widgetHours.
+  ///
+  /// In es, this message translates to:
+  /// **'hace {n} h'**
+  String widgetHours(String n);
+
+  /// No description provided for @widgetDays.
+  ///
+  /// In es, this message translates to:
+  /// **'hace {n} d'**
+  String widgetDays(String n);
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

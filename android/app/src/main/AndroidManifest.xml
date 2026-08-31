@@ -74,7 +74,21 @@
             android:name="com.pravera.flutter_foreground_task.service.ForegroundService"
             android:foregroundServiceType="location|dataSync"
             android:exported="false" />
+        <!-- The home screen widget. It only ever displays what was last read;
+             it holds no connection and starts nothing. -->
+        <receiver
+            android:name=".PackWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/pack_widget_info" />
+        </receiver>
+
         <!-- Grants the system installer read access to a downloaded update,
+
              and to nothing else. See res/xml/file_paths.xml. -->
         <provider
             android:name="androidx.core.content.FileProvider"

@@ -9,6 +9,8 @@ import 'data/repository.dart';
 import 'gps/location_source.dart';
 import 'gps/simulated_location_source.dart';
 import 'platform/live_notification.dart';
+import 'platform/pack_widget.dart';
+import 'platform/widget_publisher.dart';
 import 'model/bms_snapshot.dart';
 import 'model/jk_device_info.dart';
 import 'model/jk_settings.dart';
@@ -416,6 +418,7 @@ class BmsService {
     _watchCharging(snapshot);
     _learnFromSnapshot(snapshot);
     _snapshotController.add(snapshot);
+    unawaited(_publishWidget(snapshot));
   }
 
   void _handleSettings(JkFrame frame) {
@@ -664,7 +667,50 @@ class BmsService {
     }
   }
 
+  // --- Home screen widget ---
+  //
+  // Shows the last reading, never a live one: the app holds the link for a few
+  // minutes a day, so anything on the home screen is a memory and says so.
+
+  final WidgetPublisher widgetPublisher = WidgetPublisher();
+
+  /// The words for the age line, set by the app so this layer stays free of
+  /// Flutter localisations.
+  PackWidgetStrings? widgetStrings;
+
+  Future<void> _publishWidget(BmsSnapshot snapshot) async {
+    final device = activeDevice;
+    final words = widgetStrings;
+    if (device == null || words == null || device.demo) return;
+
+    await widgetPublisher.publish(
+      PackWidgetContent.from(
+        packName: device.name.isEmpty ? device.id : device.name,
+        soc: snapshot.soc,
+        readingAt: snapshot.timestamp,
+        now: DateTime.now().toUtc(),
+        // Only once this pack has taught the app what a kilometre costs. A
+        // range quoted from the default consumption would look identical to
+        // one it had earned.
+        rangeKm: rangeEstimator.hasLearned
+            ? rangeEstimator.rangeKm(
+                RangeEstimator.usableWh(
+                  remainingAh: snapshot.remainingCapacityAh,
+                  packVoltage: snapshot.packVoltage,
+                  cellCount: snapshot.cellCount,
+                  minCellVoltage: snapshot.minCellVoltage,
+                  averageCellVoltage: snapshot.averageCellVoltage,
+                  cutoffVoltagePerCell: cutoffVoltagePerCell,
+                ),
+              )
+            : null,
+        strings: words,
+      ),
+    );
+  }
+
   // --- Charge alerts ---
+
   //
   // Charging happens overnight, which is exactly why nobody sees any of it.
 

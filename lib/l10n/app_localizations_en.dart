@@ -2014,4 +2014,22 @@ class AppL10nEn extends AppL10n {
   String updateDialogBody(String current, String size) {
     return 'You are on $current. The new one is $size MB. Nothing downloads until you ask.';
   }
+
+  @override
+  String get widgetJustNow => 'just now';
+
+  @override
+  String widgetMinutes(String n) {
+    return '$n min ago';
+  }
+
+  @override
+  String widgetHours(String n) {
+    return '$n h ago';
+  }
+
+  @override
+  String widgetDays(String n) {
+    return '$n d ago';
+  }
 }
