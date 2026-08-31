@@ -80,6 +80,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
     });
 
     _loadStored();
+    unawaited(_checkForUpdateQuietly());
 
     // Scanning is what anybody opens this screen to do, so it starts on its
     // own. The button below becomes a retry rather than the way in.
@@ -96,7 +97,89 @@ class _ConnectScreenState extends State<ConnectScreen> {
     super.dispose();
   }
 
+  /// Announces a new build, once a day at most, and only until waved away.
+  ///
+  /// Deliberately a banner and not a dialog: nothing here is urgent, and an app
+  /// that interrupts you to talk about itself is an app you stop opening.
+  Widget _updateBanner(AppL10n t) {
+    final check = widget.updateService.lastCheck;
+    if (check == null || !check.hasUpdate) return const SizedBox.shrink();
+
+    final version = check.release!.version.toString();
+    if (widget.settings.dismissedUpdateVersion == version) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceRaised,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppTheme.cool.withValues(alpha: 0.5)),
+        ),
+        padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+        child: Row(
+          children: [
+            const Icon(Icons.system_update_alt, size: 18, color: AppTheme.cool),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                t.updateBannerTitle(version),
+                style: const TextStyle(fontSize: 13.5, color: AppTheme.cool),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                await widget.settings.dismissUpdate(version);
+                if (mounted) setState(() {});
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.textFaint,
+                textStyle: const TextStyle(fontSize: 12.5),
+              ),
+              child: Text(t.updateBannerDismiss),
+            ),
+            FilledButton(
+              onPressed: _openSettings,
+              style: FilledButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                textStyle: const TextStyle(fontSize: 12.5),
+              ),
+              child: Text(t.updateBannerAction),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _checkForUpdateQuietly() async {
+    widget.updateService.token = widget.settings.updateToken;
+    final found = await widget.updateService.checkQuietly(
+      lastCheckedAt: widget.settings.lastUpdateCheck,
+      interval: const Duration(hours: 24),
+      onChecked: widget.settings.markUpdateChecked,
+    );
+    if (found && mounted) setState(() {});
+  }
+
+  Future<void> _openSettings() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => AppSettingsScreen(
+          service: widget.service,
+          settings: widget.settings,
+          localeController: widget.localeController,
+          updateService: widget.updateService,
+        ),
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
   Future<void> _loadStored() async {
+
     final devices = await widget.service.repository?.devices();
     if (mounted && devices != null) setState(() => _stored = devices);
   }
@@ -556,19 +639,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
           IconButton(
             tooltip: t.appSettingsTitle,
             icon: const Icon(Icons.tune),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => AppSettingsScreen(
-                  service: widget.service,
-                  settings: widget.settings,
-                  localeController: widget.localeController,
-                  updateService: widget.updateService,
-                ),
-              ),
-            ).then((_) {
-              if (mounted) setState(() {});
-            }),
-          ),
+            onPressed: _openSettings,          ),
         ],
       ),
       body: SafeArea(
@@ -619,6 +690,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
                 ),
               ),
             ),
+          _updateBanner(t),
           // Always, not only when the scan came up empty. A battery you have
           // already used outranks whatever headphones happen to be in the
           // room, and opening its history needs no radio at all.

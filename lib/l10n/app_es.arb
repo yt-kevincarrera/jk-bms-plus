@@ -1019,5 +1019,15 @@
         "type": "String"
       }
     }
+  },
+  "updateBannerTitle": "Hay una versión {version}",
+  "updateBannerAction": "Ver",
+  "updateBannerDismiss": "Ahora no",
+  "@updateBannerTitle": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
   }
 }
