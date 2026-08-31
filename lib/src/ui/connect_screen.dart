@@ -68,7 +68,6 @@ class _ConnectScreenState extends State<ConnectScreen> {
       if (!mounted || _connecting) return;
       _connecting = true;
       _connect(device);
-    _loadStored();
     });
 
     _errorSub = widget.service.linkErrors.listen((e) {
@@ -78,6 +77,14 @@ class _ConnectScreenState extends State<ConnectScreen> {
           _busyMessage = e.likelyBusy;
         });
       }
+    });
+
+    _loadStored();
+
+    // Scanning is what anybody opens this screen to do, so it starts on its
+    // own. The button below becomes a retry rather than the way in.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _startScan();
     });
   }
 
@@ -117,6 +124,14 @@ class _ConnectScreenState extends State<ConnectScreen> {
               color: AppTheme.textFaint,
             ),
           ),
+          Text(
+            t.storedManageHint,
+            style: const TextStyle(
+              fontSize: 11.5,
+              height: 1.4,
+              color: AppTheme.textFaint,
+            ),
+          ),
           const SizedBox(height: 4),
           for (final d in _stored)
             ListTile(
@@ -144,10 +159,107 @@ class _ConnectScreenState extends State<ConnectScreen> {
                   ),
                 ),
               ),
+              onLongPress: () => _managePack(t, d),
             ),
         ],
       ),
     );
+  }
+
+
+  /// Rename or delete a stored battery, from the list itself.
+  ///
+  /// Deleting takes everything recorded on that pack with it, so it asks
+  /// first and says what goes.
+  Future<void> _managePack(AppL10n t, Device d) async {
+    final label = d.name.isEmpty ? d.id : d.name;
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+              child: Text(
+                label,
+                style: const TextStyle(fontSize: 15),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.edit_outlined),
+              title: Text(t.packsRename),
+              onTap: () => Navigator.of(context).pop('rename'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_outline, color: AppTheme.bad),
+              title: Text(
+                t.packsDelete,
+                style: const TextStyle(color: AppTheme.bad),
+              ),
+              onTap: () => Navigator.of(context).pop('delete'),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (!mounted || action == null) return;
+
+    if (action == 'rename') {
+      final controller = TextEditingController(text: d.name);
+      final name = await showDialog<String>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(t.packsRename),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: InputDecoration(labelText: t.packsRenameHint),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(t.packsCancel),
+            ),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.of(context).pop(controller.text.trim()),
+              child: Text(t.packsSave),
+            ),
+          ],
+        ),
+      );
+      controller.dispose();
+      if (name != null && name.isNotEmpty) {
+        await widget.service.repository?.setDeviceName(d.id, name);
+        await _loadStored();
+      }
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(t.packsDelete),
+        content: Text(t.packsDeleteConfirm(label)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(t.packsCancel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppTheme.bad),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(t.packsDelete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    await widget.service.repository?.deleteDevice(d.id);
+    await _loadStored();
   }
 
   static String _shortDate(DateTime utc) {
@@ -420,9 +532,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
                 ),
               ),
             ),
-          // Above the scan results: the pack you already know about is
-          // usually the one you came for, and opening it needs no radio.
-          if (!_scanning && _devices.isEmpty) _storedPacks(t),
+          // Always, not only when the scan came up empty. A battery you have
+          // already used outranks whatever headphones happen to be in the
+          // room, and opening its history needs no radio at all.
+          _storedPacks(t),
           Expanded(
             child: _devices.isEmpty
                 ? Center(
@@ -441,7 +554,11 @@ class _ConnectScreenState extends State<ConnectScreen> {
                           const SizedBox(height: 14),
                         ],
                         Text(
-                          _scanning ? t.connectScanning : t.connectScanFinished,
+                          _scanning
+                              ? t.connectScanning
+                              : _searched
+                                  ? t.connectScanFinished
+                                  : t.connectNoDevices,
                           style: const TextStyle(
                             color: AppTheme.textSecondary,
                           ),
@@ -483,15 +600,21 @@ class _ConnectScreenState extends State<ConnectScreen> {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
             child: _scanning
                 ? OutlinedButton.icon(
-                    onPressed: () =>
-                        _cancelScan(message: t.connectScanCancelled),
+                    // No message. Cancelling is something the rider chose to
+                    // do, and reporting it in the same red banner the app uses
+                    // for genuine failures makes a deliberate act look like
+                    // something went wrong.
+                    onPressed: _cancelScan,
                     icon: const Icon(Icons.stop_circle_outlined, size: 19),
                     label: Text(t.connectCancelScan),
                   )
                 : FilledButton.icon(
                     onPressed: _startScan,
-                    icon: const Icon(Icons.bluetooth_searching, size: 19),
-                    label: Text(t.connectScan),
+                    icon: const Icon(
+                      Icons.bluetooth_searching,
+                      size: 19,
+                    ),
+                    label: Text(_searched ? t.connectRetry : t.connectScan),
                   ),
           ),
           // Demo is a way to look around with no hardware, not something a

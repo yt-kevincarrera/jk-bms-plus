@@ -163,12 +163,6 @@ abstract class AppL10n {
   /// **'Cancelar búsqueda'**
   String get connectCancelScan;
 
-  /// No description provided for @connectScanCancelled.
-  ///
-  /// In es, this message translates to:
-  /// **'Búsqueda cancelada'**
-  String get connectScanCancelled;
-
   /// No description provided for @connectNoDevices.
   ///
   /// In es, this message translates to:
@@ -190,7 +184,7 @@ abstract class AppL10n {
   /// No description provided for @connectOtherDevicesHint.
   ///
   /// In es, this message translates to:
-  /// **'La app no oculta nada. Si tu BMS tiene otro nombre —porque lo cambiaste en la app oficial, o porque ese modelo no anuncia el suyo— va a salir en esta lista. Búscalo por la señal más fuerte y pruébalo.'**
+  /// **'La app no oculta nada. Si tu BMS tiene otro nombre, porque lo cambiaste en la app oficial o porque ese modelo no anuncia el suyo, va a salir en esta lista. Búscalo por la señal más fuerte y pruébalo.'**
   String get connectOtherDevicesHint;
 
   /// No description provided for @connectLikelyBms.
@@ -262,7 +256,7 @@ abstract class AppL10n {
   /// No description provided for @demoBanner.
   ///
   /// In es, this message translates to:
-  /// **'DEMO — pack simulado, sin BMS conectado'**
+  /// **'DEMO: pack simulado, sin BMS conectado'**
   String get demoBanner;
 
   /// No description provided for @demoTitle.
@@ -3088,7 +3082,7 @@ abstract class AppL10n {
   /// No description provided for @packsIntro.
   ///
   /// In es, this message translates to:
-  /// **'Todo lo que la app mide —capacidad, degradación, qué celda se queda atrás, cuánto cuesta un kilómetro— es de una batería concreta. Cada pack guarda su historial aparte, así que puedes usar el mismo teléfono con varias sin que se mezclen.'**
+  /// **'Todo lo que la app mide (capacidad, degradación, qué celda se queda atrás, cuánto cuesta un kilómetro) es de una batería concreta. Cada pack guarda su historial aparte, así que puedes usar el mismo teléfono con varias sin que se mezclen.'**
   String get packsIntro;
 
   /// No description provided for @packsCurrent.
@@ -3226,7 +3220,7 @@ abstract class AppL10n {
   /// No description provided for @offlineBanner.
   ///
   /// In es, this message translates to:
-  /// **'Sin conexión — todo esto sale de lo que ya estaba guardado, no del BMS ahora mismo.'**
+  /// **'Sin conexión. Todo esto sale de lo que ya estaba guardado, no del BMS ahora mismo.'**
   String get offlineBanner;
 
   /// No description provided for @offlineLastReading.
@@ -3306,6 +3300,36 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **''**
   String get agoSuffix;
+
+  /// No description provided for @catalogueFromBmsTag.
+  ///
+  /// In es, this message translates to:
+  /// **'del BMS'**
+  String get catalogueFromBmsTag;
+
+  /// No description provided for @catalogueConfirm.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirmar que se vendió así'**
+  String get catalogueConfirm;
+
+  /// No description provided for @catalogueFromBmsHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Tomado de la configuración del BMS, que es un número sobre este pack pero lo escribió quien lo armó. Si te lo vendieron con otra capacidad, ponla: la diferencia entre las dos cifras es justo lo que la salud mide.'**
+  String get catalogueFromBmsHint;
+
+  /// No description provided for @connectRetry.
+  ///
+  /// In es, this message translates to:
+  /// **'Reintentar búsqueda'**
+  String get connectRetry;
+
+  /// No description provided for @storedManageHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Mantén pulsada una batería para renombrarla o borrarla.'**
+  String get storedManageHint;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

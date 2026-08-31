@@ -412,10 +412,41 @@ class BmsRepository {
   Future<void> setDeviceName(String id, String name) =>
       db.updateDevice(id, DevicesCompanion(name: Value(name)));
 
+  /// The rider stating what the pack was sold as. Sticks, and outranks the BMS.
   Future<void> setDeviceCatalogue(String id, double ah) => db.updateDevice(
         id,
-        DevicesCompanion(catalogueCapacityAh: Value(ah)),
+        DevicesCompanion(
+          catalogueCapacityAh: Value(ah),
+          catalogueFromBms: const Value(false),
+        ),
       );
+
+  /// The app taking the BMS's configured nominal, so the health figures work
+  /// on the first connection without anybody typing anything.
+  ///
+  /// Only ever fills a blank. It will not overwrite a figure the rider stated,
+  /// because the disagreement between the two is itself a finding: a pack sold
+  /// as 45 Ah whose BMS is set to 40 is telling you something, and silently
+  /// adopting the 40 would erase it.
+  Future<bool> adoptDeviceCatalogueFromBms(String id, double ah) async {
+    if (ah <= 0 || ah > 2000) return false;
+    final existing = await db.device(id);
+    if (existing == null) return false;
+    if (existing.catalogueCapacityAh != null && !existing.catalogueFromBms) {
+      return false;
+    }
+    if (existing.catalogueCapacityAh == ah && existing.catalogueFromBms) {
+      return false;
+    }
+    await db.updateDevice(
+      id,
+      DevicesCompanion(
+        catalogueCapacityAh: Value(ah),
+        catalogueFromBms: const Value(true),
+      ),
+    );
+    return true;
+  }
 
   Future<void> deleteDevice(String id) => db.deleteDevice(id);
 

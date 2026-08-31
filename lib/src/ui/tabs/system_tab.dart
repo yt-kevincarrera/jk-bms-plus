@@ -364,6 +364,10 @@ class _SystemTabState extends State<SystemTab> {
     // this app invented.
     final catalogue = widget.service.catalogueCapacityAh;
     final device = widget.service.activeDevice;
+    // Adopted from the pack rather than stated by the rider. Shown, not hidden:
+    // the figures work either way, but only one of the two is a claim about
+    // what was sold.
+    final fromBms = device?.catalogueFromBms ?? false;
     // Half an amp-hour apart is rounding; more than that is two different
     // claims about the same pack.
     final mismatch = configured != null &&
@@ -381,9 +385,15 @@ class _SystemTabState extends State<SystemTab> {
           t.settingsCatalogue,
           catalogue == null
               ? t.catalogueUnset
-              : '${catalogue.toStringAsFixed(1)} Ah',
+              : fromBms
+                  ? '${catalogue.toStringAsFixed(1)} Ah  ·  ${t.catalogueFromBmsTag}'
+                  : '${catalogue.toStringAsFixed(1)} Ah',
           dim: catalogue == null,
-          valueColor: catalogue == null ? AppTheme.watch : null,
+          valueColor: catalogue == null
+              ? AppTheme.watch
+              : fromBms
+                  ? AppTheme.cool
+                  : null,
           hint: device == null
               ? t.settingsCatalogueHint
               : t.settingsCatalogueForPack(
@@ -428,6 +438,28 @@ class _SystemTabState extends State<SystemTab> {
         // A one-tap way to adopt the BMS's own configured figure, offered only
         // while nothing has been stated. It is a better starting point than a
         // guess, and still the rider's decision rather than the app's.
+        if (fromBms && catalogue != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 2, bottom: 6),
+            child: Text(
+              t.catalogueFromBmsHint,
+              style: const TextStyle(
+                fontSize: 11.5,
+                height: 1.45,
+                color: AppTheme.textFaint,
+              ),
+            ),
+          ),
+        // One tap to say the adopted figure is also what it was sold as, which
+        // turns it from borrowed into stated and stops it being re-adopted.
+        if (fromBms && catalogue != null && device != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 2),
+            child: OutlinedButton(
+              onPressed: () => _setCatalogue(device.id, catalogue),
+              child: Text(t.catalogueConfirm),
+            ),
+          ),
         if (catalogue == null && configured != null && device != null)
           Padding(
             padding: const EdgeInsets.only(top: 6, bottom: 2),

@@ -60,6 +60,21 @@ class $DevicesTable extends Devices with TableInfo<$DevicesTable, Device> {
         type: DriftSqlType.double,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _catalogueFromBmsMeta = const VerificationMeta(
+    'catalogueFromBms',
+  );
+  @override
+  late final GeneratedColumn<bool> catalogueFromBms = GeneratedColumn<bool>(
+    'catalogue_from_bms',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("catalogue_from_bms" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _firstSeenAtMeta = const VerificationMeta(
     'firstSeenAt',
   );
@@ -102,6 +117,7 @@ class $DevicesTable extends Devices with TableInfo<$DevicesTable, Device> {
     serialNumber,
     model,
     catalogueCapacityAh,
+    catalogueFromBms,
     firstSeenAt,
     lastSeenAt,
     demo,
@@ -150,6 +166,15 @@ class $DevicesTable extends Devices with TableInfo<$DevicesTable, Device> {
         catalogueCapacityAh.isAcceptableOrUnknown(
           data['catalogue_capacity_ah']!,
           _catalogueCapacityAhMeta,
+        ),
+      );
+    }
+    if (data.containsKey('catalogue_from_bms')) {
+      context.handle(
+        _catalogueFromBmsMeta,
+        catalogueFromBms.isAcceptableOrUnknown(
+          data['catalogue_from_bms']!,
+          _catalogueFromBmsMeta,
         ),
       );
     }
@@ -210,6 +235,10 @@ class $DevicesTable extends Devices with TableInfo<$DevicesTable, Device> {
         DriftSqlType.double,
         data['${effectivePrefix}catalogue_capacity_ah'],
       ),
+      catalogueFromBms: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}catalogue_from_bms'],
+      )!,
       firstSeenAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}first_seen_at'],
@@ -249,6 +278,18 @@ class Device extends DataClass implements Insertable<Device> {
   /// number this app invented, indistinguishable on screen from one the rider
   /// had entered. Unknown has to look like unknown.
   final double? catalogueCapacityAh;
+
+  /// True when the figure above was taken from the BMS's own configuration
+  /// rather than stated by the rider.
+  ///
+  /// Tracked rather than hidden. Adopting the BMS nominal makes the app useful
+  /// the moment it connects, but it is still somebody else's number: whoever
+  /// assembled the pack typed it. Keeping the provenance means the health
+  /// figures can work immediately without the app ever passing that number off
+  /// as what the pack was sold as -- which is the comparison the whole health
+  /// section is built on, and the one place a borrowed figure would quietly
+  /// erase a real finding.
+  final bool catalogueFromBms;
   final DateTime firstSeenAt;
   final DateTime lastSeenAt;
 
@@ -260,6 +301,7 @@ class Device extends DataClass implements Insertable<Device> {
     required this.serialNumber,
     required this.model,
     this.catalogueCapacityAh,
+    required this.catalogueFromBms,
     required this.firstSeenAt,
     required this.lastSeenAt,
     required this.demo,
@@ -274,6 +316,7 @@ class Device extends DataClass implements Insertable<Device> {
     if (!nullToAbsent || catalogueCapacityAh != null) {
       map['catalogue_capacity_ah'] = Variable<double>(catalogueCapacityAh);
     }
+    map['catalogue_from_bms'] = Variable<bool>(catalogueFromBms);
     map['first_seen_at'] = Variable<DateTime>(firstSeenAt);
     map['last_seen_at'] = Variable<DateTime>(lastSeenAt);
     map['demo'] = Variable<bool>(demo);
@@ -289,6 +332,7 @@ class Device extends DataClass implements Insertable<Device> {
       catalogueCapacityAh: catalogueCapacityAh == null && nullToAbsent
           ? const Value.absent()
           : Value(catalogueCapacityAh),
+      catalogueFromBms: Value(catalogueFromBms),
       firstSeenAt: Value(firstSeenAt),
       lastSeenAt: Value(lastSeenAt),
       demo: Value(demo),
@@ -308,6 +352,7 @@ class Device extends DataClass implements Insertable<Device> {
       catalogueCapacityAh: serializer.fromJson<double?>(
         json['catalogueCapacityAh'],
       ),
+      catalogueFromBms: serializer.fromJson<bool>(json['catalogueFromBms']),
       firstSeenAt: serializer.fromJson<DateTime>(json['firstSeenAt']),
       lastSeenAt: serializer.fromJson<DateTime>(json['lastSeenAt']),
       demo: serializer.fromJson<bool>(json['demo']),
@@ -322,6 +367,7 @@ class Device extends DataClass implements Insertable<Device> {
       'serialNumber': serializer.toJson<String>(serialNumber),
       'model': serializer.toJson<String>(model),
       'catalogueCapacityAh': serializer.toJson<double?>(catalogueCapacityAh),
+      'catalogueFromBms': serializer.toJson<bool>(catalogueFromBms),
       'firstSeenAt': serializer.toJson<DateTime>(firstSeenAt),
       'lastSeenAt': serializer.toJson<DateTime>(lastSeenAt),
       'demo': serializer.toJson<bool>(demo),
@@ -334,6 +380,7 @@ class Device extends DataClass implements Insertable<Device> {
     String? serialNumber,
     String? model,
     Value<double?> catalogueCapacityAh = const Value.absent(),
+    bool? catalogueFromBms,
     DateTime? firstSeenAt,
     DateTime? lastSeenAt,
     bool? demo,
@@ -345,6 +392,7 @@ class Device extends DataClass implements Insertable<Device> {
     catalogueCapacityAh: catalogueCapacityAh.present
         ? catalogueCapacityAh.value
         : this.catalogueCapacityAh,
+    catalogueFromBms: catalogueFromBms ?? this.catalogueFromBms,
     firstSeenAt: firstSeenAt ?? this.firstSeenAt,
     lastSeenAt: lastSeenAt ?? this.lastSeenAt,
     demo: demo ?? this.demo,
@@ -360,6 +408,9 @@ class Device extends DataClass implements Insertable<Device> {
       catalogueCapacityAh: data.catalogueCapacityAh.present
           ? data.catalogueCapacityAh.value
           : this.catalogueCapacityAh,
+      catalogueFromBms: data.catalogueFromBms.present
+          ? data.catalogueFromBms.value
+          : this.catalogueFromBms,
       firstSeenAt: data.firstSeenAt.present
           ? data.firstSeenAt.value
           : this.firstSeenAt,
@@ -378,6 +429,7 @@ class Device extends DataClass implements Insertable<Device> {
           ..write('serialNumber: $serialNumber, ')
           ..write('model: $model, ')
           ..write('catalogueCapacityAh: $catalogueCapacityAh, ')
+          ..write('catalogueFromBms: $catalogueFromBms, ')
           ..write('firstSeenAt: $firstSeenAt, ')
           ..write('lastSeenAt: $lastSeenAt, ')
           ..write('demo: $demo')
@@ -392,6 +444,7 @@ class Device extends DataClass implements Insertable<Device> {
     serialNumber,
     model,
     catalogueCapacityAh,
+    catalogueFromBms,
     firstSeenAt,
     lastSeenAt,
     demo,
@@ -405,6 +458,7 @@ class Device extends DataClass implements Insertable<Device> {
           other.serialNumber == this.serialNumber &&
           other.model == this.model &&
           other.catalogueCapacityAh == this.catalogueCapacityAh &&
+          other.catalogueFromBms == this.catalogueFromBms &&
           other.firstSeenAt == this.firstSeenAt &&
           other.lastSeenAt == this.lastSeenAt &&
           other.demo == this.demo);
@@ -416,6 +470,7 @@ class DevicesCompanion extends UpdateCompanion<Device> {
   final Value<String> serialNumber;
   final Value<String> model;
   final Value<double?> catalogueCapacityAh;
+  final Value<bool> catalogueFromBms;
   final Value<DateTime> firstSeenAt;
   final Value<DateTime> lastSeenAt;
   final Value<bool> demo;
@@ -426,6 +481,7 @@ class DevicesCompanion extends UpdateCompanion<Device> {
     this.serialNumber = const Value.absent(),
     this.model = const Value.absent(),
     this.catalogueCapacityAh = const Value.absent(),
+    this.catalogueFromBms = const Value.absent(),
     this.firstSeenAt = const Value.absent(),
     this.lastSeenAt = const Value.absent(),
     this.demo = const Value.absent(),
@@ -437,6 +493,7 @@ class DevicesCompanion extends UpdateCompanion<Device> {
     this.serialNumber = const Value.absent(),
     this.model = const Value.absent(),
     this.catalogueCapacityAh = const Value.absent(),
+    this.catalogueFromBms = const Value.absent(),
     required DateTime firstSeenAt,
     required DateTime lastSeenAt,
     this.demo = const Value.absent(),
@@ -450,6 +507,7 @@ class DevicesCompanion extends UpdateCompanion<Device> {
     Expression<String>? serialNumber,
     Expression<String>? model,
     Expression<double>? catalogueCapacityAh,
+    Expression<bool>? catalogueFromBms,
     Expression<DateTime>? firstSeenAt,
     Expression<DateTime>? lastSeenAt,
     Expression<bool>? demo,
@@ -462,6 +520,7 @@ class DevicesCompanion extends UpdateCompanion<Device> {
       if (model != null) 'model': model,
       if (catalogueCapacityAh != null)
         'catalogue_capacity_ah': catalogueCapacityAh,
+      if (catalogueFromBms != null) 'catalogue_from_bms': catalogueFromBms,
       if (firstSeenAt != null) 'first_seen_at': firstSeenAt,
       if (lastSeenAt != null) 'last_seen_at': lastSeenAt,
       if (demo != null) 'demo': demo,
@@ -475,6 +534,7 @@ class DevicesCompanion extends UpdateCompanion<Device> {
     Value<String>? serialNumber,
     Value<String>? model,
     Value<double?>? catalogueCapacityAh,
+    Value<bool>? catalogueFromBms,
     Value<DateTime>? firstSeenAt,
     Value<DateTime>? lastSeenAt,
     Value<bool>? demo,
@@ -486,6 +546,7 @@ class DevicesCompanion extends UpdateCompanion<Device> {
       serialNumber: serialNumber ?? this.serialNumber,
       model: model ?? this.model,
       catalogueCapacityAh: catalogueCapacityAh ?? this.catalogueCapacityAh,
+      catalogueFromBms: catalogueFromBms ?? this.catalogueFromBms,
       firstSeenAt: firstSeenAt ?? this.firstSeenAt,
       lastSeenAt: lastSeenAt ?? this.lastSeenAt,
       demo: demo ?? this.demo,
@@ -513,6 +574,9 @@ class DevicesCompanion extends UpdateCompanion<Device> {
         catalogueCapacityAh.value,
       );
     }
+    if (catalogueFromBms.present) {
+      map['catalogue_from_bms'] = Variable<bool>(catalogueFromBms.value);
+    }
     if (firstSeenAt.present) {
       map['first_seen_at'] = Variable<DateTime>(firstSeenAt.value);
     }
@@ -536,6 +600,7 @@ class DevicesCompanion extends UpdateCompanion<Device> {
           ..write('serialNumber: $serialNumber, ')
           ..write('model: $model, ')
           ..write('catalogueCapacityAh: $catalogueCapacityAh, ')
+          ..write('catalogueFromBms: $catalogueFromBms, ')
           ..write('firstSeenAt: $firstSeenAt, ')
           ..write('lastSeenAt: $lastSeenAt, ')
           ..write('demo: $demo, ')
@@ -4643,6 +4708,7 @@ typedef $$DevicesTableCreateCompanionBuilder =
       Value<String> serialNumber,
       Value<String> model,
       Value<double?> catalogueCapacityAh,
+      Value<bool> catalogueFromBms,
       required DateTime firstSeenAt,
       required DateTime lastSeenAt,
       Value<bool> demo,
@@ -4655,6 +4721,7 @@ typedef $$DevicesTableUpdateCompanionBuilder =
       Value<String> serialNumber,
       Value<String> model,
       Value<double?> catalogueCapacityAh,
+      Value<bool> catalogueFromBms,
       Value<DateTime> firstSeenAt,
       Value<DateTime> lastSeenAt,
       Value<bool> demo,
@@ -4692,6 +4759,11 @@ class $$DevicesTableFilterComposer
 
   ColumnFilters<double> get catalogueCapacityAh => $composableBuilder(
     column: $table.catalogueCapacityAh,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get catalogueFromBms => $composableBuilder(
+    column: $table.catalogueFromBms,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4745,6 +4817,11 @@ class $$DevicesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get catalogueFromBms => $composableBuilder(
+    column: $table.catalogueFromBms,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get firstSeenAt => $composableBuilder(
     column: $table.firstSeenAt,
     builder: (column) => ColumnOrderings(column),
@@ -4786,6 +4863,11 @@ class $$DevicesTableAnnotationComposer
 
   GeneratedColumn<double> get catalogueCapacityAh => $composableBuilder(
     column: $table.catalogueCapacityAh,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get catalogueFromBms => $composableBuilder(
+    column: $table.catalogueFromBms,
     builder: (column) => column,
   );
 
@@ -4836,6 +4918,7 @@ class $$DevicesTableTableManager
                 Value<String> serialNumber = const Value.absent(),
                 Value<String> model = const Value.absent(),
                 Value<double?> catalogueCapacityAh = const Value.absent(),
+                Value<bool> catalogueFromBms = const Value.absent(),
                 Value<DateTime> firstSeenAt = const Value.absent(),
                 Value<DateTime> lastSeenAt = const Value.absent(),
                 Value<bool> demo = const Value.absent(),
@@ -4846,6 +4929,7 @@ class $$DevicesTableTableManager
                 serialNumber: serialNumber,
                 model: model,
                 catalogueCapacityAh: catalogueCapacityAh,
+                catalogueFromBms: catalogueFromBms,
                 firstSeenAt: firstSeenAt,
                 lastSeenAt: lastSeenAt,
                 demo: demo,
@@ -4858,6 +4942,7 @@ class $$DevicesTableTableManager
                 Value<String> serialNumber = const Value.absent(),
                 Value<String> model = const Value.absent(),
                 Value<double?> catalogueCapacityAh = const Value.absent(),
+                Value<bool> catalogueFromBms = const Value.absent(),
                 required DateTime firstSeenAt,
                 required DateTime lastSeenAt,
                 Value<bool> demo = const Value.absent(),
@@ -4868,6 +4953,7 @@ class $$DevicesTableTableManager
                 serialNumber: serialNumber,
                 model: model,
                 catalogueCapacityAh: catalogueCapacityAh,
+                catalogueFromBms: catalogueFromBms,
                 firstSeenAt: firstSeenAt,
                 lastSeenAt: lastSeenAt,
                 demo: demo,

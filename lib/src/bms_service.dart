@@ -396,6 +396,9 @@ class BmsService {
     if (variant == null) return;
     final settings = _parser.parseSettings(frame, variant);
     _lastSettings = settings;
+    // Fills a blank capacity from the pack's own configuration, so a freshly
+    // connected battery produces real health figures instead of dashes.
+    unawaited(_adoptCapacityFromBms(settings));
     _settingsController.add(settings);
   }
 
@@ -836,7 +839,19 @@ class BmsService {
     _deviceController.add(activeDevice);
   }
 
+  Future<void> _adoptCapacityFromBms(JkSettings settings) async {
+    final id = activeDeviceId;
+    final repo = repository;
+    if (id == null || repo == null) return;
+    final nominal = settings.nominalCapacityAh;
+    if (nominal < 1 || nominal > 2000) return;
+    if (await repo.adoptDeviceCatalogueFromBms(id, nominal)) {
+      await refreshActiveDevice();
+    }
+  }
+
   Future<void> dispose() async {
+
 
     _silenceTimer?.cancel();
     await _stopLiveNotification();

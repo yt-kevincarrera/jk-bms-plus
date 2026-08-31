@@ -4,6 +4,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jk_bms/src/data/database.dart';
+import 'package:jk_bms/src/data/repository.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 /// The schema exactly as version 3 shipped, so the upgrade is exercised against
@@ -160,7 +161,7 @@ void main() {
     test('the migration runs and the schema lands on the current version', () async {
       // Any query forces drift to open the database and run the upgrade.
       await db.allDevices();
-      expect(raw.userVersion, 5);
+      expect(raw.userVersion, 6);
     });
 
     test('nothing that was stored is lost', () async {
@@ -315,6 +316,77 @@ void main() {
       );
       expect((await db.device('CC:DD'))!.catalogueCapacityAh, 35);
       expect((await db.device('AA:BB'))!.catalogueCapacityAh, isNull);
+    });
+  });
+
+  group('upgrading from version 5, which is what 1.2.0 shipped', () {
+    late Database raw;
+    late AppDatabase db;
+
+    setUp(() {
+      raw = sqlite3.openInMemory();
+      for (final statement in _v3Schema) {
+        raw.execute(statement);
+      }
+      // v5: devices exist, catalogue is already nullable, and there is no
+      // column recording where the figure came from.
+      raw.execute('''
+        CREATE TABLE devices (
+          id TEXT NOT NULL PRIMARY KEY,
+          name TEXT NOT NULL DEFAULT '',
+          serial_number TEXT NOT NULL DEFAULT '',
+          model TEXT NOT NULL DEFAULT '',
+          catalogue_capacity_ah REAL,
+          first_seen_at INTEGER NOT NULL,
+          last_seen_at INTEGER NOT NULL,
+          demo INTEGER NOT NULL DEFAULT 0 CHECK (demo IN (0, 1))
+        )''');
+      for (final table in ['trips', 'snapshots', 'raw_frames', 'capacity_tests']) {
+        raw.execute('ALTER TABLE $table ADD COLUMN device_id TEXT');
+      }
+      final now = _epoch(DateTime.utc(2026, 8, 31));
+      raw.execute(
+        "INSERT INTO devices (id, name, catalogue_capacity_ah, first_seen_at, "
+        "last_seen_at) VALUES ('AA:BB', 'Moto', 45, ?, ?)",
+        [now, now],
+      );
+      raw.execute(
+        "INSERT INTO devices (id, name, catalogue_capacity_ah, first_seen_at, "
+        "last_seen_at) VALUES ('CC:DD', 'La otra', NULL, ?, ?)",
+        [now, now],
+      );
+      raw.execute('PRAGMA user_version = 5');
+      db = AppDatabase.forTesting(NativeDatabase.opened(raw));
+    });
+
+    tearDown(() async => db.close());
+
+    test('adds the provenance column without disturbing the figures', () async {
+      final devices = await db.allDevices();
+      expect(devices, hasLength(2));
+
+      final stated = devices.firstWhere((d) => d.id == 'AA:BB');
+      expect(stated.catalogueCapacityAh, 45);
+      // Anything already there was entered by the rider under v1.2.0, where
+      // the app had no way to fill it in. Treating it as stated is correct,
+      // and it is what stops the BMS overwriting it on the next connection.
+      expect(stated.catalogueFromBms, isFalse);
+
+      final blank = devices.firstWhere((d) => d.id == 'CC:DD');
+      expect(blank.catalogueCapacityAh, isNull);
+      expect(blank.catalogueFromBms, isFalse);
+    });
+
+    test('a blank pack can then be filled from the BMS', () async {
+      final repo = BmsRepository(database: db);
+      expect(await repo.adoptDeviceCatalogueFromBms('CC:DD', 35), isTrue);
+      expect((await db.device('CC:DD'))!.catalogueCapacityAh, 35);
+    });
+
+    test('and a stated one is still protected from it', () async {
+      final repo = BmsRepository(database: db);
+      expect(await repo.adoptDeviceCatalogueFromBms('AA:BB', 40), isFalse);
+      expect((await db.device('AA:BB'))!.catalogueCapacityAh, 45);
     });
   });
 }
