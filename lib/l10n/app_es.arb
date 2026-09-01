@@ -1219,5 +1219,14 @@
       }
     }
   },
-  "degSoldOk": "Ha dado lo que se anunció."
+  "degSoldOk": "Ha dado lo que se anunció.",
+  "demoSetCharge": "Poner la carga a",
+  "demoFull": "Llenar al 100 %",
+  "demoEmpty": "Vaciar al 10 %",
+  "demoSpeed": "Velocidad del simulador",
+  "demoSpeedHint": "Acelera el tiempo del pack simulado. Un test de capacidad es una descarga entera: a velocidad normal son horas, y una función que tarda una tarde en llegar no se puede juzgar. La distancia y el GPS no se aceleran, así que el consumo aprendido sigue siendo realista.",
+  "demoSpeedNormal": "normal",
+  "etaFull": "Lleno en",
+  "etaTapering": "aprox., ya va bajando la corriente",
+  "etaDone": "Está lleno"
 }

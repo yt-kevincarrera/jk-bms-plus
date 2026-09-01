@@ -244,6 +244,17 @@ class BmsService {
   /// Fires whenever the connected pack changes, or its stored details do.
   Stream<Device?> get deviceStream => _deviceController.stream;
 
+  /// Puts the simulated pack at a given charge. Demo only.
+  void setDemoCharge(double fraction) {
+    _switchable?.simulator?.pack.setCharge(fraction);
+  }
+
+  /// How fast the simulated pack ages. Demo only.
+  set demoTimeScale(double scale) {
+    final pack = _switchable?.simulator?.pack;
+    if (pack != null) pack.timeScale = scale;
+  }
+
   /// Returns to the radio.
   Future<void> exitDemoMode() async {
     final link = _switchable;
