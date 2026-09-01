@@ -488,8 +488,8 @@
   },
   "adviceHealthDecorativeTitle": "The BMS health figure never moves",
   "adviceHealthDecorativeBody": "It is still pinned at 100% with real cycles behind it. Plenty of firmwares never recompute it. Ignore it and go by measured capacity.",
-  "adviceCapacityBelowTitle": "There is less capacity here than the label claims",
-  "adviceCapacityBelowBody": "The numbers the BMS reports imply {percent}% less than the pack is rated for. That could be real degradation, or a coulomb counter that has drifted. A full capacity test settles it either way.",
+  "adviceCapacityBelowTitle": "It holds less than the label claimed",
+  "adviceCapacityBelowBody": "The BMS figures imply {percent}% less than was advertised. That does not mean the battery is failing: the commonest explanation is that it never was that capacity. A full capacity test separates the two, and from then on degradation is measured against what this battery really delivered.",
   "@adviceCapacityBelowBody": {
     "placeholders": {
       "percent": {
@@ -1189,5 +1189,35 @@
   "autoTripTitle": "Start rides on their own",
   "autoTripHint": "Opens and closes the ride when it detects you are riding: it needs pack current and GPS movement together, sustained. Without it the learning depends on remembering to press start, and the rides people forget are not a random sample: they are the short ones and the ones you were late for. Uses GPS while riding.",
   "autoTripStarted": "Ride started automatically",
-  "autoTripStopped": "Ride saved"
+  "autoTripStopped": "Ride saved",
+  "degNowTitle": "Capacity now",
+  "degBaseline": "Best it has ever held",
+  "degBaselineOn": "measured on {date}",
+  "@degBaselineOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "degLost": "Degradation",
+  "degLostUnknown": "not measurable yet",
+  "degLostWhy": "Degradation is measured against the best this battery has ever held, not against what the advert said. It needs more than one measurement: with a single one you have a capacity, not a loss.",
+  "degImpliedNote": "Estimated from the BMS counter, not measured. A capacity test gives the real figure.",
+  "degSoldTitle": "Against the advert",
+  "degSoldShort": "Sold as {sold} Ah, and the best it has held is {real} Ah: about {pct} % less range than advertised. That is not wear, it was never {sold}.",
+  "@degSoldShort": {
+    "placeholders": {
+      "sold": {
+        "type": "String"
+      },
+      "real": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "degSoldOk": "It has delivered what was advertised."
 }

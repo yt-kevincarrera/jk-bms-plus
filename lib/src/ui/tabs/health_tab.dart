@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
+import 'dart:async';
+
 import '../../bms_service.dart';
+import '../../metrics/degradation.dart';
 import '../../metrics/pack_health_report.dart';
 import '../../metrics/range_estimator.dart';
 import '../../model/bms_snapshot.dart';
@@ -20,16 +23,58 @@ import '../widgets/gauges.dart';
 /// over against each other, which is exactly why none of it appears in the
 /// official app. The reasoning behind each one is worth having, but not on
 /// every glance, so it lives behind a disclosure rather than down the page.
-class HealthTab extends StatelessWidget {
+class HealthTab extends StatefulWidget {
   const HealthTab({required this.service, required this.snapshot, super.key});
 
   final BmsService service;
   final BmsSnapshot? snapshot;
 
   @override
+  State<HealthTab> createState() => _HealthTabState();
+}
+
+class _HealthTabState extends State<HealthTab> {
+  /// Degradation needs history, which lives on disk rather than in the live
+  /// stream. Loaded once and refreshed after a capacity measurement lands.
+  Degradation? _degradation;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDegradation();
+    // A finished capacity test changes the baseline, so the figure would
+    // otherwise stay stale until the tab was rebuilt from scratch.
+    _capacitySub = widget.service.capacityTestState.listen((_) {
+      _loadDegradation();
+    });
+  }
+
+  StreamSubscription<Object?>? _capacitySub;
+
+  @override
+  void dispose() {
+    _capacitySub?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadDegradation() async {
+    final repo = widget.service.repository;
+    final device = widget.service.activeDeviceId;
+    if (repo == null || device == null) return;
+
+    final result = Degradation.from(
+      tests: await repo.capacityTests(device),
+      readings: await repo.allSnapshots(device, days: 365),
+      advertisedAh: widget.service.catalogueCapacityAh,
+    );
+    if (mounted) setState(() => _degradation = result);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
-    final s = snapshot;
+    final service = widget.service;
+    final s = widget.snapshot;
     if (s == null) {
       return WaitingForData(message: t.waitingFor(t.waitingFirstReading));
     }
@@ -51,18 +96,15 @@ class HealthTab extends StatelessWidget {
       cutoffVoltagePerCell: service.cutoffVoltagePerCell,
     );
 
-    // Prefer the health that can actually be measured over the one the BMS
-    // asserts. A firmware reporting a fixed 100% forever is telling you nothing.
-    // Only when there is a stated capacity to measure against. With none, the
-    // app falls back to what the BMS claims rather than to a percentage of an
-    // invented figure.
+    // Degradation is measured against the best this pack has ever held, not
+    // against what it was advertised as. Measuring wear against a marketing
+    // figure reported a pack sold as 45 Ah that was always 40 as permanently
+    // 89% healthy, on day one, before it had lost anything: a number that
+    // described the advert and never the battery.
     final catalogue = service.catalogueCapacityAh;
-    final measured = report.impliedCapacityAh != null &&
-            catalogue != null &&
-            catalogue > 0
-        ? (report.impliedCapacityAh! / catalogue * 100).clamp(0.0, 120.0)
-        : null;
-    final healthPercent = measured ?? s.soh;
+    final degradation = _degradation;
+    final lost = degradation?.lostFraction;
+    final healthPercent = lost != null ? (1 - lost) * 100 : s.soh;
     final tone = _healthTone(healthPercent);
 
     return ListView(
@@ -77,7 +119,7 @@ class HealthTab extends StatelessWidget {
                   color: tone,
                   centreLabel: t.healthGaugeLabel,
                   centreValue: '${healthPercent.toStringAsFixed(0)}%',
-                  subtitle: measured != null
+                  subtitle: lost != null
                       ? t.healthGaugeMeasured
                       : t.healthGaugeReported,
                   size: 166,
@@ -101,15 +143,19 @@ class HealthTab extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
+                    // The real amperage, against the best this pack has
+                    // actually held. Not against the advert, which is a
+                    // different question answered further down.
                     Readout(
-                      label: t.healthCardCapacity,
-                      value:
-                          report.impliedCapacityAh?.toStringAsFixed(1) ?? '--',
+                      label: t.degNowTitle,
+                      value: degradation?.current?.ah.toStringAsFixed(1) ??
+                          report.impliedCapacityAh?.toStringAsFixed(1) ??
+                          '--',
                       unit: 'Ah',
                       size: 30,
-                      footnote: catalogue == null
-                          ? t.catalogueNotComparable
-                          : '/ ${catalogue.toStringAsFixed(0)} Ah',
+                      footnote: degradation?.baseline == null
+                          ? null
+                          : '/ ${degradation!.baseline!.ah.toStringAsFixed(1)} Ah',
                     ),
                   ],
                 ),
@@ -117,6 +163,57 @@ class HealthTab extends StatelessWidget {
             ),
           ],
         ),
+        // Two questions, kept apart on purpose. What the pack has lost is
+        // wear. What it came up short of the advert is a fact about a
+        // purchase, decided once, that does not move as the battery ages.
+        if (degradation != null) ...[
+          Section(
+            title: t.degLost,
+            intro: t.degLostWhy,
+            children: [
+              InfoRow(
+                t.degLost,
+                lost == null
+                    ? t.degLostUnknown
+                    : '${(lost * 100).toStringAsFixed(1)} %',
+                dim: lost == null,
+                valueColor: lost == null ? null : _healthTone((1 - lost) * 100),
+              ),
+              InfoRow(
+                t.degBaseline,
+                degradation.baseline == null
+                    ? '--'
+                    : '${degradation.baseline!.ah.toStringAsFixed(1)} Ah',
+                hint: degradation.baseline == null
+                    ? null
+                    : degradation.baselineIsMeasured
+                        ? t.degBaselineOn(_date(degradation.baseline!.at))
+                        : t.degImpliedNote,
+                last: catalogue == null,
+              ),
+              if (catalogue != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    (degradation.shortOfAdvertisedFraction ?? 0) < 0.02
+                        ? t.degSoldOk
+                        : t.degSoldShort(
+                            catalogue.toStringAsFixed(0),
+                            degradation.baseline!.ah.toStringAsFixed(1),
+                            ((degradation.shortOfAdvertisedFraction ?? 0) * 100)
+                                .toStringAsFixed(0),
+                          ),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      height: 1.45,
+                      color: AppTheme.textFaint,
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 6),
+            ],
+          ),
+        ],
         const SizedBox(height: 14),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -210,6 +307,7 @@ class HealthTab extends StatelessWidget {
             weakCellCounts: service.history.weakCellCounts,
             balancerEverSeen: service.history.balancerEverSeen,
             capacityTestCount: service.capacityTestCount,
+            degradationMeasurable: lost != null,
             usableWh: usableWh,
             grossWh: s.remainingCapacityAh * s.packVoltage,
           ),
@@ -260,6 +358,12 @@ class HealthTab extends StatelessWidget {
     if (percent >= 92) return t.healthVerdictGood;
     if (percent >= 80) return t.healthVerdictWatch;
     return t.healthVerdictBad;
+  }
+
+  static String _date(DateTime utc) {
+    final d = utc.toLocal();
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${two(d.day)}/${two(d.month)}/${d.year}';
   }
 
   Color _healthTone(double percent) {
