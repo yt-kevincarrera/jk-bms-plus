@@ -6,6 +6,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../bms_service.dart';
 import '../../data/database.dart';
 import '../../metrics/capacity_test_runner.dart';
+import '../../metrics/deepest_discharge.dart';
 import '../theme.dart';
 import 'common.dart';
 
@@ -22,6 +23,10 @@ class CapacityTestCard extends StatefulWidget {
 class _CapacityTestCardState extends State<CapacityTestCard> {
   Timer? _tick;
   List<CapacityTest> _history = const [];
+
+  /// How close the pack has come to a full discharge, so the card can say
+  /// what is missing rather than ask again.
+  DeepestDischarge? _deepest;
 
   @override
   void initState() {
@@ -42,8 +47,18 @@ class _CapacityTestCardState extends State<CapacityTestCard> {
   Future<void> _load() async {
     final device = widget.service.activeDeviceId;
     if (device == null) return;
-    final tests = await widget.service.repository?.capacityTests(device);
-    if (mounted && tests != null) setState(() => _history = tests);
+    final repo = widget.service.repository;
+    final tests = await repo?.capacityTests(device);
+    final deepest = repo == null
+        ? null
+        : const DeepestDischargeFinder()
+            .find(await repo.allSnapshots(device, days: 180));
+    if (mounted && tests != null) {
+      setState(() {
+        _history = tests;
+        _deepest = deepest;
+      });
+    }
   }
 
   @override
@@ -154,6 +169,23 @@ class _CapacityTestCardState extends State<CapacityTestCard> {
     };
 
     return [
+      if (_history.where((h) => h.completed).isEmpty)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Text(
+            _deepest == null
+                ? t.adviceDeepestNone
+                : t.adviceDeepestSoFar(
+                    _deepest!.startSoc.toStringAsFixed(0),
+                    _deepest!.endSoc.toStringAsFixed(0),
+                  ),
+            style: const TextStyle(
+              fontSize: 11.5,
+              height: 1.4,
+              color: AppTheme.textFaint,
+            ),
+          ),
+        ),
       Padding(
         padding: const EdgeInsets.only(bottom: 10),
         child: Text(

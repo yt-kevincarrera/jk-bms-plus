@@ -497,8 +497,8 @@
       }
     }
   },
-  "adviceNoCapacityTestTitle": "You have never actually measured the capacity",
-  "adviceNoCapacityTestBody": "It is the only way to know whether you got what the box said. Charge to full, ride until it cuts off, and let the app integrate the amp-hours that came out. Everything else is an estimate.",
+  "adviceNoCapacityTestTitle": "No real capacity measurement yet",
+  "adviceNoCapacityTestBody": "You do not have to do anything special: the app reads back the stored readings and takes any complete discharge that happens as a measurement. It has to be a complete one because everything else is circular: the percentage the BMS reports is worked out by counting amp-hours and dividing by the capacity it is configured for, so measuring a partial discharge against that percentage returns the configured capacity again, not the real one. Only a charge to the top and a discharge to the cutoff have both ends anchored to voltage.",
   "adviceRunningHotTitle": "The pack is running hot",
   "adviceRunningHotBody": "It reached {temp} °C. Ease off and check nothing is blocking airflow. Heat is what ages a lithium cell fastest.",
   "@adviceRunningHotBody": {
@@ -1228,5 +1228,17 @@
   "demoSpeedNormal": "normal",
   "etaFull": "Full in",
   "etaTapering": "approx., the current is already tailing off",
-  "etaDone": "It is full"
+  "etaDone": "It is full",
+  "adviceDeepestSoFar": "Deepest so far: {from} % down to {to} %.",
+  "adviceDeepestNone": "No discharge recorded yet.",
+  "@adviceDeepestSoFar": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  }
 }
