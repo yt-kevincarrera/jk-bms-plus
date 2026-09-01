@@ -3918,6 +3918,60 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Ha dado lo que se anunció.'**
   String get degSoldOk;
+
+  /// No description provided for @demoSetCharge.
+  ///
+  /// In es, this message translates to:
+  /// **'Poner la carga a'**
+  String get demoSetCharge;
+
+  /// No description provided for @demoFull.
+  ///
+  /// In es, this message translates to:
+  /// **'Llenar al 100 %'**
+  String get demoFull;
+
+  /// No description provided for @demoEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Vaciar al 10 %'**
+  String get demoEmpty;
+
+  /// No description provided for @demoSpeed.
+  ///
+  /// In es, this message translates to:
+  /// **'Velocidad del simulador'**
+  String get demoSpeed;
+
+  /// No description provided for @demoSpeedHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Acelera el tiempo del pack simulado. Un test de capacidad es una descarga entera: a velocidad normal son horas, y una función que tarda una tarde en llegar no se puede juzgar. La distancia y el GPS no se aceleran, así que el consumo aprendido sigue siendo realista.'**
+  String get demoSpeedHint;
+
+  /// No description provided for @demoSpeedNormal.
+  ///
+  /// In es, this message translates to:
+  /// **'normal'**
+  String get demoSpeedNormal;
+
+  /// No description provided for @etaFull.
+  ///
+  /// In es, this message translates to:
+  /// **'Lleno en'**
+  String get etaFull;
+
+  /// No description provided for @etaTapering.
+  ///
+  /// In es, this message translates to:
+  /// **'aprox., ya va bajando la corriente'**
+  String get etaTapering;
+
+  /// No description provided for @etaDone.
+  ///
+  /// In es, this message translates to:
+  /// **'Está lleno'**
+  String get etaDone;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

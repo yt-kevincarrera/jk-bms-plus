@@ -258,9 +258,55 @@ class _SystemTabState extends State<SystemTab> {
               style: const TextStyle(fontSize: 11.5, color: AppTheme.textFaint),
             ),
           ),
+        const SizedBox(height: 10),
+        // Getting the simulated pack to a state worth looking at, without
+        // waiting for it. Demo mode exists so the screens can be judged with
+        // no hardware, and a capacity test that needs a real afternoon of
+        // discharge defeats that entirely.
+        Caption(t.demoSetCharge, color: AppTheme.textFaint),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 8,
+          children: [
+            OutlinedButton(
+              onPressed: () => _setDemoCharge(1.0),
+              child: Text(t.demoFull),
+            ),
+            OutlinedButton(
+              onPressed: () => _setDemoCharge(0.10),
+              child: Text(t.demoEmpty),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        InfoRow(
+          t.demoSpeed,
+          _demoSpeed == 1
+              ? t.demoSpeedNormal
+              : '${_demoSpeed.toStringAsFixed(0)}x',
+          hint: t.demoSpeedHint,
+        ),
+        Slider(
+          value: _demoSpeed,
+          min: 1,
+          max: 300,
+          divisions: 299,
+          label: '${_demoSpeed.toStringAsFixed(0)}x',
+          onChanged: (v) {
+            setState(() => _demoSpeed = v.roundToDouble());
+            widget.service.demoTimeScale = _demoSpeed;
+          },
+        ),
         const SizedBox(height: 4),
       ],
     );
+  }
+
+  double _demoSpeed = 1;
+
+  void _setDemoCharge(double fraction) {
+    widget.service.setDemoCharge(fraction);
+    setState(() {});
   }
 
   Widget _variantSection(AppL10n t) {

@@ -1219,5 +1219,14 @@
       }
     }
   },
-  "degSoldOk": "It has delivered what was advertised."
+  "degSoldOk": "It has delivered what was advertised.",
+  "demoSetCharge": "Set the charge to",
+  "demoFull": "Fill to 100 %",
+  "demoEmpty": "Drain to 10 %",
+  "demoSpeed": "Simulator speed",
+  "demoSpeedHint": "Speeds up the simulated pack. A capacity test is a whole discharge: at normal speed that is hours, and a feature that takes an afternoon to reach cannot be judged. Distance and GPS are not sped up, so the learned consumption stays realistic.",
+  "demoSpeedNormal": "normal",
+  "etaFull": "Full in",
+  "etaTapering": "approx., the current is already tailing off",
+  "etaDone": "It is full"
 }

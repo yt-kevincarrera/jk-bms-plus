@@ -2170,4 +2170,32 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get degSoldOk => 'Ha dado lo que se anunció.';
+
+  @override
+  String get demoSetCharge => 'Poner la carga a';
+
+  @override
+  String get demoFull => 'Llenar al 100 %';
+
+  @override
+  String get demoEmpty => 'Vaciar al 10 %';
+
+  @override
+  String get demoSpeed => 'Velocidad del simulador';
+
+  @override
+  String get demoSpeedHint =>
+      'Acelera el tiempo del pack simulado. Un test de capacidad es una descarga entera: a velocidad normal son horas, y una función que tarda una tarde en llegar no se puede juzgar. La distancia y el GPS no se aceleran, así que el consumo aprendido sigue siendo realista.';
+
+  @override
+  String get demoSpeedNormal => 'normal';
+
+  @override
+  String get etaFull => 'Lleno en';
+
+  @override
+  String get etaTapering => 'aprox., ya va bajando la corriente';
+
+  @override
+  String get etaDone => 'Está lleno';
 }
