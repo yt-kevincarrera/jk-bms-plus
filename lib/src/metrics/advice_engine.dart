@@ -91,6 +91,9 @@ class AdviceEngine {
     Map<int, int> weakCellCounts = const {},
     bool balancerEverSeen = false,
     int capacityTestCount = 0,
+    /// Whether real degradation can be worked out from measurements. Once it
+    /// can, comparing against the advert has nothing left to add.
+    bool degradationMeasurable = false,
     double usableWh = 0,
     double grossWh = 0,
   }) {
@@ -164,12 +167,20 @@ class AdviceEngine {
       );
     }
 
+    // Falling short of the advertised capacity is worth mentioning once, and
+    // it is not a fault. It cannot tell a pack that has degraded from one that
+    // was never the advertised size, which is the far more common case with a
+    // number printed on a box. Calling that a problem told riders their
+    // healthy battery was failing.
+    //
+    // Suppressed entirely once real degradation can be measured, because by
+    // then the honest figure exists and this comparison adds nothing.
     final loss = report.capacityLossFraction;
-    if (loss != null && loss > 0.12) {
+    if (!degradationMeasurable && loss != null && loss > 0.12) {
       advice.add(
         Advice(
           code: AdviceCode.capacityBelowCatalogue,
-          level: loss > 0.25 ? AdviceLevel.problem : AdviceLevel.watch,
+          level: AdviceLevel.info,
           value: loss * 100,
         ),
       );

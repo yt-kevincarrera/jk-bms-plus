@@ -488,8 +488,8 @@
   },
   "adviceHealthDecorativeTitle": "El SOH del BMS no se mueve",
   "adviceHealthDecorativeBody": "Sigue clavado en 100% con ciclos reales encima. Muchos firmwares nunca lo recalculan. Ignóralo y guíate por la capacidad medida.",
-  "adviceCapacityBelowTitle": "Hay menos capacidad de la que dice la etiqueta",
-  "adviceCapacityBelowBody": "Los propios números del BMS implican un {percent}% menos de lo que el pack dice tener. Puede ser degradación real, o que el contador de coulombs esté desincronizado. Un test de capacidad completo lo resuelve sin dudas.",
+  "adviceCapacityBelowTitle": "Da menos de lo que decía la etiqueta",
+  "adviceCapacityBelowBody": "Los números del BMS implican un {percent}% menos de lo que se anunció. Eso no significa que la batería esté fallando: lo más común es que nunca fuera esa capacidad. Un test de capacidad completo separa las dos cosas, y a partir de ahí la degradación se mide contra lo que esta batería dio de verdad.",
   "@adviceCapacityBelowBody": {
     "placeholders": {
       "percent": {
@@ -1189,5 +1189,35 @@
   "autoTripTitle": "Empezar viajes solo",
   "autoTripHint": "Abre y cierra el viaje al detectar que estás rodando: hace falta consumo del pack y movimiento del GPS a la vez, sostenidos. Sin esto el aprendizaje depende de que te acuerdes de darle a empezar, y los viajes que se olvidan no son al azar: son los cortos y los que llevabas prisa. Usa GPS mientras rueda.",
   "autoTripStarted": "Viaje iniciado solo",
-  "autoTripStopped": "Viaje guardado"
+  "autoTripStopped": "Viaje guardado",
+  "degNowTitle": "Capacidad ahora",
+  "degBaseline": "La mejor que ha dado",
+  "degBaselineOn": "medida el {date}",
+  "@degBaselineOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "degLost": "Degradación",
+  "degLostUnknown": "aún no medible",
+  "degLostWhy": "La degradación se mide contra lo mejor que ha dado esta batería, no contra lo que decía el anuncio. Hace falta más de una medición: con una sola tienes una capacidad, no una pérdida.",
+  "degImpliedNote": "Estimada del contador del BMS, no medida. Un test de capacidad da la cifra de verdad.",
+  "degSoldTitle": "Frente a lo anunciado",
+  "degSoldShort": "Se vendió como {sold} Ah y lo mejor que ha dado son {real} Ah: alrededor de un {pct} % menos de autonomía de la anunciada. Eso no es desgaste, es que nunca fueron {sold}.",
+  "@degSoldShort": {
+    "placeholders": {
+      "sold": {
+        "type": "String"
+      },
+      "real": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "degSoldOk": "Ha dado lo que se anunció."
 }

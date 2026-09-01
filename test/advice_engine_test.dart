@@ -105,6 +105,7 @@ List<Advice> run({
   double usableWh = 0,
   double grossWh = 0,
   double catalogueAh = 45,
+  bool degradationMeasurable = false,
 }) {
   final s = snapshot ?? snap();
   return const AdviceEngine().evaluate(
@@ -121,6 +122,7 @@ List<Advice> run({
     weakCellCounts: weakCellCounts,
     balancerEverSeen: balancerEverSeen,
     capacityTestCount: capacityTestCount,
+    degradationMeasurable: degradationMeasurable,
     usableWh: usableWh,
     grossWh: grossWh,
   );
@@ -189,12 +191,27 @@ void main() {
       expect(has(advice, AdviceCode.healthFigureDecorative), isTrue);
     });
 
-    test('flags capacity well below what the pack was sold as', () {
+    test('mentions capacity below the label without calling it a fault', () {
       // 25 Ah remaining at 78% implies about 32 Ah against a 45 Ah label.
+      //
+      // This used to be raised as a problem, which told riders of a perfectly
+      // healthy pack that it was failing. It cannot tell a battery that has
+      // degraded from one that was never the advertised size, and with a
+      // number printed on a box the second is far more common.
       final advice = run(snapshot: snap(remainingAh: 25, soc: 78));
       final item =
           advice.firstWhere((a) => a.code == AdviceCode.capacityBelowCatalogue);
-      expect(item.level, AdviceLevel.problem);
+      expect(item.level, AdviceLevel.info);
+    });
+
+    test('drops it once real degradation can be measured', () {
+      // By then the honest figure exists, measured against what this battery
+      // actually delivered, and comparing to the advert adds nothing.
+      final advice = run(
+        snapshot: snap(remainingAh: 25, soc: 78),
+        degradationMeasurable: true,
+      );
+      expect(has(advice, AdviceCode.capacityBelowCatalogue), isFalse);
     });
 
     test('nags about a capacity test only until one is done', () {

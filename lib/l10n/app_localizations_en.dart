@@ -1046,12 +1046,11 @@ class AppL10nEn extends AppL10n {
       'It is still pinned at 100% with real cycles behind it. Plenty of firmwares never recompute it. Ignore it and go by measured capacity.';
 
   @override
-  String get adviceCapacityBelowTitle =>
-      'There is less capacity here than the label claims';
+  String get adviceCapacityBelowTitle => 'It holds less than the label claimed';
 
   @override
   String adviceCapacityBelowBody(String percent) {
-    return 'The numbers the BMS reports imply $percent% less than the pack is rated for. That could be real degradation, or a coulomb counter that has drifted. A full capacity test settles it either way.';
+    return 'The BMS figures imply $percent% less than was advertised. That does not mean the battery is failing: the commonest explanation is that it never was that capacity. A full capacity test separates the two, and from then on degradation is measured against what this battery really delivered.';
   }
 
   @override
@@ -2129,4 +2128,40 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get autoTripStopped => 'Ride saved';
+
+  @override
+  String get degNowTitle => 'Capacity now';
+
+  @override
+  String get degBaseline => 'Best it has ever held';
+
+  @override
+  String degBaselineOn(String date) {
+    return 'measured on $date';
+  }
+
+  @override
+  String get degLost => 'Degradation';
+
+  @override
+  String get degLostUnknown => 'not measurable yet';
+
+  @override
+  String get degLostWhy =>
+      'Degradation is measured against the best this battery has ever held, not against what the advert said. It needs more than one measurement: with a single one you have a capacity, not a loss.';
+
+  @override
+  String get degImpliedNote =>
+      'Estimated from the BMS counter, not measured. A capacity test gives the real figure.';
+
+  @override
+  String get degSoldTitle => 'Against the advert';
+
+  @override
+  String degSoldShort(String sold, String real, String pct) {
+    return 'Sold as $sold Ah, and the best it has held is $real Ah: about $pct % less range than advertised. That is not wear, it was never $sold.';
+  }
+
+  @override
+  String get degSoldOk => 'It has delivered what was advertised.';
 }
