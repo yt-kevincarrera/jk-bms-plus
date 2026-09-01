@@ -1047,12 +1047,11 @@ class AppL10nEs extends AppL10n {
       'Sigue clavado en 100% con ciclos reales encima. Muchos firmwares nunca lo recalculan. Ignóralo y guíate por la capacidad medida.';
 
   @override
-  String get adviceCapacityBelowTitle =>
-      'Hay menos capacidad de la que dice la etiqueta';
+  String get adviceCapacityBelowTitle => 'Da menos de lo que decía la etiqueta';
 
   @override
   String adviceCapacityBelowBody(String percent) {
-    return 'Los propios números del BMS implican un $percent% menos de lo que el pack dice tener. Puede ser degradación real, o que el contador de coulombs esté desincronizado. Un test de capacidad completo lo resuelve sin dudas.';
+    return 'Los números del BMS implican un $percent% menos de lo que se anunció. Eso no significa que la batería esté fallando: lo más común es que nunca fuera esa capacidad. Un test de capacidad completo separa las dos cosas, y a partir de ahí la degradación se mide contra lo que esta batería dio de verdad.';
   }
 
   @override
@@ -2135,4 +2134,40 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get autoTripStopped => 'Viaje guardado';
+
+  @override
+  String get degNowTitle => 'Capacidad ahora';
+
+  @override
+  String get degBaseline => 'La mejor que ha dado';
+
+  @override
+  String degBaselineOn(String date) {
+    return 'medida el $date';
+  }
+
+  @override
+  String get degLost => 'Degradación';
+
+  @override
+  String get degLostUnknown => 'aún no medible';
+
+  @override
+  String get degLostWhy =>
+      'La degradación se mide contra lo mejor que ha dado esta batería, no contra lo que decía el anuncio. Hace falta más de una medición: con una sola tienes una capacidad, no una pérdida.';
+
+  @override
+  String get degImpliedNote =>
+      'Estimada del contador del BMS, no medida. Un test de capacidad da la cifra de verdad.';
+
+  @override
+  String get degSoldTitle => 'Frente a lo anunciado';
+
+  @override
+  String degSoldShort(String sold, String real, String pct) {
+    return 'Se vendió como $sold Ah y lo mejor que ha dado son $real Ah: alrededor de un $pct % menos de autonomía de la anunciada. Eso no es desgaste, es que nunca fueron $sold.';
+  }
+
+  @override
+  String get degSoldOk => 'Ha dado lo que se anunció.';
 }

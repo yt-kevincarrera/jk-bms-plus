@@ -2008,13 +2008,13 @@ abstract class AppL10n {
   /// No description provided for @adviceCapacityBelowTitle.
   ///
   /// In es, this message translates to:
-  /// **'Hay menos capacidad de la que dice la etiqueta'**
+  /// **'Da menos de lo que decía la etiqueta'**
   String get adviceCapacityBelowTitle;
 
   /// No description provided for @adviceCapacityBelowBody.
   ///
   /// In es, this message translates to:
-  /// **'Los propios números del BMS implican un {percent}% menos de lo que el pack dice tener. Puede ser degradación real, o que el contador de coulombs esté desincronizado. Un test de capacidad completo lo resuelve sin dudas.'**
+  /// **'Los números del BMS implican un {percent}% menos de lo que se anunció. Eso no significa que la batería esté fallando: lo más común es que nunca fuera esa capacidad. Un test de capacidad completo separa las dos cosas, y a partir de ahí la degradación se mide contra lo que esta batería dio de verdad.'**
   String adviceCapacityBelowBody(String percent);
 
   /// No description provided for @adviceNoCapacityTestTitle.
@@ -3858,6 +3858,66 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Viaje guardado'**
   String get autoTripStopped;
+
+  /// No description provided for @degNowTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Capacidad ahora'**
+  String get degNowTitle;
+
+  /// No description provided for @degBaseline.
+  ///
+  /// In es, this message translates to:
+  /// **'La mejor que ha dado'**
+  String get degBaseline;
+
+  /// No description provided for @degBaselineOn.
+  ///
+  /// In es, this message translates to:
+  /// **'medida el {date}'**
+  String degBaselineOn(String date);
+
+  /// No description provided for @degLost.
+  ///
+  /// In es, this message translates to:
+  /// **'Degradación'**
+  String get degLost;
+
+  /// No description provided for @degLostUnknown.
+  ///
+  /// In es, this message translates to:
+  /// **'aún no medible'**
+  String get degLostUnknown;
+
+  /// No description provided for @degLostWhy.
+  ///
+  /// In es, this message translates to:
+  /// **'La degradación se mide contra lo mejor que ha dado esta batería, no contra lo que decía el anuncio. Hace falta más de una medición: con una sola tienes una capacidad, no una pérdida.'**
+  String get degLostWhy;
+
+  /// No description provided for @degImpliedNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Estimada del contador del BMS, no medida. Un test de capacidad da la cifra de verdad.'**
+  String get degImpliedNote;
+
+  /// No description provided for @degSoldTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Frente a lo anunciado'**
+  String get degSoldTitle;
+
+  /// No description provided for @degSoldShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Se vendió como {sold} Ah y lo mejor que ha dado son {real} Ah: alrededor de un {pct} % menos de autonomía de la anunciada. Eso no es desgaste, es que nunca fueron {sold}.'**
+  String degSoldShort(String sold, String real, String pct);
+
+  /// No description provided for @degSoldOk.
+  ///
+  /// In es, this message translates to:
+  /// **'Ha dado lo que se anunció.'**
+  String get degSoldOk;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {
