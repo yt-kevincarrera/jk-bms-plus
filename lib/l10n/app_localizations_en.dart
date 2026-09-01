@@ -1054,12 +1054,11 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String get adviceNoCapacityTestTitle =>
-      'You have never actually measured the capacity';
+  String get adviceNoCapacityTestTitle => 'No real capacity measurement yet';
 
   @override
   String get adviceNoCapacityTestBody =>
-      'It is the only way to know whether you got what the box said. Charge to full, ride until it cuts off, and let the app integrate the amp-hours that came out. Everything else is an estimate.';
+      'You do not have to do anything special: the app reads back the stored readings and takes any complete discharge that happens as a measurement. It has to be a complete one because everything else is circular: the percentage the BMS reports is worked out by counting amp-hours and dividing by the capacity it is configured for, so measuring a partial discharge against that percentage returns the configured capacity again, not the real one. Only a charge to the top and a discharge to the cutoff have both ends anchored to voltage.';
 
   @override
   String get adviceRunningHotTitle => 'The pack is running hot';
@@ -2192,4 +2191,12 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get etaDone => 'It is full';
+
+  @override
+  String adviceDeepestSoFar(String from, String to) {
+    return 'Deepest so far: $from % down to $to %.';
+  }
+
+  @override
+  String get adviceDeepestNone => 'No discharge recorded yet.';
 }

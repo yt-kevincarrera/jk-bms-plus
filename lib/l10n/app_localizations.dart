@@ -2020,13 +2020,13 @@ abstract class AppL10n {
   /// No description provided for @adviceNoCapacityTestTitle.
   ///
   /// In es, this message translates to:
-  /// **'Nunca mediste la capacidad de verdad'**
+  /// **'Todavía no hay una medición real de capacidad'**
   String get adviceNoCapacityTestTitle;
 
   /// No description provided for @adviceNoCapacityTestBody.
   ///
   /// In es, this message translates to:
-  /// **'Es la única forma de saber si te vendieron lo que dice la caja. Carga al tope, conduce hasta que corte, y deja que la app integre los Ah que salieron. Todo lo demás son estimaciones.'**
+  /// **'No tienes que hacer nada especial: la app revisa las lecturas guardadas y toma como medición cualquier descarga completa que ocurra. Hace falta que sea completa porque el resto es circular: el porcentaje que reporta el BMS lo calcula contando amperios y dividiendo entre la capacidad que tiene configurada, así que medir una descarga parcial contra ese porcentaje devuelve la capacidad configurada otra vez, no la real. Solo una carga al tope y una descarga hasta el corte tienen los dos extremos anclados al voltaje.'**
   String get adviceNoCapacityTestBody;
 
   /// No description provided for @adviceRunningHotTitle.
@@ -3972,6 +3972,18 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Está lleno'**
   String get etaDone;
+
+  /// No description provided for @adviceDeepestSoFar.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo más hondo hasta ahora: del {from} % al {to} %.'**
+  String adviceDeepestSoFar(String from, String to);
+
+  /// No description provided for @adviceDeepestNone.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía no se ha registrado ninguna descarga.'**
+  String get adviceDeepestNone;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {
