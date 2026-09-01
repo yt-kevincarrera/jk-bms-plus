@@ -1056,11 +1056,11 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get adviceNoCapacityTestTitle =>
-      'Nunca mediste la capacidad de verdad';
+      'Todavía no hay una medición real de capacidad';
 
   @override
   String get adviceNoCapacityTestBody =>
-      'Es la única forma de saber si te vendieron lo que dice la caja. Carga al tope, conduce hasta que corte, y deja que la app integre los Ah que salieron. Todo lo demás son estimaciones.';
+      'No tienes que hacer nada especial: la app revisa las lecturas guardadas y toma como medición cualquier descarga completa que ocurra. Hace falta que sea completa porque el resto es circular: el porcentaje que reporta el BMS lo calcula contando amperios y dividiendo entre la capacidad que tiene configurada, así que medir una descarga parcial contra ese porcentaje devuelve la capacidad configurada otra vez, no la real. Solo una carga al tope y una descarga hasta el corte tienen los dos extremos anclados al voltaje.';
 
   @override
   String get adviceRunningHotTitle => 'El pack está caliente';
@@ -2198,4 +2198,13 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get etaDone => 'Está lleno';
+
+  @override
+  String adviceDeepestSoFar(String from, String to) {
+    return 'Lo más hondo hasta ahora: del $from % al $to %.';
+  }
+
+  @override
+  String get adviceDeepestNone =>
+      'Todavía no se ha registrado ninguna descarga.';
 }

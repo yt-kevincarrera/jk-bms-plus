@@ -207,7 +207,11 @@ class SimulatedPack {
   /// Demo only, and nothing like it exists for a real pack: this app never
   /// writes to a BMS, and a charge level is not something it could set anyway.
   void setCharge(double fraction) {
+    final was = _soc;
     _soc = fraction.clamp(0.03, 1.0);
+    // Filling it back up from the floor is a cycle, the same as a real charge
+    // would be, so the cycle counter does not stand still through testing.
+    if (was <= 0.05 && _soc > 0.9) _cycleCount++;
   }
 
   /// Advances the model by [dt].
@@ -250,12 +254,22 @@ class SimulatedPack {
     final ah = _current * seconds / 3600.0;
     _soc = (_soc + ah / nominalCapacityAh).clamp(0.03, 1.0);
 
+    // The pack used to jump back to 35% on reaching full and back to 95% on
+    // reaching empty, so it looped forever and never arrived anywhere. That
+    // made two things impossible to see: a charge finishing, and a discharge
+    // reaching the cutoff -- which is the entire capacity test. Both are now
+    // end states, which is also what a real pack does.
     if (_scenario == DemoScenario.charging && _soc >= 0.999) {
-      _soc = 0.35;
-      _cycleCount++;
+      _soc = 1.0;
+      _current = 0.05;
     }
-    if (_scenario != DemoScenario.charging && _soc <= 0.05) {
-      _soc = 0.95;
+    if (_scenario != DemoScenario.charging && _soc <= 0.03) {
+      // The BMS opening the discharge MOSFET. Nothing more comes out until it
+      // is charged, which is exactly the end the capacity test waits for.
+      _soc = 0.03;
+      _current = 0;
+      _throttle = 0;
+      _speedKmh = 0;
     }
 
     // Temperature follows current with a long lag, and bleeds off to ambient.
