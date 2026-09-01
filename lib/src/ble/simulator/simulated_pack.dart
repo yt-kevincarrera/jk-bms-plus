@@ -74,6 +74,13 @@ class SimulatedPack {
   }
 
   double _soc = 0.78;
+
+  /// How much faster than real time the pack ages.
+  ///
+  /// A capacity test is a full discharge, which on a real bike is hours. Demo
+  /// mode exists to let the screens be judged without hardware, and a feature
+  /// that takes an afternoon to reach cannot be judged at all.
+  double timeScale = 1.0;
   double _throttle = 0;
   double _packTemp = 24.5;
   double _mosfetTemp = 27.0;
@@ -194,10 +201,19 @@ class SimulatedPack {
     return _soc < curve.first.$1 ? curve.first.$2 : curve.last.$2;
   }
 
+  /// Puts the pack at a given charge, for reaching a state worth looking at
+  /// without waiting for it.
+  ///
+  /// Demo only, and nothing like it exists for a real pack: this app never
+  /// writes to a BMS, and a charge level is not something it could set anyway.
+  void setCharge(double fraction) {
+    _soc = fraction.clamp(0.03, 1.0);
+  }
+
   /// Advances the model by [dt].
   void tick(Duration dt) {
     _ticks++;
-    final seconds = dt.inMilliseconds / 1000.0;
+    final seconds = dt.inMilliseconds / 1000.0 * timeScale;
 
     switch (_scenario) {
       case DemoScenario.riding:

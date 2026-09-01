@@ -6,6 +6,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../app_settings.dart';
 import '../../bms_service.dart';
+import '../../metrics/charge_eta.dart';
 import '../../metrics/range_estimator.dart';
 import '../../model/bms_snapshot.dart';
 import '../theme.dart';
@@ -91,6 +92,10 @@ class _NowTabState extends State<NowTab> {
               : null,
         ),
         _AlertBanner(service: service, settings: widget.settings),
+        // While charging, how long until it is full. Range is the wrong
+        // question with a charger plugged in, and "how long do I wait" is the
+        // only one anybody is actually asking.
+        if (s.isCharging) _chargeEta(t, s, service),
         _TripStrip(service: service),
         const SizedBox(height: 6),
         Row(
@@ -421,6 +426,71 @@ class _TripStripState extends State<_TripStrip> {
         ],
       );
 }
+
+/// Time until the pack is full, from what is going in right now.
+  Widget _chargeEta(AppL10n t, BmsSnapshot s, BmsService service) {
+    // Uses the pack's own capacity rather than what it was advertised as: the
+    // charger is filling the battery that exists.
+    final capacity = s.remainingCapacityAh > 0 && s.soc > 1
+        ? s.remainingCapacityAh / (s.soc / 100)
+        : null;
+    if (capacity == null) return const SizedBox.shrink();
+
+    final eta = const ChargeEtaEstimator().estimate(
+      current: s.current,
+      soc: s.soc,
+      capacityAh: capacity,
+    );
+    final left = eta.remaining;
+    if (left == null) return const SizedBox.shrink();
+
+    final label = left == Duration.zero
+        ? t.etaDone
+        : left.inHours >= 1
+            ? '${left.inHours} h ${left.inMinutes % 60} min'
+            : '${left.inMinutes} min';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceRaised,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppTheme.hairline),
+        ),
+        padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+        child: Row(
+          children: [
+            const Icon(Icons.bolt, size: 18, color: AppTheme.cool),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    left == Duration.zero ? label : '${t.etaFull} $label',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.cool,
+                    ),
+                  ),
+                  if (eta.isTapering && left != Duration.zero)
+                    Text(
+                      t.etaTapering,
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        color: AppTheme.textFaint,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
 /// Turns a verdict into a sentence that says why.
 String _statusMessage(AppL10n t, PackStatus status) {

@@ -214,9 +214,16 @@ class JkParser {
     // For the balancer, JK02_24S still has a usable signal: byte 140, which the
     // reference calls the legacy balancing indicator, reads a sane 0x00 in the
     // same captures.
+    // Current actually moving between cells is the strongest evidence there
+    // is, and it is measured rather than flagged. The action byte is taken as
+    // well because a balancer can be engaged in the instant before current
+    // shows, but a balancer passing current while byte 140 reads zero was
+    // being reported as idle, and that byte is one of the offsets docs/
+    // PROTOCOL.md still lists as unsettled for this framing.
+    final balancingByCurrent = balanceCurrent.abs() >= 0.005;
     final balancerActive = variant == JkProtocolVariant.jk02_32s
-        ? d.boolAt(169 + o2)
-        : balancingAction != 0;
+        ? d.boolAt(169 + o2) || balancingByCurrent
+        : balancingAction != 0 || balancingByCurrent;
 
     // 182  2   Bitmask the reference calls "temperature sensor absent"
     //          (bit0 MOSFET, bit1..bit5 sensors 1..5). The captured JK02_24S
