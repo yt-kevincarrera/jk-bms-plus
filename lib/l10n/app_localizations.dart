@@ -3472,13 +3472,13 @@ abstract class AppL10n {
   /// No description provided for @backupExport.
   ///
   /// In es, this message translates to:
-  /// **'Crear copia'**
+  /// **'Guardar copia de todo'**
   String get backupExport;
 
   /// No description provided for @backupExportLight.
   ///
   /// In es, this message translates to:
-  /// **'Crear copia sin frames crudos'**
+  /// **'Guardar copia más pequeña, sin frames crudos'**
   String get backupExportLight;
 
   /// No description provided for @backupImport.
@@ -4224,6 +4224,36 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'de izquierda a derecha: de vacía a llena'**
   String get trendsAxisCharge;
+
+  /// No description provided for @learnWhyImplausible.
+  ///
+  /// In es, this message translates to:
+  /// **'{n} dieron un consumo que ninguna moto puede producir, así que se rechazaron. Eso es un fallo de esta app y no algo del manejo, y quedó arreglado en esta versión: los viajes grabados de aquí en adelante deberían salir bien. Los viejos no se pueden reparar, porque las lecturas que hacían falta nunca se guardaron.'**
+  String learnWhyImplausible(String n);
+
+  /// No description provided for @connectCouldNotSearch.
+  ///
+  /// In es, this message translates to:
+  /// **'La radio nunca confirmó que la búsqueda empezara, así que en realidad no se buscó nada. Normalmente es el Bluetooth despertando justo al abrir la app. Prueba otra vez.'**
+  String get connectCouldNotSearch;
+
+  /// No description provided for @backupShare.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviarla a otro lugar'**
+  String get backupShare;
+
+  /// No description provided for @backupSaveDialog.
+  ///
+  /// In es, this message translates to:
+  /// **'Dónde guardar la copia'**
+  String get backupSaveDialog;
+
+  /// No description provided for @backupSaved.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardada como {name}.'**
+  String backupSaved(String name);
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

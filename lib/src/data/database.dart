@@ -147,6 +147,20 @@ class Trips extends Table {
   /// How much the estimate was worth then, by name.
   TextColumn get confidence => text().nullable()();
 
+  /// Amp-hours the pack's own coulomb counter says left over the ride.
+  ///
+  /// Kept next to the watt-hours rather than instead of them, because it is a
+  /// different kind of number: the BMS accumulated it internally at a rate no
+  /// phone sees, and it kept counting through every second the link was down.
+  RealColumn get ahOut => real().nullable()();
+
+  /// Which method produced [energyOutWh], by name.
+  ///
+  /// Worth recording because the two disagreed by a factor of twenty-five on a
+  /// real ride. A stored figure with no provenance cannot be re-examined, and
+  /// every ride recorded before this fix has one that is far too low.
+  TextColumn get energySource => text().nullable()();
+
 }
 
 /// The track of a ride, one row per fix, with what the pack was doing at that
@@ -272,7 +286,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -334,6 +348,10 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(trips, trips.learnedKm);
             await m.addColumn(trips, trips.rangeKmAtEnd);
             await m.addColumn(trips, trips.confidence);
+          }
+          if (from < 10) {
+            await m.addColumn(trips, trips.ahOut);
+            await m.addColumn(trips, trips.energySource);
           }
         },
       );

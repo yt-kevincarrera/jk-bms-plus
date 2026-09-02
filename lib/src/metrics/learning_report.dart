@@ -19,6 +19,7 @@ class LearningReport {
     required this.used,
     required this.noDistance,
     required this.noEnergyOut,
+    required this.implausible,
     required this.learnedKm,
   });
 
@@ -39,6 +40,16 @@ class LearningReport {
   /// parser assumes.
   final int noEnergyOut;
 
+  /// Rejected for a consumption figure no motorcycle could produce.
+  ///
+  /// This is the one that actually happened. Eight recorded rides, real
+  /// distance, real energy, and every sample came out at 0.7 Wh/km because
+  /// almost every reading was being dropped before it could be integrated.
+  /// The estimator's own floor of 2 Wh/km caught it and refused all of them,
+  /// correctly and silently, which left "learned: 0 km" as the only visible
+  /// symptom of a bug three layers down.
+  final int implausible;
+
   final double learnedKm;
 
   bool get hasLearned => used > 0;
@@ -49,6 +60,12 @@ class LearningReport {
   /// The single most likely explanation, when there is one.
   LearningBlocker? get blocker {
     if (!allRejected) return null;
+    // Ordered by how much each one tells you. An implausible figure is a
+    // fault in the app, not a fact about the riding, so it outranks the
+    // explanations that merely describe short trips.
+    if (implausible >= noEnergyOut && implausible >= noDistance) {
+      return LearningBlocker.implausible;
+    }
     if (noEnergyOut >= noDistance) return LearningBlocker.noEnergyOut;
     return LearningBlocker.ridesTooShort;
   }
@@ -62,6 +79,7 @@ class LearningReport {
     var used = 0;
     var noDistance = 0;
     var noEnergyOut = 0;
+    var implausible = 0;
     var considered = 0;
 
     for (final t in trips) {
@@ -74,10 +92,16 @@ class LearningReport {
       considered++;
 
       final net = t.energyOutWh - t.energyInWh;
+      final whPerKm = t.distanceKm <= 0 ? null : net / t.distanceKm;
       if (t.distanceKm < 0.2) {
         noDistance++;
       } else if (net <= 0) {
         noEnergyOut++;
+      } else if (whPerKm == null || whPerKm < 2 || whPerKm > 400) {
+        // The estimator's own limits, repeated here rather than asked of it:
+        // addSegment returns silently, which is right for it and useless for
+        // explaining anything.
+        implausible++;
       } else {
         used++;
       }
@@ -88,6 +112,7 @@ class LearningReport {
       used: used,
       noDistance: noDistance,
       noEnergyOut: noEnergyOut,
+      implausible: implausible,
       learnedKm: learnedKm,
     );
   }
@@ -95,6 +120,10 @@ class LearningReport {
 
 /// What is standing between the recorded rides and a learned figure.
 enum LearningBlocker {
+  /// Consumption came out at a figure no motorcycle could produce, which is a
+  /// fault in the app rather than a fact about the riding.
+  implausible,
+
   /// Rides recorded distance but no energy leaving the pack.
   noEnergyOut,
 

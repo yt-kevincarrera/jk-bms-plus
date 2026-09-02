@@ -451,7 +451,22 @@ class _ConnectScreenState extends State<ConnectScreen> {
       return;
     }
 
-    final adapterState = await FlutterBluePlus.adapterState.first;
+    // Not `.first`. At launch the adapter stream's first value is routinely
+    // `unknown` or `turningOn`, and scanning on that either failed outright or
+    // came back empty a moment later. Waiting for it to settle costs a second
+    // at worst and is the difference between searching and pretending to.
+    final adapterState = await FlutterBluePlus.adapterState
+        .firstWhere(
+          (s) =>
+              s == BluetoothAdapterState.on ||
+              s == BluetoothAdapterState.off ||
+              s == BluetoothAdapterState.unauthorized ||
+              s == BluetoothAdapterState.unavailable,
+        )
+        .timeout(
+          const Duration(seconds: 6),
+          onTimeout: () => BluetoothAdapterState.unknown,
+        );
     if (adapterState != BluetoothAdapterState.on) {
       if (!mounted) return;
       setState(() {
@@ -497,15 +512,30 @@ class _ConnectScreenState extends State<ConnectScreen> {
     }
 
     await _scanSub?.cancel();
+    // Reset per scan, not per screen: a failure from a previous attempt must
+    // not suppress the result of this one.
+    var couldNotSearch = false;
     _scanSub = widget.service.scan().listen(
       (devices) {
         if (mounted) setState(() => _devices = devices);
+      },
+      onError: (Object e) {
+        if (e is! ScanNeverStarted) return;
+        couldNotSearch = true;
+        if (mounted) {
+          setState(() {
+            _message = t.connectCouldNotSearch;
+            _messageDetail = '';
+            _busyMessage = true;
+          });
+        }
       },
       onDone: () {
         if (mounted) {
           setState(() {
             _scanning = false;
-            _searched = true;
+            // Only a scan that really ran gets to say the bike was not there.
+            _searched = !couldNotSearch;
           });
         }
       },

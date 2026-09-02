@@ -900,6 +900,26 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _ahOutMeta = const VerificationMeta('ahOut');
+  @override
+  late final GeneratedColumn<double> ahOut = GeneratedColumn<double>(
+    'ah_out',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _energySourceMeta = const VerificationMeta(
+    'energySource',
+  );
+  @override
+  late final GeneratedColumn<String> energySource = GeneratedColumn<String>(
+    'energy_source',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -928,6 +948,8 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
     learnedKm,
     rangeKmAtEnd,
     confidence,
+    ahOut,
+    energySource,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1167,6 +1189,21 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
         confidence.isAcceptableOrUnknown(data['confidence']!, _confidenceMeta),
       );
     }
+    if (data.containsKey('ah_out')) {
+      context.handle(
+        _ahOutMeta,
+        ahOut.isAcceptableOrUnknown(data['ah_out']!, _ahOutMeta),
+      );
+    }
+    if (data.containsKey('energy_source')) {
+      context.handle(
+        _energySourceMeta,
+        energySource.isAcceptableOrUnknown(
+          data['energy_source']!,
+          _energySourceMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1280,6 +1317,14 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
         DriftSqlType.string,
         data['${effectivePrefix}confidence'],
       ),
+      ahOut: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}ah_out'],
+      ),
+      energySource: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}energy_source'],
+      ),
     );
   }
 
@@ -1338,6 +1383,20 @@ class Trip extends DataClass implements Insertable<Trip> {
 
   /// How much the estimate was worth then, by name.
   final String? confidence;
+
+  /// Amp-hours the pack's own coulomb counter says left over the ride.
+  ///
+  /// Kept next to the watt-hours rather than instead of them, because it is a
+  /// different kind of number: the BMS accumulated it internally at a rate no
+  /// phone sees, and it kept counting through every second the link was down.
+  final double? ahOut;
+
+  /// Which method produced [energyOutWh], by name.
+  ///
+  /// Worth recording because the two disagreed by a factor of twenty-five on a
+  /// real ride. A stored figure with no provenance cannot be re-examined, and
+  /// every ride recorded before this fix has one that is far too low.
+  final String? energySource;
   const Trip({
     required this.id,
     required this.startedAt,
@@ -1365,6 +1424,8 @@ class Trip extends DataClass implements Insertable<Trip> {
     this.learnedKm,
     this.rangeKmAtEnd,
     this.confidence,
+    this.ahOut,
+    this.energySource,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1406,6 +1467,12 @@ class Trip extends DataClass implements Insertable<Trip> {
     }
     if (!nullToAbsent || confidence != null) {
       map['confidence'] = Variable<String>(confidence);
+    }
+    if (!nullToAbsent || ahOut != null) {
+      map['ah_out'] = Variable<double>(ahOut);
+    }
+    if (!nullToAbsent || energySource != null) {
+      map['energy_source'] = Variable<String>(energySource);
     }
     return map;
   }
@@ -1450,6 +1517,12 @@ class Trip extends DataClass implements Insertable<Trip> {
       confidence: confidence == null && nullToAbsent
           ? const Value.absent()
           : Value(confidence),
+      ahOut: ahOut == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ahOut),
+      energySource: energySource == null && nullToAbsent
+          ? const Value.absent()
+          : Value(energySource),
     );
   }
 
@@ -1487,6 +1560,8 @@ class Trip extends DataClass implements Insertable<Trip> {
       learnedKm: serializer.fromJson<double?>(json['learnedKm']),
       rangeKmAtEnd: serializer.fromJson<double?>(json['rangeKmAtEnd']),
       confidence: serializer.fromJson<String?>(json['confidence']),
+      ahOut: serializer.fromJson<double?>(json['ahOut']),
+      energySource: serializer.fromJson<String?>(json['energySource']),
     );
   }
   @override
@@ -1519,6 +1594,8 @@ class Trip extends DataClass implements Insertable<Trip> {
       'learnedKm': serializer.toJson<double?>(learnedKm),
       'rangeKmAtEnd': serializer.toJson<double?>(rangeKmAtEnd),
       'confidence': serializer.toJson<String?>(confidence),
+      'ahOut': serializer.toJson<double?>(ahOut),
+      'energySource': serializer.toJson<String?>(energySource),
     };
   }
 
@@ -1549,6 +1626,8 @@ class Trip extends DataClass implements Insertable<Trip> {
     Value<double?> learnedKm = const Value.absent(),
     Value<double?> rangeKmAtEnd = const Value.absent(),
     Value<String?> confidence = const Value.absent(),
+    Value<double?> ahOut = const Value.absent(),
+    Value<String?> energySource = const Value.absent(),
   }) => Trip(
     id: id ?? this.id,
     startedAt: startedAt ?? this.startedAt,
@@ -1578,6 +1657,8 @@ class Trip extends DataClass implements Insertable<Trip> {
     learnedKm: learnedKm.present ? learnedKm.value : this.learnedKm,
     rangeKmAtEnd: rangeKmAtEnd.present ? rangeKmAtEnd.value : this.rangeKmAtEnd,
     confidence: confidence.present ? confidence.value : this.confidence,
+    ahOut: ahOut.present ? ahOut.value : this.ahOut,
+    energySource: energySource.present ? energySource.value : this.energySource,
   );
   Trip copyWithCompanion(TripsCompanion data) {
     return Trip(
@@ -1637,6 +1718,10 @@ class Trip extends DataClass implements Insertable<Trip> {
       confidence: data.confidence.present
           ? data.confidence.value
           : this.confidence,
+      ahOut: data.ahOut.present ? data.ahOut.value : this.ahOut,
+      energySource: data.energySource.present
+          ? data.energySource.value
+          : this.energySource,
     );
   }
 
@@ -1668,7 +1753,9 @@ class Trip extends DataClass implements Insertable<Trip> {
           ..write('whPerKmAfter: $whPerKmAfter, ')
           ..write('learnedKm: $learnedKm, ')
           ..write('rangeKmAtEnd: $rangeKmAtEnd, ')
-          ..write('confidence: $confidence')
+          ..write('confidence: $confidence, ')
+          ..write('ahOut: $ahOut, ')
+          ..write('energySource: $energySource')
           ..write(')'))
         .toString();
   }
@@ -1701,6 +1788,8 @@ class Trip extends DataClass implements Insertable<Trip> {
     learnedKm,
     rangeKmAtEnd,
     confidence,
+    ahOut,
+    energySource,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -1731,7 +1820,9 @@ class Trip extends DataClass implements Insertable<Trip> {
           other.whPerKmAfter == this.whPerKmAfter &&
           other.learnedKm == this.learnedKm &&
           other.rangeKmAtEnd == this.rangeKmAtEnd &&
-          other.confidence == this.confidence);
+          other.confidence == this.confidence &&
+          other.ahOut == this.ahOut &&
+          other.energySource == this.energySource);
 }
 
 class TripsCompanion extends UpdateCompanion<Trip> {
@@ -1761,6 +1852,8 @@ class TripsCompanion extends UpdateCompanion<Trip> {
   final Value<double?> learnedKm;
   final Value<double?> rangeKmAtEnd;
   final Value<String?> confidence;
+  final Value<double?> ahOut;
+  final Value<String?> energySource;
   const TripsCompanion({
     this.id = const Value.absent(),
     this.startedAt = const Value.absent(),
@@ -1788,6 +1881,8 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     this.learnedKm = const Value.absent(),
     this.rangeKmAtEnd = const Value.absent(),
     this.confidence = const Value.absent(),
+    this.ahOut = const Value.absent(),
+    this.energySource = const Value.absent(),
   });
   TripsCompanion.insert({
     this.id = const Value.absent(),
@@ -1816,6 +1911,8 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     this.learnedKm = const Value.absent(),
     this.rangeKmAtEnd = const Value.absent(),
     this.confidence = const Value.absent(),
+    this.ahOut = const Value.absent(),
+    this.energySource = const Value.absent(),
   }) : startedAt = Value(startedAt),
        endedAt = Value(endedAt),
        distanceKm = Value(distanceKm),
@@ -1860,6 +1957,8 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     Expression<double>? learnedKm,
     Expression<double>? rangeKmAtEnd,
     Expression<String>? confidence,
+    Expression<double>? ahOut,
+    Expression<String>? energySource,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1889,6 +1988,8 @@ class TripsCompanion extends UpdateCompanion<Trip> {
       if (learnedKm != null) 'learned_km': learnedKm,
       if (rangeKmAtEnd != null) 'range_km_at_end': rangeKmAtEnd,
       if (confidence != null) 'confidence': confidence,
+      if (ahOut != null) 'ah_out': ahOut,
+      if (energySource != null) 'energy_source': energySource,
     });
   }
 
@@ -1919,6 +2020,8 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     Value<double?>? learnedKm,
     Value<double?>? rangeKmAtEnd,
     Value<String?>? confidence,
+    Value<double?>? ahOut,
+    Value<String?>? energySource,
   }) {
     return TripsCompanion(
       id: id ?? this.id,
@@ -1947,6 +2050,8 @@ class TripsCompanion extends UpdateCompanion<Trip> {
       learnedKm: learnedKm ?? this.learnedKm,
       rangeKmAtEnd: rangeKmAtEnd ?? this.rangeKmAtEnd,
       confidence: confidence ?? this.confidence,
+      ahOut: ahOut ?? this.ahOut,
+      energySource: energySource ?? this.energySource,
     );
   }
 
@@ -2033,6 +2138,12 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     if (confidence.present) {
       map['confidence'] = Variable<String>(confidence.value);
     }
+    if (ahOut.present) {
+      map['ah_out'] = Variable<double>(ahOut.value);
+    }
+    if (energySource.present) {
+      map['energy_source'] = Variable<String>(energySource.value);
+    }
     return map;
   }
 
@@ -2064,7 +2175,9 @@ class TripsCompanion extends UpdateCompanion<Trip> {
           ..write('whPerKmAfter: $whPerKmAfter, ')
           ..write('learnedKm: $learnedKm, ')
           ..write('rangeKmAtEnd: $rangeKmAtEnd, ')
-          ..write('confidence: $confidence')
+          ..write('confidence: $confidence, ')
+          ..write('ahOut: $ahOut, ')
+          ..write('energySource: $energySource')
           ..write(')'))
         .toString();
   }
@@ -5690,6 +5803,8 @@ typedef $$TripsTableCreateCompanionBuilder =
       Value<double?> learnedKm,
       Value<double?> rangeKmAtEnd,
       Value<String?> confidence,
+      Value<double?> ahOut,
+      Value<String?> energySource,
     });
 typedef $$TripsTableUpdateCompanionBuilder =
     TripsCompanion Function({
@@ -5719,6 +5834,8 @@ typedef $$TripsTableUpdateCompanionBuilder =
       Value<double?> learnedKm,
       Value<double?> rangeKmAtEnd,
       Value<String?> confidence,
+      Value<double?> ahOut,
+      Value<String?> energySource,
     });
 
 final class $$TripsTableReferences
@@ -5879,6 +5996,16 @@ class $$TripsTableFilterComposer extends Composer<_$AppDatabase, $TripsTable> {
 
   ColumnFilters<String> get confidence => $composableBuilder(
     column: $table.confidence,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get ahOut => $composableBuilder(
+    column: $table.ahOut,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get energySource => $composableBuilder(
+    column: $table.energySource,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6046,6 +6173,16 @@ class $$TripsTableOrderingComposer
     column: $table.confidence,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get ahOut => $composableBuilder(
+    column: $table.ahOut,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get energySource => $composableBuilder(
+    column: $table.energySource,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$TripsTableAnnotationComposer
@@ -6165,6 +6302,14 @@ class $$TripsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<double> get ahOut =>
+      $composableBuilder(column: $table.ahOut, builder: (column) => column);
+
+  GeneratedColumn<String> get energySource => $composableBuilder(
+    column: $table.energySource,
+    builder: (column) => column,
+  );
+
   Expression<T> tripPointsRefs<T extends Object>(
     Expression<T> Function($$TripPointsTableAnnotationComposer a) f,
   ) {
@@ -6245,6 +6390,8 @@ class $$TripsTableTableManager
                 Value<double?> learnedKm = const Value.absent(),
                 Value<double?> rangeKmAtEnd = const Value.absent(),
                 Value<String?> confidence = const Value.absent(),
+                Value<double?> ahOut = const Value.absent(),
+                Value<String?> energySource = const Value.absent(),
               }) => TripsCompanion(
                 id: id,
                 startedAt: startedAt,
@@ -6272,6 +6419,8 @@ class $$TripsTableTableManager
                 learnedKm: learnedKm,
                 rangeKmAtEnd: rangeKmAtEnd,
                 confidence: confidence,
+                ahOut: ahOut,
+                energySource: energySource,
               ),
           createCompanionCallback:
               ({
@@ -6301,6 +6450,8 @@ class $$TripsTableTableManager
                 Value<double?> learnedKm = const Value.absent(),
                 Value<double?> rangeKmAtEnd = const Value.absent(),
                 Value<String?> confidence = const Value.absent(),
+                Value<double?> ahOut = const Value.absent(),
+                Value<String?> energySource = const Value.absent(),
               }) => TripsCompanion.insert(
                 id: id,
                 startedAt: startedAt,
@@ -6328,6 +6479,8 @@ class $$TripsTableTableManager
                 learnedKm: learnedKm,
                 rangeKmAtEnd: rangeKmAtEnd,
                 confidence: confidence,
+                ahOut: ahOut,
+                energySource: energySource,
               ),
           withReferenceMapper: (p0) => p0
               .map(

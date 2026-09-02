@@ -124,13 +124,20 @@ class _BackupCardState extends State<BackupCard> {
           ),
         TextButton.icon(
           onPressed: _busy ? null : () => _export(t, withFrames: true),
-          icon: const Icon(Icons.save_alt, size: 18),
+          icon: const Icon(Icons.download, size: 18),
           label: Text(t.backupExport),
         ),
         TextButton.icon(
           onPressed: _busy ? null : () => _export(t, withFrames: false),
-          icon: const Icon(Icons.save_alt, size: 18),
+          icon: const Icon(Icons.download, size: 18),
           label: Text(t.backupExportLight),
+        ),
+        TextButton.icon(
+          onPressed: _busy
+              ? null
+              : () => _export(t, withFrames: false, share: true),
+          icon: const Icon(Icons.ios_share, size: 18),
+          label: Text(t.backupShare),
         ),
         TextButton.icon(
           onPressed: _busy ? null : () => _import(t),
@@ -142,27 +149,52 @@ class _BackupCardState extends State<BackupCard> {
     );
   }
 
-  Future<void> _export(AppL10n t, {required bool withFrames}) async {
+  /// Writes the copy and then hands it over.
+  ///
+  /// The file itself lands in the app's private directory, which nothing else
+  /// on the phone can reach, so writing it and stopping there would be a
+  /// backup you cannot retrieve. There are two ways to hand it over and the
+  /// app only offered the wrong one:
+  ///
+  /// - [share] false: the system save dialog, which lets you put the file in
+  ///   Downloads or Drive and is what "make a copy" means to anybody.
+  /// - [share] true: the share sheet. A .json matches almost no app's intent
+  ///   filter, so the sheet came up nearly empty with no Files entry, and the
+  ///   copy could not actually be got off the phone.
+  Future<void> _export(
+    AppL10n t, {
+    required bool withFrames,
+    bool share = false,
+  }) async {
     final db = widget.service.repository?.db;
     if (db == null) return;
 
     setState(() {
       _busy = true;
+      _failed = false;
       _message = null;
     });
     try {
-      final file =
-          await BackupCodec(db).export(includeRawFrames: withFrames);
-      // Straight to the share sheet: the file lands in the app's private
-      // directory, which nothing else on the phone can reach, so writing it
-      // without handing it over would be a backup you cannot retrieve.
-      await SharePlus.instance.share(
-        ShareParams(
-          files: [XFile(file.path)],
-          fileNameOverrides: [p.basename(file.path)],
-        ),
+      final file = await BackupCodec(db).export(includeRawFrames: withFrames);
+      final name = p.basename(file.path);
+
+      if (share) {
+        await SharePlus.instance.share(
+          ShareParams(files: [XFile(file.path)], fileNameOverrides: [name]),
+        );
+        if (mounted) setState(() => _message = null);
+        return;
+      }
+
+      final saved = await FilePicker.saveFile(
+        dialogTitle: t.backupSaveDialog,
+        fileName: name,
+        bytes: await file.readAsBytes(),
       );
-      if (mounted) setState(() => _message = null);
+      if (!mounted) return;
+      // Null is the rider backing out of the dialog, which is not a failure
+      // and must not be reported as one.
+      setState(() => _message = saved == null ? null : t.backupSaved(name));
     } on Object catch (e) {
       if (mounted) {
         setState(() {

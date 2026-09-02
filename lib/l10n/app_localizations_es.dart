@@ -1909,10 +1909,11 @@ class AppL10nEs extends AppL10n {
       'Toda la base de datos en un archivo, y de vuelta. Las exportaciones a CSV y GPX son para leer los datos en otro sitio; esto es para no perderlos. Si cambias de teléfono o lo pierdes, es lo único que trae de vuelta meses de lecturas, los viajes con su recorrido y los frames crudos.';
 
   @override
-  String get backupExport => 'Crear copia';
+  String get backupExport => 'Guardar copia de todo';
 
   @override
-  String get backupExportLight => 'Crear copia sin frames crudos';
+  String get backupExportLight =>
+      'Guardar copia más pequeña, sin frames crudos';
 
   @override
   String get backupImport => 'Restaurar desde un archivo';
@@ -2358,4 +2359,24 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get trendsAxisCharge => 'de izquierda a derecha: de vacía a llena';
+
+  @override
+  String learnWhyImplausible(String n) {
+    return '$n dieron un consumo que ninguna moto puede producir, así que se rechazaron. Eso es un fallo de esta app y no algo del manejo, y quedó arreglado en esta versión: los viajes grabados de aquí en adelante deberían salir bien. Los viejos no se pueden reparar, porque las lecturas que hacían falta nunca se guardaron.';
+  }
+
+  @override
+  String get connectCouldNotSearch =>
+      'La radio nunca confirmó que la búsqueda empezara, así que en realidad no se buscó nada. Normalmente es el Bluetooth despertando justo al abrir la app. Prueba otra vez.';
+
+  @override
+  String get backupShare => 'Enviarla a otro lugar';
+
+  @override
+  String get backupSaveDialog => 'Dónde guardar la copia';
+
+  @override
+  String backupSaved(String name) {
+    return 'Guardada como $name.';
+  }
 }

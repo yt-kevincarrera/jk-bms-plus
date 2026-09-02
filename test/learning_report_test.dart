@@ -58,6 +58,39 @@ void main() {
       );
 
   group('rides that teach nothing', () {
+    test('an implausible consumption is named as a fault, not a habit', () async {
+      // What actually happened. Eight rides with real distance and real
+      // energy, every sample at 0.7 Wh/km because almost every reading was
+      // dropped before it could be integrated. The estimator's own floor of
+      // 2 Wh/km refused all of them, correctly and silently, which left
+      // "learned: 0 km" as the only visible symptom of a bug three layers
+      // down.
+      for (var i = 0; i < 8; i++) {
+        await ride(km: 5.95, outWh: 4.3, dayOffset: i);
+      }
+      final r = await report();
+      expect(r.implausible, 8);
+      expect(r.noEnergyOut, 0);
+      expect(r.blocker, LearningBlocker.implausible);
+    });
+
+    test('a plausible ride is not called implausible', () async {
+      // The same ride once the readings are actually being integrated: 5.95 km
+      // on 107 Wh is about 18 Wh/km.
+      await ride(km: 5.95, outWh: 107);
+      final r = await report(learnedKm: 5.95);
+      expect(r.used, 1);
+      expect(r.implausible, 0);
+    });
+
+    test('an absurdly high figure is refused the same way', () async {
+      // The other end of the same guard: a GPS glitch that records 50 m as a
+      // full ride produces hundreds of Wh/km.
+      await ride(km: 0.3, outWh: 400);
+      final r = await report();
+      expect(r.implausible, 1);
+    });
+
     test('a pack with no rides is not blocked, it is new', () async {
       final r = await report();
       expect(r.considered, 0);
@@ -127,7 +160,10 @@ void main() {
       await ride(km: 5, dayOffset: 2);
 
       final r = await report();
-      expect(r.noDistance + r.noEnergyOut + r.used, r.considered);
+      expect(
+        r.noDistance + r.noEnergyOut + r.implausible + r.used,
+        r.considered,
+      );
     });
   });
 }

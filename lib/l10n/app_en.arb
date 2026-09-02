@@ -1034,8 +1034,8 @@
   "thermalAbsentNote": "Unconnected probes report impossible values, around -200 C. That is not cold, it is nothing wired to that input. They are shown separately so they cannot skew the maximum or trip an alert.",
   "backupTitle": "Backup",
   "backupIntro": "The whole database in one file, and back again. The CSV and GPX exports are for reading the data elsewhere; this is for not losing it. If you change phones or lose one, this is the only thing that brings back months of readings, the rides with their tracks, and the raw frames.",
-  "backupExport": "Create backup",
-  "backupExportLight": "Create backup without raw frames",
+  "backupExport": "Save a copy of everything",
+  "backupExportLight": "Save a smaller copy, without raw frames",
   "backupImport": "Restore from a file",
   "backupImportMerge": "Add to what is here",
   "backupImportReplace": "Replace everything",
@@ -1280,5 +1280,10 @@
   "trendsConsumptionHint": "One dot per recorded ride, oldest on the left. Height is what that ride cost per kilometre. Riding style and weather move it around a lot, so ignore single dots and look at whether the cloud is drifting upwards over months: the same route costing more means the pack is having to work harder for it.",
   "trendsCapacityHint": "One dot per full discharge measured, oldest on the left. Height is the amp-hours the pack actually held that time. This is the only real measure of wear here, and it is the slowest to fill in: expect it to go down a little each year and be suspicious of a sudden drop.",
   "trendsAxisTime": "left to right: oldest to newest",
-  "trendsAxisCharge": "left to right: empty to full"
+  "trendsAxisCharge": "left to right: empty to full",
+  "learnWhyImplausible": "{n} came out at a consumption no motorcycle could produce, so they were refused. That is a fault in this app rather than anything about the riding, and it was fixed in this version: rides recorded from here should read correctly. The old ones cannot be repaired, because the readings they needed were never stored.",
+  "connectCouldNotSearch": "The radio never confirmed the search started, so nothing was actually looked for. Usually Bluetooth still waking up just after launch. Try again.",
+  "backupShare": "Send it somewhere instead",
+  "backupSaveDialog": "Where to put the copy",
+  "backupSaved": "Saved as {name}."
 }

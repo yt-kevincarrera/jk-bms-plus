@@ -1034,8 +1034,8 @@
   "thermalAbsentNote": "Las sondas sin conectar reportan valores imposibles, del orden de -200 °C. No son frío: no hay nada cableado a esa entrada. Se muestran aparte para que no ensucien ni el máximo ni los avisos.",
   "backupTitle": "Copia de seguridad",
   "backupIntro": "Toda la base de datos en un archivo, y de vuelta. Las exportaciones a CSV y GPX son para leer los datos en otro sitio; esto es para no perderlos. Si cambias de teléfono o lo pierdes, es lo único que trae de vuelta meses de lecturas, los viajes con su recorrido y los frames crudos.",
-  "backupExport": "Crear copia",
-  "backupExportLight": "Crear copia sin frames crudos",
+  "backupExport": "Guardar copia de todo",
+  "backupExportLight": "Guardar copia más pequeña, sin frames crudos",
   "backupImport": "Restaurar desde un archivo",
   "backupImportMerge": "Añadir a lo que ya hay",
   "backupImportReplace": "Reemplazar todo",
@@ -1344,5 +1344,24 @@
   "trendsConsumptionHint": "Un punto por viaje grabado, el más viejo a la izquierda. La altura es lo que costó ese viaje por kilómetro. La forma de manejar y el clima lo mueven mucho, así que ignora los puntos suertos y mira si la nube va subiendo con los meses: que la misma ruta cueste más significa que la batería está trabajando más para lograrlo.",
   "trendsCapacityHint": "Un punto por descarga completa medida, la más vieja a la izquierda. La altura es los amperios-hora que la batería realmente tenía esa vez. Es la única medida real de desgaste que hay aquí, y la más lenta en llenarse: espera que baje un poco cada año, y desconfía de una caída de golpe.",
   "trendsAxisTime": "de izquierda a derecha: del más viejo al más nuevo",
-  "trendsAxisCharge": "de izquierda a derecha: de vacía a llena"
+  "trendsAxisCharge": "de izquierda a derecha: de vacía a llena",
+  "learnWhyImplausible": "{n} dieron un consumo que ninguna moto puede producir, así que se rechazaron. Eso es un fallo de esta app y no algo del manejo, y quedó arreglado en esta versión: los viajes grabados de aquí en adelante deberían salir bien. Los viejos no se pueden reparar, porque las lecturas que hacían falta nunca se guardaron.",
+  "@learnWhyImplausible": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "connectCouldNotSearch": "La radio nunca confirmó que la búsqueda empezara, así que en realidad no se buscó nada. Normalmente es el Bluetooth despertando justo al abrir la app. Prueba otra vez.",
+  "backupShare": "Enviarla a otro lugar",
+  "backupSaveDialog": "Dónde guardar la copia",
+  "backupSaved": "Guardada como {name}.",
+  "@backupSaved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

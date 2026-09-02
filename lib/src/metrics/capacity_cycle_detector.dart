@@ -1,4 +1,5 @@
 import '../data/database.dart';
+import 'sampling.dart';
 
 /// A full discharge found in the stored history.
 class DetectedCycle {
@@ -151,18 +152,22 @@ class _Run {
   int _gapSeconds = 0;
 
   void add(Snapshot s, {required Duration maxGap}) {
-    final dt = s.timestamp.difference(_lastAt);
+    final raw = s.timestamp.difference(_lastAt);
     final power = s.packVoltage * s.current;
 
-    if (dt.inSeconds > 0 && dt <= maxGap) {
-      final hours = dt.inMilliseconds / 3600000.0;
+    // Milliseconds. The old guard was inSeconds > 0, and the BMS pushes two or
+    // three readings a second, so it was false for almost every interval and
+    // the amp-hours between them were dropped. See [usableInterval].
+    final dt = usableInterval(_lastAt, s.timestamp, maxGap: maxGap);
+    if (dt != null) {
+      final hours = hoursIn(dt);
       // Trapezoid, and only what left the pack.
       final averageCurrent = (_lastCurrent + s.current) / 2;
       final averagePower = (_lastPower + power) / 2;
       if (averageCurrent < 0) _ah += -averageCurrent * hours;
       if (averagePower < 0) _wh += -averagePower * hours;
-    } else if (dt > maxGap) {
-      _gapSeconds += dt.inSeconds;
+    } else if (raw > maxGap) {
+      _gapSeconds += raw.inSeconds;
     }
 
     _lastAt = s.timestamp;
