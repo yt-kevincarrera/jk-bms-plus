@@ -2199,4 +2199,70 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get adviceDeepestNone => 'No discharge recorded yet.';
+
+  @override
+  String get linkLostTitle => 'Connection lost';
+
+  @override
+  String get linkLostBody =>
+      'Out of range of the pack, or something else is holding the Bluetooth channel. Keeps trying on its own; what is on screen is the last reading.';
+
+  @override
+  String get linkReconnectingTitle => 'Reconnecting';
+
+  @override
+  String get linkConnectingTitle => 'Connecting';
+
+  @override
+  String linkReadingAge(String age) {
+    return 'Last reading $age ago';
+  }
+
+  @override
+  String get linkBack => 'Reading again';
+
+  @override
+  String get linkDetails => 'Details';
+
+  @override
+  String get troubleBusy =>
+      'Something else is already connected to the pack. The JK BMS accepts only one Bluetooth connection at a time, so close the official JK app or any other logger.';
+
+  @override
+  String get troubleOutOfRange =>
+      'The pack did not answer. Either it is out of range or switched off, or something else is holding its one Bluetooth connection: the official JK app, or another logger.';
+
+  @override
+  String get troubleBluetoothOff => 'Bluetooth is off on the phone.';
+
+  @override
+  String get troublePermission =>
+      'The app is not allowed to use Bluetooth. Grant Nearby devices in Android settings.';
+
+  @override
+  String get troubleLocationOff =>
+      'Location is off on the phone. Android needs it on to scan for Bluetooth devices.';
+
+  @override
+  String get troubleGeneric => 'Bluetooth trouble. Keeps trying on its own.';
+
+  @override
+  String get troubleSlowFrames =>
+      'The phone granted a smaller Bluetooth packet size than asked for. Readings arrive in more pieces, which is slower but still correct.';
+
+  @override
+  String get screenAwakeTitle => 'Keep the screen on';
+
+  @override
+  String get screenAwakeHint =>
+      'It used to be held on for as long as this screen was open, which is right in a phone mount and wrong on the sofa.';
+
+  @override
+  String get screenAwakeNever => 'Never';
+
+  @override
+  String get screenAwakeRiding => 'While riding';
+
+  @override
+  String get screenAwakeAlways => 'Always';
 }

@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:jk_bms/src/model/bms_snapshot.dart';
 
 import 'fixtures/snapshot_builder.dart';
 

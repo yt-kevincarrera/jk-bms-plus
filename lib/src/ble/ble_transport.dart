@@ -4,6 +4,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 import '../protocol/jk_constants.dart';
 import 'bms_link.dart';
+import 'link_trouble.dart';
 
 /// What the link is doing right now.
 enum BleLinkState {
@@ -118,14 +119,34 @@ class ScanLifecycle {
 
 /// Why the link is down, in words a rider can act on.
 class BleLinkError {
-  const BleLinkError(this.message, {this.likelyBusy = false});
+  const BleLinkError(this.message, {this.likelyBusy = false, this.trouble});
 
+  /// Reads an exception and classifies it, keeping the raw text as detail.
+  ///
+  /// Preferred over the plain constructor everywhere an exception is what we
+  /// have: it is what stops `FlutterBluePlusException | ... | android-code:
+  /// 133` reaching a screen as the headline.
+  factory BleLinkError.from(Object error) {
+    final t = LinkTrouble.from(error);
+    return BleLinkError(
+      error.toString(),
+      likelyBusy: t.likelyBusy,
+      trouble: t,
+    );
+  }
+
+  /// The raw text. Kept for the frame console and the details view; never the
+  /// thing a screen leads with when [trouble] is set.
   final String message;
 
   /// The BMS accepts exactly one BLE connection at a time. When the official
   /// app (or an ESP32) already holds it, connection attempts fail in ways that
   /// look like a generic error, so we call it out explicitly.
   final bool likelyBusy;
+
+  /// What this is really about, in terms a screen can put into words the rider
+  /// can act on. Null for messages that were already written for a human.
+  final LinkTrouble? trouble;
 
   @override
   String toString() => message;
@@ -273,7 +294,7 @@ class BleTransport implements BmsLink {
       timeout: timeout,
       androidUsesFineLocation: true,
     ).catchError((Object e) {
-      _errorController.add(BleLinkError('Could not start scanning: $e'));
+      _errorController.add(BleLinkError.from(e));
       if (lifecycle.onDeadline()) unawaited(finish());
     });
 
@@ -338,6 +359,10 @@ class BleTransport implements BmsLink {
           BleLinkError(
             'MTU stayed at ${device.mtuNow} bytes ($e). Frames will arrive in '
             'more pieces, which is slower but still correct.',
+            trouble: LinkTrouble(
+              LinkTroubleKind.slowFrames,
+              detail: e.toString(),
+            ),
           ),
         );
       }
@@ -349,7 +374,7 @@ class BleTransport implements BmsLink {
       _notifySub = characteristic.onValueReceived.listen(
         _bytesController.add,
         onError: (Object e) =>
-            _errorController.add(BleLinkError('Notification error: $e')),
+            _errorController.add(BleLinkError.from(e)),
       );
       await characteristic.setNotifyValue(true);
 
@@ -389,24 +414,15 @@ class BleTransport implements BmsLink {
     );
   }
 
-  BleLinkError _describeConnectFailure(Object e) {
-    final text = e.toString();
-    // Android surfaces "already connected elsewhere" as GATT 133 / 8 / 22 more
-    // often than as anything readable.
-    final busy = text.contains('133') ||
-        text.contains('ANDROID_SPECIFIC_ERROR') ||
-        text.contains('status: 8') ||
-        text.contains('status: 22');
-    if (busy) {
-      return BleLinkError(
-        'Could not connect. The JK BMS accepts only one Bluetooth connection '
-        'at a time, so close the official JK app (and any ESP32 logger) and '
-        'try again.',
-        likelyBusy: true,
-      );
-    }
-    return BleLinkError('Connection failed: $text');
-  }
+  /// Classifies a failed connection.
+  ///
+  /// This used to read GATT 133 as proof that another client held the link,
+  /// and tell the rider to close the official app. It is not proof: 133 is
+  /// Android's catch-all and it comes back just as readily from a pack that is
+  /// out of range or switched off, which is the far more common case on a bike
+  /// somebody has walked away from. The wording now names both causes instead
+  /// of picking the wrong one confidently.
+  BleLinkError _describeConnectFailure(Object e) => BleLinkError.from(e);
 
   void _onDropped() {
     _pollTimer?.cancel();
@@ -456,7 +472,7 @@ class BleTransport implements BmsLink {
     try {
       await c.write(frame, withoutResponse: c.properties.writeWithoutResponse);
     } on Exception catch (e) {
-      _errorController.add(BleLinkError('Could not send request: $e'));
+      _errorController.add(BleLinkError.from(e));
     }
   }
 

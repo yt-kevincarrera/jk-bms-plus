@@ -38,9 +38,13 @@ import 'protocol/protocol_variant.dart';
 /// logic. That is what makes it safe to split, merge or add tabs later without
 /// touching anything below this line.
 class BmsService {
-  BmsService({BmsLink? transport, JkParser parser = const JkParser()})
-      : _transport = transport ?? SwitchableLink(),
-        _parser = parser {
+  BmsService({
+    BmsLink? transport,
+    JkParser parser = const JkParser(),
+    LocationSource Function()? locationFactory,
+  })  : _transport = transport ?? SwitchableLink(),
+        _parser = parser,
+        _locationFactory = locationFactory {
     _assembler.onRejected = (_) => _statsController.add(_assembler.stats);
     _bytesSub = _transport.bytes.listen(_onBytes);
     _stateSub = _transport.state.listen((s) => lastLinkState = s);
@@ -48,6 +52,13 @@ class BmsService {
 
   final BmsLink _transport;
   final JkParser _parser;
+
+  /// Where positions come from, when something other than the phone should
+  /// supply them.
+  ///
+  /// Exists so the pause-and-resume path can be tested. It was a real ride
+  /// that found the bug there, which is an expensive way to run a test.
+  final LocationSource Function()? _locationFactory;
   final FrameAssembler _assembler = FrameAssembler();
 
   /// Full-resolution ring buffer every screen reads from.
@@ -480,7 +491,34 @@ class BmsService {
 
   void pauseTrip() => trip.pause();
 
-  void resumeTrip() => trip.resume();
+  /// Picks the ride back up, and makes sure there is still a location stream
+  /// to pick it up with.
+  ///
+  /// Belt and braces on top of the fix in [_armLocationForAutoTrip]: the
+  /// stream can also die without the app being told, when the OS revokes the
+  /// permission or stands the provider down. Since the app cannot tell a live
+  /// stream from a dead one by looking at its own fields, resume rebuilds it
+  /// unconditionally. A second of missing fixes at the kerb costs nothing;
+  /// resuming into a ride that silently records no distance cost a real one.
+  Future<LocationProblem?> resumeTrip() async {
+    if (!trip.isPaused) return null;
+
+    final problem = await _ensureLocation();
+    lastLocationProblem = problem;
+    if (problem != null) {
+      // Said out loud rather than swallowed. A ride that cannot see where it
+      // is going must not look like a ride that can.
+      _problemController.add(
+        'Resumed without location, so no distance will be recorded from '
+        'here. Stop the trip and start it again once location is back.',
+      );
+    }
+
+    // Resumed either way. A ride missing its track is worth less than a whole
+    // one; it is worth much more than a ride that quietly stopped.
+    trip.resume();
+    return problem;
+  }
 
   /// Ends the trip, stores it, and returns the summary.
   ///
@@ -510,7 +548,20 @@ class BmsService {
     if (summary == null) return null;
 
     if (id != null) {
-      await repository?.finishTrip(id, summary, points);
+      // Written with the ride, not after the relearn below: once the estimator
+      // has folded this ride in, "before" is no longer available to anybody.
+      await repository?.finishTrip(
+        id,
+        summary,
+        points,
+        conclusions: TripConclusions(
+          whPerKmBefore: hadLearnedBefore ? whPerKmBefore : null,
+          whPerKmAfter: rangeEstimator.whPerKm,
+          learnedKm: rangeEstimator.learnedKm,
+          rangeKmAtEnd: 0,
+          confidence: rangeEstimator.confidence,
+        ),
+      );
       // A ride is the most likely thing to have completed a discharge.
       await scanForCapacityCycles();
       // Rebuilding from every stored trip, rather than adding this one on top
@@ -531,16 +582,23 @@ class BmsService {
             cutoffVoltagePerCell: cutoffVoltagePerCell,
           );
 
-    return TripOutcome(
-      summary: summary,
-      whPerKmBefore: whPerKmBefore,
+    final conclusions = TripConclusions(
+      whPerKmBefore: hadLearnedBefore ? whPerKmBefore : null,
       whPerKmAfter: rangeEstimator.whPerKm,
-      hadLearnedBefore: hadLearnedBefore,
       learnedKm: rangeEstimator.learnedKm,
+      rangeKmAtEnd: rangeEstimator.rangeKm(usableWh),
       confidence: rangeEstimator.confidence,
-      rangeKmNow: rangeEstimator.rangeKm(usableWh),
-      averageWhPerKm: summary.whPerKm,
     );
+
+    // Rewritten now that the range at the end charge is known: it needs the
+    // relearned estimator above, which did not exist when the row was first
+    // completed. Cheap, and it keeps the stored conclusions identical to the
+    // ones the rider just read.
+    if (id != null) {
+      await repository?.recordTripConclusions(id, conclusions);
+    }
+
+    return TripOutcome(summary: summary, conclusions: conclusions);
   }
 
   int? _currentTripId;
@@ -550,18 +608,26 @@ class BmsService {
 
   Future<LocationProblem?> _ensureLocation() async {
     await _fixSub?.cancel();
+    _fixSub = null;
     await _location?.stop();
+    _location = null;
 
     // In demo mode the position comes from the simulated pack, so the riding
     // screens can be judged with no window and no satellites.
     final simulator = _switchable?.simulator;
-    final source = simulator != null
-        ? SimulatedLocationSource(pack: simulator.pack)
-        : GeolocatorSource();
+    final source = _locationFactory?.call() ??
+        (simulator != null
+            ? SimulatedLocationSource(pack: simulator.pack)
+            : GeolocatorSource());
     _location = source;
 
     final problem = await source.start();
-    if (problem != null) return problem;
+    if (problem != null) {
+      // Not left in place. A source that refused to start is not a location
+      // stream, and holding it would make the next check think one is running.
+      _location = null;
+      return problem;
+    }
 
     _fixSub = source.fixes.listen((fix) {
       // While a trip is open the recorder owns the fixes; before one, they
@@ -723,8 +789,11 @@ class BmsService {
     final action = tripAutoStart.evaluate(
       at: snapshot.timestamp,
       current: snapshot.current,
-      // Null until there is a fix, which the detector treats as not moving.
-      speedKmh: trip.isRecording ? trip.speedKmh : _lastAutoSpeedKmh,
+      // Null until there is a *fresh* fix. The stale figure was the other half
+      // of the pause bug: the last thing pause() writes is a zero, and handing
+      // that to the detector for the rest of the ride made every coast look
+      // like a parked bike.
+      speedKmh: trip.isRecording ? trip.freshSpeedKmh : _lastAutoSpeedKmh,
       recording: trip.isRecording,
     );
 
@@ -749,7 +818,13 @@ class BmsService {
   /// off would cost more battery than the feature saves, so the current does
   /// the waiting and the GPS only joins in once there is something to confirm.
   Future<void> _armLocationForAutoTrip(BmsSnapshot snapshot) async {
-    if (trip.isRecording) return;
+    // isActive, not isRecording. A paused trip still owns the location stream,
+    // and this used to tear it down: pausing to put air in the tyres left the
+    // pack drawing nothing, which read as "stood down", and the fixes never
+    // came back when the ride resumed. The rest of that ride recorded no
+    // distance at all, and the stale zero speed then looked like a parked bike
+    // to the auto-stop.
+    if (trip.isActive) return;
 
     final drawing = snapshot.current <= -tripAutoStart.minCurrentAmps;
     if (drawing && _location == null) {
@@ -763,7 +838,25 @@ class BmsService {
   }
 
   /// Speed while no trip is open, so the detector has something to judge.
-  double? _lastAutoSpeedKmh;
+  double? _rawAutoSpeedKmh;
+  DateTime? _autoSpeedAt;
+
+  /// The same figure, withdrawn once it is too old to mean anything.
+  ///
+  /// A speed from a minute ago is not a speed. Left standing, it lets a burst
+  /// of current open a ride on a fix taken at the last set of lights.
+  double? get _lastAutoSpeedKmh {
+    final at = _autoSpeedAt;
+    if (at == null) return null;
+    return DateTime.now().toUtc().difference(at) > const Duration(seconds: 20)
+        ? null
+        : _rawAutoSpeedKmh;
+  }
+
+  set _lastAutoSpeedKmh(double? kmh) {
+    _rawAutoSpeedKmh = kmh;
+    _autoSpeedAt = kmh == null ? null : DateTime.now().toUtc();
+  }
 
   /// Fed by the UI from the location stream when nothing is recording.
   set idleSpeedKmh(double? kmh) => _lastAutoSpeedKmh = kmh;
@@ -788,8 +881,10 @@ class BmsService {
 
   Future<void> _updateChargeWatch(BmsSnapshot snapshot) async {
     // A trip already owns the service, and its notification is the more
-    // useful one. Never fight it for the slot.
-    if (trip.isRecording) return;
+    // useful one. Never fight it for the slot. A paused trip still owns it:
+    // taking the foreground service away mid-pause is how a ride dies the
+    // moment the phone goes in a pocket.
+    if (trip.isActive) return;
     if (!chargeWatchEnabled) {
       if (_chargeServiceUp) await _stopChargeWatch();
       return;
@@ -818,8 +913,8 @@ class BmsService {
   Future<void> _stopChargeWatch() async {
     _chargeServiceUp = false;
     // Only if a trip is not relying on it. Stopping the service out from under
-    // a ride would end the recording.
-    if (!trip.isRecording) await notifications.stop();
+    // a ride would end the recording, and a paused ride is still a ride.
+    if (!trip.isActive) await notifications.stop();
   }
 
   // --- Home screen widget ---

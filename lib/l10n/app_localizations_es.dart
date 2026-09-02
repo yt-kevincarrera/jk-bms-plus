@@ -2207,4 +2207,71 @@ class AppL10nEs extends AppL10n {
   @override
   String get adviceDeepestNone =>
       'Todavía no se ha registrado ninguna descarga.';
+
+  @override
+  String get linkLostTitle => 'Se perdió la conexión';
+
+  @override
+  String get linkLostBody =>
+      'Estás fuera del alcance de la batería, o algo más tiene tomado el canal Bluetooth. Sigue reintentando solo; lo que ves en pantalla es la última lectura.';
+
+  @override
+  String get linkReconnectingTitle => 'Reconectando';
+
+  @override
+  String get linkConnectingTitle => 'Conectando';
+
+  @override
+  String linkReadingAge(String age) {
+    return 'Última lectura hace $age';
+  }
+
+  @override
+  String get linkBack => 'Leyendo otra vez';
+
+  @override
+  String get linkDetails => 'Detalles';
+
+  @override
+  String get troubleBusy =>
+      'Algo más ya está conectado a la batería. El JK BMS acepta una sola conexión Bluetooth a la vez, así que cierra la app oficial de JK o cualquier otro registrador.';
+
+  @override
+  String get troubleOutOfRange =>
+      'La batería no respondió. O está fuera de alcance o apagada, o algo más tiene tomada su única conexión Bluetooth: la app oficial de JK, u otro registrador.';
+
+  @override
+  String get troubleBluetoothOff => 'El Bluetooth del teléfono está apagado.';
+
+  @override
+  String get troublePermission =>
+      'La app no tiene permiso para usar Bluetooth. Concede Dispositivos cercanos en los ajustes de Android.';
+
+  @override
+  String get troubleLocationOff =>
+      'La ubicación del teléfono está apagada. Android la necesita encendida para buscar dispositivos Bluetooth.';
+
+  @override
+  String get troubleGeneric =>
+      'Problema de Bluetooth. Sigue reintentando solo.';
+
+  @override
+  String get troubleSlowFrames =>
+      'El teléfono concedió un tamaño de paquete Bluetooth menor del pedido. Las lecturas llegan en más trozos, lo que es más lento pero igual de correcto.';
+
+  @override
+  String get screenAwakeTitle => 'Mantener la pantalla encendida';
+
+  @override
+  String get screenAwakeHint =>
+      'Antes se quedaba encendida todo el tiempo que esta pantalla estuviera abierta, lo cual está bien en un soporte de moto y mal en el sofá.';
+
+  @override
+  String get screenAwakeNever => 'Nunca';
+
+  @override
+  String get screenAwakeRiding => 'Mientras ruedas';
+
+  @override
+  String get screenAwakeAlways => 'Siempre';
 }
