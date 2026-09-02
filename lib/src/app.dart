@@ -53,9 +53,21 @@ class _JkBmsAppState extends State<JkBmsApp> {
     // full: raw frames are the biggest thing this app writes.
     _repository.pruneRawFrames();
     _repository.compactSnapshots();
+    // Every pack, at startup, because the saved-pack screen reads history with
+    // no radio involved and was showing figures the app already knew how to
+    // mend. Finds nothing after the first pass.
+    _repairOldRides();
     _proximity.load();
     _loadSettings();
     _loadVersion();
+  }
+
+  /// Measures again the rides recorded before the integration bug was fixed.
+  Future<void> _repairOldRides() async {
+    final report = await _repository.repairAllTripEnergy();
+    // Only a redraw, so a screen already open picks up the mended figures
+    // rather than waiting to be reopened.
+    if (report.didAnything && mounted) setState(() {});
   }
 
   /// Reads the version Android has installed, which is the only figure that
