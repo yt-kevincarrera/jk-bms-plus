@@ -1,4 +1,5 @@
 import '../model/bms_snapshot.dart';
+import 'sampling.dart';
 
 /// Where a capacity measurement is up to.
 enum CapacityTestState {
@@ -164,11 +165,17 @@ class CapacityTestRunner {
     if (previousAt != null &&
         previousCurrent != null &&
         previousPower != null) {
-      final dt = s.timestamp.difference(previousAt);
       // A gap means the link dropped. Integrating across it would invent
       // amp-hours that never left the pack, which would inflate the answer.
-      if (dt.inSeconds > 0 && dt.inSeconds <= 10) {
-        final hours = dt.inMilliseconds / 3600000.0;
+      //
+      // This was the same truncation as everywhere else, and here it did the
+      // most damage of all: the capacity test is the app's one real
+      // measurement of wear, and it was counting only the intervals that
+      // happened to straddle a whole second. Every figure it has ever produced
+      // is too low.
+      final dt = usableInterval(previousAt, s.timestamp);
+      if (dt != null) {
+        final hours = hoursIn(dt);
         // Trapezoid, and only what comes *out*: charging mid-test does not
         // subtract, it invalidates, and that is what [chargedDuringRun] is for.
         final averageCurrent = (previousCurrent + s.current) / 2;

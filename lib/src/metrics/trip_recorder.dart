@@ -393,10 +393,19 @@ class TripRecorder {
 
     if (previous == null || previousAt == null) return;
 
-    final dt = fix.timestamp.difference(previousAt);
     // A long gap means the app was backgrounded or the signal died. Do not draw
     // a straight line across it and call it distance.
-    if (dt.inSeconds <= 0 || dt.inSeconds > 30) return;
+    //
+    // This one was never wrong in practice, because the location source asks
+    // for a fix every five metres and they arrive seconds apart. It is written
+    // in milliseconds anyway: it was wrong for the same reason as the others,
+    // and lowering that filter would have silently started dropping distance.
+    final dt = usableInterval(
+      previousAt,
+      fix.timestamp,
+      maxGap: const Duration(seconds: 30),
+    );
+    if (dt == null) return;
 
     final metres = _haversineMetres(
       previous.latitude,

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import '../model/bms_snapshot.dart';
+import 'sampling.dart';
 
 /// What a charge turned out to be.
 class ChargeReport {
@@ -116,7 +117,13 @@ class ChargeSessionRecorder {
   double _worstDeltaHigh = 0;
   int _weakCellAtTop = 0;
   int _strongCellAtTop = 0;
-  int _balancerSeconds = 0;
+  /// Time the balancer was seen working, kept as a Duration.
+  ///
+  /// It used to be an int of whole seconds added up per reading, which is zero
+  /// for a 400 ms interval, so the balancer could run for a whole charge and
+  /// this would finish on nought. Anything reading it concluded the balancer
+  /// had never done anything.
+  Duration _balancing = Duration.zero;
   bool _reachedTop = false;
 
   /// Live figures while a charge is under way.
@@ -161,7 +168,7 @@ class ChargeSessionRecorder {
     _worstDeltaHigh = 0;
     _weakCellAtTop = 0;
     _strongCellAtTop = 0;
-    _balancerSeconds = 0;
+    _balancing = Duration.zero;
     _reachedTop = false;
   }
 
@@ -200,13 +207,22 @@ class ChargeSessionRecorder {
       return;
     }
 
-    final dt = s.timestamp.difference(previousAt);
-    if (dt.inSeconds <= 0 || dt.inSeconds > 30) return;
+    final dt = usableInterval(
+      previousAt,
+      s.timestamp,
+      maxGap: const Duration(seconds: 30),
+    );
+    if (dt == null) return;
 
-    final hours = dt.inMilliseconds / 3600000.0;
+    final hours = hoursIn(dt);
     _ah += (previousCurrent + s.current) / 2 * hours;
     _wh += (previousPower + s.power) / 2 * hours;
-    if (s.balancerActive) _balancerSeconds += dt.inSeconds;
+    // Milliseconds accumulated as a Duration rather than whole seconds added
+    // up. The old version added inSeconds, which is zero for a 400 ms
+    // interval, so the balancer could run for an entire charge and this would
+    // finish on nought seconds. Anything reading it concluded the balancer had
+    // never worked.
+    if (s.balancerActive) _balancing += dt;
   }
 
   ChargeReport? _finish(BmsSnapshot s) {
@@ -229,7 +245,7 @@ class ChargeSessionRecorder {
       worstDeltaHigh: _worstDeltaHigh,
       weakCellAtTop: _weakCellAtTop,
       strongCellAtTop: _strongCellAtTop,
-      balancerWorkedSeconds: _balancerSeconds,
+      balancerWorkedSeconds: _balancing.inSeconds,
       reachedTop: _reachedTop,
     );
   }

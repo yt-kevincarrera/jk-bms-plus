@@ -162,7 +162,7 @@ class AppL10nEs extends AppL10n {
   String get soc => 'Carga';
 
   @override
-  String get range => 'Autonomía';
+  String get range => 'Autonomía restante';
 
   @override
   String get rangeDisclaimer =>
@@ -2379,4 +2379,28 @@ class AppL10nEs extends AppL10n {
   String backupSaved(String name) {
     return 'Guardada como $name.';
   }
+
+  @override
+  String get rangeFull => 'Con la batería llena';
+
+  @override
+  String rangeFullBand(String low, String high) {
+    return 'unos $low a $high km';
+  }
+
+  @override
+  String get rangeFullUnknown =>
+      'Hace falta una capacidad medida para poder decir esto.';
+
+  @override
+  String get rangeFullFromAdvert =>
+      'Sale de la capacidad que pusiste tú, no de una medida.';
+
+  @override
+  String get rangeFullFromMeasured =>
+      'Sale de una capacidad que esta batería midió de verdad.';
+
+  @override
+  String get rangeNoneLearned =>
+      'Todavía no ha aprendido nada, así que no hay distancia que valga la pena decir, a ninguna carga.';
 }

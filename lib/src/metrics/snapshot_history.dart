@@ -1,6 +1,7 @@
 import 'dart:collection';
 
 import '../model/bms_snapshot.dart';
+import 'sampling.dart';
 
 /// In-memory ring buffer of snapshots at full resolution, plus the smoothing
 /// the screens read.
@@ -96,11 +97,16 @@ class SnapshotHistory {
     final list = _buffer.toList();
     var wh = 0.0;
     for (var i = 1; i < list.length; i++) {
-      final dt = list[i].timestamp.difference(list[i - 1].timestamp);
-      // Ignore gaps: a dropped connection is not thirty seconds of current.
-      if (dt.inSeconds <= 0 || dt.inSeconds > 10) continue;
+      // Ignore gaps: a dropped connection is not ten seconds of current.
+      // Milliseconds, because the readings are 300 to 500 ms apart and the old
+      // guard threw all of them away. See [usableInterval].
+      final dt = usableInterval(
+        list[i - 1].timestamp,
+        list[i].timestamp,
+      );
+      if (dt == null) continue;
       final avgPower = (list[i].power + list[i - 1].power) / 2;
-      wh += avgPower * dt.inMilliseconds / 3600000.0;
+      wh += avgPower * hoursIn(dt);
     }
     return wh;
   }

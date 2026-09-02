@@ -26,6 +26,7 @@ import 'metrics/capacity_test_runner.dart';
 import 'metrics/charge_alerts.dart';
 import 'metrics/charge_session.dart';
 import 'metrics/range_estimator.dart';
+import 'metrics/range_outlook.dart';
 import 'metrics/sampling.dart';
 import 'metrics/ride_alerts.dart';
 import 'metrics/trip_autostart.dart';
@@ -275,6 +276,7 @@ class BmsService {
     await relearnRangeFromTrips();
     await resumeCapacityTest();
     await scanForCapacityCycles();
+    await refreshMeasuredCapacity();
   }
 
   /// Re-reads the stored row, after a rename or a catalogue change.
@@ -686,6 +688,79 @@ class BmsService {
     _fixSub = null;
     await _location?.stop();
     _location = null;
+  }
+
+  /// How far it can go now, and how far a full pack is worth.
+  ///
+  /// The two were one number with one label, which invited the worst possible
+  /// reading: a distance quoted off a half-empty pack, taken as what the bike
+  /// does. Only one of them changes when you charge.
+  RangeOutlook get rangeOutlook {
+    final s = _lastSnapshot;
+    if (s == null) return RangeOutlook.unknown;
+
+    final usableNow = RangeEstimator.usableWh(
+      remainingAh: s.remainingCapacityAh,
+      packVoltage: s.packVoltage,
+      cellCount: s.cellCount,
+      minCellVoltage: s.minCellVoltage,
+      averageCellVoltage: s.averageCellVoltage,
+      cutoffVoltagePerCell: cutoffVoltagePerCell,
+    );
+
+    // A measured capacity outranks the catalogue figure, which is a claim
+    // about a purchase rather than a measurement of this battery.
+    final measured = bestMeasuredCapacityAh;
+    final capacity = measured ?? catalogueCapacityAh;
+
+    return RangeOutlook.from(
+      estimator: rangeEstimator,
+      usableWhNow: usableNow,
+      fullCapacityAh: capacity,
+      // The voltage a full pack sits at, from the BMS's own per-cell limit
+      // where it has stated one. Not the voltage right now, which is whatever
+      // today's charge happens to be.
+      fullPackVoltage: capacity == null ? null : _fullPackVoltage(s),
+      capacityWasMeasured: measured != null,
+    );
+  }
+
+  /// Pack voltage at full, for turning a capacity into watt-hours.
+  double? _fullPackVoltage(BmsSnapshot s) {
+    if (s.cellCount <= 0) return null;
+    // Mid-charge nominal rather than the peak: energy is capacity times the
+    // *average* voltage over a discharge, and quoting the fully-charged
+    // voltage would overstate a full pack by several percent.
+    const nominalPerCell = 3.7;
+    return s.cellCount * nominalPerCell;
+  }
+
+  /// The best capacity this pack has ever actually measured, if any.
+  ///
+  /// The high-water mark of completed tests, not the latest: a test done on a
+  /// cold day, or one with a hole in it, is not what the pack holds. Null until
+  /// a full discharge has been recorded, and null is the honest answer, since
+  /// the alternative is quoting a full-pack range off a number from an advert.
+  double? bestMeasuredCapacityAh;
+
+  /// Re-reads the stored tests to find that high-water mark.
+  Future<void> refreshMeasuredCapacity() async {
+    final repo = repository;
+    final device = activeDeviceId;
+    if (repo == null || device == null) {
+      bestMeasuredCapacityAh = null;
+      return;
+    }
+    final tests = await repo.capacityTests(device);
+    double? best;
+    for (final t in tests) {
+      if (!t.completed || t.measuredAh <= 0) continue;
+      // A measurement with minutes missing from the middle counts low, and
+      // counting low here would understate the pack for good.
+      if (t.gapSeconds > 120) continue;
+      if (best == null || t.measuredAh > best) best = t.measuredAh;
+    }
+    bestMeasuredCapacityAh = best;
   }
 
   /// Rebuilds the range estimate from every stored trip.
@@ -1306,6 +1381,7 @@ class BmsService {
       }
     }
     if (added > 0) {
+      await refreshMeasuredCapacity();
       capacityTestCount = await repo.countCompletedCapacityTests(device);
       _capacityController.add(capacityTest.state);
     }
