@@ -19,10 +19,13 @@ void main() {
     verifier = LicenseVerifier(publicKey: await signer.publicKey);
   });
 
+  // `enabled` is said explicitly: the repository's public key is the all-zero
+  // placeholder, so a controller built with the defaults is switched off.
   LicenseController controller(DateTime Function() clock) => LicenseController(
     identity: FixedDeviceIdentity(device),
     verifier: verifier,
     clock: clock,
+    enabled: true,
   );
 
   Future<String> issue(
@@ -116,6 +119,7 @@ void main() {
       identity: FixedDeviceIdentity(device),
       verifier: LicenseVerifier(publicKey: await otherSigner.publicKey),
       clock: () => t0.add(const Duration(days: 30)),
+      enabled: true,
     );
     await rebuilt.load();
     expect(rebuilt.activeLicenses, isEmpty);
@@ -169,6 +173,55 @@ void main() {
     await later.load();
     expect(later.activeLicenses, hasLength(1));
     expect(later.entitlements.status, LicenseStatus.workshopExpired);
+  });
+
+  test(
+    'with licensing off, everything is open and nothing is written',
+    () async {
+      final c = LicenseController(
+        identity: FixedDeviceIdentity(device),
+        verifier: verifier,
+        clock: () => t0,
+        enabled: false,
+      );
+      await c.load();
+      expect(c.isLoaded, isTrue);
+      expect(c.canActivate, isFalse);
+      expect(c.entitlements.isUnrestricted, isTrue);
+      expect(c.entitlements.allows(Feature.unlimitedHistory), isTrue);
+      expect(await c.consumeInspection(), isTrue);
+
+      // The trial clock must not have started: the day licensing is switched
+      // on, the week has to begin then, not months earlier.
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getKeys(), isEmpty);
+
+      final live = controller(() => t0.add(const Duration(days: 400)));
+      await live.load();
+      expect(live.installedAt, t0.add(const Duration(days: 400)));
+      expect(live.entitlements.status, LicenseStatus.trial);
+    },
+  );
+
+  test('the switch follows the public key by default', () {
+    // The placeholder is all zeros, so a build straight from the repo has
+    // licensing off. See license_public_key.dart.
+    expect(
+      LicenseController(identity: FixedDeviceIdentity(device)).enabled,
+      isFalse,
+    );
+  });
+
+  test('an admin key never spends and never expires', () async {
+    await controller(() => t0).load();
+    final c = controller(() => t0.add(const Duration(days: 3000)));
+    await c.load();
+    final result = await c.activate(await issue(LicenseTier.admin));
+    expect(result.accepted, isTrue);
+    expect(c.entitlements.status, LicenseStatus.admin);
+    expect(await c.consumeInspection(), isTrue);
+    expect(await c.consumeCertificate(), isTrue);
+    expect(c.inspectionsSpent, 0);
   });
 
   test('removing a key takes its unlocks with it', () async {

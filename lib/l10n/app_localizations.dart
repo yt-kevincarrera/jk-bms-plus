@@ -4710,6 +4710,18 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Es Pro: requiere licencia para mantener la conexión con la app cerrada.'**
   String get chargeWatchProHint;
+
+  /// No description provided for @licenseStatusAdmin.
+  ///
+  /// In es, this message translates to:
+  /// **'Admin'**
+  String get licenseStatusAdmin;
+
+  /// No description provided for @licenseAdminBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Acceso total en este teléfono: todo desbloqueado, sin límites ni caducidad.'**
+  String get licenseAdminBody;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

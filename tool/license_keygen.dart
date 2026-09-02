@@ -54,7 +54,7 @@ Licence tool for JK BMS +
       Generate the signing pair. Writes the 32-byte seed (hex) to <seed file>
       and the public key into $_publicKeyFile.
 
-  issue   --key <seed file> --device XXXX-XXXX-XXXX-XXXX --tier pro|workshop|credits
+  issue   --key <seed file> --device XXXX-XXXX-XXXX-XXXX --tier pro|workshop|credits|admin
           [--expires YYYY-MM-DD] [--inspections N] [--certificates N] [--label "text"]
       Sign a key for one phone and print it with the message to send.
 
@@ -145,8 +145,9 @@ Future<void> _issue(Map<String, String> o) async {
     'pro' => LicenseTier.pro,
     'workshop' || 'taller' => LicenseTier.workshop,
     'credits' || 'chequeos' => LicenseTier.credits,
+    'admin' => LicenseTier.admin,
     final other => throw _Fail(
-      '--tier must be pro, workshop or credits (got $other)',
+      '--tier must be pro, workshop, credits or admin (got $other)',
     ),
   };
 
@@ -162,8 +163,9 @@ Future<void> _issue(Map<String, String> o) async {
   if (tier == LicenseTier.workshop && expires == null) {
     throw const _Fail('a workshop key needs --expires: it is sold by the year');
   }
-  if (tier == LicenseTier.pro && expires != null) {
-    throw const _Fail('a Pro key is for life; drop --expires');
+  if ((tier == LicenseTier.pro || tier == LicenseTier.admin) &&
+      expires != null) {
+    throw const _Fail('a Pro or admin key is for life; drop --expires');
   }
 
   final inspections = int.tryParse(o['inspections'] ?? '0') ?? -1;
@@ -214,6 +216,8 @@ String _messageFor(LicensePayload p, String text) {
       if (p.inspectionCredits > 0) '${p.inspectionCredits} chequeo(s)',
       if (p.certificateCredits > 0) '${p.certificateCredits} certificado(s)',
     ].join(' y '),
+    LicenseTier.admin =>
+      'JK BMS + acceso total (admin), sin límites ni caducidad',
   };
   final extras = <String>[
     if (p.tier != LicenseTier.credits && p.inspectionCredits > 0)

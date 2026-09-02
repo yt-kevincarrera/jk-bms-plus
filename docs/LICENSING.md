@@ -5,6 +5,21 @@ string the buyer pastes in once, and the phone checks it by itself. This
 document is the whole mechanism; the product reasoning is in
 [PRD-monetizacion-inspeccion.md](PRD-monetizacion-inspeccion.md), section 6.
 
+## The switch
+
+Licensing is **off** in every build until the author generates the signing
+pair. The public key constant in `lib/src/license/license_public_key.dart` is
+all zeros, and while it is, `LicenseController.enabled` is false: every feature
+is open, no trial clock runs, no licence card or Pro badge appears anywhere,
+and nothing about licences is written to the phone. The code can be merged and
+shipped long before there is a way to take payment, and nobody sees it.
+
+Running `keygen` (below) writes the real public key and that is the whole
+launch: from the next build on, the 7-day trial starts on first launch, the
+gates close after it, and Ajustes gains a Licencia card. There is no second
+flag to remember. If the pair ever needs to exist before launch, put the
+public key back to zeros in that file until the day.
+
 ## Tiers
 
 | Status | How it comes about | What it unlocks |
@@ -14,6 +29,7 @@ document is the whole mechanism; the product reasoning is in
 | Pro | A `pro` key | Unlimited history, degradation and curves, verdicts, alerts with the app closed, backup export/import, and the rest of `Feature` |
 | Pro Taller | A `workshop` key, with an end date | Everything Pro, inspections and certificates without counting, workshop extras |
 | Credits | A `credits` key | N inspections and/or N certificates, nothing else |
+| Admin | An `admin` key | Everything, for good, nothing counted. The author's own phones and anybody testing for them. Never sold |
 
 The list of what is gated lives in one place, `Entitlements.allows` in
 `lib/src/license/entitlements.dart`. Screens ask it and do not decide for
@@ -51,8 +67,8 @@ seed. Back the seed up alongside the APK signing key described in
 keys can be issued for any build already out there; leak it and anybody can
 issue keys.
 
-Until `keygen` has been run the public key constant is all zeros. Such a build
-accepts no key at all, says so on the licence screen, and still runs the trial.
+Until `keygen` has been run the public key constant is all zeros and licensing
+is off altogether; see **The switch** above.
 
 For every sale:
 
@@ -65,6 +81,10 @@ dart run tool/license_keygen.dart issue --key ~/.jkbms/license_signing.key \
 dart run tool/license_keygen.dart issue --key ~/.jkbms/license_signing.key \
     --device 7K3M-PX9W-4RTB-2HND --tier workshop --expires 2027-09-02 \
     --label "Taller El Rayo"
+
+# The author's own phone, or a tester's: everything, no limits
+dart run tool/license_keygen.dart issue --key ~/.jkbms/license_signing.key \
+    --device 7K3M-PX9W-4RTB-2HND --tier admin --label "Kevin"
 
 # Three inspection checks for somebody buying one battery
 dart run tool/license_keygen.dart issue --key ~/.jkbms/license_signing.key \

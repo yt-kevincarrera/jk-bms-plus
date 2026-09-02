@@ -59,6 +59,14 @@ enum LicenseStatus {
   /// A workshop key was active and has run out. Back to Pro? No: back to
   /// free, said plainly, because that is what was sold.
   workshopExpired,
+
+  /// An admin key is active: the author's own phone, or a tester's.
+  admin,
+
+  /// Licensing is not switched on in this build, so there is nothing to
+  /// gate. This is every build until the author generates the signing pair;
+  /// see `licensePublicKey`. Behaves like [admin] and shows no licence UI.
+  unrestricted,
 }
 
 /// What this phone may do, worked out from the keys it holds and the day.
@@ -79,6 +87,11 @@ class Entitlements {
 
   /// The starting point for a phone with nothing stored yet.
   static const Entitlements none = Entitlements(status: LicenseStatus.free);
+
+  /// A build with licensing switched off: everything, no clock, no UI.
+  static const Entitlements unrestricted = Entitlements(
+    status: LicenseStatus.unrestricted,
+  );
 
   /// Works the status out.
   ///
@@ -105,6 +118,7 @@ class Entitlements {
     var hasPro = false;
     var hasLiveWorkshop = false;
     var hadWorkshop = false;
+    var hasAdmin = false;
 
     for (final k in keys) {
       inspections += k.inspectionCredits;
@@ -129,10 +143,14 @@ class Entitlements {
           }
         case LicenseTier.credits:
           break;
+        case LicenseTier.admin:
+          hasAdmin = true;
       }
     }
 
-    if (hasLiveWorkshop) {
+    if (hasAdmin) {
+      status = LicenseStatus.admin;
+    } else if (hasLiveWorkshop) {
       status = LicenseStatus.workshop;
     } else if (hasPro) {
       status = LicenseStatus.pro;
@@ -170,11 +188,25 @@ class Entitlements {
 
   /// Everything the Pro tier includes, trial included.
   bool get isPro => switch (status) {
-    LicenseStatus.trial || LicenseStatus.pro || LicenseStatus.workshop => true,
+    LicenseStatus.trial ||
+    LicenseStatus.pro ||
+    LicenseStatus.workshop ||
+    LicenseStatus.admin ||
+    LicenseStatus.unrestricted => true,
     LicenseStatus.free || LicenseStatus.workshopExpired => false,
   };
 
-  bool get isWorkshop => status == LicenseStatus.workshop;
+  /// Everything the workshop tier includes, which an admin also has.
+  bool get isWorkshop => switch (status) {
+    LicenseStatus.workshop ||
+    LicenseStatus.admin ||
+    LicenseStatus.unrestricted => true,
+    _ => false,
+  };
+
+  /// True when nothing is gated and nothing should be shown about it:
+  /// no card, no badge, no trial countdown.
+  bool get isUnrestricted => status == LicenseStatus.unrestricted;
 
   bool get isTrial => status == LicenseStatus.trial;
 

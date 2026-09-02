@@ -170,6 +170,30 @@ void main() {
       expect(spent.allows(Feature.inspection), isFalse);
     });
 
+    test('an admin key is everything, for good, and counts nothing', () {
+      final e = Entitlements.compute(
+        keys: [key(LicenseTier.admin)],
+        installedAt: installed,
+        now: later,
+      );
+      expect(e.status, LicenseStatus.admin);
+      expect(e.isPro, isTrue);
+      expect(e.isWorkshop, isTrue);
+      expect(e.isUnrestricted, isFalse);
+      for (final f in Feature.values) {
+        expect(e.allows(f), isTrue, reason: f.name);
+      }
+      expect(e.historyWindow, isNull);
+    });
+
+    test('a build with licensing off gates nothing and shows nothing', () {
+      const e = Entitlements.unrestricted;
+      expect(e.isUnrestricted, isTrue);
+      for (final f in Feature.values) {
+        expect(e.allows(f), isTrue, reason: f.name);
+      }
+    });
+
     test('a Pro key can carry credits too', () {
       final e = Entitlements.compute(
         keys: [key(LicenseTier.pro, inspections: 3)],

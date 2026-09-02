@@ -9,10 +9,12 @@
 ///   see docs/RELEASING.md and docs/LICENSING.md.
 /// - Replacing this constant invalidates every key already sold. Do not.
 ///
-/// All zeros means no key pair has been generated yet. The verifier then
-/// rejects everything, which is the correct behaviour for a build nobody can
-/// sell licences for: the trial still works, and nothing is unlocked by
-/// accident.
+/// All zeros means no key pair has been generated yet, and that is also the
+/// switch: while it is zeros, licensing is off in the whole app (see
+/// `LicenseController.enabled`). Everything is unlocked, no trial clock runs,
+/// no licence card is shown. Running `keygen` turns it on. Ship freely
+/// before then; the day the sales channel is ready, one command and one
+/// commit make it real.
 const List<int> licensePublicKey = [
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //

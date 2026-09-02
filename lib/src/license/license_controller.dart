@@ -65,9 +65,21 @@ class LicenseController extends ChangeNotifier {
     DeviceIdentity? identity,
     LicenseVerifier? verifier,
     DateTime Function()? clock,
+    bool? enabled,
   }) : _identity = identity ?? PlatformDeviceIdentity(),
        _verifier = verifier ?? LicenseVerifier(publicKey: licensePublicKey),
-       _clock = clock ?? (() => DateTime.now().toUtc());
+       _clock = clock ?? (() => DateTime.now().toUtc()),
+       enabled = enabled ?? licensePublicKeyIsSet;
+
+  /// Whether licensing exists in this build at all.
+  ///
+  /// Off until the author generates the signing pair, which is the one
+  /// switch: the day the public key is compiled in, the trial clock starts,
+  /// the licence card appears and the gates close. Before that the app is
+  /// fully unlocked and shows nothing about licences, so a build can ship
+  /// with this code in it and nobody is the wiser. Nothing is written to
+  /// preferences while off, so the trial does not quietly start early.
+  final bool enabled;
 
   static const _installedAtKey = 'license_installed_at';
   static const _keysKey = 'license_keys';
@@ -104,13 +116,19 @@ class LicenseController extends ChangeNotifier {
 
   /// Whether this build can accept keys at all. False until the author has
   /// generated a key pair and baked the public half in.
-  bool get canActivate => licensePublicKeyIsSet;
+  bool get canActivate => enabled;
 
   int get inspectionsSpent => _inspectionsSpent;
   int get certificatesSpent => _certificatesSpent;
 
   Future<void> load() async {
     _device = await _identity.code();
+    if (!enabled) {
+      _entitlements = Entitlements.unrestricted;
+      _loaded = true;
+      notifyListeners();
+      return;
+    }
     try {
       final prefs = await SharedPreferences.getInstance();
       final at = prefs.getInt(_installedAtKey);
@@ -224,6 +242,7 @@ class LicenseController extends ChangeNotifier {
   void refresh() => _recompute();
 
   void _recompute() {
+    if (!enabled) return;
     final installed = _installedAt ?? _clock();
     _entitlements = Entitlements.compute(
       keys: [for (final a in _active) a.payload],

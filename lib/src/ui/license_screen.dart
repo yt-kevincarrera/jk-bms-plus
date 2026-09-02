@@ -86,6 +86,7 @@ class _LicenseScreenState extends State<LicenseScreen> {
             ? t.licenseWorkshopNoEnd
             : t.licenseWorkshopBody(_date(e.workshopExpiresAt!)),
       LicenseStatus.workshopExpired => t.licenseWorkshopExpiredBody,
+      LicenseStatus.admin || LicenseStatus.unrestricted => t.licenseAdminBody,
     };
     final extras = <String>[
       if (e.label.isNotEmpty) t.licenseLabel(e.label),
@@ -138,6 +139,8 @@ class _LicenseScreenState extends State<LicenseScreen> {
           t.licenseStatusWorkshopExpired,
           AppTheme.watch,
         ),
+        LicenseStatus.admin ||
+        LicenseStatus.unrestricted => (t.licenseStatusAdmin, AppTheme.cool),
       };
 
   // --- Device code ---
@@ -400,6 +403,7 @@ class _LicenseScreenState extends State<LicenseScreen> {
     LicenseTier.pro => t.licenseStatusPro,
     LicenseTier.workshop => t.licenseStatusWorkshop,
     LicenseTier.credits => t.licenseCreditsLeft('').replaceAll(':', '').trim(),
+    LicenseTier.admin => t.licenseStatusAdmin,
   };
 
   static String _date(DateTime utc) {
@@ -417,6 +421,8 @@ class LicenseCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final e = LicenseScope.entitlements(context);
+    // A build with licensing switched off has nothing to say here.
+    if (e.isUnrestricted) return const SizedBox.shrink();
     final now = DateTime.now().toUtc();
     final (label, color) = _LicenseScreenState._statusLabel(t, e.status);
     final line = switch (e.status) {
@@ -430,6 +436,7 @@ class LicenseCard extends StatelessWidget {
                 _LicenseScreenState._date(e.workshopExpiresAt!),
               ),
       LicenseStatus.workshopExpired => t.licenseWorkshopExpiredBody,
+      LicenseStatus.admin || LicenseStatus.unrestricted => t.licenseAdminBody,
     };
 
     return Section(

@@ -15,7 +15,11 @@ enum LicenseTier {
 
   /// A key that carries only credits (inspection checks, certificates) and
   /// unlocks nothing else. For the person buying one battery, once.
-  credits(3);
+  credits(3),
+
+  /// Everything, for good, nothing counted. The author's own phones, and
+  /// anybody testing the app for them. Never sold.
+  admin(9);
 
   const LicenseTier(this.code);
 

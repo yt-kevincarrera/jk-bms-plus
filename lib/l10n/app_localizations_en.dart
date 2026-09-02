@@ -2646,4 +2646,11 @@ class AppL10nEn extends AppL10n {
   @override
   String get chargeWatchProHint =>
       'Pro: needs a licence to hold the link with the app closed.';
+
+  @override
+  String get licenseStatusAdmin => 'Admin';
+
+  @override
+  String get licenseAdminBody =>
+      'Full access on this phone: everything unlocked, no limits, no expiry.';
 }

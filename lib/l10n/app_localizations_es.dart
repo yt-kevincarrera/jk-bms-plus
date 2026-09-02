@@ -2659,4 +2659,11 @@ class AppL10nEs extends AppL10n {
   @override
   String get chargeWatchProHint =>
       'Es Pro: requiere licencia para mantener la conexión con la app cerrada.';
+
+  @override
+  String get licenseStatusAdmin => 'Admin';
+
+  @override
+  String get licenseAdminBody =>
+      'Acceso total en este teléfono: todo desbloqueado, sin límites ni caducidad.';
 }

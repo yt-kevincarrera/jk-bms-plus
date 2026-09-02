@@ -1553,5 +1553,7 @@
       }
     }
   },
-  "chargeWatchProHint": "Es Pro: requiere licencia para mantener la conexión con la app cerrada."
+  "chargeWatchProHint": "Es Pro: requiere licencia para mantener la conexión con la app cerrada.",
+  "licenseStatusAdmin": "Admin",
+  "licenseAdminBody": "Acceso total en este teléfono: todo desbloqueado, sin límites ni caducidad."
 }
