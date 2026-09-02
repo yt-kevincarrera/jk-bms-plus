@@ -18,6 +18,7 @@ import 'protocol/frame_assembler.dart';
 import 'protocol/jk_constants.dart';
 import 'protocol/jk_frame.dart';
 import 'protocol/jk_parser.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'metrics/capacity_cycle_detector.dart';
@@ -30,6 +31,35 @@ import 'metrics/trip_autostart.dart';
 import 'metrics/trip_recorder.dart';
 import 'metrics/snapshot_history.dart';
 import 'protocol/protocol_variant.dart';
+
+/// What has a claim on the one foreground service, strongest first.
+///
+/// There is one service and one notification slot. Before this existed each
+/// claimant started and stopped the service on its own, which meant a charge
+/// finishing could stop the service a ride was relying on.
+enum ServiceClaim {
+  /// A ride is open, paused included. Needs the location service type.
+  trip,
+
+  /// A package is being fetched.
+  ///
+  /// Above [charge] and below [trip]: the rider is waiting on this one and its
+  /// progress is the more useful thing to show, but not while riding. Without
+  /// a claim of its own the download died whenever the screen went dark, which
+  /// is the same failure as the readings stopping, with a worse ending: a
+  /// truncated package.
+  update,
+
+  /// The pack is charging and the rider asked to be told about it overnight.
+  charge,
+
+  /// Nothing special is happening; the app is simply connected and reading.
+  ///
+  /// This is the claim that makes the app behave the same with the screen on
+  /// or off. Without it, an app whose screen has gone dark keeps its Bluetooth
+  /// subscription for a while and then quietly stops receiving.
+  link,
+}
 
 /// The single source of BMS data for the whole app.
 ///
@@ -47,7 +77,13 @@ class BmsService {
         _locationFactory = locationFactory {
     _assembler.onRejected = (_) => _statsController.add(_assembler.stats);
     _bytesSub = _transport.bytes.listen(_onBytes);
-    _stateSub = _transport.state.listen((s) => lastLinkState = s);
+    _stateSub = _transport.state.listen((s) {
+      lastLinkState = s;
+      // Readings are what normally drive the service, and a dropped link stops
+      // producing them, so the link state has to be able to stand it down
+      // itself or the notification outlives the connection it describes.
+      unawaited(_updateForegroundService());
+    });
   }
 
   final BmsLink _transport;
@@ -438,7 +474,7 @@ class BmsService {
     repository?.addSnapshot(snapshot);
     _checkAlerts(snapshot);
     _checkChargeAlerts(snapshot);
-    unawaited(_updateChargeWatch(snapshot));
+    unawaited(_updateForegroundService());
     unawaited(_updateAutoTrip(snapshot));
     _updateCapacityTest(snapshot);
     _watchCharging(snapshot);
@@ -485,7 +521,7 @@ class BmsService {
     // leaves something behind.
     _currentTripId =
         await repository?.beginTrip(DateTime.now().toUtc(), demo: isDemo);
-    await _startLiveNotification();
+    await _updateForegroundService();
     return null;
   }
 
@@ -541,7 +577,10 @@ class BmsService {
     final summary = trip.stop();
     _segments.reset();
     await _stopLocation();
-    await _stopLiveNotification();
+    // Not stopped outright: the pack may still be connected, or charging, and
+    // either of those has its own claim on the service. Ending a ride is not a
+    // reason to stop reading.
+    await _updateForegroundService();
 
     final id = _currentTripId;
     _currentTripId = null;
@@ -679,9 +718,16 @@ class BmsService {
 
   // --- The live notification ---
   //
-  // What keeps a trip alive once you switch to your music app or lock the
-  // screen, and what puts speed, distance and charge where you can see them
-  // without coming back here.
+  // There is exactly one foreground service, and on Android it is the only
+  // thing that stops the system throttling this app off the radio and the GPS
+  // the moment the screen goes dark. Three different things want it, so this
+  // arbitrates rather than each one starting and stopping it behind the others'
+  // backs, which is how a charge finishing used to be able to end a ride.
+  //
+  // The reason it matters more than it looks: without a service, an app with
+  // the screen off keeps its Bluetooth subscription for a while and then
+  // quietly stops receiving. Readings do not fail, they thin out and stop,
+  // which is the worst way for a logger to break.
 
   final LiveNotification notifications = LiveNotification();
   Timer? _notificationTimer;
@@ -691,38 +737,167 @@ class BmsService {
   String Function(TripRecorder trip, BmsSnapshot? snapshot)? notificationText;
   String notificationTitle = 'Trip';
 
-  Future<void> _startLiveNotification() async {
-    if (!await notifications.requestPermission()) return;
+  /// Whether to hold the service open merely for being connected.
+  ///
+  /// On by default, which is a change of position. The app used to keep the
+  /// *screen* awake instead, which answered the wrong question: a phone in a
+  /// mount with a burning screen, and a phone whose screen had been allowed to
+  /// sleep silently losing readings. Holding the service is what actually makes
+  /// the app behave the same either way.
+  bool linkWatchEnabled = true;
 
-    final started = await notifications.start(
-      title: notificationTitle,
-      text: notificationText?.call(trip, _lastSnapshot) ?? '',
-      usesRealLocation: !isDemo,
-    );
-    if (!started) {
-      _problemController.add(
-        'Could not start the background service, so the trip will stop '
-        'recording when the app leaves the screen.',
+  /// Wording for the connected notification, supplied by the UI.
+  String linkWatchTitle = 'Reading the pack';
+  String Function(BmsSnapshot?)? linkWatchText;
+
+  /// Wording for a download in progress, supplied by the UI.
+  String downloadTitle = 'Downloading update';
+  String Function(int percent)? downloadText;
+
+  /// How far the current download has got, or null when none is running.
+  int? _download;
+
+  /// Told by the update service that a package is being fetched.
+  ///
+  /// [percent] null means finished, failed or cancelled; either way the claim
+  /// is released. Nothing about the download itself lives here: this object
+  /// only decides who holds the foreground service.
+  void reportDownloadProgress(int? percent) {
+    final was = _download;
+    _download = percent;
+    // Only when it starts or stops does the owner change; the rest are text
+    // updates the timer is already making.
+    if ((was == null) != (percent == null)) {
+      unawaited(_updateForegroundService());
+    }
+  }
+
+  /// What currently has a claim on the one service, strongest first.
+  ///
+  /// Order is the priority order. A ride outranks a charge because its
+  /// notification is the one worth reading and because it is the one that
+  /// needs the location type; both outrank merely being connected.
+  ServiceClaim? get _claim {
+    if (trip.isActive) return ServiceClaim.trip;
+    if (_download != null) return ServiceClaim.update;
+    if (chargeWatchEnabled && chargeAlerts.isCharging) {
+      return ServiceClaim.charge;
+    }
+    // Never in demo mode: there is no radio to keep alive, and a permanent
+    // notification about a simulated pack would be a claim about nothing.
+    if (linkWatchEnabled &&
+        !isDemo &&
+        activeDevice != null &&
+        lastLinkState == BleLinkState.connected) {
+      return ServiceClaim.link;
+    }
+    return null;
+  }
+
+  /// The current claim, for tests.
+  ///
+  /// The service cannot actually start off a device, so what is worth checking
+  /// is the arbitration: which of the four things gets the one slot, and when
+  /// it is released.
+  @visibleForTesting
+  ServiceClaim? get claimForTest => _claim;
+
+  ServiceClaim? _serviceOwner;
+
+  /// True while the app is holding the link open for a charge.
+  bool get isWatchingCharge => _serviceOwner == ServiceClaim.charge;
+
+  /// True while it is held open just to keep reading.
+  bool get isWatchingLink => _serviceOwner == ServiceClaim.link;
+
+  String _serviceTitle(ServiceClaim claim) => switch (claim) {
+        ServiceClaim.trip => notificationTitle,
+        ServiceClaim.charge => chargeWatchTitle,
+        ServiceClaim.update => downloadTitle,
+        ServiceClaim.link => linkWatchTitle,
+      };
+
+  String _serviceText(ServiceClaim claim) => switch (claim) {
+        ServiceClaim.trip => notificationText?.call(trip, _lastSnapshot) ?? '',
+        ServiceClaim.charge => chargeWatchText?.call(_lastSnapshot) ?? '',
+        ServiceClaim.update => downloadText?.call(_download ?? 0) ?? '',
+        ServiceClaim.link => linkWatchText?.call(_lastSnapshot) ?? '',
+      };
+
+  /// Brings the one service into line with whoever has the strongest claim.
+  ///
+  /// Safe to call as often as readings arrive. Starting is the only expensive
+  /// part and it only happens when the owner actually changes.
+  Future<void> _updateForegroundService() async {
+    final wanted = _claim;
+
+    if (wanted == null) {
+      if (_serviceOwner != null) {
+        _serviceOwner = null;
+        _notificationTimer?.cancel();
+        _notificationTimer = null;
+        await notifications.stop();
+      }
+      return;
+    }
+
+    if (_serviceOwner == wanted) {
+      await notifications.update(
+        title: _serviceTitle(wanted),
+        text: _serviceText(wanted),
       );
       return;
     }
 
-    _notificationTimer?.cancel();
-    // Once a second: often enough to read as live, rare enough that the system
-    // does not start rate-limiting the updates.
-    _notificationTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!trip.isActive) return;
-      notifications.update(
-        title: notificationTitle,
-        text: notificationText?.call(trip, _lastSnapshot) ?? '',
-      );
-    });
-  }
+    // A change of owner can also be a change of service *type*, and Android
+    // will not reclassify a running service, so it has to be restarted.
+    if (_serviceOwner != null) await notifications.stop();
 
-  Future<void> _stopLiveNotification() async {
+    if (!await notifications.requestPermission()) {
+      _serviceOwner = null;
+      if (wanted == ServiceClaim.trip) {
+        _problemController.add(
+          'Could not start the background service, so the trip will stop '
+          'recording when the app leaves the screen.',
+        );
+      }
+      return;
+    }
+
+    final started = await notifications.start(
+      title: _serviceTitle(wanted),
+      text: _serviceText(wanted),
+      // location only for a ride, and only a real one. Android 14 refuses a
+      // location-typed service from an app with no location permission, and
+      // neither a charge nor a bare connection has anything to do with where
+      // the bike is.
+      usesRealLocation: wanted == ServiceClaim.trip && !isDemo,
+    );
+    if (!started) {
+      _serviceOwner = null;
+      if (wanted == ServiceClaim.trip) {
+        _problemController.add(
+          'Could not start the background service, so the trip will stop '
+          'recording when the app leaves the screen.',
+        );
+      }
+      return;
+    }
+
+    _serviceOwner = wanted;
     _notificationTimer?.cancel();
-    _notificationTimer = null;
-    await notifications.stop();
+    // A ride and a download are being watched second by second; a charge or a
+    // bare connection is not, and rewriting that notification once a second
+    // for hours would spend battery on a number nobody is reading. The point
+    // of holding the service is the radio, not the text.
+    final cadence = switch (wanted) {
+      ServiceClaim.trip || ServiceClaim.update => const Duration(seconds: 1),
+      ServiceClaim.charge || ServiceClaim.link => const Duration(seconds: 10),
+    };
+    _notificationTimer = Timer.periodic(
+      cadence,
+      (_) => unawaited(_updateForegroundService()),
+    );
   }
 
   // --- Alerts while riding ---
@@ -863,59 +1038,23 @@ class BmsService {
 
   // --- Charge watch ---
   //
-  // Charge alerts were useless without this. Android throttles a backgrounded
-  // app off the radio within minutes, so overnight there were no readings and
-  // therefore no alerts -- exactly the case the alerts were built for.
+  // Charge alerts were useless without a service. Android throttles a
+  // backgrounded app off the radio within minutes, so overnight there were no
+  // readings and therefore no alerts -- exactly the case the alerts were built
+  // for. The service itself is arbitrated in [_updateForegroundService]; all
+  // that is left here is the claim and the wording.
 
   /// Whether to hold a foreground service open while the pack is charging.
+  ///
+  /// Distinct from [linkWatchEnabled] even though both hold the same service:
+  /// this one is about being reachable overnight with the app closed, which is
+  /// a longer and more expensive commitment than staying alive while somebody
+  /// is using the app.
   bool chargeWatchEnabled = false;
 
   /// Wording for the charging notification, supplied by the UI.
   String chargeWatchTitle = 'Charging';
-  String Function(BmsSnapshot)? chargeWatchText;
-
-  bool _chargeServiceUp = false;
-
-  /// True while the app is holding the link open for a charge.
-  bool get isWatchingCharge => _chargeServiceUp;
-
-  Future<void> _updateChargeWatch(BmsSnapshot snapshot) async {
-    // A trip already owns the service, and its notification is the more
-    // useful one. Never fight it for the slot. A paused trip still owns it:
-    // taking the foreground service away mid-pause is how a ride dies the
-    // moment the phone goes in a pocket.
-    if (trip.isActive) return;
-    if (!chargeWatchEnabled) {
-      if (_chargeServiceUp) await _stopChargeWatch();
-      return;
-    }
-
-    if (chargeAlerts.isCharging) {
-      final text = chargeWatchText?.call(snapshot) ?? '';
-      if (_chargeServiceUp) {
-        await notifications.update(title: chargeWatchTitle, text: text);
-        return;
-      }
-      if (!await notifications.requestPermission()) return;
-      // dataSync, not location: this has nothing to do with where the bike is,
-      // and asking for a location-typed service without needing it is how an
-      // app gets refused on Android 14.
-      _chargeServiceUp = await notifications.start(
-        title: chargeWatchTitle,
-        text: text,
-        usesRealLocation: false,
-      );
-    } else if (_chargeServiceUp) {
-      await _stopChargeWatch();
-    }
-  }
-
-  Future<void> _stopChargeWatch() async {
-    _chargeServiceUp = false;
-    // Only if a trip is not relying on it. Stopping the service out from under
-    // a ride would end the recording, and a paused ride is still a ride.
-    if (!trip.isActive) await notifications.stop();
-  }
+  String Function(BmsSnapshot?)? chargeWatchText;
 
   // --- Home screen widget ---
   //
@@ -1106,9 +1245,11 @@ class BmsService {
     double? chargeTargetSoc,
     bool watchCharge = false,
     bool autoTrip = true,
+    bool watchLink = true,
     Set<String> muted = const {},
   }) {
     chargeWatchEnabled = watchCharge;
+    linkWatchEnabled = watchLink;
     autoTripEnabled = autoTrip;
     mutedAlerts = muted;
     chargeAlerts.targetSoc = chargeTargetSoc;
@@ -1218,7 +1359,10 @@ class BmsService {
 
 
     _silenceTimer?.cancel();
-    await _stopLiveNotification();
+    _notificationTimer?.cancel();
+    _notificationTimer = null;
+    _serviceOwner = null;
+    await notifications.stop();
     await _stopLocation();
     await _bytesSub.cancel();
     await _stateSub.cancel();

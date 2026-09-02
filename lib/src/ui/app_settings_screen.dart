@@ -110,6 +110,30 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                     ),
                   ),
                 ),
+                // First, because it is the setting that makes the next one a
+                // preference rather than a workaround.
+                SwitchListTile(
+                  value: settings.linkWatchEnabled,
+                  onChanged: (v) async {
+                    await settings.setLinkWatch(v);
+                    widget.service.linkWatchEnabled = v;
+                    if (mounted) setState(() {});
+                  },
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    t.linkWatchTitle,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                  subtitle: Text(
+                    t.linkWatchHint,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      height: 1.4,
+                      color: AppTheme.textFaint,
+                    ),
+                  ),
+                ),
                 // Three positions rather than a switch: "never" and "always"
                 // are both real answers, and the middle one is the reason the
                 // wakelock existed in the first place.
@@ -131,6 +155,17 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                           color: AppTheme.textFaint,
                         ),
                       ),
+                      if (settings.linkWatchEnabled) ...[
+                        const SizedBox(height: 3),
+                        Text(
+                          t.screenAwakeReason,
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            height: 1.4,
+                            color: AppTheme.good,
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 8),
                       SegmentedButton<ScreenAwake>(
                         showSelectedIcon: false,
