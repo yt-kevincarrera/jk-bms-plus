@@ -1380,7 +1380,7 @@
   "rangeFullFromAdvert": "Sale de la capacidad que pusiste tú, no de una medida.",
   "rangeFullFromMeasured": "Sale de una capacidad que esta batería midió de verdad.",
   "rangeNoneLearned": "Todavía no ha aprendido nada, así que no hay distancia que valga la pena decir, a ninguna carga.",
-  "offlineRangeAtLastSeen": "Con la carga que tenía al final",
+  "offlineRangeAtLastSeen": "Con la carga de la última lectura",
   "offlineHealthNeedsTests": "Hacen falta dos descargas completas para poder medir desgaste. Una da una capacidad; hacen falta dos para ver una caída.",
   "@offlineHealthOneTest": {
     "placeholders": {
@@ -1397,5 +1397,13 @@
   "systemNudgesHint": "La app solo le escribe a la batería cuando lleva seis segundos sin hablar. Antes escribía cada cinco segundos sin importar nada, y eso es lo que parece interrumpir el flujo. Si esto se queda cerca de cero en un viaje con lecturas continuas, esa era la causa.",
   "settingsSectionRides": "Viajes",
   "settingsSectionLink": "Conexión y pantalla",
-  "settingsSectionLinkHint": "Lo que mantiene a la app leyendo. Estos dos van juntos: si se mantiene la conexión abierta, la pantalla puede dormirse."
+  "settingsSectionLinkHint": "Lo que mantiene a la app leyendo. Estos dos van juntos: si se mantiene la conexión abierta, la pantalla puede dormirse.",
+  "@offlineRangeStale": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineRangeStale": "Esa lectura tiene {age}, así que esto es un recuerdo y no una cifra: la batería puede haberse usado o haber estado ahí parada desde entonces."
 }
