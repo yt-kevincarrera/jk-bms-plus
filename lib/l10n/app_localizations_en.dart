@@ -2394,7 +2394,7 @@ class AppL10nEn extends AppL10n {
       'Nothing learned yet, so no distance is worth quoting at any charge.';
 
   @override
-  String get offlineRangeAtLastSeen => 'At the charge last seen';
+  String get offlineRangeAtLastSeen => 'At the charge in the last reading';
 
   @override
   String get offlineHealthNeedsTests =>
@@ -2430,4 +2430,9 @@ class AppL10nEn extends AppL10n {
   @override
   String get settingsSectionLinkHint =>
       'What keeps the app reading. These two go together: hold the connection open and the screen is free to sleep.';
+
+  @override
+  String offlineRangeStale(String age) {
+    return 'That reading is $age old, so this is a memory rather than a figure: the pack may have been ridden or left to sit since.';
+  }
 }

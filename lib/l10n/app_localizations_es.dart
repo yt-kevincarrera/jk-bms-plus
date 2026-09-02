@@ -2405,7 +2405,7 @@ class AppL10nEs extends AppL10n {
       'Todavía no ha aprendido nada, así que no hay distancia que valga la pena decir, a ninguna carga.';
 
   @override
-  String get offlineRangeAtLastSeen => 'Con la carga que tenía al final';
+  String get offlineRangeAtLastSeen => 'Con la carga de la última lectura';
 
   @override
   String get offlineHealthNeedsTests =>
@@ -2441,4 +2441,9 @@ class AppL10nEs extends AppL10n {
   @override
   String get settingsSectionLinkHint =>
       'Lo que mantiene a la app leyendo. Estos dos van juntos: si se mantiene la conexión abierta, la pantalla puede dormirse.';
+
+  @override
+  String offlineRangeStale(String age) {
+    return 'Esa lectura tiene $age, así que esto es un recuerdo y no una cifra: la batería puede haberse usado o haber estado ahí parada desde entonces.';
+  }
 }

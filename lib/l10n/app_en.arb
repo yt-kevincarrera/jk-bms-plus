@@ -1292,7 +1292,7 @@
   "rangeFullFromAdvert": "From the capacity you entered, not a measured one.",
   "rangeFullFromMeasured": "From a capacity this pack actually measured.",
   "rangeNoneLearned": "Nothing learned yet, so no distance is worth quoting at any charge.",
-  "offlineRangeAtLastSeen": "At the charge last seen",
+  "offlineRangeAtLastSeen": "At the charge in the last reading",
   "offlineHealthNeedsTests": "Needs two full discharges before wear can be measured at all. One gives a capacity; it takes two to show a decline.",
   "offlineHealthOneTest": "One measurement so far: {ah} Ah. A second one, months from now, is what turns it into wear.",
   "healthCardShortOfAdvert": "Vs. advertised",
@@ -1302,5 +1302,6 @@
   "systemNudgesHint": "The app only writes to the pack once it has stopped talking for six seconds. It used to write every five seconds regardless, which appears to be what interrupted the stream. If this stays near zero on a ride whose readings are continuous, that was the cause.",
   "settingsSectionRides": "Rides",
   "settingsSectionLink": "Connection and screen",
-  "settingsSectionLinkHint": "What keeps the app reading. These two go together: hold the connection open and the screen is free to sleep."
+  "settingsSectionLinkHint": "What keeps the app reading. These two go together: hold the connection open and the screen is free to sleep.",
+  "offlineRangeStale": "That reading is {age} old, so this is a memory rather than a figure: the pack may have been ridden or left to sit since."
 }

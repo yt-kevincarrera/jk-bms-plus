@@ -153,6 +153,18 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
     });
   }
 
+  /// Whether the newest reading is old enough that anything derived from the
+  /// charge in it should be read as history.
+  ///
+  /// Three days is generous. A pack ridden without the app open, or simply
+  /// left standing, has moved on from whatever it read last.
+  bool get _readingIsStale {
+    final at = _last?.timestamp;
+    if (at == null) return true;
+    return DateTime.now().toUtc().difference(at.toUtc()) >
+        const Duration(days: 3);
+  }
+
   /// The best capacity this pack has ever measured, ignoring tests with a hole
   /// in the middle: those count low, and counting low here would understate
   /// the pack for good.
@@ -420,9 +432,26 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
             _outlook.nowKm == null
                 ? t.offlineRangeUnknown
                 : '${_outlook.nowKm!.toStringAsFixed(0)} km',
-            dim: _outlook.nowKm == null,
+            // Dimmed once the reading behind it is old. This figure is only
+            // ever as fresh as that reading, and after a few days the pack has
+            // very likely been ridden or has sat and self-discharged, so the
+            // number stops describing the battery and starts describing a
+            // moment.
+            dim: _outlook.nowKm == null || _readingIsStale,
             last: completed.isEmpty,
           ),
+          if (_outlook.nowKm != null && _readingIsStale && last != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                t.offlineRangeStale(_ago(t, last.timestamp)),
+                style: const TextStyle(
+                  fontSize: 11,
+                  height: 1.35,
+                  color: AppTheme.textFaint,
+                ),
+              ),
+            ),
           if (_outlook.fullKm != null)
             Padding(
               padding: const EdgeInsets.only(top: 4),

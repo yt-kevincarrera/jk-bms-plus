@@ -4294,7 +4294,7 @@ abstract class AppL10n {
   /// No description provided for @offlineRangeAtLastSeen.
   ///
   /// In es, this message translates to:
-  /// **'Con la carga que tenía al final'**
+  /// **'Con la carga de la última lectura'**
   String get offlineRangeAtLastSeen;
 
   /// No description provided for @offlineHealthNeedsTests.
@@ -4356,6 +4356,12 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Lo que mantiene a la app leyendo. Estos dos van juntos: si se mantiene la conexión abierta, la pantalla puede dormirse.'**
   String get settingsSectionLinkHint;
+
+  /// No description provided for @offlineRangeStale.
+  ///
+  /// In es, this message translates to:
+  /// **'Esa lectura tiene {age}, así que esto es un recuerdo y no una cifra: la batería puede haberse usado o haber estado ahí parada desde entonces.'**
+  String offlineRangeStale(String age);
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {
