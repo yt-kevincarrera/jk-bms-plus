@@ -1303,5 +1303,155 @@
   "settingsSectionRides": "Rides",
   "settingsSectionLink": "Connection and screen",
   "settingsSectionLinkHint": "What keeps the app reading. These two go together: hold the connection open and the screen is free to sleep.",
-  "offlineRangeStale": "That reading is {age} old, so this is a memory rather than a figure: the pack may have been ridden or left to sit since."
+  "offlineRangeStale": "That reading is {age} old, so this is a memory rather than a figure: the pack may have been ridden or left to sit since.",
+  "licenseTitle": "Licence",
+  "licenseStatusFree": "Free",
+  "licenseStatusTrial": "Pro trial",
+  "licenseStatusPro": "Pro",
+  "licenseStatusWorkshop": "Pro Workshop",
+  "licenseStatusWorkshopExpired": "Workshop expired",
+  "licenseTrialLeft": "{days} days of trial left with everything Pro. After that the app keeps working: the complete live viewer, free, for good.",
+  "@licenseTrialLeft": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseFreeBody": "The complete live viewer and the last 24 hours of history, free. The rest (unlimited history, degradation, verdicts, alerts with the app closed, backup) is Pro: one payment, for life, for this phone.",
+  "licenseProBody": "Pro is active on this phone. One payment, no expiry.",
+  "licenseWorkshopBody": "Pro Workshop active until {date}.",
+  "@licenseWorkshopBody": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseWorkshopNoEnd": "Pro Workshop active.",
+  "licenseWorkshopExpiredBody": "The Workshop licence has run out. The app is back on the free tier; renew to get Pro back.",
+  "licenseCreditsLeft": "Inspection checks left: {count}",
+  "@licenseCreditsLeft": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseCertificatesLeft": "Certificates left: {count}",
+  "@licenseCertificatesLeft": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseLabel": "Issued to {label}",
+  "@licenseLabel": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseDeviceCode": "This phone's code",
+  "licenseDeviceCodeHint": "The key is bound to this code. Send it with the proof of payment and you will get a key to paste here. It is checked on the phone, with no internet.",
+  "licenseCopyCode": "Copy code",
+  "licenseCopied": "Copied",
+  "licenseCopyRequest": "Copy request message",
+  "licenseRequestMessage": "Hi, I want to activate JK BMS + Pro.\nPhone code: {code}\nApp version: {version}",
+  "@licenseRequestMessage": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "licensePasteTitle": "Paste key",
+  "licensePasteHint": "Paste the whole key, from JKB1 to the end. Line breaks from the chat do not matter.",
+  "licenseActivate": "Activate",
+  "licenseActivated": "Key activated.",
+  "licenseAlreadyActive": "That key was already active on this phone.",
+  "licenseRejectedMalformed": "That is not a key. Check you copied all of it, from JKB1 to the end.",
+  "licenseRejectedSignature": "The key is not valid: either a character is missing, or it was not issued by the author.",
+  "licenseRejectedDevice": "This key is for another phone. Each key is bound to the code of the phone that asked for it.",
+  "licenseRejectedExpired": "This key has expired.",
+  "licenseNotConfigured": "This build carries no licence public key and cannot activate one. It is a development build; see docs/LICENSING.md.",
+  "licenseActiveKeys": "Keys on this phone",
+  "licenseKeyActivated": "Activated on {date}",
+  "@licenseKeyActivated": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseKeyExpires": "Expires on {date}",
+  "@licenseKeyExpires": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseKeyExpired": "Expired on {date}",
+  "@licenseKeyExpired": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseKeyCredits": "{inspections} checks, {certificates} certificates",
+  "@licenseKeyCredits": {
+    "placeholders": {
+      "inspections": {
+        "type": "String"
+      },
+      "certificates": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseRemoveKey": "Remove",
+  "licenseRemoveConfirmTitle": "Remove this key?",
+  "licenseRemoveConfirmBody": "The app loses what this key unlocks. The key itself stays valid: if you kept it, you can paste it again.",
+  "licenseWhyTitle": "Why it costs money",
+  "licenseWhyBody": "The free tier matches the official JK app and is never cut down. Pro is what that app cannot do by design: remember, compare and conclude. One payment; no subscriptions. No account, no server, no internet: the key is checked on the phone against the author's signature.",
+  "licenseOpen": "See licence",
+  "proBadge": "PRO",
+  "proGateTitle": "Pro feature",
+  "proGateBody": "{feature} is part of Pro. One payment, for life, for this phone.",
+  "@proGateBody": {
+    "placeholders": {
+      "feature": {
+        "type": "String"
+      }
+    }
+  },
+  "proGateTrialEnded": "The 7-day trial is over.",
+  "proFeatureHistory": "History older than 24 hours",
+  "proFeatureDegradation": "Degradation and the long-term curves",
+  "proFeatureVerdicts": "The verdicts on the pack's condition",
+  "proFeatureBackgroundAlerts": "Alerts with the app closed",
+  "proFeatureBackup": "Backup and restore",
+  "proFeatureConfigAudit": "The BMS configuration audit",
+  "proFeatureBatteryReport": "The battery PDF report",
+  "proFeatureInspection": "The quick inspection of another battery",
+  "proFeatureCertificate": "The seller certificate",
+  "proFeatureWorkshop": "The workshop features",
+  "historyOlderLocked": "{count} rides older than 24 hours are not shown. Seeing them is Pro.",
+  "@historyOlderLocked": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "chargeWatchProHint": "Pro: needs a licence to hold the link with the app closed.",
+  "licenseStatusAdmin": "Admin",
+  "licenseAdminBody": "Full access on this phone: everything unlocked, no limits, no expiry."
 }

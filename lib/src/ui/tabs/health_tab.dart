@@ -12,7 +12,9 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import '../../metrics/advice_engine.dart';
 import '../../metrics/snapshot_history.dart';
+import '../../license/entitlements.dart';
 import '../widgets/advice_list.dart';
+import '../widgets/pro_gate.dart';
 import '../widgets/capacity_test_card.dart';
 import '../widgets/charge_report_card.dart';
 import '../widgets/gauges.dart';
@@ -148,7 +150,8 @@ class _HealthTabState extends State<HealthTab> {
                     // different question answered further down.
                     Readout(
                       label: t.degNowTitle,
-                      value: degradation?.current?.ah.toStringAsFixed(1) ??
+                      value:
+                          degradation?.current?.ah.toStringAsFixed(1) ??
                           report.impliedCapacityAh?.toStringAsFixed(1) ??
                           '--',
                       unit: 'Ah',
@@ -167,51 +170,57 @@ class _HealthTabState extends State<HealthTab> {
         // wear. What it came up short of the advert is a fact about a
         // purchase, decided once, that does not move as the battery ages.
         if (degradation != null) ...[
-          Section(
-            title: t.degLost,
-            intro: t.degLostWhy,
-            children: [
-              InfoRow(
-                t.degLost,
-                lost == null
-                    ? t.degLostUnknown
-                    : '${(lost * 100).toStringAsFixed(1)} %',
-                dim: lost == null,
-                valueColor: lost == null ? null : _healthTone((1 - lost) * 100),
-              ),
-              InfoRow(
-                t.degBaseline,
-                degradation.baseline == null
-                    ? '--'
-                    : '${degradation.baseline!.ah.toStringAsFixed(1)} Ah',
-                hint: degradation.baseline == null
-                    ? null
-                    : degradation.baselineIsMeasured
-                        ? t.degBaselineOn(_date(degradation.baseline!.at))
-                        : t.degImpliedNote,
-                last: catalogue == null,
-              ),
-              if (catalogue != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    (degradation.shortOfAdvertisedFraction ?? 0) < 0.02
-                        ? t.degSoldOk
-                        : t.degSoldShort(
-                            catalogue.toStringAsFixed(0),
-                            degradation.baseline!.ah.toStringAsFixed(1),
-                            ((degradation.shortOfAdvertisedFraction ?? 0) * 100)
-                                .toStringAsFixed(0),
-                          ),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      height: 1.45,
-                      color: AppTheme.textFaint,
+          ProGate(
+            feature: Feature.degradation,
+            child: Section(
+              title: t.degLost,
+              intro: t.degLostWhy,
+              children: [
+                InfoRow(
+                  t.degLost,
+                  lost == null
+                      ? t.degLostUnknown
+                      : '${(lost * 100).toStringAsFixed(1)} %',
+                  dim: lost == null,
+                  valueColor: lost == null
+                      ? null
+                      : _healthTone((1 - lost) * 100),
+                ),
+                InfoRow(
+                  t.degBaseline,
+                  degradation.baseline == null
+                      ? '--'
+                      : '${degradation.baseline!.ah.toStringAsFixed(1)} Ah',
+                  hint: degradation.baseline == null
+                      ? null
+                      : degradation.baselineIsMeasured
+                      ? t.degBaselineOn(_date(degradation.baseline!.at))
+                      : t.degImpliedNote,
+                  last: catalogue == null,
+                ),
+                if (catalogue != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      (degradation.shortOfAdvertisedFraction ?? 0) < 0.02
+                          ? t.degSoldOk
+                          : t.degSoldShort(
+                              catalogue.toStringAsFixed(0),
+                              degradation.baseline!.ah.toStringAsFixed(1),
+                              ((degradation.shortOfAdvertisedFraction ?? 0) *
+                                      100)
+                                  .toStringAsFixed(0),
+                            ),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        height: 1.45,
+                        color: AppTheme.textFaint,
+                      ),
                     ),
                   ),
-                ),
-              const SizedBox(height: 6),
-            ],
+                const SizedBox(height: 6),
+              ],
+            ),
           ),
         ],
         const SizedBox(height: 14),
@@ -229,7 +238,9 @@ class _HealthTabState extends State<HealthTab> {
                 label: t.healthCardShortOfAdvert,
                 value: report.shortOfAdvertisedFraction == null
                     ? '--'
-                    : (report.shortOfAdvertisedFraction! * 100).toStringAsFixed(1),
+                    : (report.shortOfAdvertisedFraction! * 100).toStringAsFixed(
+                        1,
+                      ),
                 unit: '%',
                 color: report.shortOfAdvertisedFraction == null
                     ? AppTheme.textFaint
@@ -246,8 +257,9 @@ class _HealthTabState extends State<HealthTab> {
                     ? '--'
                     : report.cycleInflation!.toStringAsFixed(2),
                 unit: 'x',
-                color:
-                    (report.cycleInflation ?? 1) > 1.4 ? AppTheme.watch : null,
+                color: (report.cycleInflation ?? 1) > 1.4
+                    ? AppTheme.watch
+                    : null,
               ),
               StatCard(
                 label: t.healthCardImbalance,
@@ -296,20 +308,25 @@ class _HealthTabState extends State<HealthTab> {
           ),
         ),
         const SizedBox(height: 4),
-        AdviceList(
-          advice: const AdviceEngine().evaluate(
-            snapshot: s,
-            report: report,
-            estimator: estimator,
-            settings: service.lastSettings,
-            restingDelta: service.history.restingDelta,
-            loadedDelta: service.history.loadedDelta,
-            weakCellCounts: service.history.weakCellCounts,
-            balancerEverSeen: service.history.balancerEverSeen,
-            capacityTestCount: service.capacityTestCount,
-            degradationMeasurable: lost != null,
-            usableWh: usableWh,
-            grossWh: s.remainingCapacityAh * s.packVoltage,
+        // The conclusions are the part the official app cannot draw, and the
+        // part that is Pro. The figures above them stay: they are readings.
+        ProGate(
+          feature: Feature.verdicts,
+          child: AdviceList(
+            advice: const AdviceEngine().evaluate(
+              snapshot: s,
+              report: report,
+              estimator: estimator,
+              settings: service.lastSettings,
+              restingDelta: service.history.restingDelta,
+              loadedDelta: service.history.loadedDelta,
+              weakCellCounts: service.history.weakCellCounts,
+              balancerEverSeen: service.history.balancerEverSeen,
+              capacityTestCount: service.capacityTestCount,
+              degradationMeasurable: lost != null,
+              usableWh: usableWh,
+              grossWh: s.remainingCapacityAh * s.packVoltage,
+            ),
           ),
         ),
         const SizedBox(height: 4),

@@ -1405,5 +1405,155 @@
       }
     }
   },
-  "offlineRangeStale": "Esa lectura tiene {age}, así que esto es un recuerdo y no una cifra: la batería puede haberse usado o haber estado ahí parada desde entonces."
+  "offlineRangeStale": "Esa lectura tiene {age}, así que esto es un recuerdo y no una cifra: la batería puede haberse usado o haber estado ahí parada desde entonces.",
+  "licenseTitle": "Licencia",
+  "licenseStatusFree": "Gratis",
+  "licenseStatusTrial": "Prueba Pro",
+  "licenseStatusPro": "Pro",
+  "licenseStatusWorkshop": "Pro Taller",
+  "licenseStatusWorkshopExpired": "Taller vencido",
+  "licenseTrialLeft": "Quedan {days} días de prueba con todo lo Pro. Después la app sigue funcionando: el visor en vivo completo, gratis y para siempre.",
+  "@licenseTrialLeft": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseFreeBody": "Visor completo en vivo y las últimas 24 horas de historial, gratis. Lo demás (historial ilimitado, degradación, veredictos, avisos con la app cerrada, copia de seguridad) es Pro: un pago único, de por vida, para este teléfono.",
+  "licenseProBody": "Pro activo en este teléfono. Pago único, sin caducidad.",
+  "licenseWorkshopBody": "Pro Taller activo hasta el {date}.",
+  "@licenseWorkshopBody": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseWorkshopNoEnd": "Pro Taller activo.",
+  "licenseWorkshopExpiredBody": "La licencia de Taller venció. La app volvió al nivel gratis; renueva para recuperar lo Pro.",
+  "licenseCreditsLeft": "Chequeos disponibles: {count}",
+  "@licenseCreditsLeft": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseCertificatesLeft": "Certificados disponibles: {count}",
+  "@licenseCertificatesLeft": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseLabel": "A nombre de {label}",
+  "@licenseLabel": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseDeviceCode": "Código de este teléfono",
+  "licenseDeviceCodeHint": "La clave va atada a este código. Mándalo junto con el comprobante de pago y recibirás una clave para pegar aquí. Se comprueba en el teléfono, sin internet.",
+  "licenseCopyCode": "Copiar código",
+  "licenseCopied": "Copiado",
+  "licenseCopyRequest": "Copiar mensaje de solicitud",
+  "licenseRequestMessage": "Hola, quiero activar JK BMS + Pro.\nCódigo del teléfono: {code}\nVersión de la app: {version}",
+  "@licenseRequestMessage": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "licensePasteTitle": "Pegar clave",
+  "licensePasteHint": "Pega la clave completa, desde JKB1 hasta el final. Los saltos de línea del chat no importan.",
+  "licenseActivate": "Activar",
+  "licenseActivated": "Clave activada.",
+  "licenseAlreadyActive": "Esa clave ya estaba activada en este teléfono.",
+  "licenseRejectedMalformed": "Eso no es una clave. Revisa que la copiaste completa, de JKB1 hasta el final.",
+  "licenseRejectedSignature": "La clave no es válida: o le falta un carácter, o no fue emitida por el autor.",
+  "licenseRejectedDevice": "Esta clave es de otro teléfono. Cada clave va atada al código del teléfono que la pidió.",
+  "licenseRejectedExpired": "Esta clave ya venció.",
+  "licenseNotConfigured": "Esta compilación no lleva clave pública de licencias y no puede activar ninguna. Es una compilación de desarrollo; ver docs/LICENSING.md.",
+  "licenseActiveKeys": "Claves en este teléfono",
+  "licenseKeyActivated": "Activada el {date}",
+  "@licenseKeyActivated": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseKeyExpires": "Vence el {date}",
+  "@licenseKeyExpires": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseKeyExpired": "Venció el {date}",
+  "@licenseKeyExpired": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseKeyCredits": "{inspections} chequeos, {certificates} certificados",
+  "@licenseKeyCredits": {
+    "placeholders": {
+      "inspections": {
+        "type": "String"
+      },
+      "certificates": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseRemoveKey": "Quitar",
+  "licenseRemoveConfirmTitle": "¿Quitar esta clave?",
+  "licenseRemoveConfirmBody": "La app pierde lo que esta clave desbloquea. La clave sigue siendo válida: si la guardaste, puedes pegarla otra vez.",
+  "licenseWhyTitle": "Por qué se cobra",
+  "licenseWhyBody": "Lo gratis iguala a la app oficial de JK y no se recorta nunca. Lo Pro es lo que esa app no puede hacer por diseño: recordar, comparar y concluir. Un pago único; nada de suscripciones. Sin cuenta, sin servidor y sin internet: la clave se comprueba en el teléfono con la firma del autor.",
+  "licenseOpen": "Ver licencia",
+  "proBadge": "PRO",
+  "proGateTitle": "Función Pro",
+  "proGateBody": "{feature} es parte de Pro. Un pago único, de por vida, para este teléfono.",
+  "@proGateBody": {
+    "placeholders": {
+      "feature": {
+        "type": "String"
+      }
+    }
+  },
+  "proGateTrialEnded": "La prueba de 7 días terminó.",
+  "proFeatureHistory": "El historial de más de 24 horas",
+  "proFeatureDegradation": "La degradación y las curvas a largo plazo",
+  "proFeatureVerdicts": "Los veredictos sobre el estado del pack",
+  "proFeatureBackgroundAlerts": "Los avisos con la app cerrada",
+  "proFeatureBackup": "La copia de seguridad y su restauración",
+  "proFeatureConfigAudit": "La auditoría de la configuración del BMS",
+  "proFeatureBatteryReport": "El informe PDF de la batería",
+  "proFeatureInspection": "La inspección rápida de otra batería",
+  "proFeatureCertificate": "El certificado de vendedor",
+  "proFeatureWorkshop": "Las funciones de taller",
+  "historyOlderLocked": "{count} viajes de más de 24 horas no se muestran. Verlos es Pro.",
+  "@historyOlderLocked": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "chargeWatchProHint": "Es Pro: requiere licencia para mantener la conexión con la app cerrada.",
+  "licenseStatusAdmin": "Admin",
+  "licenseAdminBody": "Acceso total en este teléfono: todo desbloqueado, sin límites ni caducidad."
 }

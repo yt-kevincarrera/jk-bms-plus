@@ -67,6 +67,17 @@ pack. Each BMS the phone connects to gets its own history, its own catalogue
 capacity and its own learned consumption, keyed on the BLE address. Pooling two
 packs would not average them; it would describe a battery that does not exist.
 
+**Free, trial, Pro.** The live viewer is free and stays free, so nobody has a
+reason to go back to the official app. What the official app cannot do —
+history past a day, degradation and the long-term curves, the verdicts, alerts
+with the app closed, backup — is Pro: a single payment, for life, bound to a
+device code shown in Ajustes → Licencia. A 7-day trial of the full thing runs
+from first launch. Keys are Ed25519 signatures checked on the phone; there is
+no account and no server. None of this is switched on yet: until the signing
+key pair exists the app is fully open and shows nothing about licences.
+[docs/LICENSING.md](docs/LICENSING.md) has the mechanism, the switch and the
+tool that issues keys.
+
 **Demo mode.**
 
  A simulated 20S pack generating real 300-byte frames through the
@@ -86,6 +97,8 @@ Spanish by default, English available, remembered across restarts.
 | M4 — parity UI | Done |
 | M5 — reconnection robustness | Partly: auto-reconnect and resync are in, not yet exercised against a real radio |
 | M6 — derived metrics | Done: range learning, health report, advice, capacity test, charge report and the long-term curves. The curves need months of riding before they mean much, and say so themselves |
+| M7 — licences | Done, and switched off: device code, Ed25519 keys checked on the phone, 7-day Pro trial, Pro/Workshop/credits/admin tiers, gating. Nothing shows and nothing is gated until the author generates the key pair, which is the launch switch (see [docs/LICENSING.md](docs/LICENSING.md)) |
+| M8 — verdicts, M9 — inspection, M10 — PDF | Not started. Specified in [docs/PRD-monetizacion-inspeccion.md](docs/PRD-monetizacion-inspeccion.md) |
 
 ## Running it
 
@@ -132,7 +145,7 @@ watching the first real connection, settle these:
 flutter test
 ```
 
-191 tests, no device needed. The protocol ones run against 11 real 300-byte
+479 tests, no device needed. The protocol ones run against 11 real 300-byte
 frames captured from JK hardware, with expected values taken from the reference
 implementation's byte-layout tables rather than from this parser's own output.
 
@@ -153,6 +166,9 @@ lib/src/
   data/       database (drift), repository, exporter
   update/     app_version, release_info, update_checker, update_downloader,
               update_service
+  license/    license_payload, license_key, device_code, license_verifier,
+              entitlements, license_controller, device_identity,
+              license_public_key (the author's public key; see docs/LICENSING.md)
 
   platform/   live_notification (the foreground service)
   ui/         theme, tabs/, widgets/, trip_screen, trip_detail_screen,

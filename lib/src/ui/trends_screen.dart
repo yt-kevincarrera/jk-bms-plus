@@ -7,8 +7,10 @@ import '../data/database.dart';
 import '../metrics/chart_markers.dart';
 import '../metrics/long_term_analysis.dart';
 import '../metrics/maintenance.dart';
+import '../license/entitlements.dart';
 import 'theme.dart';
 import 'widgets/common.dart';
+import 'widgets/pro_gate.dart';
 
 /// The long view.
 ///
@@ -87,47 +89,52 @@ class _TrendsScreenState extends State<TrendsScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(t.trendsTitle)),
+      // Gated at the screen rather than at each button that opens it, so
+      // every way in (history tab, saved-pack screen) gets the same answer.
       body: SafeArea(
-        child: _loading
-            ? const Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppTheme.goodDim,
-                  ),
-                ),
-              )
-            : ListView(
-                padding: const EdgeInsets.only(top: 8, bottom: 28),
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 14),
-                    child: Text(
-                      t.trendsIntro,
-                      style: const TextStyle(
-                        fontSize: 12.5,
-                        height: 1.5,
-                        color: AppTheme.textSecondary,
-                      ),
+        child: ProGate(
+          feature: Feature.degradation,
+          child: _loading
+              ? const Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppTheme.goodDim,
                     ),
                   ),
-                  _consumption(t),
-                  _capacity(t),
-                  _sag(t),
-                  _deltaAgainstCharge(t),
-                ],
-              ),
+                )
+              : ListView(
+                  padding: const EdgeInsets.only(top: 8, bottom: 28),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 14),
+                      child: Text(
+                        t.trendsIntro,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          height: 1.5,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                    ),
+                    _consumption(t),
+                    _capacity(t),
+                    _sag(t),
+                    _deltaAgainstCharge(t),
+                  ],
+                ),
+        ),
       ),
     );
   }
 
   Widget _consumption(AppL10n t) {
     final points = _analysis.consumptionOverTime(_trips);
-    final trend = _analysis.trendPerMonth(
-      [for (final p in points) (at: p.at, value: p.whPerKm)],
-    );
+    final trend = _analysis.trendPerMonth([
+      for (final p in points) (at: p.at, value: p.whPerKm),
+    ]);
 
     return _TrendSection(
       title: t.trendsConsumption,
@@ -135,7 +142,9 @@ class _TrendsScreenState extends State<TrendsScreen> {
       pointCount: points.length,
       trendLabel: trend == null
           ? null
-          : t.trendsPerMonth('${trend >= 0 ? "+" : ""}${trend.toStringAsFixed(1)} Wh/km'),
+          : t.trendsPerMonth(
+              '${trend >= 0 ? "+" : ""}${trend.toStringAsFixed(1)} Wh/km',
+            ),
       trendIsBad: (trend ?? 0) > 0.5,
       spots: [
         for (var i = 0; i < points.length; i++)
@@ -154,9 +163,9 @@ class _TrendsScreenState extends State<TrendsScreen> {
 
   Widget _capacity(AppL10n t) {
     final points = _analysis.capacityOverTime(_tests);
-    final trend = _analysis.trendPerMonth(
-      [for (final p in points) (at: p.at, value: p.measuredAh)],
-    );
+    final trend = _analysis.trendPerMonth([
+      for (final p in points) (at: p.at, value: p.measuredAh),
+    ]);
 
     return _TrendSection(
       title: t.trendsCapacity,
@@ -196,7 +205,9 @@ class _TrendsScreenState extends State<TrendsScreen> {
       pointCount: resistances.length,
       trendLabel: trend == null
           ? null
-          : t.trendsPerMonth('${trend >= 0 ? "+" : ""}${trend.toStringAsFixed(1)} mΩ'),
+          : t.trendsPerMonth(
+              '${trend >= 0 ? "+" : ""}${trend.toStringAsFixed(1)} mΩ',
+            ),
       trendIsBad: (trend ?? 0) > 0.5,
       hint: t.trendsSagHint,
       axisNote: t.trendsAxisTime,
@@ -477,21 +488,21 @@ class _Legend extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 14,
-            height: 3,
-            decoration: BoxDecoration(
-              color: colour,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
-          ),
-        ],
-      );
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Container(
+        width: 14,
+        height: 3,
+        decoration: BoxDecoration(
+          color: colour,
+          borderRadius: BorderRadius.circular(2),
+        ),
+      ),
+      const SizedBox(width: 6),
+      Text(
+        label,
+        style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
+      ),
+    ],
+  );
 }

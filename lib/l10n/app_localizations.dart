@@ -4362,6 +4362,366 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Esa lectura tiene {age}, así que esto es un recuerdo y no una cifra: la batería puede haberse usado o haber estado ahí parada desde entonces.'**
   String offlineRangeStale(String age);
+
+  /// No description provided for @licenseTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Licencia'**
+  String get licenseTitle;
+
+  /// No description provided for @licenseStatusFree.
+  ///
+  /// In es, this message translates to:
+  /// **'Gratis'**
+  String get licenseStatusFree;
+
+  /// No description provided for @licenseStatusTrial.
+  ///
+  /// In es, this message translates to:
+  /// **'Prueba Pro'**
+  String get licenseStatusTrial;
+
+  /// No description provided for @licenseStatusPro.
+  ///
+  /// In es, this message translates to:
+  /// **'Pro'**
+  String get licenseStatusPro;
+
+  /// No description provided for @licenseStatusWorkshop.
+  ///
+  /// In es, this message translates to:
+  /// **'Pro Taller'**
+  String get licenseStatusWorkshop;
+
+  /// No description provided for @licenseStatusWorkshopExpired.
+  ///
+  /// In es, this message translates to:
+  /// **'Taller vencido'**
+  String get licenseStatusWorkshopExpired;
+
+  /// No description provided for @licenseTrialLeft.
+  ///
+  /// In es, this message translates to:
+  /// **'Quedan {days} días de prueba con todo lo Pro. Después la app sigue funcionando: el visor en vivo completo, gratis y para siempre.'**
+  String licenseTrialLeft(String days);
+
+  /// No description provided for @licenseFreeBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Visor completo en vivo y las últimas 24 horas de historial, gratis. Lo demás (historial ilimitado, degradación, veredictos, avisos con la app cerrada, copia de seguridad) es Pro: un pago único, de por vida, para este teléfono.'**
+  String get licenseFreeBody;
+
+  /// No description provided for @licenseProBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Pro activo en este teléfono. Pago único, sin caducidad.'**
+  String get licenseProBody;
+
+  /// No description provided for @licenseWorkshopBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Pro Taller activo hasta el {date}.'**
+  String licenseWorkshopBody(String date);
+
+  /// No description provided for @licenseWorkshopNoEnd.
+  ///
+  /// In es, this message translates to:
+  /// **'Pro Taller activo.'**
+  String get licenseWorkshopNoEnd;
+
+  /// No description provided for @licenseWorkshopExpiredBody.
+  ///
+  /// In es, this message translates to:
+  /// **'La licencia de Taller venció. La app volvió al nivel gratis; renueva para recuperar lo Pro.'**
+  String get licenseWorkshopExpiredBody;
+
+  /// No description provided for @licenseCreditsLeft.
+  ///
+  /// In es, this message translates to:
+  /// **'Chequeos disponibles: {count}'**
+  String licenseCreditsLeft(String count);
+
+  /// No description provided for @licenseCertificatesLeft.
+  ///
+  /// In es, this message translates to:
+  /// **'Certificados disponibles: {count}'**
+  String licenseCertificatesLeft(String count);
+
+  /// No description provided for @licenseLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'A nombre de {label}'**
+  String licenseLabel(String label);
+
+  /// No description provided for @licenseDeviceCode.
+  ///
+  /// In es, this message translates to:
+  /// **'Código de este teléfono'**
+  String get licenseDeviceCode;
+
+  /// No description provided for @licenseDeviceCodeHint.
+  ///
+  /// In es, this message translates to:
+  /// **'La clave va atada a este código. Mándalo junto con el comprobante de pago y recibirás una clave para pegar aquí. Se comprueba en el teléfono, sin internet.'**
+  String get licenseDeviceCodeHint;
+
+  /// No description provided for @licenseCopyCode.
+  ///
+  /// In es, this message translates to:
+  /// **'Copiar código'**
+  String get licenseCopyCode;
+
+  /// No description provided for @licenseCopied.
+  ///
+  /// In es, this message translates to:
+  /// **'Copiado'**
+  String get licenseCopied;
+
+  /// No description provided for @licenseCopyRequest.
+  ///
+  /// In es, this message translates to:
+  /// **'Copiar mensaje de solicitud'**
+  String get licenseCopyRequest;
+
+  /// No description provided for @licenseRequestMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'Hola, quiero activar JK BMS + Pro.\nCódigo del teléfono: {code}\nVersión de la app: {version}'**
+  String licenseRequestMessage(String code, String version);
+
+  /// No description provided for @licensePasteTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Pegar clave'**
+  String get licensePasteTitle;
+
+  /// No description provided for @licensePasteHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Pega la clave completa, desde JKB1 hasta el final. Los saltos de línea del chat no importan.'**
+  String get licensePasteHint;
+
+  /// No description provided for @licenseActivate.
+  ///
+  /// In es, this message translates to:
+  /// **'Activar'**
+  String get licenseActivate;
+
+  /// No description provided for @licenseActivated.
+  ///
+  /// In es, this message translates to:
+  /// **'Clave activada.'**
+  String get licenseActivated;
+
+  /// No description provided for @licenseAlreadyActive.
+  ///
+  /// In es, this message translates to:
+  /// **'Esa clave ya estaba activada en este teléfono.'**
+  String get licenseAlreadyActive;
+
+  /// No description provided for @licenseRejectedMalformed.
+  ///
+  /// In es, this message translates to:
+  /// **'Eso no es una clave. Revisa que la copiaste completa, de JKB1 hasta el final.'**
+  String get licenseRejectedMalformed;
+
+  /// No description provided for @licenseRejectedSignature.
+  ///
+  /// In es, this message translates to:
+  /// **'La clave no es válida: o le falta un carácter, o no fue emitida por el autor.'**
+  String get licenseRejectedSignature;
+
+  /// No description provided for @licenseRejectedDevice.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta clave es de otro teléfono. Cada clave va atada al código del teléfono que la pidió.'**
+  String get licenseRejectedDevice;
+
+  /// No description provided for @licenseRejectedExpired.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta clave ya venció.'**
+  String get licenseRejectedExpired;
+
+  /// No description provided for @licenseNotConfigured.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta compilación no lleva clave pública de licencias y no puede activar ninguna. Es una compilación de desarrollo; ver docs/LICENSING.md.'**
+  String get licenseNotConfigured;
+
+  /// No description provided for @licenseActiveKeys.
+  ///
+  /// In es, this message translates to:
+  /// **'Claves en este teléfono'**
+  String get licenseActiveKeys;
+
+  /// No description provided for @licenseKeyActivated.
+  ///
+  /// In es, this message translates to:
+  /// **'Activada el {date}'**
+  String licenseKeyActivated(String date);
+
+  /// No description provided for @licenseKeyExpires.
+  ///
+  /// In es, this message translates to:
+  /// **'Vence el {date}'**
+  String licenseKeyExpires(String date);
+
+  /// No description provided for @licenseKeyExpired.
+  ///
+  /// In es, this message translates to:
+  /// **'Venció el {date}'**
+  String licenseKeyExpired(String date);
+
+  /// No description provided for @licenseKeyCredits.
+  ///
+  /// In es, this message translates to:
+  /// **'{inspections} chequeos, {certificates} certificados'**
+  String licenseKeyCredits(String inspections, String certificates);
+
+  /// No description provided for @licenseRemoveKey.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar'**
+  String get licenseRemoveKey;
+
+  /// No description provided for @licenseRemoveConfirmTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Quitar esta clave?'**
+  String get licenseRemoveConfirmTitle;
+
+  /// No description provided for @licenseRemoveConfirmBody.
+  ///
+  /// In es, this message translates to:
+  /// **'La app pierde lo que esta clave desbloquea. La clave sigue siendo válida: si la guardaste, puedes pegarla otra vez.'**
+  String get licenseRemoveConfirmBody;
+
+  /// No description provided for @licenseWhyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Por qué se cobra'**
+  String get licenseWhyTitle;
+
+  /// No description provided for @licenseWhyBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo gratis iguala a la app oficial de JK y no se recorta nunca. Lo Pro es lo que esa app no puede hacer por diseño: recordar, comparar y concluir. Un pago único; nada de suscripciones. Sin cuenta, sin servidor y sin internet: la clave se comprueba en el teléfono con la firma del autor.'**
+  String get licenseWhyBody;
+
+  /// No description provided for @licenseOpen.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver licencia'**
+  String get licenseOpen;
+
+  /// No description provided for @proBadge.
+  ///
+  /// In es, this message translates to:
+  /// **'PRO'**
+  String get proBadge;
+
+  /// No description provided for @proGateTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Función Pro'**
+  String get proGateTitle;
+
+  /// No description provided for @proGateBody.
+  ///
+  /// In es, this message translates to:
+  /// **'{feature} es parte de Pro. Un pago único, de por vida, para este teléfono.'**
+  String proGateBody(String feature);
+
+  /// No description provided for @proGateTrialEnded.
+  ///
+  /// In es, this message translates to:
+  /// **'La prueba de 7 días terminó.'**
+  String get proGateTrialEnded;
+
+  /// No description provided for @proFeatureHistory.
+  ///
+  /// In es, this message translates to:
+  /// **'El historial de más de 24 horas'**
+  String get proFeatureHistory;
+
+  /// No description provided for @proFeatureDegradation.
+  ///
+  /// In es, this message translates to:
+  /// **'La degradación y las curvas a largo plazo'**
+  String get proFeatureDegradation;
+
+  /// No description provided for @proFeatureVerdicts.
+  ///
+  /// In es, this message translates to:
+  /// **'Los veredictos sobre el estado del pack'**
+  String get proFeatureVerdicts;
+
+  /// No description provided for @proFeatureBackgroundAlerts.
+  ///
+  /// In es, this message translates to:
+  /// **'Los avisos con la app cerrada'**
+  String get proFeatureBackgroundAlerts;
+
+  /// No description provided for @proFeatureBackup.
+  ///
+  /// In es, this message translates to:
+  /// **'La copia de seguridad y su restauración'**
+  String get proFeatureBackup;
+
+  /// No description provided for @proFeatureConfigAudit.
+  ///
+  /// In es, this message translates to:
+  /// **'La auditoría de la configuración del BMS'**
+  String get proFeatureConfigAudit;
+
+  /// No description provided for @proFeatureBatteryReport.
+  ///
+  /// In es, this message translates to:
+  /// **'El informe PDF de la batería'**
+  String get proFeatureBatteryReport;
+
+  /// No description provided for @proFeatureInspection.
+  ///
+  /// In es, this message translates to:
+  /// **'La inspección rápida de otra batería'**
+  String get proFeatureInspection;
+
+  /// No description provided for @proFeatureCertificate.
+  ///
+  /// In es, this message translates to:
+  /// **'El certificado de vendedor'**
+  String get proFeatureCertificate;
+
+  /// No description provided for @proFeatureWorkshop.
+  ///
+  /// In es, this message translates to:
+  /// **'Las funciones de taller'**
+  String get proFeatureWorkshop;
+
+  /// No description provided for @historyOlderLocked.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} viajes de más de 24 horas no se muestran. Verlos es Pro.'**
+  String historyOlderLocked(String count);
+
+  /// No description provided for @chargeWatchProHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Es Pro: requiere licencia para mantener la conexión con la app cerrada.'**
+  String get chargeWatchProHint;
+
+  /// No description provided for @licenseStatusAdmin.
+  ///
+  /// In es, this message translates to:
+  /// **'Admin'**
+  String get licenseStatusAdmin;
+
+  /// No description provided for @licenseAdminBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Acceso total en este teléfono: todo desbloqueado, sin límites ni caducidad.'**
+  String get licenseAdminBody;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {
