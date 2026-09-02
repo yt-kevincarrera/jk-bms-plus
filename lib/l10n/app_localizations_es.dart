@@ -2431,4 +2431,14 @@ class AppL10nEs extends AppL10n {
   @override
   String get systemNudgesHint =>
       'La app solo le escribe a la batería cuando lleva seis segundos sin hablar. Antes escribía cada cinco segundos sin importar nada, y eso es lo que parece interrumpir el flujo. Si esto se queda cerca de cero en un viaje con lecturas continuas, esa era la causa.';
+
+  @override
+  String get settingsSectionRides => 'Viajes';
+
+  @override
+  String get settingsSectionLink => 'Conexión y pantalla';
+
+  @override
+  String get settingsSectionLinkHint =>
+      'Lo que mantiene a la app leyendo. Estos dos van juntos: si se mantiene la conexión abierta, la pantalla puede dormirse.';
 }

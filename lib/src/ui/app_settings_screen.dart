@@ -89,6 +89,39 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                   },
                 ),
                 SwitchListTile(
+                  value: settings.chargeWatchEnabled,
+                  onChanged: (v) async {
+                    await settings.setChargeWatch(v);
+                    widget.service.chargeWatchEnabled = v;
+                    if (mounted) setState(() {});
+                  },
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    t.chargeWatchTitle,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                  subtitle: Text(
+                    t.chargeWatchHint,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      height: 1.4,
+                      color: AppTheme.textFaint,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+              ],
+            ),
+            // Rides had ended up inside the charging section, along with the
+            // link and the screen. Four of that section's five controls had
+            // nothing to do with charging: it had quietly become the place new
+            // settings went, which is how a rider stops being able to find
+            // anything.
+            Section(
+              title: t.settingsSectionRides,
+              children: [
+                SwitchListTile(
                   value: settings.autoTripEnabled,
                   onChanged: (v) async {
                     await settings.setAutoTrip(v);
@@ -110,8 +143,13 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                     ),
                   ),
                 ),
-                // First, because it is the setting that makes the next one a
-                // preference rather than a workaround.
+                const SizedBox(height: 4),
+              ],
+            ),
+            Section(
+              title: t.settingsSectionLink,
+              intro: t.settingsSectionLinkHint,
+              children: [
                 SwitchListTile(
                   value: settings.linkWatchEnabled,
                   onChanged: (v) async {
@@ -202,28 +240,6 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                         },
                       ),
                     ],
-                  ),
-                ),
-                SwitchListTile(
-                  value: settings.chargeWatchEnabled,
-                  onChanged: (v) async {
-                    await settings.setChargeWatch(v);
-                    widget.service.chargeWatchEnabled = v;
-                    if (mounted) setState(() {});
-                  },
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    t.chargeWatchTitle,
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                  subtitle: Text(
-                    t.chargeWatchHint,
-                    style: const TextStyle(
-                      fontSize: 11.5,
-                      height: 1.4,
-                      color: AppTheme.textFaint,
-                    ),
                   ),
                 ),
                 const SizedBox(height: 4),
