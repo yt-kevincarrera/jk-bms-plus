@@ -12,6 +12,8 @@ import '../trends_screen.dart';
 import '../trip_screen.dart';
 import '../widgets/common.dart';
 import '../widgets/learning_why_card.dart';
+import '../license_scope.dart';
+import '../widgets/pro_gate.dart';
 
 /// Every ride that has been recorded, newest first.
 ///
@@ -19,11 +21,7 @@ import '../widgets/learning_why_card.dart';
 /// is why it was built last: a degradation curve drawn from two days of data
 /// would be a drawing, not a measurement.
 class HistoryTab extends StatelessWidget {
-  const HistoryTab({
-    required this.service,
-    required this.settings,
-    super.key,
-  });
+  const HistoryTab({required this.service, required this.settings, super.key});
 
   final BmsService service;
   final AppSettings settings;
@@ -42,13 +40,24 @@ class HistoryTab extends StatelessWidget {
         final trips = snapshot.data ?? const <Trip>[];
         if (trips.isEmpty) return _empty(t, service);
 
+        // The free tier keeps a day. The rows are all still stored -- nothing
+        // is thrown away, and the estimator still learns from every ride --
+        // only the list is cut, and it says how much is behind the cut.
+        final window = LicenseScope.entitlements(context).historyWindow;
+        final cutoff = window == null
+            ? null
+            : DateTime.now().toUtc().subtract(window);
+        final shown = cutoff == null
+            ? trips
+            : trips.where((tr) => tr.startedAt.isAfter(cutoff)).toList();
+        final hidden = trips.length - shown.length;
+
         // A trip row exists from the moment recording starts, so the one in
         // progress is here too. It has no distance yet and would skew the
         // averages, so it is left out of the totals.
         final finished = trips.where((tr) => tr.distanceKm > 0).toList();
 
-        final totalKm =
-            finished.fold<double>(0, (a, tr) => a + tr.distanceKm);
+        final totalKm = finished.fold<double>(0, (a, tr) => a + tr.distanceKm);
         final totalWh = finished.fold<double>(
           0,
           (a, tr) => a + (tr.energyOutWh - tr.energyInWh),
@@ -71,10 +80,7 @@ class HistoryTab extends StatelessWidget {
             Section(
               title: t.historyTotals,
               children: [
-                InfoRow(
-                  t.historyTotalTrips,
-                  '${finished.length}',
-                ),
+                InfoRow(t.historyTotalTrips, '${finished.length}'),
                 InfoRow(
                   t.historyTotalDistance,
                   '${totalKm.toStringAsFixed(1)} km',
@@ -109,12 +115,17 @@ class HistoryTab extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 6),
               child: Caption(t.historyTrips),
             ),
-            for (final trip in trips)
+            for (final trip in shown)
               _TripCard(
                 trip: trip,
                 service: service,
                 repository: repository,
                 t: t,
+              ),
+            if (hidden > 0)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: _OlderRidesLocked(count: hidden),
               ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
@@ -133,39 +144,78 @@ class HistoryTab extends StatelessWidget {
   }
 
   Widget _empty(AppL10n t, BmsService service) => ListView(
-        padding: const EdgeInsets.only(top: 8),
-        children: [
-          _StartTripButton(service: service, settings: settings),
-          const SizedBox(height: 40),
-          const Icon(Icons.timeline, size: 40, color: AppTheme.textFaint),
-          const SizedBox(height: 18),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Column(
-              children: [
-                Text(
-                  t.historyEmpty,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  t.historyEmptyHint,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 12.5,
-                    height: 1.45,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-              ],
+    padding: const EdgeInsets.only(top: 8),
+    children: [
+      _StartTripButton(service: service, settings: settings),
+      const SizedBox(height: 40),
+      const Icon(Icons.timeline, size: 40, color: AppTheme.textFaint),
+      const SizedBox(height: 18),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          children: [
+            Text(
+              t.historyEmpty,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
-          ),
-        ],
-      );
+            const SizedBox(height: 10),
+            Text(
+              t.historyEmptyHint,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 12.5,
+                height: 1.45,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
+}
+
+/// The line where the free history ends.
+class _OlderRidesLocked extends StatelessWidget {
+  const _OlderRidesLocked({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: () => openLicenseScreen(context),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceRaised,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppTheme.hairline),
+        ),
+        padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+        child: Row(
+          children: [
+            const Icon(Icons.lock_outline, size: 18, color: AppTheme.watch),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                t.historyOlderLocked('$count'),
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  height: 1.4,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            const ProBadge(),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// Starting a ride from the list of rides is where a hand goes looking for it.
@@ -257,18 +307,16 @@ class _TripCard extends StatelessWidget {
           // what it taught.
           await service.deleteTrip(trip.id);
           if (!context.mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(t.historyDeleted)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(t.historyDeleted)));
         },
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute<void>(
-              builder: (_) => TripDetailScreen(
-                trip: trip,
-                repository: repository,
-              ),
+              builder: (_) =>
+                  TripDetailScreen(trip: trip, repository: repository),
             ),
           ),
           child: Container(
@@ -310,9 +358,7 @@ class _TripCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 14),
                           Text(
-                            whPerKm == null
-                                ? '--'
-                                : whPerKm.toStringAsFixed(0),
+                            whPerKm == null ? '--' : whPerKm.toStringAsFixed(0),
                             style: AppTheme.readout(24),
                           ),
                           const SizedBox(width: 3),
@@ -424,9 +470,7 @@ class StorageSection extends StatelessWidget {
             ),
             InfoRow(
               t.historyStorageSize,
-              stats == null
-                  ? '--'
-                  : '${stats.megabytes.toStringAsFixed(1)} MB',
+              stats == null ? '--' : '${stats.megabytes.toStringAsFixed(1)} MB',
               hint: t.historyStorageNote,
               last: true,
             ),

@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 2.9.2+35
+version: 2.10.0+36
 
 environment:
   sdk: ^3.11.5
@@ -52,6 +52,10 @@ dependencies:
   package_info_plus: ^10.2.1
   file_picker: ^12.1.2
   home_widget: ^0.9.3
+  # Licence keys are Ed25519 signatures checked on the phone, with no server.
+  cryptography: ^2.9.0
+  # A stable per-install identifier for the device code a licence is bound to.
+  android_id: ^0.5.2
 
 dev_dependencies:
   flutter_test:

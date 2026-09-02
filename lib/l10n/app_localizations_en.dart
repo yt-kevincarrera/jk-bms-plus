@@ -2435,4 +2435,222 @@ class AppL10nEn extends AppL10n {
   String offlineRangeStale(String age) {
     return 'That reading is $age old, so this is a memory rather than a figure: the pack may have been ridden or left to sit since.';
   }
+
+  @override
+  String get licenseTitle => 'Licence';
+
+  @override
+  String get licenseStatusFree => 'Free';
+
+  @override
+  String get licenseStatusTrial => 'Pro trial';
+
+  @override
+  String get licenseStatusPro => 'Pro';
+
+  @override
+  String get licenseStatusWorkshop => 'Pro Workshop';
+
+  @override
+  String get licenseStatusWorkshopExpired => 'Workshop expired';
+
+  @override
+  String licenseTrialLeft(String days) {
+    return '$days days of trial left with everything Pro. After that the app keeps working: the complete live viewer, free, for good.';
+  }
+
+  @override
+  String get licenseFreeBody =>
+      'The complete live viewer and the last 24 hours of history, free. The rest (unlimited history, degradation, verdicts, alerts with the app closed, backup) is Pro: one payment, for life, for this phone.';
+
+  @override
+  String get licenseProBody =>
+      'Pro is active on this phone. One payment, no expiry.';
+
+  @override
+  String licenseWorkshopBody(String date) {
+    return 'Pro Workshop active until $date.';
+  }
+
+  @override
+  String get licenseWorkshopNoEnd => 'Pro Workshop active.';
+
+  @override
+  String get licenseWorkshopExpiredBody =>
+      'The Workshop licence has run out. The app is back on the free tier; renew to get Pro back.';
+
+  @override
+  String licenseCreditsLeft(String count) {
+    return 'Inspection checks left: $count';
+  }
+
+  @override
+  String licenseCertificatesLeft(String count) {
+    return 'Certificates left: $count';
+  }
+
+  @override
+  String licenseLabel(String label) {
+    return 'Issued to $label';
+  }
+
+  @override
+  String get licenseDeviceCode => 'This phone\'s code';
+
+  @override
+  String get licenseDeviceCodeHint =>
+      'The key is bound to this code. Send it with the proof of payment and you will get a key to paste here. It is checked on the phone, with no internet.';
+
+  @override
+  String get licenseCopyCode => 'Copy code';
+
+  @override
+  String get licenseCopied => 'Copied';
+
+  @override
+  String get licenseCopyRequest => 'Copy request message';
+
+  @override
+  String licenseRequestMessage(String code, String version) {
+    return 'Hi, I want to activate JK BMS + Pro.\nPhone code: $code\nApp version: $version';
+  }
+
+  @override
+  String get licensePasteTitle => 'Paste key';
+
+  @override
+  String get licensePasteHint =>
+      'Paste the whole key, from JKB1 to the end. Line breaks from the chat do not matter.';
+
+  @override
+  String get licenseActivate => 'Activate';
+
+  @override
+  String get licenseActivated => 'Key activated.';
+
+  @override
+  String get licenseAlreadyActive =>
+      'That key was already active on this phone.';
+
+  @override
+  String get licenseRejectedMalformed =>
+      'That is not a key. Check you copied all of it, from JKB1 to the end.';
+
+  @override
+  String get licenseRejectedSignature =>
+      'The key is not valid: either a character is missing, or it was not issued by the author.';
+
+  @override
+  String get licenseRejectedDevice =>
+      'This key is for another phone. Each key is bound to the code of the phone that asked for it.';
+
+  @override
+  String get licenseRejectedExpired => 'This key has expired.';
+
+  @override
+  String get licenseNotConfigured =>
+      'This build carries no licence public key and cannot activate one. It is a development build; see docs/LICENSING.md.';
+
+  @override
+  String get licenseActiveKeys => 'Keys on this phone';
+
+  @override
+  String licenseKeyActivated(String date) {
+    return 'Activated on $date';
+  }
+
+  @override
+  String licenseKeyExpires(String date) {
+    return 'Expires on $date';
+  }
+
+  @override
+  String licenseKeyExpired(String date) {
+    return 'Expired on $date';
+  }
+
+  @override
+  String licenseKeyCredits(String inspections, String certificates) {
+    return '$inspections checks, $certificates certificates';
+  }
+
+  @override
+  String get licenseRemoveKey => 'Remove';
+
+  @override
+  String get licenseRemoveConfirmTitle => 'Remove this key?';
+
+  @override
+  String get licenseRemoveConfirmBody =>
+      'The app loses what this key unlocks. The key itself stays valid: if you kept it, you can paste it again.';
+
+  @override
+  String get licenseWhyTitle => 'Why it costs money';
+
+  @override
+  String get licenseWhyBody =>
+      'The free tier matches the official JK app and is never cut down. Pro is what that app cannot do by design: remember, compare and conclude. One payment; no subscriptions. No account, no server, no internet: the key is checked on the phone against the author\'s signature.';
+
+  @override
+  String get licenseOpen => 'See licence';
+
+  @override
+  String get proBadge => 'PRO';
+
+  @override
+  String get proGateTitle => 'Pro feature';
+
+  @override
+  String proGateBody(String feature) {
+    return '$feature is part of Pro. One payment, for life, for this phone.';
+  }
+
+  @override
+  String get proGateTrialEnded => 'The 7-day trial is over.';
+
+  @override
+  String get proFeatureHistory => 'History older than 24 hours';
+
+  @override
+  String get proFeatureDegradation => 'Degradation and the long-term curves';
+
+  @override
+  String get proFeatureVerdicts => 'The verdicts on the pack\'s condition';
+
+  @override
+  String get proFeatureBackgroundAlerts => 'Alerts with the app closed';
+
+  @override
+  String get proFeatureBackup => 'Backup and restore';
+
+  @override
+  String get proFeatureConfigAudit => 'The BMS configuration audit';
+
+  @override
+  String get proFeatureBatteryReport => 'The battery PDF report';
+
+  @override
+  String get proFeatureInspection => 'The quick inspection of another battery';
+
+  @override
+  String get proFeatureCertificate => 'The seller certificate';
+
+  @override
+  String get proFeatureWorkshop => 'The workshop features';
+
+  @override
+  String historyOlderLocked(String count) {
+    return '$count rides older than 24 hours are not shown. Seeing them is Pro.';
+  }
+
+  @override
+  String get chargeWatchProHint =>
+      'Pro: needs a licence to hold the link with the app closed.';
+
+  @override
+  String get licenseStatusAdmin => 'Admin';
+
+  @override
+  String get licenseAdminBody =>
+      'Full access on this phone: everything unlocked, no limits, no expiry.';
 }

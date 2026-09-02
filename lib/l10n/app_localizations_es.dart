@@ -2446,4 +2446,224 @@ class AppL10nEs extends AppL10n {
   String offlineRangeStale(String age) {
     return 'Esa lectura tiene $age, así que esto es un recuerdo y no una cifra: la batería puede haberse usado o haber estado ahí parada desde entonces.';
   }
+
+  @override
+  String get licenseTitle => 'Licencia';
+
+  @override
+  String get licenseStatusFree => 'Gratis';
+
+  @override
+  String get licenseStatusTrial => 'Prueba Pro';
+
+  @override
+  String get licenseStatusPro => 'Pro';
+
+  @override
+  String get licenseStatusWorkshop => 'Pro Taller';
+
+  @override
+  String get licenseStatusWorkshopExpired => 'Taller vencido';
+
+  @override
+  String licenseTrialLeft(String days) {
+    return 'Quedan $days días de prueba con todo lo Pro. Después la app sigue funcionando: el visor en vivo completo, gratis y para siempre.';
+  }
+
+  @override
+  String get licenseFreeBody =>
+      'Visor completo en vivo y las últimas 24 horas de historial, gratis. Lo demás (historial ilimitado, degradación, veredictos, avisos con la app cerrada, copia de seguridad) es Pro: un pago único, de por vida, para este teléfono.';
+
+  @override
+  String get licenseProBody =>
+      'Pro activo en este teléfono. Pago único, sin caducidad.';
+
+  @override
+  String licenseWorkshopBody(String date) {
+    return 'Pro Taller activo hasta el $date.';
+  }
+
+  @override
+  String get licenseWorkshopNoEnd => 'Pro Taller activo.';
+
+  @override
+  String get licenseWorkshopExpiredBody =>
+      'La licencia de Taller venció. La app volvió al nivel gratis; renueva para recuperar lo Pro.';
+
+  @override
+  String licenseCreditsLeft(String count) {
+    return 'Chequeos disponibles: $count';
+  }
+
+  @override
+  String licenseCertificatesLeft(String count) {
+    return 'Certificados disponibles: $count';
+  }
+
+  @override
+  String licenseLabel(String label) {
+    return 'A nombre de $label';
+  }
+
+  @override
+  String get licenseDeviceCode => 'Código de este teléfono';
+
+  @override
+  String get licenseDeviceCodeHint =>
+      'La clave va atada a este código. Mándalo junto con el comprobante de pago y recibirás una clave para pegar aquí. Se comprueba en el teléfono, sin internet.';
+
+  @override
+  String get licenseCopyCode => 'Copiar código';
+
+  @override
+  String get licenseCopied => 'Copiado';
+
+  @override
+  String get licenseCopyRequest => 'Copiar mensaje de solicitud';
+
+  @override
+  String licenseRequestMessage(String code, String version) {
+    return 'Hola, quiero activar JK BMS + Pro.\nCódigo del teléfono: $code\nVersión de la app: $version';
+  }
+
+  @override
+  String get licensePasteTitle => 'Pegar clave';
+
+  @override
+  String get licensePasteHint =>
+      'Pega la clave completa, desde JKB1 hasta el final. Los saltos de línea del chat no importan.';
+
+  @override
+  String get licenseActivate => 'Activar';
+
+  @override
+  String get licenseActivated => 'Clave activada.';
+
+  @override
+  String get licenseAlreadyActive =>
+      'Esa clave ya estaba activada en este teléfono.';
+
+  @override
+  String get licenseRejectedMalformed =>
+      'Eso no es una clave. Revisa que la copiaste completa, de JKB1 hasta el final.';
+
+  @override
+  String get licenseRejectedSignature =>
+      'La clave no es válida: o le falta un carácter, o no fue emitida por el autor.';
+
+  @override
+  String get licenseRejectedDevice =>
+      'Esta clave es de otro teléfono. Cada clave va atada al código del teléfono que la pidió.';
+
+  @override
+  String get licenseRejectedExpired => 'Esta clave ya venció.';
+
+  @override
+  String get licenseNotConfigured =>
+      'Esta compilación no lleva clave pública de licencias y no puede activar ninguna. Es una compilación de desarrollo; ver docs/LICENSING.md.';
+
+  @override
+  String get licenseActiveKeys => 'Claves en este teléfono';
+
+  @override
+  String licenseKeyActivated(String date) {
+    return 'Activada el $date';
+  }
+
+  @override
+  String licenseKeyExpires(String date) {
+    return 'Vence el $date';
+  }
+
+  @override
+  String licenseKeyExpired(String date) {
+    return 'Venció el $date';
+  }
+
+  @override
+  String licenseKeyCredits(String inspections, String certificates) {
+    return '$inspections chequeos, $certificates certificados';
+  }
+
+  @override
+  String get licenseRemoveKey => 'Quitar';
+
+  @override
+  String get licenseRemoveConfirmTitle => '¿Quitar esta clave?';
+
+  @override
+  String get licenseRemoveConfirmBody =>
+      'La app pierde lo que esta clave desbloquea. La clave sigue siendo válida: si la guardaste, puedes pegarla otra vez.';
+
+  @override
+  String get licenseWhyTitle => 'Por qué se cobra';
+
+  @override
+  String get licenseWhyBody =>
+      'Lo gratis iguala a la app oficial de JK y no se recorta nunca. Lo Pro es lo que esa app no puede hacer por diseño: recordar, comparar y concluir. Un pago único; nada de suscripciones. Sin cuenta, sin servidor y sin internet: la clave se comprueba en el teléfono con la firma del autor.';
+
+  @override
+  String get licenseOpen => 'Ver licencia';
+
+  @override
+  String get proBadge => 'PRO';
+
+  @override
+  String get proGateTitle => 'Función Pro';
+
+  @override
+  String proGateBody(String feature) {
+    return '$feature es parte de Pro. Un pago único, de por vida, para este teléfono.';
+  }
+
+  @override
+  String get proGateTrialEnded => 'La prueba de 7 días terminó.';
+
+  @override
+  String get proFeatureHistory => 'El historial de más de 24 horas';
+
+  @override
+  String get proFeatureDegradation =>
+      'La degradación y las curvas a largo plazo';
+
+  @override
+  String get proFeatureVerdicts => 'Los veredictos sobre el estado del pack';
+
+  @override
+  String get proFeatureBackgroundAlerts => 'Los avisos con la app cerrada';
+
+  @override
+  String get proFeatureBackup => 'La copia de seguridad y su restauración';
+
+  @override
+  String get proFeatureConfigAudit =>
+      'La auditoría de la configuración del BMS';
+
+  @override
+  String get proFeatureBatteryReport => 'El informe PDF de la batería';
+
+  @override
+  String get proFeatureInspection => 'La inspección rápida de otra batería';
+
+  @override
+  String get proFeatureCertificate => 'El certificado de vendedor';
+
+  @override
+  String get proFeatureWorkshop => 'Las funciones de taller';
+
+  @override
+  String historyOlderLocked(String count) {
+    return '$count viajes de más de 24 horas no se muestran. Verlos es Pro.';
+  }
+
+  @override
+  String get chargeWatchProHint =>
+      'Es Pro: requiere licencia para mantener la conexión con la app cerrada.';
+
+  @override
+  String get licenseStatusAdmin => 'Admin';
+
+  @override
+  String get licenseAdminBody =>
+      'Acceso total en este teléfono: todo desbloqueado, sin límites ni caducidad.';
 }
