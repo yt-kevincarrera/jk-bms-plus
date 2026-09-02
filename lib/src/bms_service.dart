@@ -721,6 +721,13 @@ class BmsService {
       // where it has stated one. Not the voltage right now, which is whatever
       // today's charge happens to be.
       fullPackVoltage: capacity == null ? null : _fullPackVoltage(s),
+      // The same derating the remaining figure gets. A weak cell shortens a
+      // full pack exactly as much as it shortens a half-empty one.
+      usableFraction: RangeEstimator.usableFractionOf(
+        minCellVoltage: s.minCellVoltage,
+        averageCellVoltage: s.averageCellVoltage,
+        cutoffVoltagePerCell: cutoffVoltagePerCell,
+      ),
       capacityWasMeasured: measured != null,
     );
   }

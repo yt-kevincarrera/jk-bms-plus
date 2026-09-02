@@ -2392,4 +2392,7 @@ class AppL10nEn extends AppL10n {
   @override
   String get rangeNoneLearned =>
       'Nothing learned yet, so no distance is worth quoting at any charge.';
+
+  @override
+  String get offlineRangeAtLastSeen => 'At the charge last seen';
 }

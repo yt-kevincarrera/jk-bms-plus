@@ -127,11 +127,30 @@ class RangeEstimator {
     if (headroomAverage <= 0) return 0;
     if (headroomWeakest <= 0) return 0;
 
-    // The weakest cell runs out first; the fraction of the average cell's
-    // remaining headroom that it actually has is the fraction of the pack you
-    // can really use.
-    final usableFraction = (headroomWeakest / headroomAverage).clamp(0.0, 1.0);
-    return gross * usableFraction;
+    return gross * usableFractionOf(
+      minCellVoltage: minCellVoltage,
+      averageCellVoltage: averageCellVoltage,
+      cutoffVoltagePerCell: cutoffVoltagePerCell,
+    );
+  }
+
+  /// How much of the pack's charge the imbalance actually lets you use.
+  ///
+  /// The weakest cell runs out first; the fraction of the average cell's
+  /// remaining headroom that it actually has is the fraction of the pack you
+  /// can really reach. Exposed on its own because it applies to a full pack as
+  /// much as to this moment's charge: shipped without it, the full-pack range
+  /// came out *higher* than the remaining range on a fully charged battery,
+  /// which is nonsense the rider would have found before anybody else.
+  static double usableFractionOf({
+    required double minCellVoltage,
+    required double averageCellVoltage,
+    required double cutoffVoltagePerCell,
+  }) {
+    final headroomAverage = averageCellVoltage - cutoffVoltagePerCell;
+    final headroomWeakest = minCellVoltage - cutoffVoltagePerCell;
+    if (headroomAverage <= 0 || headroomWeakest <= 0) return 0;
+    return (headroomWeakest / headroomAverage).clamp(0.0, 1.0);
   }
 
   Map<String, Object?> toJson() => {
