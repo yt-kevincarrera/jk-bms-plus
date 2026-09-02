@@ -1390,5 +1390,9 @@
     }
   },
   "offlineHealthOneTest": "Una medición hasta ahora: {ah} Ah. La segunda, dentro de unos meses, es la que la convierte en desgaste.",
-  "healthCardShortOfAdvert": "Frente al anuncio"
+  "healthCardShortOfAdvert": "Frente al anuncio",
+  "systemDrops": "Caídas del enlace",
+  "systemTimeDisconnected": "Tiempo desconectado",
+  "systemNudges": "Veces que hubo que insistirle",
+  "systemNudgesHint": "La app solo le escribe a la batería cuando lleva seis segundos sin hablar. Antes escribía cada cinco segundos sin importar nada, y eso es lo que parece interrumpir el flujo. Si esto se queda cerca de cero en un viaje con lecturas continuas, esa era la causa."
 }
