@@ -3,9 +3,23 @@ import 'dart:math' as math;
 import '../gps/location_source.dart';
 import '../model/bms_snapshot.dart';
 import 'altitude_tracker.dart';
+import 'sampling.dart';
 import 'range_estimator.dart';
 
 enum TripState { idle, recording, paused }
+
+/// How a ride's energy figure was arrived at.
+enum EnergySource {
+  /// The pack's own coulomb counter. Preferred: it is accumulated inside the
+  /// BMS at a rate no phone sees, and it keeps counting through a dropped
+  /// link.
+  coulombCount,
+
+  /// Power integrated between the readings the phone actually received. All
+  /// there is when the counter has not moved, and blind to every second the
+  /// link was down.
+  integrated,
+}
 
 /// One point of the recorded track, with what the pack was doing there.
 ///
@@ -58,6 +72,8 @@ class TripSummary {
     required this.maxDeltaVolts,
     required this.climbM,
     required this.descentM,
+    this.ahOut,
+    this.energySource = EnergySource.integrated,
   });
 
   final DateTime startedAt;
@@ -86,6 +102,14 @@ class TripSummary {
   final double maxDeltaVolts;
   final double climbM;
   final double descentM;
+
+  /// Amp-hours the pack's own counter says left over the ride, when it said.
+  final double? ahOut;
+
+  /// Where [energyOutWh] came from. Worth recording: the two methods disagreed
+  /// by a factor of twenty-five on a real ride, and knowing which one answered
+  /// is the difference between a measurement and a guess.
+  final EnergySource energySource;
 
   /// Net consumption per kilometre. Null on a trip too short to mean anything.
   double? get whPerKm {
@@ -149,8 +173,19 @@ class TripRecorder {
   /// Frozen at stop, so the summary does not keep ticking.
   Duration? _finalTotal;
 
-  double _energyOutWh = 0;
-  double _energyInWh = 0;
+  /// Energy from integrating power between readings. A cross-check now rather
+  /// than the answer: it can only account for the moments the phone was
+  /// listening.
+  double _integratedOutWh = 0;
+  double _integratedInWh = 0;
+
+  /// The coulomb counter at the start and end of the ride.
+  double? _startRemainingAh;
+  double _endRemainingAh = 0;
+
+  /// Mean pack voltage over the ride, for turning amp-hours into watt-hours.
+  double _voltageSum = 0;
+  int _voltageSamples = 0;
 
   /// Climb and descent are not simple sums of the steps between fixes. See
   /// [AltitudeTracker] for why, and for what the numbers actually mean.
@@ -214,14 +249,47 @@ class TripRecorder {
     final idle = totalDuration - _movingDuration;
     return idle.isNegative ? Duration.zero : idle;
   }
-  double get energyOutWh => _energyOutWh;
-  double get energyInWh => _energyInWh;
+  /// Amp-hours the pack's own counter says have left, or null when it has not
+  /// moved enough to mean anything.
+  ///
+  /// Null rather than zero below a hundredth of an amp-hour: the counter is
+  /// quantised, and a difference smaller than its own step is not a
+  /// measurement of nothing, it is nothing measured.
+  double? get ahOut {
+    final start = _startRemainingAh;
+    if (start == null) return null;
+    final used = start - _endRemainingAh;
+    return used < 0.01 ? null : used;
+  }
+
+  double get meanPackVoltage =>
+      _voltageSamples == 0 ? 0 : _voltageSum / _voltageSamples;
+
+  /// Energy out of the pack: the coulomb count where there is one, otherwise
+  /// what could be integrated.
+  double get energyOutWh {
+    final ah = ahOut;
+    final volts = meanPackVoltage;
+    if (ah != null && volts > 0) return ah * volts;
+    return _integratedOutWh;
+  }
+
+  /// Energy back in. Only ever integrated: the coulomb difference is a net
+  /// figure and cannot separate the two directions.
+  double get energyInWh => _integratedInWh;
+
+  /// Which of the two produced [energyOutWh], so a stored ride can say.
+  EnergySource get energySource =>
+      ahOut != null && meanPackVoltage > 0
+          ? EnergySource.coulombCount
+          : EnergySource.integrated;
+
   double? get startSoc => _startSoc;
 
   /// Consumption so far. Null until far enough to be meaningful.
   double? get whPerKm {
     if (_distanceKm < 0.2) return null;
-    final net = _energyOutWh - _energyInWh;
+    final net = energyOutWh - energyInWh;
     return net <= 0 ? null : net / _distanceKm;
   }
 
@@ -271,13 +339,15 @@ class TripRecorder {
     final started = _startedAt;
     if (started == null) return null;
     return TripSummary(
+      ahOut: ahOut,
+      energySource: energySource,
       startedAt: started,
       movingDuration: _movingDuration,
       totalDuration: totalDuration,
       distanceKm: _distanceKm,
       maxSpeedKmh: _maxSpeedKmh,
-      energyOutWh: _energyOutWh,
-      energyInWh: _energyInWh,
+      energyOutWh: energyOutWh,
+      energyInWh: energyInWh,
       startSoc: _startSoc ?? 0,
       endSoc: _endSoc,
       minPackVoltage: _minPackVoltage.isFinite ? _minPackVoltage : 0,
@@ -351,6 +421,20 @@ class TripRecorder {
     _startSoc ??= s.soc;
     _endSoc = s.soc;
 
+    // The pack's own count of what has left it, which is the figure to prefer.
+    // It is accumulated by the BMS at a rate no phone sees, and it keeps
+    // counting through a dropped link: the ride that exposed all of this had
+    // 998 of its 1286 seconds with no readings at all, and the coulomb counter
+    // did not care.
+    if (s.remainingCapacityAh > 0) {
+      _startRemainingAh ??= s.remainingCapacityAh;
+      _endRemainingAh = s.remainingCapacityAh;
+    }
+    if (s.packVoltage > 0) {
+      _voltageSum += s.packVoltage;
+      _voltageSamples++;
+    }
+
     if (s.packVoltage > 0) {
       _minPackVoltage = math.min(_minPackVoltage, s.packVoltage);
       _maxPackVoltage = math.max(_maxPackVoltage, s.packVoltage);
@@ -373,16 +457,16 @@ class TripRecorder {
     _lastPower = s.power;
     if (previousAt == null || previousPower == null) return;
 
-    final dt = s.timestamp.difference(previousAt);
-    if (dt.inSeconds <= 0 || dt.inSeconds > 10) return;
+    final dt = usableInterval(previousAt, s.timestamp);
+    if (dt == null) return;
 
-    // Trapezoid rather than sampling one endpoint: at 1 Hz against a throttle
-    // that swings hard, taking only the later reading biases the total.
-    final wh = (previousPower + s.power) / 2 * dt.inMilliseconds / 3600000.0;
+    // Trapezoid rather than sampling one endpoint: against a throttle that
+    // swings hard, taking only the later reading biases the total.
+    final wh = (previousPower + s.power) / 2 * hoursIn(dt);
     if (wh < 0) {
-      _energyOutWh += -wh;
+      _integratedOutWh += -wh;
     } else {
-      _energyInWh += wh;
+      _integratedInWh += wh;
     }
   }
 
@@ -399,8 +483,12 @@ class TripRecorder {
     _pausedTotal = Duration.zero;
     _pausedAt = null;
     _finalTotal = null;
-    _energyOutWh = 0;
-    _energyInWh = 0;
+    _integratedOutWh = 0;
+    _integratedInWh = 0;
+    _startRemainingAh = null;
+    _endRemainingAh = 0;
+    _voltageSum = 0;
+    _voltageSamples = 0;
     _altitude.reset();
     _points.clear();
     _lastSnapshot = null;

@@ -1901,10 +1901,10 @@ class AppL10nEn extends AppL10n {
       'The whole database in one file, and back again. The CSV and GPX exports are for reading the data elsewhere; this is for not losing it. If you change phones or lose one, this is the only thing that brings back months of readings, the rides with their tracks, and the raw frames.';
 
   @override
-  String get backupExport => 'Create backup';
+  String get backupExport => 'Save a copy of everything';
 
   @override
-  String get backupExportLight => 'Create backup without raw frames';
+  String get backupExportLight => 'Save a smaller copy, without raw frames';
 
   @override
   String get backupImport => 'Restore from a file';
@@ -2348,4 +2348,24 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get trendsAxisCharge => 'left to right: empty to full';
+
+  @override
+  String learnWhyImplausible(String n) {
+    return '$n came out at a consumption no motorcycle could produce, so they were refused. That is a fault in this app rather than anything about the riding, and it was fixed in this version: rides recorded from here should read correctly. The old ones cannot be repaired, because the readings they needed were never stored.';
+  }
+
+  @override
+  String get connectCouldNotSearch =>
+      'The radio never confirmed the search started, so nothing was actually looked for. Usually Bluetooth still waking up just after launch. Try again.';
+
+  @override
+  String get backupShare => 'Send it somewhere instead';
+
+  @override
+  String get backupSaveDialog => 'Where to put the copy';
+
+  @override
+  String backupSaved(String name) {
+    return 'Saved as $name.';
+  }
 }

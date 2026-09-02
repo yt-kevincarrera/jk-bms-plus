@@ -25,6 +25,8 @@ class LearningWhyCard extends StatelessWidget {
       t.learnWhyCount('${report.used}', '${report.considered}'),
       if (report.noDistance > 0) t.learnWhyShort('${report.noDistance}'),
       if (report.noEnergyOut > 0) t.learnWhyNoEnergy('${report.noEnergyOut}'),
+      if (report.implausible > 0)
+        t.learnWhyImplausible('${report.implausible}'),
     ];
 
     return Section(

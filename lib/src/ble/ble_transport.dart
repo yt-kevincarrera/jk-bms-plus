@@ -117,6 +117,18 @@ class ScanLifecycle {
   }
 }
 
+/// A scan that ended without the radio ever confirming it began.
+///
+/// Its own type rather than a message, because the screen has to treat it
+/// differently from every other kind of trouble: this is the one case where
+/// "nothing found" must not be said.
+class ScanNeverStarted implements Exception {
+  const ScanNeverStarted();
+
+  @override
+  String toString() => 'the radio never confirmed the scan started';
+}
+
 /// Why the link is down, in words a rider can act on.
 class BleLinkError {
   const BleLinkError(this.message, {this.likelyBusy = false, this.trouble});
@@ -241,6 +253,17 @@ class BleTransport implements BmsLink {
       resultsSub = null;
       scanningSub = null;
       if (_currentState == BleLinkState.scanning) _setState(BleLinkState.idle);
+
+      // A scan the radio never confirmed it started is not a scan that found
+      // nothing, and saying so is how the app came to greet a rider with
+      // "search finished, no devices found" a fraction of a second after
+      // launch. The distinction reaches the screen as an error, so it can say
+      // that it could not look rather than that it looked and the bike was not
+      // there.
+      if (!lifecycle.started && !controller.isClosed) {
+        controller.addError(const ScanNeverStarted());
+      }
+
       // Closing is the whole point: it is what makes onDone fire, which is
       // what turns the screen's spinner off. Without it the radio stopped at
       // the timeout and the screen said "searching" indefinitely -- over a
