@@ -27,6 +27,9 @@ class FakeLink implements BmsLink {
   int? negotiatedMtu = 244;
 
   @override
+  LinkHealth get health => LinkHealth.unknown;
+
+  @override
   Stream<List<DiscoveredBms>> scan() => const Stream.empty();
   @override
   Future<void> connect(String deviceId) async {}

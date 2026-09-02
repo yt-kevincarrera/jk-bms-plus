@@ -190,6 +190,9 @@ class BmsService {
   Stream<BleLinkState> get linkState => _transport.state;
   Stream<BleLinkError> get linkErrors => _transport.errors;
 
+  /// How the link has been behaving, for the System tab to report.
+  LinkHealth get linkHealth => _transport.health;
+
   BmsSnapshot? get lastSnapshot => _lastSnapshot;
   JkDeviceInfo? get lastDeviceInfo => _lastDeviceInfo;
   JkSettings? get lastSettings => _lastSettings;

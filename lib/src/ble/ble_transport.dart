@@ -4,6 +4,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 import '../protocol/jk_constants.dart';
 import 'bms_link.dart';
+import 'link_quiet.dart';
 import 'link_trouble.dart';
 
 /// What the link is doing right now.
@@ -178,6 +179,7 @@ class BleTransport implements BmsLink {
     this.reconnectDelay = const Duration(milliseconds: 400),
     this.connectTimeout = const Duration(seconds: 8),
     this.pollInterval = const Duration(seconds: 5),
+    this.quietBefore = const Duration(seconds: 6),
   });
 
   /// MTU we ask for on connect. 244 is the largest an Android BLE stack will
@@ -204,14 +206,52 @@ class BleTransport implements BmsLink {
 
   /// Times the link has dropped since the app started, and how long has been
   /// spent disconnected. Shown rather than kept, because a rider whose ride
-  /// has holes in it deserves to know the link is the reason.
+  /// has holes in it deserves to know whether the link is the reason.
   int drops = 0;
   Duration timeDisconnected = Duration.zero;
   DateTime? _droppedAt;
 
-  /// How often to re-ask for cell info if the BMS goes quiet. The BMS normally
-  /// pushes on its own once asked; this is a nudge, not a poll loop.
+  @override
+  LinkHealth get health => LinkHealth(
+        drops: drops,
+        // Counts the stretch currently in progress, so a link that went away a
+        // minute ago and has not come back says a minute rather than nothing.
+        timeDisconnected: _droppedAt == null
+            ? timeDisconnected
+            : timeDisconnected + DateTime.now().difference(_droppedAt!),
+        nudges: nudges,
+      );
+
+  /// How often to check whether the BMS has gone quiet.
+  ///
+  /// The comment here used to say "a nudge, not a poll loop" and the code was
+  /// a poll loop: it wrote a cell-info request every five seconds regardless.
+  ///
+  /// A real ride shows what that costs. Fifty-two stretches of 20 seconds or
+  /// more with no cell info at all, most of them 27 to 33 seconds, and in 48 of
+  /// them frames were still arriving, so the link was never down. What arrived
+  /// during them was device-info responses, at two- to six-second intervals: in
+  /// step with the poll. The pack streams cell info two or three times a second
+  /// on its own, and being written to every five seconds while it does that is
+  /// what appears to interrupt it.
+  ///
+  /// So the nudge is a nudge now: it only writes when nothing has arrived for
+  /// [quietBefore]. On a pack that is streaming normally it never fires at all.
   final Duration pollInterval;
+
+  /// Silence long enough to be worth a nudge.
+  ///
+  /// Generous next to the two or three readings a second a healthy pack sends,
+  /// so ordinary jitter never triggers a write.
+  final Duration quietBefore;
+
+  /// When a cell-info frame last arrived, which is the only thing that proves
+  /// the pack is still talking.
+  DateTime? _lastCellInfoAt;
+
+  /// Nudges sent because the pack really had gone quiet. Counted so the effect
+  /// of not polling can be seen rather than assumed.
+  int nudges = 0;
 
   final _stateController = StreamController<BleLinkState>.broadcast();
   final _bytesController = StreamController<List<int>>.broadcast();
@@ -418,7 +458,13 @@ class BleTransport implements BmsLink {
 
       await _notifySub?.cancel();
       _notifySub = characteristic.onValueReceived.listen(
-        _bytesController.add,
+        (bytes) {
+          // Any notification at all proves the pack is still talking, which is
+          // the only thing the nudge needs to know. The transport does not
+          // parse record types and should not have to.
+          _lastCellInfoAt = DateTime.now();
+          _bytesController.add(bytes);
+        },
         onError: (Object e) =>
             _errorController.add(BleLinkError.from(e)),
       );
@@ -437,7 +483,7 @@ class BleTransport implements BmsLink {
       await requestCellInfo();
 
       _pollTimer?.cancel();
-      _pollTimer = Timer.periodic(pollInterval, (_) => requestCellInfo());
+      _pollTimer = Timer.periodic(pollInterval, (_) => _nudgeIfQuiet());
     } on Exception catch (e) {
       _setState(BleLinkState.failed);
       _errorController.add(_describeConnectFailure(e));
@@ -477,6 +523,9 @@ class BleTransport implements BmsLink {
 
   void _onDropped() {
     drops++;
+    // Forgotten on a drop, so the first check after reconnecting nudges rather
+    // than trusting a timestamp from before the link went away.
+    _lastCellInfoAt = null;
     _droppedAt ??= DateTime.now();
     _pollTimer?.cancel();
     _notifySub?.cancel();
@@ -498,6 +547,19 @@ class BleTransport implements BmsLink {
 
   /// Asks the BMS for a cell info frame (record type 0x02).
   Future<void> requestCellInfo() => _writeCommand(commandCellInfo);
+
+  /// Asks again, but only if the pack has actually stopped talking.
+  Future<void> _nudgeIfQuiet() async {
+    if (!shouldNudge(
+      lastHeardAt: _lastCellInfoAt,
+      now: DateTime.now(),
+      quietBefore: quietBefore,
+    )) {
+      return;
+    }
+    nudges++;
+    await requestCellInfo();
+  }
 
   /// Builds and sends a read command.
   ///

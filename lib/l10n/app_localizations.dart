@@ -4314,6 +4314,30 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Frente al anuncio'**
   String get healthCardShortOfAdvert;
+
+  /// No description provided for @systemDrops.
+  ///
+  /// In es, this message translates to:
+  /// **'Caídas del enlace'**
+  String get systemDrops;
+
+  /// No description provided for @systemTimeDisconnected.
+  ///
+  /// In es, this message translates to:
+  /// **'Tiempo desconectado'**
+  String get systemTimeDisconnected;
+
+  /// No description provided for @systemNudges.
+  ///
+  /// In es, this message translates to:
+  /// **'Veces que hubo que insistirle'**
+  String get systemNudges;
+
+  /// No description provided for @systemNudgesHint.
+  ///
+  /// In es, this message translates to:
+  /// **'La app solo le escribe a la batería cuando lleva seis segundos sin hablar. Antes escribía cada cinco segundos sin importar nada, y eso es lo que parece interrumpir el flujo. Si esto se queda cerca de cero en un viaje con lecturas continuas, esa era la causa.'**
+  String get systemNudgesHint;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

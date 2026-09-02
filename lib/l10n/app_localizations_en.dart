@@ -2407,4 +2407,17 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get healthCardShortOfAdvert => 'Vs. advertised';
+
+  @override
+  String get systemDrops => 'Link drops';
+
+  @override
+  String get systemTimeDisconnected => 'Time disconnected';
+
+  @override
+  String get systemNudges => 'Times the pack was prodded';
+
+  @override
+  String get systemNudgesHint =>
+      'The app only writes to the pack once it has stopped talking for six seconds. It used to write every five seconds regardless, which appears to be what interrupted the stream. If this stays near zero on a ride whose readings are continuous, that was the cause.';
 }
