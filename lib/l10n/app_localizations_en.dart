@@ -2420,4 +2420,14 @@ class AppL10nEn extends AppL10n {
   @override
   String get systemNudgesHint =>
       'The app only writes to the pack once it has stopped talking for six seconds. It used to write every five seconds regardless, which appears to be what interrupted the stream. If this stays near zero on a ride whose readings are continuous, that was the cause.';
+
+  @override
+  String get settingsSectionRides => 'Rides';
+
+  @override
+  String get settingsSectionLink => 'Connection and screen';
+
+  @override
+  String get settingsSectionLinkHint =>
+      'What keeps the app reading. These two go together: hold the connection open and the screen is free to sleep.';
 }

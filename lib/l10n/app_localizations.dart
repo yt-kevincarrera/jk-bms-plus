@@ -4338,6 +4338,24 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'La app solo le escribe a la batería cuando lleva seis segundos sin hablar. Antes escribía cada cinco segundos sin importar nada, y eso es lo que parece interrumpir el flujo. Si esto se queda cerca de cero en un viaje con lecturas continuas, esa era la causa.'**
   String get systemNudgesHint;
+
+  /// No description provided for @settingsSectionRides.
+  ///
+  /// In es, this message translates to:
+  /// **'Viajes'**
+  String get settingsSectionRides;
+
+  /// No description provided for @settingsSectionLink.
+  ///
+  /// In es, this message translates to:
+  /// **'Conexión y pantalla'**
+  String get settingsSectionLink;
+
+  /// No description provided for @settingsSectionLinkHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que mantiene a la app leyendo. Estos dos van juntos: si se mantiene la conexión abierta, la pantalla puede dormirse.'**
+  String get settingsSectionLinkHint;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

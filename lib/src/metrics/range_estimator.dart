@@ -30,9 +30,14 @@ class RangeEstimator {
     this.halfLifeKm = 40.0,
     double? learnedWhPerKm,
     double learnedKm = 0,
-  })  : _whPerKm = learnedWhPerKm ?? defaultWhPerKm,
-        _hasLearned = learnedWhPerKm != null,
-        _learnedKm = learnedKm;
+  })  : _hasLearned = learnedWhPerKm != null,
+        _learnedKm = learnedKm,
+        // Seeded so a restored estimate carries the weight its distance earned
+        // rather than starting again from one sample's worth.
+        _weight = learnedWhPerKm == null ? 0 : (learnedKm <= 0 ? 1 : learnedKm),
+        _weighted = learnedWhPerKm == null
+            ? 0
+            : learnedWhPerKm * (learnedKm <= 0 ? 1 : learnedKm);
 
   /// Used before anything has been learned. A sane figure for a 72 V urban
   /// motorcycle; it stops mattering after the first proper ride.
@@ -42,12 +47,31 @@ class RangeEstimator {
   /// estimate reacts faster and wanders more.
   final double halfLifeKm;
 
-  double _whPerKm;
+  /// Running distance-weighted totals, with old samples decayed.
+  ///
+  /// Kept as a pair rather than as a single running figure because the single
+  /// figure had to be *initialised* from somewhere, and it took the first
+  /// sample whole. That gave a 1.8 km trundle round the block the same
+  /// authority as a 40 km commute, and once set, later samples could only move
+  /// it by their own small fraction: a 6 km ride shifts a 40 km half-life
+  /// average by about a tenth.
+  ///
+  /// On a real pack's first three rides that produced 29.7 Wh/km where the
+  /// honest answer, total energy over total distance, was 21.5. Quoted as a
+  /// full-pack range that is 100 km against a true 138: pessimistic by 40%,
+  /// from arithmetic rather than from the battery.
+  ///
+  /// Self-normalising fixes it. The first sample gets the weight its own
+  /// distance earns and no more, early samples average properly, and once
+  /// there is real distance behind it the decay still favours recent riding.
+  double _weight = 0;
+  double _weighted = 0;
+
   bool _hasLearned;
   double _learnedKm;
 
   /// Watt-hours per kilometre the estimator currently believes.
-  double get whPerKm => _whPerKm;
+  double get whPerKm => _weight <= 0 ? defaultWhPerKm : _weighted / _weight;
 
   /// True once at least one real segment has been folded in.
   bool get hasLearned => _hasLearned;
@@ -82,21 +106,20 @@ class RangeEstimator {
     // over a segment; a reading like that is a GPS glitch, not a hill.
     if (sampleWhPerKm > 400 || sampleWhPerKm < 2) return;
 
-    if (!_hasLearned) {
-      _whPerKm = sampleWhPerKm;
-      _hasLearned = true;
-    } else {
-      // Distance-weighted exponential average: a segment's influence grows with
-      // how far it went, and decays with how far has been ridden since.
-      final alpha = 1 - math.pow(0.5, km / halfLifeKm).toDouble();
-      _whPerKm = _whPerKm * (1 - alpha) + sampleWhPerKm * alpha;
-    }
+    // Distance-weighted, and normalised by the weight actually accumulated:
+    // a segment's influence grows with how far it went and decays with how far
+    // has been ridden since, with no sample ever counting for more than its
+    // own distance deserves.
+    final decay = math.pow(0.5, km / halfLifeKm).toDouble();
+    _weight = _weight * decay + km;
+    _weighted = _weighted * decay + km * sampleWhPerKm;
+    _hasLearned = true;
     _learnedKm += km;
   }
 
   /// Best estimate of how far the bike can still go, in kilometres.
   double rangeKm(double usableWh) =>
-      _whPerKm <= 0 ? 0 : usableWh / _whPerKm;
+      whPerKm <= 0 ? 0 : usableWh / whPerKm;
 
   /// The honest version: a band, wide while the estimate is young.
   (double low, double high) rangeBandKm(double usableWh) {
@@ -154,7 +177,7 @@ class RangeEstimator {
   }
 
   Map<String, Object?> toJson() => {
-        'whPerKm': _whPerKm,
+        'whPerKm': whPerKm,
         'hasLearned': _hasLearned,
         'learnedKm': _learnedKm,
       };
