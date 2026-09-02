@@ -1291,5 +1291,6 @@
   "rangeFullUnknown": "Needs a measured capacity before this can be said.",
   "rangeFullFromAdvert": "From the capacity you entered, not a measured one.",
   "rangeFullFromMeasured": "From a capacity this pack actually measured.",
-  "rangeNoneLearned": "Nothing learned yet, so no distance is worth quoting at any charge."
+  "rangeNoneLearned": "Nothing learned yet, so no distance is worth quoting at any charge.",
+  "offlineRangeAtLastSeen": "At the charge last seen"
 }

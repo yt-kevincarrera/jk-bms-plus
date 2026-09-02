@@ -68,6 +68,7 @@ class RangeOutlook {
     required double usableWhNow,
     double? fullCapacityAh,
     double? fullPackVoltage,
+    double usableFraction = 1,
     bool capacityWasMeasured = false,
   }) {
     if (!estimator.hasLearned) {
@@ -82,22 +83,27 @@ class RangeOutlook {
 
     final now = usableWhNow > 0 ? estimator.rangeKm(usableWhNow) : null;
 
-    double? full;
-    if (fullCapacityAh != null &&
-        fullCapacityAh > 0 &&
-        fullPackVoltage != null &&
-        fullPackVoltage > 0) {
-      full = estimator.rangeKm(fullCapacityAh * fullPackVoltage);
-    }
+    // The imbalance derating applies to a full pack too. Without it the
+    // full-pack figure came out *higher* than the remaining one on a fully
+    // charged battery, which is nonsense: the weakest cell reaches cutoff
+    // first whatever the charge was when it started.
+    final fullWh = fullCapacityAh != null &&
+            fullCapacityAh > 0 &&
+            fullPackVoltage != null &&
+            fullPackVoltage > 0
+        ? fullCapacityAh * fullPackVoltage * usableFraction.clamp(0.0, 1.0)
+        : null;
+    final full = fullWh == null || fullWh <= 0
+        ? null
+        : estimator.rangeKm(fullWh);
 
     return RangeOutlook(
       nowKm: now,
       fullKm: full,
       nowBandKm: now == null ? null : estimator.rangeBandKm(usableWhNow),
-      fullBandKm: full == null || fullCapacityAh == null ||
-              fullPackVoltage == null
+      fullBandKm: full == null || fullWh == null
           ? null
-          : estimator.rangeBandKm(fullCapacityAh * fullPackVoltage),
+          : estimator.rangeBandKm(fullWh),
       confidence: estimator.confidence,
       hasLearned: true,
       fullFromMeasuredCapacity: capacityWasMeasured,

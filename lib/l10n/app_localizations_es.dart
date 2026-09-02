@@ -2403,4 +2403,7 @@ class AppL10nEs extends AppL10n {
   @override
   String get rangeNoneLearned =>
       'Todavía no ha aprendido nada, así que no hay distancia que valga la pena decir, a ninguna carga.';
+
+  @override
+  String get offlineRangeAtLastSeen => 'Con la carga que tenía al final';
 }
