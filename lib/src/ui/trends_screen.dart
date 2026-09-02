@@ -102,6 +102,17 @@ class _TrendsScreenState extends State<TrendsScreen> {
             : ListView(
                 padding: const EdgeInsets.only(top: 8, bottom: 28),
                 children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 14),
+                    child: Text(
+                      t.trendsIntro,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        height: 1.5,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                  ),
                   _consumption(t),
                   _capacity(t),
                   _sag(t),
@@ -131,6 +142,8 @@ class _TrendsScreenState extends State<TrendsScreen> {
           FlSpot(i.toDouble(), points[i].whPerKm),
       ],
       unit: 'Wh/km',
+      hint: t.trendsConsumptionHint,
+      axisNote: t.trendsAxisTime,
       markers: ChartMarkers.place(
         pointDates: [for (final p in points) p.at],
         events: _maintenance,
@@ -158,6 +171,8 @@ class _TrendsScreenState extends State<TrendsScreen> {
           FlSpot(i.toDouble(), points[i].measuredAh),
       ],
       unit: 'Ah',
+      hint: t.trendsCapacityHint,
+      axisNote: t.trendsAxisTime,
       markers: ChartMarkers.place(
         pointDates: [for (final p in points) p.at],
         events: _maintenance,
@@ -184,6 +199,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
           : t.trendsPerMonth('${trend >= 0 ? "+" : ""}${trend.toStringAsFixed(1)} mΩ'),
       trendIsBad: (trend ?? 0) > 0.5,
       hint: t.trendsSagHint,
+      axisNote: t.trendsAxisTime,
       spots: [
         for (var i = 0; i < resistances.length; i++)
           FlSpot(i.toDouble(), resistances[i].value),
@@ -212,6 +228,17 @@ class _TrendsScreenState extends State<TrendsScreen> {
       title: t.trendsDeltaVsCharge,
       intro: t.trendsDeltaHint,
       children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 4),
+          child: Text(
+            t.trendsAxisCharge,
+            style: const TextStyle(
+              fontSize: 11,
+              height: 1.4,
+              color: AppTheme.textFaint,
+            ),
+          ),
+        ),
         SizedBox(
           height: 180,
           child: LineChart(
@@ -304,6 +331,7 @@ class _TrendSection extends StatelessWidget {
     this.trendLabel,
     this.trendIsBad = false,
     this.hint,
+    this.axisNote,
   });
 
   final String title;
@@ -320,11 +348,18 @@ class _TrendSection extends StatelessWidget {
   final bool trendIsBad;
   final String? hint;
 
+  /// Which way the sideways axis runs. Obvious once you know and impossible to
+  /// guess from a chart whose x axis is an index rather than a date.
+  final String? axisNote;
+
   @override
   Widget build(BuildContext context) {
     if (pointCount < 3) {
       return Section(
         title: title,
+        // Said even here, and especially here: an empty chart is exactly when
+        // somebody wants to know what it is going to tell them.
+        intro: hint,
         children: [
           InfoRow(t.trendsNotEnough, '', dim: true, last: true),
           const SizedBox(height: 6),
@@ -340,6 +375,18 @@ class _TrendSection extends StatelessWidget {
         style: const TextStyle(fontSize: 11, color: AppTheme.textFaint),
       ),
       children: [
+        if (axisNote != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Text(
+              axisNote!,
+              style: const TextStyle(
+                fontSize: 11,
+                height: 1.4,
+                color: AppTheme.textFaint,
+              ),
+            ),
+          ),
         // Only when there is something to explain. A legend for lines that
         // are not on the chart is noise.
         if (markers.isNotEmpty)

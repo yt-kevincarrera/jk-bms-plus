@@ -38,6 +38,7 @@ class AppSettings extends ChangeNotifier {
   static const _mutedKey = 'muted_alerts';
   static const _autoTripKey = 'auto_trip_enabled';
   static const _screenAwakeKey = 'keep_screen_awake';
+  static const _linkWatchKey = 'link_watch_enabled';
 
 
 
@@ -96,6 +97,15 @@ class AppSettings extends ChangeNotifier {
 
   bool hapticAlerts = true;
 
+  /// Whether to hold a foreground service open just for being connected.
+  ///
+  /// On by default, unlike the charge watch. Android stops handing an app
+  /// Bluetooth readings shortly after the screen goes dark unless a service is
+  /// held, and an app that quietly stops measuring when the screen sleeps is
+  /// broken rather than frugal. The app used to keep the screen awake instead,
+  /// which was answering the wrong question.
+  bool linkWatchEnabled = true;
+
   /// How long the screen is held awake.
   ///
   /// It used to be held awake for as long as the live screen was open, full
@@ -127,6 +137,7 @@ class AppSettings extends ChangeNotifier {
       mutedAlerts = (prefs.getStringList(_mutedKey) ?? const []).toSet();
       autoTripEnabled = prefs.getBool(_autoTripKey) ?? true;
       screenAwake = ScreenAwake.parse(prefs.getString(_screenAwakeKey));
+      linkWatchEnabled = prefs.getBool(_linkWatchKey) ?? true;
       notifyListeners();
     } on Exception catch (_) {
       // Defaults are usable; a broken preference store is not worth failing on.
@@ -196,6 +207,12 @@ class AppSettings extends ChangeNotifier {
     } on Exception catch (_) {
       // Silenced for this session at least.
     }
+  }
+
+  Future<void> setLinkWatch(bool value) async {
+    linkWatchEnabled = value;
+    notifyListeners();
+    await _writeBool(_linkWatchKey, value);
   }
 
   Future<void> setScreenAwake(ScreenAwake value) async {

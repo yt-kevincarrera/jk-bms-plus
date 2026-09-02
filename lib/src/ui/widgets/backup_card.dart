@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -30,14 +31,64 @@ class _BackupCardState extends State<BackupCard> {
   String? _message;
   bool _failed = false;
 
+  /// How much there is to copy, so the card can say what it covers.
+  ///
+  /// "Create backup" said nothing about scope, and the obvious reading of a
+  /// button on a screen reached from one battery is that it copies that
+  /// battery. It copies all of them, which is the right behaviour and was the
+  /// wrong silence.
+  int? _packs;
+  int _trips = 0;
+  int _readings = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_countUp());
+  }
+
+  Future<void> _countUp() async {
+    final repo = widget.service.repository;
+    if (repo == null) return;
+    final packs = await repo.db.allDevices();
+    var trips = 0;
+    var readings = 0;
+    for (final p in packs) {
+      trips += (await repo.db.recentTrips(p.id, limit: 1000)).length;
+      readings += await repo.db.snapshotCountFor(p.id);
+    }
+    if (mounted) {
+      setState(() {
+        _packs = packs.length;
+        _trips = trips;
+        _readings = readings;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
+    final packs = _packs;
 
     return Section(
       title: t.backupTitle,
       intro: t.backupIntro,
       children: [
+        if (packs != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Text(
+              packs == 0
+                  ? t.backupScopeEmpty
+                  : t.backupScope('$packs', '$_trips', '$_readings'),
+              style: TextStyle(
+                fontSize: 12,
+                height: 1.45,
+                color: packs == 0 ? AppTheme.textFaint : AppTheme.textSecondary,
+              ),
+            ),
+          ),
         if (_busy)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
