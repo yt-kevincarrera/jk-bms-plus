@@ -376,7 +376,7 @@ abstract class AppL10n {
   /// No description provided for @range.
   ///
   /// In es, this message translates to:
-  /// **'Autonomía'**
+  /// **'Autonomía restante'**
   String get range;
 
   /// No description provided for @rangeDisclaimer.
@@ -4254,6 +4254,42 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Guardada como {name}.'**
   String backupSaved(String name);
+
+  /// No description provided for @rangeFull.
+  ///
+  /// In es, this message translates to:
+  /// **'Con la batería llena'**
+  String get rangeFull;
+
+  /// No description provided for @rangeFullBand.
+  ///
+  /// In es, this message translates to:
+  /// **'unos {low} a {high} km'**
+  String rangeFullBand(String low, String high);
+
+  /// No description provided for @rangeFullUnknown.
+  ///
+  /// In es, this message translates to:
+  /// **'Hace falta una capacidad medida para poder decir esto.'**
+  String get rangeFullUnknown;
+
+  /// No description provided for @rangeFullFromAdvert.
+  ///
+  /// In es, this message translates to:
+  /// **'Sale de la capacidad que pusiste tú, no de una medida.'**
+  String get rangeFullFromAdvert;
+
+  /// No description provided for @rangeFullFromMeasured.
+  ///
+  /// In es, this message translates to:
+  /// **'Sale de una capacidad que esta batería midió de verdad.'**
+  String get rangeFullFromMeasured;
+
+  /// No description provided for @rangeNoneLearned.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía no ha aprendido nada, así que no hay distancia que valga la pena decir, a ninguna carga.'**
+  String get rangeNoneLearned;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

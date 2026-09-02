@@ -8,6 +8,7 @@ import '../../app_settings.dart';
 import '../../bms_service.dart';
 import '../../metrics/charge_eta.dart';
 import '../../metrics/range_estimator.dart';
+import '../../metrics/range_outlook.dart';
 import '../../model/bms_snapshot.dart';
 import '../theme.dart';
 import '../warning_labels.dart';
@@ -63,6 +64,7 @@ class _NowTabState extends State<NowTab> {
     final power = history.smoothedPower;
     final current = history.smoothedCurrent;
     final estimator = service.rangeEstimator;
+    final outlook = service.rangeOutlook;
 
     final usableWh = RangeEstimator.usableWh(
       remainingAh: s.remainingCapacityAh,
@@ -121,14 +123,22 @@ class _NowTabState extends State<NowTab> {
                   children: [
                     Readout(
                       label: t.range,
-                      value: estimator.rangeKm(usableWh).toStringAsFixed(0),
+                      value: outlook.nowKm?.toStringAsFixed(0) ?? '--',
                       unit: 'km',
                       size: 44,
-                      footnote: t.rangeBand(
-                        low.toStringAsFixed(0),
-                        high.toStringAsFixed(0),
-                      ),
+                      footnote: outlook.hasLearned
+                          ? t.rangeBand(
+                              low.toStringAsFixed(0),
+                              high.toStringAsFixed(0),
+                            )
+                          : t.rangeNoneLearned,
                     ),
+                    const SizedBox(height: 10),
+                    // The separate question, answered separately. One of these
+                    // changes when you charge and the other does not, and
+                    // showing only the first invited it to be read as what the
+                    // bike does.
+                    _FullPackRange(outlook: outlook, t: t),
                     const SizedBox(height: 12),
                     Pill(
                       estimator.hasLearned
@@ -427,6 +437,90 @@ class _TripStripState extends State<_TripStrip> {
           ),
         ],
       );
+}
+
+/// What a full pack is worth, in kilometres.
+///
+/// Kept visually quieter than the remaining range: it is the figure you plan
+/// with rather than the one you watch. It refuses to appear as a number until
+/// there is a capacity to build it on, because a full-pack range derived from
+/// nothing is exactly the sort of confident invention this app is meant not to
+/// do.
+class _FullPackRange extends StatelessWidget {
+  const _FullPackRange({required this.outlook, required this.t});
+
+  final RangeOutlook outlook;
+  final AppL10n t;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!outlook.hasLearned) return const SizedBox.shrink();
+
+    final full = outlook.fullKm;
+    if (full == null) {
+      return Text(
+        t.rangeFullUnknown,
+        style: const TextStyle(
+          fontSize: 11,
+          height: 1.35,
+          color: AppTheme.textFaint,
+        ),
+      );
+    }
+
+    final band = outlook.fullBandKm;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          t.rangeFull,
+          style: const TextStyle(
+            fontSize: 10.5,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.6,
+            color: AppTheme.textFaint,
+          ),
+        ),
+        const SizedBox(height: 1),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(
+              full.toStringAsFixed(0),
+              style: AppTheme.readout(22),
+            ),
+            const SizedBox(width: 3),
+            const Text(
+              'km',
+              style: TextStyle(fontSize: 11, color: AppTheme.textFaint),
+            ),
+          ],
+        ),
+        if (band != null)
+          Text(
+            t.rangeFullBand(
+              band.$1.toStringAsFixed(0),
+              band.$2.toStringAsFixed(0),
+            ),
+            style: const TextStyle(fontSize: 10, color: AppTheme.textFaint),
+          ),
+        Text(
+          outlook.fullFromMeasuredCapacity
+              ? t.rangeFullFromMeasured
+              : t.rangeFullFromAdvert,
+          style: TextStyle(
+            fontSize: 10,
+            height: 1.3,
+            color: outlook.fullFromMeasuredCapacity
+                ? AppTheme.good
+                : AppTheme.textFaint,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 /// Time until the pack is full, from what is going in right now.

@@ -162,7 +162,7 @@ class AppL10nEn extends AppL10n {
   String get soc => 'Charge';
 
   @override
-  String get range => 'Range';
+  String get range => 'Range left';
 
   @override
   String get rangeDisclaimer =>
@@ -2368,4 +2368,28 @@ class AppL10nEn extends AppL10n {
   String backupSaved(String name) {
     return 'Saved as $name.';
   }
+
+  @override
+  String get rangeFull => 'On a full pack';
+
+  @override
+  String rangeFullBand(String low, String high) {
+    return 'about $low to $high km';
+  }
+
+  @override
+  String get rangeFullUnknown =>
+      'Needs a measured capacity before this can be said.';
+
+  @override
+  String get rangeFullFromAdvert =>
+      'From the capacity you entered, not a measured one.';
+
+  @override
+  String get rangeFullFromMeasured =>
+      'From a capacity this pack actually measured.';
+
+  @override
+  String get rangeNoneLearned =>
+      'Nothing learned yet, so no distance is worth quoting at any charge.';
 }
