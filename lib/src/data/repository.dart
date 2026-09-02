@@ -180,6 +180,8 @@ class BmsRepository {
         maxDeltaVolts: Value(summary.maxDeltaVolts),
         climbM: Value(summary.climbM),
         descentM: Value(summary.descentM),
+        ahOut: Value(summary.ahOut),
+        energySource: Value(summary.energySource.name),
         whPerKmBefore: Value(conclusions?.whPerKmBefore),
         whPerKmAfter: Value(conclusions?.whPerKmAfter),
         learnedKm: Value(conclusions?.learnedKm),

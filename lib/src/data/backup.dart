@@ -236,6 +236,8 @@ class BackupCodec {
         'learnedKm': t.learnedKm,
         'rangeKmAtEnd': t.rangeKmAtEnd,
         'confidence': t.confidence,
+        'ahOut': t.ahOut,
+        'energySource': t.energySource,
       };
 
   static Map<String, Object?> _point(TripPoint p) => {
@@ -355,6 +357,8 @@ class BackupCodec {
         learnedKm: Value(_dn(t['learnedKm'])),
         rangeKmAtEnd: Value(_dn(t['rangeKmAtEnd'])),
         confidence: Value(t['confidence'] as String?),
+        ahOut: Value(_dn(t['ahOut'])),
+        energySource: Value(t['energySource'] as String?),
       );
 
   static TripPointsCompanion _pointCompanion(

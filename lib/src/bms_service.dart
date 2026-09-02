@@ -26,6 +26,7 @@ import 'metrics/capacity_test_runner.dart';
 import 'metrics/charge_alerts.dart';
 import 'metrics/charge_session.dart';
 import 'metrics/range_estimator.dart';
+import 'metrics/sampling.dart';
 import 'metrics/ride_alerts.dart';
 import 'metrics/trip_autostart.dart';
 import 'metrics/trip_recorder.dart';
@@ -1402,16 +1403,17 @@ class SegmentAccumulator {
     _lastDistanceKm = odometerKm;
     if (previousAt == null || previousKm == null) return null;
 
-    final dt = at.difference(previousAt);
-    // A gap means a dropped link, not hours of riding. Skip it rather than
-    // integrating a straight line across it.
-    if (dt.inSeconds <= 0 || dt.inSeconds > 10) return null;
+    // Milliseconds: inSeconds was zero for almost every real interval, so
+    // this returned early on nearly every reading and the in-ride learning
+    // never accumulated anything at all. See [usableInterval].
+    final dt = usableInterval(previousAt, at);
+    if (dt == null) return null;
 
     final dKm = odometerKm - previousKm;
     if (dKm < 0) return null;
 
     // Discharge is negative power, and consumption is what we are learning.
-    _wh += -power * dt.inMilliseconds / 3600000.0;
+    _wh += -power * hoursIn(dt);
     _km += dKm;
 
     if (_km < 0.5) return null;
