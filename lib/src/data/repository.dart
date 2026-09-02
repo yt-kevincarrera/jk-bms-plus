@@ -221,6 +221,35 @@ class BmsRepository {
   /// The estimator is rebuilt from these rather than kept as a running tally,
   /// so deleting a bad trip actually removes its influence instead of leaving
   /// it baked into a number nobody can unpick.
+  /// Mends every pack's rides, not just the one being connected to.
+  ///
+  /// This belongs at startup rather than on connect, and putting it on connect
+  /// was a plain mistake: the saved-pack screen reads a pack's history with no
+  /// radio involved, which is the whole point of it, so a repair that only
+  /// happens on connect leaves that screen showing figures the app already
+  /// knows how to fix. It reported "nothing learned yet" against rides it
+  /// could have measured.
+  ///
+  /// Cheap to call at every start: it only looks at rides with no amp-hour
+  /// figure, and after the first pass there are none.
+  Future<TripRepairReport> repairAllTripEnergy() async {
+    final devices = await db.allDevices();
+    var examined = 0;
+    var repaired = 0;
+    var unrepairable = 0;
+    for (final d in devices) {
+      final report = await repairTripEnergy(d.id);
+      examined += report.examined;
+      repaired += report.repaired;
+      unrepairable += report.unrepairable;
+    }
+    return TripRepairReport(
+      examined: examined,
+      repaired: repaired,
+      unrepairable: unrepairable,
+    );
+  }
+
   /// Recomputes the energy of rides recorded before the integration bug.
   ///
   /// Only touches rides that have no amp-hour figure, which is exactly the set
