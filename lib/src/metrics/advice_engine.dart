@@ -175,7 +175,7 @@ class AdviceEngine {
     //
     // Suppressed entirely once real degradation can be measured, because by
     // then the honest figure exists and this comparison adds nothing.
-    final loss = report.capacityLossFraction;
+    final loss = report.shortOfAdvertisedFraction;
     if (!degradationMeasurable && loss != null && loss > 0.12) {
       advice.add(
         Advice(

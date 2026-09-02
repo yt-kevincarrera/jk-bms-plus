@@ -175,7 +175,8 @@ class BleLinkError {
 class BleTransport implements BmsLink {
   BleTransport({
     this.mtuRequest = 244,
-    this.reconnectDelay = const Duration(seconds: 2),
+    this.reconnectDelay = const Duration(milliseconds: 400),
+    this.connectTimeout = const Duration(seconds: 8),
     this.pollInterval = const Duration(seconds: 5),
   });
 
@@ -184,7 +185,29 @@ class BleTransport implements BmsLink {
   /// notifications to 2.
   final int mtuRequest;
 
+  /// How long to wait before trying again after the link drops.
+  ///
+  /// Was two seconds, which sounds harmless and was not. A real ride shows
+  /// this pack dropping the link every few seconds and reconnecting, over and
+  /// over: fifty-two gaps in an hour, most of them 27 to 33 seconds. Two of
+  /// those seconds were this delay and the rest was a connect attempt allowed
+  /// to run for twenty. Cycling faster does not stop the drops, but it turns a
+  /// thirty-second hole into a few seconds of one.
   final Duration reconnectDelay;
+
+  /// How long a single connect attempt may run before it is abandoned.
+  ///
+  /// Short on purpose. A JK BMS three feet away either answers in a couple of
+  /// seconds or is not going to; waiting twenty is not patience, it is a hole
+  /// in the recording.
+  final Duration connectTimeout;
+
+  /// Times the link has dropped since the app started, and how long has been
+  /// spent disconnected. Shown rather than kept, because a rider whose ride
+  /// has holes in it deserves to know the link is the reason.
+  int drops = 0;
+  Duration timeDisconnected = Duration.zero;
+  DateTime? _droppedAt;
 
   /// How often to re-ask for cell info if the BMS goes quiet. The BMS normally
   /// pushes on its own once asked; this is a nudge, not a poll loop.
@@ -363,7 +386,7 @@ class BleTransport implements BmsLink {
         // out publishing it, so the nonprofit terms apply. Revisit if that ever
         // changes.
         license: License.nonprofit,
-        timeout: const Duration(seconds: 20),
+        timeout: connectTimeout,
         // Null so the MTU request below is ours to observe and report on.
         mtu: null,
         autoConnect: false,
@@ -402,6 +425,11 @@ class BleTransport implements BmsLink {
       await characteristic.setNotifyValue(true);
 
       _setState(BleLinkState.connected);
+      final since = _droppedAt;
+      if (since != null) {
+        timeDisconnected += DateTime.now().difference(since);
+        _droppedAt = null;
+      }
 
       // The BMS answers device info first; the variant we decode everything
       // else with comes out of that frame, so it has to be the first request.
@@ -448,6 +476,8 @@ class BleTransport implements BmsLink {
   BleLinkError _describeConnectFailure(Object e) => BleLinkError.from(e);
 
   void _onDropped() {
+    drops++;
+    _droppedAt ??= DateTime.now();
     _pollTimer?.cancel();
     _notifySub?.cancel();
     _notifySub = null;
