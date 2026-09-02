@@ -122,6 +122,14 @@ class TripRecorder {
   TripState get state => _state;
 
   bool get isRecording => _state == TripState.recording;
+  bool get isPaused => _state == TripState.paused;
+
+  /// Whether a trip exists at all, paused or running.
+  ///
+  /// The distinction matters more than it looks: anything the ride *owns* (the
+  /// location stream, the foreground service) has to be held for [isActive],
+  /// while anything the ride *learns from* must only run for [isRecording].
+  /// Confusing the two is what let a pause dismantle a ride in progress.
   bool get isActive => _state != TripState.idle;
 
   DateTime? _startedAt;
@@ -165,6 +173,20 @@ class TripRecorder {
   /// Live figures, for the screen.
   double get distanceKm => _distanceKm;
   double get speedKmh => _speedKmh;
+
+  /// The speed, but only while it is still worth believing.
+  ///
+  /// [speedKmh] is the last figure a fix carried, and it keeps that figure
+  /// forever once the fixes stop. Fine for a dial the rider can see is frozen;
+  /// dangerous for a decision. Null here means nobody knows, which is what the
+  /// auto-stop needs to hear rather than a confident zero.
+  double? get freshSpeedKmh {
+    if (_state != TripState.recording) return null;
+    final last = _lastFixAt;
+    if (last == null) return null;
+    final age = DateTime.now().toUtc().difference(last);
+    return age > const Duration(seconds: 20) ? null : _speedKmh;
+  }
   double get maxSpeedKmh => _maxSpeedKmh;
   Duration get movingDuration => _movingDuration;
   /// Wall-clock time since the trip started, minus whatever was spent paused.

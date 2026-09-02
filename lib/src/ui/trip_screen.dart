@@ -72,6 +72,19 @@ class _TripScreenState extends State<TripScreen> {
     });
   }
 
+  /// Resumes, and says so if location did not come back with it.
+  ///
+  /// Silence here was the expensive part of the pause bug: the ride carried on
+  /// looking normal while recording nothing.
+  Future<void> _resume() async {
+    final t = AppL10n.of(context);
+    final problem = await widget.service.resumeTrip();
+    if (!mounted) return;
+    setState(() {
+      _problem = problem == null ? null : _problemText(t, problem);
+    });
+  }
+
   Future<void> _stop() async {
     final t = AppL10n.of(context);
     final outcome = await widget.service.stopTrip();
@@ -291,7 +304,7 @@ class _TripScreenState extends State<TripScreen> {
             children: [
               Expanded(
                 child: FilledButton.icon(
-                  onPressed: () => setState(widget.service.resumeTrip),
+                  onPressed: _resume,
                   icon: const Icon(Icons.play_arrow, size: 20),
                   label: Text(t.tripResume),
                 ),
