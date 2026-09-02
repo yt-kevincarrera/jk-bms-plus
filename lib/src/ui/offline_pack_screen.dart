@@ -61,6 +61,12 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
     }
 
     final id = widget.device.id;
+
+    // Before reading anything. The startup pass may still be running, and this
+    // screen must not race it into showing "nothing learned yet" against rides
+    // the app can measure. Idempotent, and finds nothing after the first pass.
+    await repo.repairTripEnergy(id);
+
     // A bounded window. This used to ask for ten years of readings just to
     // find the last one and count them, which at 1 Hz is hundreds of thousands
     // of rows pulled into memory to answer two questions that are one SQL
