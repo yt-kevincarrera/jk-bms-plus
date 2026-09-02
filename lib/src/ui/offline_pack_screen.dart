@@ -4,6 +4,7 @@ import '../../l10n/app_localizations.dart';
 import '../bms_service.dart';
 import '../data/database.dart';
 import '../metrics/cell_drift.dart';
+import '../metrics/degradation.dart';
 import '../metrics/range_estimator.dart';
 import '../metrics/range_outlook.dart';
 import 'theme.dart';
@@ -212,10 +213,17 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
         ? last.remainingAh / socFraction
         : null;
 
-    final catalogue = widget.device.catalogueCapacityAh;
-    final healthPercent = implied != null && catalogue != null && catalogue > 0
-        ? (implied / catalogue * 100).clamp(0.0, 120.0)
-        : null;
+    // Wear, measured, or nothing. It used to be the implied capacity over the
+    // catalogue figure, which on this pack was 40 divided by 40: a guaranteed
+    // 99% that would have read the same on a ruined battery. Checked against a
+    // real pack at every charge from 53% to 70% and it gave 40.0 Ah every
+    // time. See [CapacitySource.configured].
+    final wear = Degradation.from(
+      tests: _tests,
+      readings: const [],
+      advertisedAh: widget.device.catalogueCapacityAh,
+    );
+    final lost = wear.lostFraction;
 
     // Which cell sat lowest in the last reading. Not the same as the one that
     // is always lowest, but it is what the stored row can answer.
@@ -289,11 +297,16 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
         children: [
           InfoRow(
             t.offlineMeasuredHealth,
-            healthPercent == null
-                ? '--'
-                : '${healthPercent.toStringAsFixed(0)} %',
-            dim: healthPercent == null,
-            valueColor: healthPercent == null ? null : _healthTone(healthPercent),
+            lost == null ? '--' : '${(lost * 100).toStringAsFixed(1)} %',
+            dim: lost == null,
+            valueColor: lost == null ? null : _healthTone(100 - lost * 100),
+            hint: lost != null
+                ? null
+                : wear.current == null
+                    ? t.offlineHealthNeedsTests
+                    : t.offlineHealthOneTest(
+                        wear.current!.ah.toStringAsFixed(1),
+                      ),
           ),
           InfoRow(
             t.offlineImplied,

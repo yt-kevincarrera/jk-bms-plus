@@ -1,4 +1,5 @@
 import '../data/database.dart';
+import 'degradation.dart';
 import 'range_estimator.dart';
 
 /// What can be said about one battery from what is on disk.
@@ -81,17 +82,28 @@ class PackSummary {
   }) {
     final last = readings.isEmpty ? null : readings.last;
 
-    // Only away from the extremes of charge, where dividing by a rounded
-    // percentage is noise rather than a figure.
+    // Remaining over charge reads back what the BMS is configured with, and
+    // nothing else: it computes remaining amp-hours as charge times configured
+    // capacity, so the division cancels. Only readable away from the extremes,
+    // where the rounded percentage makes even that noisy.
     final socFraction = last == null ? 0.0 : last.soc / 100.0;
     final implied = last != null && socFraction >= 0.15 && socFraction <= 0.95
         ? last.remainingAh / socFraction
         : null;
 
     final catalogue = device.catalogueCapacityAh;
-    final health = implied != null && catalogue != null && catalogue > 0
-        ? (implied / catalogue * 100).clamp(0.0, 120.0).toDouble()
-        : null;
+
+    // Health from measured discharges, or nothing. This used to be the implied
+    // capacity over the catalogue figure, which on a pack whose catalogue came
+    // from the BMS is 40 divided by 40: a permanent 100% that the home-screen
+    // widget was showing as though it meant something.
+    final wear = Degradation.from(
+      tests: tests,
+      readings: const [],
+      advertisedAh: catalogue,
+    );
+    final lost = wear.lostFraction;
+    final health = lost == null ? null : ((1 - lost) * 100).clamp(0.0, 100.0);
 
     // The honest cycle count needs a capacity to divide by. The implied one is
     // closer to the truth than the catalogue claim, so it is preferred.

@@ -981,10 +981,10 @@
   "connectRetry": "Reintentar búsqueda",
   "storedManageHint": "Mantén pulsada una batería para renombrarla o borrarla.",
   "offlineHealthTitle": "Salud guardada",
-  "offlineMeasuredHealth": "Salud medida",
-  "offlineImplied": "Capacidad total",
-  "offlineImpliedHint": "Ah restantes divididos entre la carga que reporta el BMS. Es la capacidad que implica su propio contador, no una medición independiente.",
-  "offlineImpliedUnusable": "La última lectura fue con la carga muy alta o muy baja, y ahí esa división es solo ruido.",
+  "offlineMeasuredHealth": "Desgaste medido",
+  "offlineImplied": "Capacidad configurada en el BMS",
+  "offlineImpliedHint": "Es un ajuste dentro del BMS, no una medición de las celdas. Es contra lo que se escala cada porcentaje que reporta la batería, así que vale la pena verlo, y se queda igual por muy cansada que esté la batería.",
+  "offlineImpliedUnusable": "Solo se puede leer entre un 25 % y un 90 % de carga.",
   "offlineSoh": "Salud que reporta el BMS",
   "offlineCycles": "Ciclos que cuenta el BMS",
   "offlineWeakest": "Celda más floja",
@@ -1380,5 +1380,15 @@
   "rangeFullFromAdvert": "Sale de la capacidad que pusiste tú, no de una medida.",
   "rangeFullFromMeasured": "Sale de una capacidad que esta batería midió de verdad.",
   "rangeNoneLearned": "Todavía no ha aprendido nada, así que no hay distancia que valga la pena decir, a ninguna carga.",
-  "offlineRangeAtLastSeen": "Con la carga que tenía al final"
+  "offlineRangeAtLastSeen": "Con la carga que tenía al final",
+  "offlineHealthNeedsTests": "Hacen falta dos descargas completas para poder medir desgaste. Una da una capacidad; hacen falta dos para ver una caída.",
+  "@offlineHealthOneTest": {
+    "placeholders": {
+      "ah": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineHealthOneTest": "Una medición hasta ahora: {ah} Ah. La segunda, dentro de unos meses, es la que la convierte en desgaste.",
+  "healthCardShortOfAdvert": "Frente al anuncio"
 }

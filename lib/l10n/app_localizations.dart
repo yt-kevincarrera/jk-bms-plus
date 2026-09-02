@@ -3340,25 +3340,25 @@ abstract class AppL10n {
   /// No description provided for @offlineMeasuredHealth.
   ///
   /// In es, this message translates to:
-  /// **'Salud medida'**
+  /// **'Desgaste medido'**
   String get offlineMeasuredHealth;
 
   /// No description provided for @offlineImplied.
   ///
   /// In es, this message translates to:
-  /// **'Capacidad total'**
+  /// **'Capacidad configurada en el BMS'**
   String get offlineImplied;
 
   /// No description provided for @offlineImpliedHint.
   ///
   /// In es, this message translates to:
-  /// **'Ah restantes divididos entre la carga que reporta el BMS. Es la capacidad que implica su propio contador, no una medición independiente.'**
+  /// **'Es un ajuste dentro del BMS, no una medición de las celdas. Es contra lo que se escala cada porcentaje que reporta la batería, así que vale la pena verlo, y se queda igual por muy cansada que esté la batería.'**
   String get offlineImpliedHint;
 
   /// No description provided for @offlineImpliedUnusable.
   ///
   /// In es, this message translates to:
-  /// **'La última lectura fue con la carga muy alta o muy baja, y ahí esa división es solo ruido.'**
+  /// **'Solo se puede leer entre un 25 % y un 90 % de carga.'**
   String get offlineImpliedUnusable;
 
   /// No description provided for @offlineSoh.
@@ -4296,6 +4296,24 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Con la carga que tenía al final'**
   String get offlineRangeAtLastSeen;
+
+  /// No description provided for @offlineHealthNeedsTests.
+  ///
+  /// In es, this message translates to:
+  /// **'Hacen falta dos descargas completas para poder medir desgaste. Una da una capacidad; hacen falta dos para ver una caída.'**
+  String get offlineHealthNeedsTests;
+
+  /// No description provided for @offlineHealthOneTest.
+  ///
+  /// In es, this message translates to:
+  /// **'Una medición hasta ahora: {ah} Ah. La segunda, dentro de unos meses, es la que la convierte en desgaste.'**
+  String offlineHealthOneTest(String ah);
+
+  /// No description provided for @healthCardShortOfAdvert.
+  ///
+  /// In es, this message translates to:
+  /// **'Frente al anuncio'**
+  String get healthCardShortOfAdvert;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

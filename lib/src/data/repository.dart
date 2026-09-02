@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:drift/drift.dart';
 
 import '../metrics/capacity_cycle_detector.dart';
+import '../metrics/trip_energy_repair.dart';
 import '../metrics/trip_recorder.dart';
 import '../model/bms_snapshot.dart';
 import '../protocol/jk_frame.dart';
@@ -220,6 +221,65 @@ class BmsRepository {
   /// The estimator is rebuilt from these rather than kept as a running tally,
   /// so deleting a bad trip actually removes its influence instead of leaving
   /// it baked into a number nobody can unpick.
+  /// Recomputes the energy of rides recorded before the integration bug.
+  ///
+  /// Only touches rides that have no amp-hour figure, which is exactly the set
+  /// recorded by a build that could not produce one. Runs once per pack in
+  /// practice, then finds nothing.
+  Future<TripRepairReport> repairTripEnergy(
+    String deviceId, {
+    TripEnergyRepair repairer = const TripEnergyRepair(),
+  }) async {
+    await flush();
+    final trips = await db.recentTrips(deviceId, limit: 500);
+    final stale = [
+      for (final t in trips)
+        if (t.ahOut == null && t.energySource == null && t.distanceKm > 0) t,
+    ];
+    if (stale.isEmpty) return TripRepairReport.none;
+
+    // One window covering every ride that needs mending, read once. Rides are
+    // minutes long and there may be dozens; a query each would be slower than
+    // the whole repair.
+    var earliest = stale.first.startedAt;
+    var latest = stale.first.endedAt;
+    for (final t in stale) {
+      if (t.startedAt.isBefore(earliest)) earliest = t.startedAt;
+      if (t.endedAt.isAfter(latest)) latest = t.endedAt;
+    }
+    final readings = await db.snapshotsBetween(
+      deviceId,
+      earliest.subtract(const Duration(minutes: 1)),
+      latest.add(const Duration(minutes: 1)),
+    );
+
+    var repaired = 0;
+    var unrepairable = 0;
+    for (final t in stale) {
+      final fixed = repairer.recompute(t, readings);
+      if (fixed == null) {
+        unrepairable++;
+        continue;
+      }
+      await db.updateTrip(
+        t.id,
+        TripsCompanion(
+          energyOutWh: Value(fixed.outWh),
+          energyInWh: Value(fixed.inWh),
+          ahOut: Value(fixed.ahOut),
+          energySource: Value(fixed.source.name),
+        ),
+      );
+      repaired++;
+    }
+
+    return TripRepairReport(
+      examined: stale.length,
+      repaired: repaired,
+      unrepairable: unrepairable,
+    );
+  }
+
   /// Stores, or corrects, what the app concluded about a finished ride.
   Future<void> recordTripConclusions(
     int tripId,

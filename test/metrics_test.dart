@@ -179,14 +179,21 @@ void main() {
   });
 
   group('PackHealthReport', () {
-    test('implies capacity from remaining over charge', () {
+    test('reads back the capacity the BMS is configured with', () {
+      // Remaining over charge does not measure the cells: the BMS computes
+      // remaining amp-hours as charge times configured capacity, so the
+      // division cancels and hands back the setting. Verified on a real pack
+      // at every charge level from 53% to 70%, where it gave 40.0 Ah every
+      // time.
       final r = PackHealthReport.from(
         snapshot: snapshot(soc: 80, remainingAh: 32),
         catalogueCapacityAh: 45,
       );
       expect(r.impliedCapacityAh, closeTo(40, 1e-9));
-      // 40 against a 45 Ah sticker is an 11% shortfall.
-      expect(r.capacityLossFraction, closeTo(1 - 40 / 45, 1e-9));
+      // Which makes it a statement about the purchase, not about wear: a BMS
+      // set to 40 under a 45 Ah sticker is an 11% shortfall, on day one, for
+      // good.
+      expect(r.shortOfAdvertisedFraction, closeTo(1 - 40 / 45, 1e-9));
     });
 
     test('refuses the capacity maths near the ends of the range', () {

@@ -13,7 +13,7 @@ class PackHealthReport {
     required this.impliedCapacityAh,
     required this.configuredCapacityAh,
     required this.catalogueCapacityAh,
-    required this.capacityLossFraction,
+    required this.shortOfAdvertisedFraction,
     required this.equivalentFullCycles,
     required this.reportedCycles,
     required this.cycleInflation,
@@ -37,9 +37,16 @@ class PackHealthReport {
   }) {
     final configured = settings?.nominalCapacityAh ?? snapshot.nominalCapacityAh;
 
-    // Remaining divided by reported charge gives the capacity the BMS's own
-    // coulomb counter implies. Near the extremes of the range this is dividing
-    // by a rounded percentage, so it becomes noise; do not pretend otherwise.
+    // Remaining divided by reported charge reads back the capacity the BMS is
+    // *configured* with, and only that: it computes remaining amp-hours as
+    // charge times configured capacity, so the division cancels. Measured on a
+    // real pack at every charge level from 53% to 70% it gave 40.0 Ah every
+    // time, varying only with the rounding of a whole-number percentage.
+    //
+    // Which is why what comes out of it below is compared against the advert
+    // and nothing else. It cannot be wear: on a pack whose catalogue figure was
+    // itself read from the BMS this is 40 over 40, a guaranteed zero that would
+    // read the same on a ruined battery.
     final socFraction = snapshot.soc / 100.0;
     final meaningful = socFraction >= 0.15 && socFraction <= 0.95;
     final implied = meaningful && socFraction > 0
@@ -88,7 +95,7 @@ class PackHealthReport {
       impliedCapacityAh: implied,
       configuredCapacityAh: configured,
       catalogueCapacityAh: catalogueCapacityAh,
-      capacityLossFraction: loss?.toDouble(),
+      shortOfAdvertisedFraction: loss?.toDouble(),
       equivalentFullCycles: equivalent,
       reportedCycles: snapshot.cycleCount,
       cycleInflation: inflation,
@@ -101,8 +108,9 @@ class PackHealthReport {
     );
   }
 
-  /// What the BMS's own numbers imply the pack still holds. Null when the
-  /// charge level makes the division meaningless.
+  /// The capacity the BMS is configured with, read back off its own coulomb
+  /// counter. A setting, not a measurement of the cells. Null when the charge
+  /// level makes even that division too noisy to read.
   final double? impliedCapacityAh;
 
   /// What the BMS is configured to believe the pack holds.
@@ -114,9 +122,13 @@ class PackHealthReport {
   /// rider can answer, and every figure derived from it stays null too.
   final double? catalogueCapacityAh;
 
-  /// Fraction lost against the catalogue figure. Negative means it measures
-  /// *better* than advertised, which does happen with conservative ratings.
-  final double? capacityLossFraction;
+  /// How far the BMS's configured capacity falls short of what the pack was
+  /// sold as. Negative means it is set higher than advertised.
+  ///
+  /// A fact about the purchase, decided once, and not wear: nothing here
+  /// changes as the battery ages. Wear needs completed discharges, and lives
+  /// in [Degradation].
+  final double? shortOfAdvertisedFraction;
 
   /// Charge throughput expressed as whole pack-fulls.
   final double equivalentFullCycles;
@@ -152,7 +164,7 @@ class PackHealthReport {
   /// A blunt one-line verdict, or null when there is not enough to say.
   double? get worstLossPercent {
     final candidates = <double>[
-      if (capacityLossFraction != null) capacityLossFraction! * 100,
+      if (shortOfAdvertisedFraction != null) shortOfAdvertisedFraction! * 100,
       if (imbalanceLossFraction != null) imbalanceLossFraction! * 100,
     ];
     if (candidates.isEmpty) return null;
