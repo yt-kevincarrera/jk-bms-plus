@@ -1,13 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../app_settings.dart';
 import '../bms_service.dart';
 import '../gps/location_source.dart';
 import '../metrics/range_estimator.dart';
 import '../metrics/trip_recorder.dart';
+import '../platform/screen_awake.dart';
 import 'theme.dart';
 import 'widgets/common.dart';
 
@@ -18,9 +19,14 @@ import 'widgets/common.dart';
 /// new battery actually has, which is what this ride cost and whether the pack
 /// held up — so this screen shows both at once.
 class TripScreen extends StatefulWidget {
-  const TripScreen({required this.service, super.key});
+  const TripScreen({
+    required this.service,
+    required this.settings,
+    super.key,
+  });
 
   final BmsService service;
+  final AppSettings settings;
 
   @override
   State<TripScreen> createState() => _TripScreenState();
@@ -33,7 +39,6 @@ class _TripScreenState extends State<TripScreen> {
   @override
   void initState() {
     super.initState();
-    WakelockPlus.enable();
     // The recorder is updated by two streams that do not go through setState,
     // so redraw on a clock rather than trying to hook both.
     _tick = Timer.periodic(
@@ -45,7 +50,7 @@ class _TripScreenState extends State<TripScreen> {
   @override
   void dispose() {
     _tick?.cancel();
-    WakelockPlus.disable();
+    ScreenAwakeKeeper.release();
     super.dispose();
   }
 
@@ -110,6 +115,13 @@ class _TripScreenState extends State<TripScreen> {
     final t = AppL10n.of(context);
     final trip = widget.service.trip;
     final snapshot = widget.service.lastSnapshot;
+
+    // Riding is the case this screen exists for, so the awake setting is
+    // honoured here too rather than only on the live tab.
+    ScreenAwakeKeeper.apply(
+      widget.settings.screenAwake,
+      riding: trip.isActive,
+    );
 
     return Scaffold(
       appBar: AppBar(

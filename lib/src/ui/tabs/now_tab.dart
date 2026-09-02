@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
+import '../../platform/screen_awake.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../app_settings.dart';
@@ -37,20 +37,20 @@ class NowTab extends StatefulWidget {
 
 class _NowTabState extends State<NowTab> {
   @override
-  void initState() {
-    super.initState();
-    // This is meant to live in a phone mount while riding.
-    WakelockPlus.enable();
-  }
-
-  @override
   void dispose() {
-    WakelockPlus.disable();
+    ScreenAwakeKeeper.release();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Applied from build rather than initState: it depends on whether a ride
+    // is open, which changes while this screen is on show. The keeper only
+    // touches the platform when the answer changes.
+    ScreenAwakeKeeper.apply(
+      widget.settings.screenAwake,
+      riding: widget.service.trip.isActive,
+    );
     final t = AppL10n.of(context);
     final s = widget.snapshot;
     if (s == null) {
@@ -96,7 +96,7 @@ class _NowTabState extends State<NowTab> {
         // question with a charger plugged in, and "how long do I wait" is the
         // only one anybody is actually asking.
         if (s.isCharging) _chargeEta(t, s, service),
-        _TripStrip(service: service),
+        _TripStrip(service: service, settings: widget.settings),
         const SizedBox(height: 6),
         Row(
           children: [
@@ -291,9 +291,10 @@ class _NowTabState extends State<NowTab> {
 /// starting a ride is something you do once, at the kerb, not something you go
 /// hunting for in a menu.
 class _TripStrip extends StatefulWidget {
-  const _TripStrip({required this.service});
+  const _TripStrip({required this.service, required this.settings});
 
   final BmsService service;
+  final AppSettings settings;
 
   @override
   State<_TripStrip> createState() => _TripStripState();
@@ -320,7 +321,8 @@ class _TripStripState extends State<_TripStrip> {
   Future<void> _open() async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => TripScreen(service: widget.service),
+        builder: (_) =>
+            TripScreen(service: widget.service, settings: widget.settings),
       ),
     );
     if (mounted) setState(() {});

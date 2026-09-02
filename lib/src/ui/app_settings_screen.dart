@@ -110,6 +110,65 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                     ),
                   ),
                 ),
+                // Three positions rather than a switch: "never" and "always"
+                // are both real answers, and the middle one is the reason the
+                // wakelock existed in the first place.
+                Padding(
+                  padding: const EdgeInsets.only(top: 6, bottom: 2),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        t.screenAwakeTitle,
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        t.screenAwakeHint,
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          height: 1.4,
+                          color: AppTheme.textFaint,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SegmentedButton<ScreenAwake>(
+                        showSelectedIcon: false,
+                        style: const ButtonStyle(
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        segments: [
+                          ButtonSegment(
+                            value: ScreenAwake.never,
+                            label: Text(
+                              t.screenAwakeNever,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                          ButtonSegment(
+                            value: ScreenAwake.whileRiding,
+                            label: Text(
+                              t.screenAwakeRiding,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                          ButtonSegment(
+                            value: ScreenAwake.always,
+                            label: Text(
+                              t.screenAwakeAlways,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        ],
+                        selected: {settings.screenAwake},
+                        onSelectionChanged: (picked) async {
+                          await settings.setScreenAwake(picked.first);
+                          if (mounted) setState(() {});
+                        },
+                      ),
+                    ],
+                  ),
+                ),
                 SwitchListTile(
                   value: settings.chargeWatchEnabled,
                   onChanged: (v) async {

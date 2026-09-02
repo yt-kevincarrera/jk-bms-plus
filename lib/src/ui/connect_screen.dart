@@ -13,6 +13,7 @@ import '../bms_service.dart';
 import 'home_shell.dart';
 import 'locale_controller.dart';
 import 'theme.dart';
+import 'widgets/link_trouble_text.dart';
 import '../data/database.dart';
 import 'app_settings_screen.dart';
 import 'offline_pack_screen.dart';
@@ -62,6 +63,12 @@ class _ConnectScreenState extends State<ConnectScreen> {
   String? _message;
   bool _busyMessage = false;
 
+  /// The raw exception behind [_message], when there was one.
+  ///
+  /// Kept separate so the screen can lead with a sentence and still hand over
+  /// the original text on request. It used to be the message.
+  String _messageDetail = '';
+
   @override
   void initState() {
     super.initState();
@@ -76,7 +83,14 @@ class _ConnectScreenState extends State<ConnectScreen> {
     _errorSub = widget.service.linkErrors.listen((e) {
       if (mounted) {
         setState(() {
-          _message = e.message;
+          final trouble = e.trouble;
+          // A smaller packet size is a note about speed, not a failure worth
+          // colouring red on the screen somebody is trying to connect from.
+          if (trouble != null && !trouble.isNoteworthy) return;
+          _message = trouble == null
+              ? e.message
+              : linkTroubleWording(AppL10n.of(context), trouble);
+          _messageDetail = trouble?.detail ?? '';
           _busyMessage = e.likelyBusy;
         });
       }
@@ -423,6 +437,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
       _scanning = true;
       _searched = false;
       _message = null;
+      _messageDetail = '';
       _devices = const [];
     });
 
@@ -431,6 +446,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
       setState(() {
         _scanning = false;
         _message = t.connectNoBle;
+        _messageDetail = '';
       });
       return;
     }
@@ -441,6 +457,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
       setState(() {
         _scanning = false;
         _message = t.connectBluetoothOff;
+        _messageDetail = '';
       });
       return;
     }
@@ -454,6 +471,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
       setState(() {
         _scanning = false;
         _message = t.connectLocationOff;
+        _messageDetail = '';
       });
       return;
     }
@@ -473,6 +491,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
       setState(() {
         _scanning = false;
         _message = t.connectLocationDenied;
+        _messageDetail = '';
       });
       return;
     }
@@ -579,6 +598,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
       setState(() {
         _connecting = true;
         _message = t0(context).connectWaitingFirst;
+        _messageDetail = '';
         _busyMessage = true;
       });
     }
@@ -603,6 +623,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
       if (mounted) {
         setState(() {
           _message = t0(context).connectNotABms;
+          _messageDetail = '';
           _busyMessage = false;
         });
       }
@@ -613,7 +634,12 @@ class _ConnectScreenState extends State<ConnectScreen> {
     // reconnect to a BMS, and remembering whatever was tapped last would have
     // it chasing a speaker.
     await widget.proximity.remember(device.id, device.name);
-    if (mounted) setState(() => _message = null);
+    if (mounted) {
+      setState(() {
+        _message = null;
+        _messageDetail = '';
+      });
+    }
 
     await _openHome(device.name);
     await widget.service.disconnect();
@@ -700,13 +726,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
           if (_message != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
-              child: Text(
-                _message!,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  height: 1.4,
-                  color: _busyMessage ? AppTheme.watch : AppTheme.bad,
-                ),
+              child: LinkTroubleText(
+                message: _message!,
+                detail: _messageDetail,
+                color: _busyMessage ? AppTheme.watch : AppTheme.bad,
               ),
             ),
           // Always, not only when the scan came up empty. A battery you have
