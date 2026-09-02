@@ -8,7 +8,11 @@ import '../metrics/ride_alerts.dart';
 import '../update/update_service.dart';
 import 'locale_controller.dart';
 import 'theme.dart';
+import '../license/entitlements.dart';
+import 'license_scope.dart';
+import 'license_screen.dart';
 import 'widgets/backup_card.dart';
+import 'widgets/pro_gate.dart';
 import 'widgets/packs_card.dart';
 import 'widgets/common.dart';
 import 'widgets/update_card.dart';
@@ -45,6 +49,10 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final settings = widget.settings;
+    final canWatchCharge = LicenseScope.allows(
+      context,
+      Feature.backgroundAlerts,
+    );
 
     return Scaffold(
       appBar: AppBar(title: Text(t.appSettingsTitle)),
@@ -52,12 +60,13 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
         child: ListView(
           padding: const EdgeInsets.only(bottom: 28),
           children: [
-            UpdateCard(
-              service: widget.updateService,
-              settings: settings,
-            ),
+            UpdateCard(service: widget.updateService, settings: settings),
+            const LicenseCard(),
             PacksCard(service: widget.service),
-            BackupCard(service: widget.service),
+            ProGate(
+              feature: Feature.backupExportImport,
+              child: BackupCard(service: widget.service),
+            ),
             Section(
               title: t.chargeAlertsTitle,
               intro: t.chargeAlertsIntro,
@@ -88,21 +97,37 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                     if (mounted) setState(() {});
                   },
                 ),
+                // Reaching a closed app is the Pro half of the alerts; the
+                // ones that fire with the app open stay free. The switch
+                // shows off when the licence does not cover it, whatever
+                // the stored preference says, because the service is told
+                // the same thing at startup.
                 SwitchListTile(
-                  value: settings.chargeWatchEnabled,
-                  onChanged: (v) async {
-                    await settings.setChargeWatch(v);
-                    widget.service.chargeWatchEnabled = v;
-                    if (mounted) setState(() {});
-                  },
+                  value: canWatchCharge && settings.chargeWatchEnabled,
+                  onChanged: canWatchCharge
+                      ? (v) async {
+                          await settings.setChargeWatch(v);
+                          widget.service.chargeWatchEnabled = v;
+                          if (mounted) setState(() {});
+                        }
+                      : null,
                   dense: true,
                   contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    t.chargeWatchTitle,
-                    style: const TextStyle(fontSize: 14),
+                  title: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          t.chargeWatchTitle,
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                      if (!canWatchCharge) const ProBadge(),
+                    ],
                   ),
                   subtitle: Text(
-                    t.chargeWatchHint,
+                    canWatchCharge
+                        ? t.chargeWatchHint
+                        : '${t.chargeWatchProHint}\n${t.chargeWatchHint}',
                     style: const TextStyle(
                       fontSize: 11.5,
                       height: 1.4,
@@ -110,6 +135,14 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                     ),
                   ),
                 ),
+                if (!canWatchCharge)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton(
+                      onPressed: () => openLicenseScreen(context),
+                      child: Text(t.licenseOpen),
+                    ),
+                  ),
                 const SizedBox(height: 4),
               ],
             ),
@@ -343,24 +376,27 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
 
   /// Every alert the app can raise, by the name it is stored under.
   List<({String name, String label})> _alertSwitches(AppL10n t) => [
-        (name: ChargeAlert.targetReached.name, label: t.chargeAlertTargetReached('%')),
-        (name: ChargeAlert.chargeComplete.name, label: t.chargeAlertComplete),
-        (name: ChargeAlert.hotWhileCharging.name, label: t.chargeAlertHot),
-        (name: ChargeAlert.spreadAtTop.name, label: t.chargeAlertSpread),
-        (name: RideAlert.bmsFault.name, label: t.alertBmsFault),
-        (name: RideAlert.cellSpread.name, label: t.alertCellSpread),
-        (name: RideAlert.temperature.name, label: t.alertTemperature),
-        (name: RideAlert.lowCharge.name, label: t.alertLowCharge),
-        (name: RideAlert.criticalCharge.name, label: t.alertCriticalCharge),
-        (name: RideAlert.cellNearCutoff.name, label: t.alertCellNearCutoff),
-      ];
+    (
+      name: ChargeAlert.targetReached.name,
+      label: t.chargeAlertTargetReached('%'),
+    ),
+    (name: ChargeAlert.chargeComplete.name, label: t.chargeAlertComplete),
+    (name: ChargeAlert.hotWhileCharging.name, label: t.chargeAlertHot),
+    (name: ChargeAlert.spreadAtTop.name, label: t.chargeAlertSpread),
+    (name: RideAlert.bmsFault.name, label: t.alertBmsFault),
+    (name: RideAlert.cellSpread.name, label: t.alertCellSpread),
+    (name: RideAlert.temperature.name, label: t.alertTemperature),
+    (name: RideAlert.lowCharge.name, label: t.alertLowCharge),
+    (name: RideAlert.criticalCharge.name, label: t.alertCriticalCharge),
+    (name: RideAlert.cellNearCutoff.name, label: t.alertCellNearCutoff),
+  ];
 
   Widget _localeChip(String label, LanguageChoice choice) => ChoiceChip(
-        label: Text(label),
-        selected: widget.localeController.choice == choice,
-        onSelected: (_) async {
-          await widget.localeController.set(choice);
-          if (mounted) setState(() {});
-        },
-      );
+    label: Text(label),
+    selected: widget.localeController.choice == choice,
+    onSelected: (_) async {
+      await widget.localeController.set(choice);
+      if (mounted) setState(() {});
+    },
+  );
 }
