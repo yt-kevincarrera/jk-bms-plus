@@ -32,6 +32,9 @@ class FakeLink implements BmsLink {
   Stream<List<DiscoveredBms>> scan() => const Stream.empty();
 
   @override
+  LinkHealth get health => LinkHealth.unknown;
+
+  @override
   Future<void> connect(String deviceId) async => connected = true;
 
   @override

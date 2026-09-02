@@ -171,6 +171,25 @@ class _SystemTabState extends State<SystemTab> {
             InfoRow(
               t.systemBytesReceived,
               '${stats?.bytesReceived ?? 0}',
+            ),
+            // A diagnosis was made from a backup after the fact, and the
+            // next one should not have to be. These three tell apart the
+            // two ways a recording gets holes in it: the link going away,
+            // and the pack going quiet while the link stays up.
+            InfoRow(
+              t.systemDrops,
+              '${service.linkHealth.drops}',
+              valueColor:
+                  service.linkHealth.drops > 5 ? AppTheme.watch : null,
+            ),
+            InfoRow(
+              t.systemTimeDisconnected,
+              _duration(service.linkHealth.timeDisconnected.inSeconds),
+            ),
+            InfoRow(
+              t.systemNudges,
+              '${service.linkHealth.nudges}',
+              hint: t.systemNudgesHint,
               last: true,
             ),
           ],

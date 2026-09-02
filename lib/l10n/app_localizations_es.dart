@@ -2418,4 +2418,17 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get healthCardShortOfAdvert => 'Frente al anuncio';
+
+  @override
+  String get systemDrops => 'Caídas del enlace';
+
+  @override
+  String get systemTimeDisconnected => 'Tiempo desconectado';
+
+  @override
+  String get systemNudges => 'Veces que hubo que insistirle';
+
+  @override
+  String get systemNudgesHint =>
+      'La app solo le escribe a la batería cuando lleva seis segundos sin hablar. Antes escribía cada cinco segundos sin importar nada, y eso es lo que parece interrumpir el flujo. Si esto se queda cerca de cero en un viaje con lecturas continuas, esa era la causa.';
 }

@@ -140,6 +140,9 @@ class SimulatedLink implements BmsLink {
   }
 
   @override
+  LinkHealth get health => LinkHealth.unknown;
+
+  @override
   Future<void> disconnect() async {
     _timer?.cancel();
     _timer = null;

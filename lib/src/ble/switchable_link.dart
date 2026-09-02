@@ -51,6 +51,9 @@ class SwitchableLink implements BmsLink {
   Future<void> connect(String deviceId) => _active.connect(deviceId);
 
   @override
+  LinkHealth get health => _active.health;
+
+  @override
   Future<void> disconnect() => _active.disconnect();
 
   /// Switches to the simulated pack. Any real connection is dropped first: the
@@ -111,6 +114,8 @@ class _Uninitialised implements BmsLink {
   Stream<BleLinkError> get errors => const Stream.empty();
   @override
   int? get negotiatedMtu => null;
+  @override
+  LinkHealth get health => LinkHealth.unknown;
   @override
   Stream<List<DiscoveredBms>> scan() => const Stream.empty();
   @override
