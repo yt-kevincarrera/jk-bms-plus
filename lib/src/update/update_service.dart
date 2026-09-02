@@ -69,6 +69,14 @@ class UpdateService extends ChangeNotifier {
   String? error;
   File? _downloaded;
 
+  /// Told when a download starts, progresses and ends.
+  ///
+  /// Set by the app to the service that owns the foreground service. Android
+  /// stops an app mid-download when the screen goes dark unless one is held,
+  /// and a half-written package is worse than none: the installer will happily
+  /// be handed a truncated file.
+  void Function(int? percent)? onDownloadProgress;
+
   /// The token used for a private repository, supplied by the rider.
   ///
   /// Never compiled into the binary: a token baked into an APK is a token
@@ -179,6 +187,7 @@ class UpdateService extends ChangeNotifier {
     progress = DownloadProgress(0, asset.sizeBytes);
     error = null;
     notifyListeners();
+    onDownloadProgress?.call(0);
 
     try {
       _downloaded = await UpdateDownloader.download(
@@ -186,6 +195,10 @@ class UpdateService extends ChangeNotifier {
         token: token,
         onProgress: (p) {
           progress = p;
+          final fraction = p.fraction;
+          onDownloadProgress?.call(
+            fraction == null ? 0 : (fraction * 100).round(),
+          );
           notifyListeners();
         },
       );
@@ -197,6 +210,11 @@ class UpdateService extends ChangeNotifier {
       phase = UpdatePhase.failed;
       notifyListeners();
       return false;
+    } finally {
+      // In a finally, so a failure or a throw releases the claim as surely as
+      // success does. A service held open by a download that is no longer
+      // running is a notification that lies.
+      onDownloadProgress?.call(null);
     }
   }
 

@@ -96,6 +96,7 @@ class _JkBmsAppState extends State<JkBmsApp> {
       chargeTargetSoc: _settings.chargeTargetSoc,
       watchCharge: _settings.chargeWatchEnabled,
       autoTrip: _settings.autoTripEnabled,
+      watchLink: _settings.linkWatchEnabled,
       muted: _settings.mutedAlerts,
     );
 
@@ -134,11 +135,30 @@ class _JkBmsAppState extends State<JkBmsApp> {
               daysAgo: (n) => t.widgetDays('$n'),
             );
             _service.chargeWatchTitle = t.chargeWatchNotifTitle;
-            _service.chargeWatchText = (s) => t.chargeWatchNotifText(
-                  s.soc.toStringAsFixed(0),
-                  s.packVoltage.toStringAsFixed(1),
-                  s.current.toStringAsFixed(1),
-                );
+            _service.chargeWatchText = (s) => s == null
+                ? ''
+                : t.chargeWatchNotifText(
+                    s.soc.toStringAsFixed(0),
+                    s.packVoltage.toStringAsFixed(1),
+                    s.current.toStringAsFixed(1),
+                  );
+            // The notification for merely being connected. Its whole job is to
+            // let the screen sleep without the readings stopping, so it shows
+            // the reading rather than saying the app is running.
+            _service.downloadTitle = t.downloadNotifTitle;
+            _service.downloadText = (pct) => t.downloadNotifText('$pct');
+            // The update service does not know about foreground services and
+            // should not: it reports, and the one object that owns the service
+            // decides.
+            _updates.onDownloadProgress = _service.reportDownloadProgress;
+            _service.linkWatchTitle = t.linkWatchNotifTitle;
+            _service.linkWatchText = (s) => s == null
+                ? t.linkWatchNotifWaiting
+                : t.linkWatchNotifText(
+                    s.soc.toStringAsFixed(0),
+                    s.packVoltage.toStringAsFixed(1),
+                    s.current.toStringAsFixed(1),
+                  );
             return ConnectScreen(
               service: _service,
               localeController: _locale,

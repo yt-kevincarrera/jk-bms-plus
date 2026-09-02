@@ -1395,11 +1395,11 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get trendsDeltaHint =>
-      'Si el delta es plano y salta cerca del tope, hay una celda con menos capacidad. Si crece con la corriente, es resistencia: casi siempre una conexión.';
+      'Esta es la distinta: a lo ancho va el nivel de carga, no el tiempo. Cada punto es una lectura, colocada según lo llena que estaba la batería y cuánto se separaban su celda más alta y su más baja en ese momento. Lo que importa es la forma. Plana en el medio con un pico cerca del lleno es una celda con menos capacidad que las demás. Una curva que en cambio sigue a la corriente, más alta con carga, es resistencia en algún punto, y casi siempre una conexión y no una celda.';
 
   @override
   String get trendsSagHint =>
-      'La misma corriente produciendo una caída mayor con los meses significa que la resistencia interna sube. Se nota mucho antes que la pérdida de capacidad.';
+      'Cuántos miliohmios de resistencia interna implica cada viaje, sacado de cuánto cayó el voltaje para la corriente que se pidió. El más viejo a la izquierda. La resistencia subiendo es lo primero que se degrada en una batería y se nota mucho antes que la pérdida de capacidad, así que una subida aquí es un aviso temprano y no un veredicto. Un salto de golpe casi siempre es una conexión, no las celdas.';
 
   @override
   String get alertTitle => 'Aviso';
@@ -2274,4 +2274,88 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get screenAwakeAlways => 'Siempre';
+
+  @override
+  String get linkWatchNotifTitle => 'Leyendo la batería';
+
+  @override
+  String get linkWatchNotifWaiting => 'Esperando la primera lectura';
+
+  @override
+  String linkWatchNotifText(String soc, String volts, String amps) {
+    return '$soc %  ·  $volts V  ·  $amps A';
+  }
+
+  @override
+  String get linkWatchTitle => 'Seguir leyendo con la pantalla apagada';
+
+  @override
+  String get linkWatchHint =>
+      'Android deja de entregarle lecturas Bluetooth a una app poco después de que la pantalla se apaga, a menos que la app mantenga un servicio en primer plano. Esto lo mantiene mientras la batería está conectada, para que la app funcione igual con la pantalla encendida o apagada. Para eso es la notificación; no es la app anunciándose.';
+
+  @override
+  String get screenAwakeReason =>
+      'Con el ajuste de arriba encendido, la pantalla puede apagarse sin que las lecturas se detengan.';
+
+  @override
+  String backupScope(String packs, String trips, String readings) {
+    return 'Todas las baterías, no solo la conectada: $packs baterías, $trips viajes, $readings lecturas.';
+  }
+
+  @override
+  String get backupScopeEmpty =>
+      'Todavía no hay nada guardado, así que no hay nada que copiar.';
+
+  @override
+  String get downloadNotifTitle => 'Descargando actualización';
+
+  @override
+  String downloadNotifText(String percent) {
+    return '$percent %';
+  }
+
+  @override
+  String get learnWhyTitle => 'Por qué no ha aprendido nada';
+
+  @override
+  String learnWhyCount(String used, String considered) {
+    return '$used de $considered viajes grabados eran utilizables.';
+  }
+
+  @override
+  String learnWhyShort(String n) {
+    return '$n fueron de menos de 200 m, demasiado corto para dividir: un temblor del GPS en esa distancia produce un consumo de cientos de Wh/km.';
+  }
+
+  @override
+  String learnWhyNoEnergy(String n) {
+    return '$n grabaron distancia pero no energía saliendo de la batería. O fueron en remolque, o la batería reporta su corriente con el signo contrario al que esta app asume.';
+  }
+
+  @override
+  String get learnWhySignWarning =>
+      'Si es el signo, también estaría desactivando la energía de los viajes, el consumo y la detección de capacidad, mientras cada lectura en vivo sigue pareciendo correcta. Vale la pena comprobarlo: rodando, la corriente en la pantalla principal debería ser negativa.';
+
+  @override
+  String get learnWhyNeedMore =>
+      'Aprende del primer viaje de más de 200 m que consuma energía. No hay nada más que hacer.';
+
+  @override
+  String get trendsIntro =>
+      'Cuatro gráficas, y de cada una lo que sirve es la pendiente, no la altura. Un número que se queda quieto es una batería sana; uno que se va para un lado durante meses es la batería diciéndote algo.';
+
+  @override
+  String get trendsConsumptionHint =>
+      'Un punto por viaje grabado, el más viejo a la izquierda. La altura es lo que costó ese viaje por kilómetro. La forma de manejar y el clima lo mueven mucho, así que ignora los puntos suertos y mira si la nube va subiendo con los meses: que la misma ruta cueste más significa que la batería está trabajando más para lograrlo.';
+
+  @override
+  String get trendsCapacityHint =>
+      'Un punto por descarga completa medida, la más vieja a la izquierda. La altura es los amperios-hora que la batería realmente tenía esa vez. Es la única medida real de desgaste que hay aquí, y la más lenta en llenarse: espera que baje un poco cada año, y desconfía de una caída de golpe.';
+
+  @override
+  String get trendsAxisTime =>
+      'de izquierda a derecha: del más viejo al más nuevo';
+
+  @override
+  String get trendsAxisCharge => 'de izquierda a derecha: de vacía a llena';
 }

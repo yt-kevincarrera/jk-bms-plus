@@ -2566,13 +2566,13 @@ abstract class AppL10n {
   /// No description provided for @trendsDeltaHint.
   ///
   /// In es, this message translates to:
-  /// **'Si el delta es plano y salta cerca del tope, hay una celda con menos capacidad. Si crece con la corriente, es resistencia: casi siempre una conexión.'**
+  /// **'Esta es la distinta: a lo ancho va el nivel de carga, no el tiempo. Cada punto es una lectura, colocada según lo llena que estaba la batería y cuánto se separaban su celda más alta y su más baja en ese momento. Lo que importa es la forma. Plana en el medio con un pico cerca del lleno es una celda con menos capacidad que las demás. Una curva que en cambio sigue a la corriente, más alta con carga, es resistencia en algún punto, y casi siempre una conexión y no una celda.'**
   String get trendsDeltaHint;
 
   /// No description provided for @trendsSagHint.
   ///
   /// In es, this message translates to:
-  /// **'La misma corriente produciendo una caída mayor con los meses significa que la resistencia interna sube. Se nota mucho antes que la pérdida de capacidad.'**
+  /// **'Cuántos miliohmios de resistencia interna implica cada viaje, sacado de cuánto cayó el voltaje para la corriente que se pidió. El más viejo a la izquierda. La resistencia subiendo es lo primero que se degrada en una batería y se nota mucho antes que la pérdida de capacidad, así que una subida aquí es un aviso temprano y no un veredicto. Un salto de golpe casi siempre es una conexión, no las celdas.'**
   String get trendsSagHint;
 
   /// No description provided for @alertTitle.
@@ -4098,6 +4098,132 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Siempre'**
   String get screenAwakeAlways;
+
+  /// No description provided for @linkWatchNotifTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Leyendo la batería'**
+  String get linkWatchNotifTitle;
+
+  /// No description provided for @linkWatchNotifWaiting.
+  ///
+  /// In es, this message translates to:
+  /// **'Esperando la primera lectura'**
+  String get linkWatchNotifWaiting;
+
+  /// No description provided for @linkWatchNotifText.
+  ///
+  /// In es, this message translates to:
+  /// **'{soc} %  ·  {volts} V  ·  {amps} A'**
+  String linkWatchNotifText(String soc, String volts, String amps);
+
+  /// No description provided for @linkWatchTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Seguir leyendo con la pantalla apagada'**
+  String get linkWatchTitle;
+
+  /// No description provided for @linkWatchHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Android deja de entregarle lecturas Bluetooth a una app poco después de que la pantalla se apaga, a menos que la app mantenga un servicio en primer plano. Esto lo mantiene mientras la batería está conectada, para que la app funcione igual con la pantalla encendida o apagada. Para eso es la notificación; no es la app anunciándose.'**
+  String get linkWatchHint;
+
+  /// No description provided for @screenAwakeReason.
+  ///
+  /// In es, this message translates to:
+  /// **'Con el ajuste de arriba encendido, la pantalla puede apagarse sin que las lecturas se detengan.'**
+  String get screenAwakeReason;
+
+  /// No description provided for @backupScope.
+  ///
+  /// In es, this message translates to:
+  /// **'Todas las baterías, no solo la conectada: {packs} baterías, {trips} viajes, {readings} lecturas.'**
+  String backupScope(String packs, String trips, String readings);
+
+  /// No description provided for @backupScopeEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía no hay nada guardado, así que no hay nada que copiar.'**
+  String get backupScopeEmpty;
+
+  /// No description provided for @downloadNotifTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Descargando actualización'**
+  String get downloadNotifTitle;
+
+  /// No description provided for @downloadNotifText.
+  ///
+  /// In es, this message translates to:
+  /// **'{percent} %'**
+  String downloadNotifText(String percent);
+
+  /// No description provided for @learnWhyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Por qué no ha aprendido nada'**
+  String get learnWhyTitle;
+
+  /// No description provided for @learnWhyCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{used} de {considered} viajes grabados eran utilizables.'**
+  String learnWhyCount(String used, String considered);
+
+  /// No description provided for @learnWhyShort.
+  ///
+  /// In es, this message translates to:
+  /// **'{n} fueron de menos de 200 m, demasiado corto para dividir: un temblor del GPS en esa distancia produce un consumo de cientos de Wh/km.'**
+  String learnWhyShort(String n);
+
+  /// No description provided for @learnWhyNoEnergy.
+  ///
+  /// In es, this message translates to:
+  /// **'{n} grabaron distancia pero no energía saliendo de la batería. O fueron en remolque, o la batería reporta su corriente con el signo contrario al que esta app asume.'**
+  String learnWhyNoEnergy(String n);
+
+  /// No description provided for @learnWhySignWarning.
+  ///
+  /// In es, this message translates to:
+  /// **'Si es el signo, también estaría desactivando la energía de los viajes, el consumo y la detección de capacidad, mientras cada lectura en vivo sigue pareciendo correcta. Vale la pena comprobarlo: rodando, la corriente en la pantalla principal debería ser negativa.'**
+  String get learnWhySignWarning;
+
+  /// No description provided for @learnWhyNeedMore.
+  ///
+  /// In es, this message translates to:
+  /// **'Aprende del primer viaje de más de 200 m que consuma energía. No hay nada más que hacer.'**
+  String get learnWhyNeedMore;
+
+  /// No description provided for @trendsIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuatro gráficas, y de cada una lo que sirve es la pendiente, no la altura. Un número que se queda quieto es una batería sana; uno que se va para un lado durante meses es la batería diciéndote algo.'**
+  String get trendsIntro;
+
+  /// No description provided for @trendsConsumptionHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Un punto por viaje grabado, el más viejo a la izquierda. La altura es lo que costó ese viaje por kilómetro. La forma de manejar y el clima lo mueven mucho, así que ignora los puntos suertos y mira si la nube va subiendo con los meses: que la misma ruta cueste más significa que la batería está trabajando más para lograrlo.'**
+  String get trendsConsumptionHint;
+
+  /// No description provided for @trendsCapacityHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Un punto por descarga completa medida, la más vieja a la izquierda. La altura es los amperios-hora que la batería realmente tenía esa vez. Es la única medida real de desgaste que hay aquí, y la más lenta en llenarse: espera que baje un poco cada año, y desconfía de una caída de golpe.'**
+  String get trendsCapacityHint;
+
+  /// No description provided for @trendsAxisTime.
+  ///
+  /// In es, this message translates to:
+  /// **'de izquierda a derecha: del más viejo al más nuevo'**
+  String get trendsAxisTime;
+
+  /// No description provided for @trendsAxisCharge.
+  ///
+  /// In es, this message translates to:
+  /// **'de izquierda a derecha: de vacía a llena'**
+  String get trendsAxisCharge;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

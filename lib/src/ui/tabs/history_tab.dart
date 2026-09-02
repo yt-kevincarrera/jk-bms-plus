@@ -5,11 +5,13 @@ import '../../app_settings.dart';
 import '../../bms_service.dart';
 import '../../data/database.dart';
 import '../../data/repository.dart';
+import '../../metrics/learning_report.dart';
 import '../theme.dart';
 import '../trip_detail_screen.dart';
 import '../trends_screen.dart';
 import '../trip_screen.dart';
 import '../widgets/common.dart';
+import '../widgets/learning_why_card.dart';
 
 /// Every ride that has been recorded, newest first.
 ///
@@ -56,6 +58,16 @@ class HistoryTab extends StatelessWidget {
           padding: const EdgeInsets.only(top: 8, bottom: 28),
           children: [
             _StartTripButton(service: service, settings: settings),
+            // Right under the totals, which is where somebody notices that
+            // eight recorded rides have taught the estimate nothing and comes
+            // looking for a reason.
+            LearningWhyCard(
+              report: LearningReport.from(
+                trips,
+                learnedKm: service.rangeEstimator.learnedKm,
+              ),
+              t: t,
+            ),
             Section(
               title: t.historyTotals,
               children: [
