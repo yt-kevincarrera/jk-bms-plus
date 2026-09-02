@@ -434,49 +434,102 @@ class TripRecorder {
   static double _radians(double degrees) => degrees * math.pi / 180.0;
 }
 
-/// What a finished ride turned out to be, and what it taught.
+/// What the app concluded when a ride ended, kept so it can be read again.
 ///
-/// The summary alone says what happened. This adds what changed because of it,
-/// which is the part that makes recording a ride feel worth doing.
-class TripOutcome {
-  const TripOutcome({
-    required this.summary,
+/// These are stored with the ride rather than worked out on demand, because
+/// they cannot be worked out on demand. "The estimate moved from 41 to 39
+/// Wh/km" is a statement about a moment; by the time anybody looks again the
+/// estimator has learned from every ride since, so asking it now answers a
+/// different question. The conclusions used to be shown once, in a sheet at
+/// the end of a ride, and be gone the instant it was dismissed.
+class TripConclusions {
+  const TripConclusions({
     required this.whPerKmBefore,
     required this.whPerKmAfter,
-    required this.hadLearnedBefore,
     required this.learnedKm,
+    required this.rangeKmAtEnd,
     required this.confidence,
-    required this.rangeKmNow,
-    required this.averageWhPerKm,
   });
 
-  final TripSummary summary;
-
   /// The learned figure before this ride was folded in.
-  final double whPerKmBefore;
+  ///
+  /// Null when there was nothing learned yet, which is different from zero.
+  /// The estimator always has a figure to quote, including its own starting
+  /// default, so its value alone cannot tell the two apart.
+  final double? whPerKmBefore;
+
+  /// And after, which is what the next range was quoted from.
   final double whPerKmAfter;
 
-  /// False when this was the first ride with usable data.
-  final bool hadLearnedBefore;
-
   final double learnedKm;
+
+  /// Range at the charge the ride ended on.
+  final double rangeKmAtEnd;
+
   final RangeConfidence confidence;
 
-  /// Range at the charge level the ride ended on.
-  final double rangeKmNow;
-
-  /// What this ride cost, for comparison against the learned average.
-  final double? averageWhPerKm;
+  /// False when this was the first ride with usable data.
+  bool get hadLearnedBefore => whPerKmBefore != null;
 
   /// True when the ride moved the estimate by more than rounding.
-  bool get moved => (whPerKmAfter - whPerKmBefore).abs() > 0.5;
+  bool get moved => (whPerKmAfter - (whPerKmBefore ?? whPerKmAfter)).abs() > 0.5;
 
-  /// How much thirstier this ride was than the learned average, as a
-  /// percentage. Null when there is nothing to compare against.
-  double? get thirstPercent {
-    final ride = summary.whPerKm;
-    if (ride == null || !hadLearnedBefore || whPerKmBefore <= 0) return null;
-    final delta = (ride - whPerKmBefore) / whPerKmBefore * 100;
+  /// How much thirstier a ride costing [rideWhPerKm] was than the learned
+  /// average, as a percentage. Null when there is nothing to compare against,
+  /// or when the difference is not worth remarking on.
+  double? thirstPercentFor(double? rideWhPerKm) {
+    final before = whPerKmBefore;
+    if (rideWhPerKm == null || before == null || before <= 0) return null;
+    final delta = (rideWhPerKm - before) / before * 100;
     return delta > 15 ? delta : null;
   }
+
+  /// Rebuilds from stored columns, or null when the ride predates them.
+  ///
+  /// Null rather than defaults: a ride from before this was kept has no
+  /// conclusions, and inventing "0 Wh/km, low confidence" for it would put a
+  /// made-up measurement in front of the rider.
+  static TripConclusions? restore({
+    double? whPerKmBefore,
+    double? whPerKmAfter,
+    double? learnedKm,
+    double? rangeKmAtEnd,
+    String? confidence,
+  }) {
+    if (whPerKmAfter == null || confidence == null) return null;
+    return TripConclusions(
+      whPerKmBefore: whPerKmBefore,
+      whPerKmAfter: whPerKmAfter,
+      learnedKm: learnedKm ?? 0,
+      rangeKmAtEnd: rangeKmAtEnd ?? 0,
+      confidence: RangeConfidence.values.firstWhere(
+        (c) => c.name == confidence,
+        // An unrecognised name comes from a newer build's backup. Losing the
+        // label beats losing the row.
+        orElse: () => RangeConfidence.values.first,
+      ),
+    );
+  }
+}
+
+/// What a finished ride turned out to be, and what it taught.
+///
+/// The summary alone says what happened. This pairs it with what changed
+/// because of it, which is the part that makes recording a ride feel worth
+/// doing.
+class TripOutcome {
+  const TripOutcome({required this.summary, required this.conclusions});
+
+  final TripSummary summary;
+  final TripConclusions conclusions;
+
+  double? get whPerKmBefore => conclusions.whPerKmBefore;
+  double get whPerKmAfter => conclusions.whPerKmAfter;
+  bool get hadLearnedBefore => conclusions.hadLearnedBefore;
+  double get learnedKm => conclusions.learnedKm;
+  RangeConfidence get confidence => conclusions.confidence;
+  double get rangeKmNow => conclusions.rangeKmAtEnd;
+  double? get averageWhPerKm => summary.whPerKm;
+  bool get moved => conclusions.moved;
+  double? get thirstPercent => conclusions.thirstPercentFor(summary.whPerKm);
 }

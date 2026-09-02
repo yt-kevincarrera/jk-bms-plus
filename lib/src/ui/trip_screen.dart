@@ -6,11 +6,11 @@ import '../../l10n/app_localizations.dart';
 import '../app_settings.dart';
 import '../bms_service.dart';
 import '../gps/location_source.dart';
-import '../metrics/range_estimator.dart';
 import '../metrics/trip_recorder.dart';
 import '../platform/screen_awake.dart';
 import 'theme.dart';
 import 'widgets/common.dart';
+import 'widgets/trip_learned_section.dart';
 
 /// Trip mode: the speedometer half of the app.
 ///
@@ -457,7 +457,15 @@ class _TripSummarySheet extends StatelessWidget {
               ),
             ],
           ),
-          _LearnedSection(outcome: outcome, t: t),
+          TripLearnedSection(
+            conclusions: outcome.conclusions,
+            whPerKm: summary.whPerKm,
+            socUsed: summary.socUsed,
+            distanceKm: summary.distanceKm,
+            maxTemperature: summary.maxTemperature,
+            maxDeltaVolts: summary.maxDeltaVolts,
+            t: t,
+          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
             child: Text(
@@ -490,122 +498,5 @@ class _TripSummarySheet extends StatelessWidget {
     // which makes the two lines look like they disagree with each other.
     if (d.inMinutes < 10) return '$m:${s.toString().padLeft(2, '0')}';
     return '$m min';
-  }
-}
-
-/// What the ride changed, and one thing worth knowing about it.
-///
-/// A summary of what happened is useful once. Telling you what it *taught* is
-/// what makes the next ride worth recording too.
-class _LearnedSection extends StatelessWidget {
-  const _LearnedSection({required this.outcome, required this.t});
-
-  final TripOutcome outcome;
-  final AppL10n t;
-
-  @override
-  Widget build(BuildContext context) {
-    final summary = outcome.summary;
-    final tips = _tips();
-
-    return Section(
-      title: t.tripLearnedTitle,
-      accent: AppTheme.cool,
-      intro: _headline(),
-      children: [
-        if (summary.whPerKm != null) ...[
-          InfoRow(
-            t.tripLearnedRange,
-            '${outcome.rangeKmNow.toStringAsFixed(0)} km',
-          ),
-          InfoRow(
-            t.tripLearnedTotalKm,
-            '${outcome.learnedKm.toStringAsFixed(1)} km',
-          ),
-          InfoRow(
-            t.tripLearnedConfidence,
-            switch (outcome.confidence) {
-              RangeConfidence.low => t.rangeConfidenceLow,
-              RangeConfidence.medium => t.rangeConfidenceMedium,
-              RangeConfidence.high => t.rangeConfidenceHigh,
-            },
-            valueColor: switch (outcome.confidence) {
-              RangeConfidence.low => AppTheme.textFaint,
-              RangeConfidence.medium => AppTheme.watch,
-              RangeConfidence.high => AppTheme.good,
-            },
-            last: tips.isEmpty,
-          ),
-        ],
-        for (final tip in tips)
-          Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.only(top: 2, right: 10),
-                  child: Icon(
-                    Icons.lightbulb_outline,
-                    size: 15,
-                    color: AppTheme.cool,
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    tip,
-                    style: const TextStyle(
-                      fontSize: 12.5,
-                      height: 1.45,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        const SizedBox(height: 10),
-      ],
-    );
-  }
-
-  String _headline() {
-    final after = outcome.whPerKmAfter.toStringAsFixed(1);
-    if (outcome.summary.whPerKm == null) return t.tripLearnedTooShort;
-    if (!outcome.hadLearnedBefore) return t.tripLearnedFirst(after);
-    if (!outcome.moved) return t.tripLearnedUnchanged(after);
-    return t.tripLearnedChanged(
-      outcome.whPerKmBefore.toStringAsFixed(1),
-      after,
-    );
-  }
-
-  /// At most two, so the sheet stays a summary rather than a lecture.
-  List<String> _tips() {
-    final s = outcome.summary;
-    final tips = <String>[];
-
-    // How much of the pack a ride covers is what decides how sharp the estimate
-    // can get. A ride from 100% to 20% pins the number down; five short hops
-    // around the block cannot.
-    if (s.socUsed >= 25) {
-      tips.add(t.tripDeepDischargeTip);
-    } else if (s.socUsed > 0 && s.socUsed < 8 && s.distanceKm > 0.5) {
-      tips.add(t.tripShallowTip);
-    }
-
-    final thirst = outcome.thirstPercent;
-    if (thirst != null) {
-      tips.add(t.tripThirstyTip(thirst.toStringAsFixed(0)));
-    }
-
-    if (tips.length < 2 && s.maxTemperature > 45) {
-      tips.add(t.tripHotTip(s.maxTemperature.toStringAsFixed(1)));
-    }
-    if (tips.length < 2 && s.maxDeltaVolts > 0.06) {
-      tips.add(t.tripDeltaTip(s.maxDeltaVolts.toStringAsFixed(3)));
-    }
-
-    return tips.take(2).toList();
   }
 }

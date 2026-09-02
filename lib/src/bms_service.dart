@@ -548,7 +548,20 @@ class BmsService {
     if (summary == null) return null;
 
     if (id != null) {
-      await repository?.finishTrip(id, summary, points);
+      // Written with the ride, not after the relearn below: once the estimator
+      // has folded this ride in, "before" is no longer available to anybody.
+      await repository?.finishTrip(
+        id,
+        summary,
+        points,
+        conclusions: TripConclusions(
+          whPerKmBefore: hadLearnedBefore ? whPerKmBefore : null,
+          whPerKmAfter: rangeEstimator.whPerKm,
+          learnedKm: rangeEstimator.learnedKm,
+          rangeKmAtEnd: 0,
+          confidence: rangeEstimator.confidence,
+        ),
+      );
       // A ride is the most likely thing to have completed a discharge.
       await scanForCapacityCycles();
       // Rebuilding from every stored trip, rather than adding this one on top
@@ -569,16 +582,23 @@ class BmsService {
             cutoffVoltagePerCell: cutoffVoltagePerCell,
           );
 
-    return TripOutcome(
-      summary: summary,
-      whPerKmBefore: whPerKmBefore,
+    final conclusions = TripConclusions(
+      whPerKmBefore: hadLearnedBefore ? whPerKmBefore : null,
       whPerKmAfter: rangeEstimator.whPerKm,
-      hadLearnedBefore: hadLearnedBefore,
       learnedKm: rangeEstimator.learnedKm,
+      rangeKmAtEnd: rangeEstimator.rangeKm(usableWh),
       confidence: rangeEstimator.confidence,
-      rangeKmNow: rangeEstimator.rangeKm(usableWh),
-      averageWhPerKm: summary.whPerKm,
     );
+
+    // Rewritten now that the range at the end charge is known: it needs the
+    // relearned estimator above, which did not exist when the row was first
+    // completed. Cheap, and it keeps the stored conclusions identical to the
+    // ones the rider just read.
+    if (id != null) {
+      await repository?.recordTripConclusions(id, conclusions);
+    }
+
+    return TripOutcome(summary: summary, conclusions: conclusions);
   }
 
   int? _currentTripId;

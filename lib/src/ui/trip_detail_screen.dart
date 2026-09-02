@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../data/database.dart';
 import '../data/repository.dart';
+import '../metrics/trip_recorder.dart';
 import 'theme.dart';
 import 'widgets/common.dart';
+import 'widgets/trip_learned_section.dart';
 
 /// One stored ride, in full.
 ///
@@ -71,6 +73,26 @@ class TripDetailScreen extends StatelessWidget {
             _ProfileSection(
               tripId: trip.id,
               repository: repository,
+              t: t,
+            ),
+            // What the app concluded when this ride ended, as it was then. It
+            // used to be shown once in a sheet and then be unreachable, which
+            // made the most interesting part of recording a ride the part you
+            // could not go back and read. Draws nothing for rides from before
+            // the conclusions were kept.
+            TripLearnedSection(
+              conclusions: TripConclusions.restore(
+                whPerKmBefore: trip.whPerKmBefore,
+                whPerKmAfter: trip.whPerKmAfter,
+                learnedKm: trip.learnedKm,
+                rangeKmAtEnd: trip.rangeKmAtEnd,
+                confidence: trip.confidence,
+              ),
+              whPerKm: whPerKm,
+              socUsed: socUsed,
+              distanceKm: trip.distanceKm,
+              maxTemperature: trip.maxTemperature,
+              maxDeltaVolts: trip.maxDeltaVolts,
               t: t,
             ),
             Section(
