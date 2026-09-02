@@ -4722,6 +4722,252 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Acceso total en este teléfono: todo desbloqueado, sin límites ni caducidad.'**
   String get licenseAdminBody;
+
+  /// No description provided for @adviceWhy.
+  ///
+  /// In es, this message translates to:
+  /// **'POR QUÉ'**
+  String get adviceWhy;
+
+  /// No description provided for @adviceWhyHide.
+  ///
+  /// In es, this message translates to:
+  /// **'OCULTAR'**
+  String get adviceWhyHide;
+
+  /// No description provided for @adviceHonestyNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada frase se apoya en un dato medido: tócala para verlo. Los ciclos y la capacidad configurada del BMS se pueden editar desde la app oficial, así que aquí se contrastan siempre con lo que dice la física.'**
+  String get adviceHonestyNote;
+
+  /// No description provided for @verdictHealthMeasuredTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Capacidad frente a la mejor que ha dado'**
+  String get verdictHealthMeasuredTitle;
+
+  /// No description provided for @verdictHealthMeasuredBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu batería está al {pct} % de la capacidad con la que llegó: {now} Ah medidos ahora frente a {best} Ah, lo mejor que ha dado. Medido en descargas completas, no estimado.'**
+  String verdictHealthMeasuredBody(String pct, String now, String best);
+
+  /// No description provided for @verdictHealthNotMeasurableTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'El desgaste todavía no se puede medir'**
+  String get verdictHealthNotMeasurableTitle;
+
+  /// No description provided for @verdictHealthNotMeasurableBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Hay {count} descarga(s) completa(s) medidas. Hacen falta dos para hablar de pérdida: una da una capacidad, no una caída. La app toma la siguiente sola cuando ocurra.'**
+  String verdictHealthNotMeasurableBody(String count);
+
+  /// No description provided for @verdictCellDriftingTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'La celda {cell} se está separando del resto'**
+  String verdictCellDriftingTitle(String cell);
+
+  /// No description provided for @verdictCellDriftingBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Lleva {weeks} semanas alejándose: va {dev} V por debajo de la media del pack y baja unos {rate} V al mes. Coherente con una celda en camino de irse. Revísala antes de que el pack se apague en la calle.'**
+  String verdictCellDriftingBody(String weeks, String dev, String rate);
+
+  /// No description provided for @verdictNoCellDriftingTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Ninguna celda se está yendo'**
+  String get verdictNoCellDriftingTitle;
+
+  /// No description provided for @verdictNoCellDriftingBody.
+  ///
+  /// In es, this message translates to:
+  /// **'En {weeks} semanas de lecturas en reposo ninguna celda se separa del resto. La peor va {dev} V bajo la media y no empeora. Nada que hacer.'**
+  String verdictNoCellDriftingBody(String weeks, String dev);
+
+  /// No description provided for @verdictRangeNowTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Te quedan ~{km} km con cómo tú manejas'**
+  String verdictRangeNowTitle(String km);
+
+  /// No description provided for @verdictRangeNowBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Sale de {wh} Wh/km aprendidos en {learned} km tuyos, aplicados a la energía que el pack puede entregar ahora. Es una estimación: cambia con el terreno, la carga y el acelerador.'**
+  String verdictRangeNowBody(String wh, String learned);
+
+  /// No description provided for @verdictDeltaNormalTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Delta bajo carga normal'**
+  String get verdictDeltaNormalTitle;
+
+  /// No description provided for @verdictDeltaNormalBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Con corriente el delta llega a {loaded} V, contra {rest} V en reposo. No hay nada resistivo que perseguir. Nada que hacer.'**
+  String verdictDeltaNormalBody(String loaded, String rest);
+
+  /// No description provided for @evidenceRestingDelta.
+  ///
+  /// In es, this message translates to:
+  /// **'Delta en reposo (máximo en la sesión)'**
+  String get evidenceRestingDelta;
+
+  /// No description provided for @evidenceLoadedDelta.
+  ///
+  /// In es, this message translates to:
+  /// **'Delta bajo carga (máximo en la sesión)'**
+  String get evidenceLoadedDelta;
+
+  /// No description provided for @evidenceWeakCellShare.
+  ///
+  /// In es, this message translates to:
+  /// **'Lecturas en que la celda {cell} fue la más baja'**
+  String evidenceWeakCellShare(String cell);
+
+  /// No description provided for @evidenceReadingsInSession.
+  ///
+  /// In es, this message translates to:
+  /// **'Lecturas en esta sesión'**
+  String get evidenceReadingsInSession;
+
+  /// No description provided for @evidenceReportedCycles.
+  ///
+  /// In es, this message translates to:
+  /// **'Ciclos según el BMS (dato editable)'**
+  String get evidenceReportedCycles;
+
+  /// No description provided for @evidenceEquivalentCycles.
+  ///
+  /// In es, this message translates to:
+  /// **'Ciclos equivalentes por los amperios que pasaron'**
+  String get evidenceEquivalentCycles;
+
+  /// No description provided for @evidenceReportedSoh.
+  ///
+  /// In es, this message translates to:
+  /// **'SOH según el BMS'**
+  String get evidenceReportedSoh;
+
+  /// No description provided for @evidenceImpliedCapacity.
+  ///
+  /// In es, this message translates to:
+  /// **'Capacidad configurada en el BMS (editable)'**
+  String get evidenceImpliedCapacity;
+
+  /// No description provided for @evidenceCatalogueCapacity.
+  ///
+  /// In es, this message translates to:
+  /// **'Capacidad anunciada'**
+  String get evidenceCatalogueCapacity;
+
+  /// No description provided for @evidenceCapacityTests.
+  ///
+  /// In es, this message translates to:
+  /// **'Descargas completas medidas'**
+  String get evidenceCapacityTests;
+
+  /// No description provided for @evidenceHottestProbe.
+  ///
+  /// In es, this message translates to:
+  /// **'Sonda más caliente'**
+  String get evidenceHottestProbe;
+
+  /// No description provided for @evidenceBalanceStart.
+  ///
+  /// In es, this message translates to:
+  /// **'Voltaje de arranque del balanceador'**
+  String get evidenceBalanceStart;
+
+  /// No description provided for @evidenceCellOvp.
+  ///
+  /// In es, this message translates to:
+  /// **'Límite de sobretensión por celda'**
+  String get evidenceCellOvp;
+
+  /// No description provided for @evidenceLearnedKm.
+  ///
+  /// In es, this message translates to:
+  /// **'Kilómetros aprendidos'**
+  String get evidenceLearnedKm;
+
+  /// No description provided for @evidenceWhPerKm.
+  ///
+  /// In es, this message translates to:
+  /// **'Consumo aprendido'**
+  String get evidenceWhPerKm;
+
+  /// No description provided for @evidenceUsableWh.
+  ///
+  /// In es, this message translates to:
+  /// **'Energía aprovechable ahora'**
+  String get evidenceUsableWh;
+
+  /// No description provided for @evidenceStrandedFraction.
+  ///
+  /// In es, this message translates to:
+  /// **'Energía atrapada sobre el corte'**
+  String get evidenceStrandedFraction;
+
+  /// No description provided for @evidenceRangeBand.
+  ///
+  /// In es, this message translates to:
+  /// **'Banda de la estimación'**
+  String get evidenceRangeBand;
+
+  /// No description provided for @evidenceBaselineCapacity.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo mejor que ha dado ({date})'**
+  String evidenceBaselineCapacity(String date);
+
+  /// No description provided for @evidenceCurrentCapacity.
+  ///
+  /// In es, this message translates to:
+  /// **'Última medición ({date})'**
+  String evidenceCurrentCapacity(String date);
+
+  /// No description provided for @evidenceDriftDeviation.
+  ///
+  /// In es, this message translates to:
+  /// **'Celda {cell} bajo la media del pack'**
+  String evidenceDriftDeviation(String cell);
+
+  /// No description provided for @evidenceDriftRate.
+  ///
+  /// In es, this message translates to:
+  /// **'Ritmo de separación'**
+  String get evidenceDriftRate;
+
+  /// No description provided for @evidencePerMonth.
+  ///
+  /// In es, this message translates to:
+  /// **'mes'**
+  String get evidencePerMonth;
+
+  /// No description provided for @evidenceDriftSamples.
+  ///
+  /// In es, this message translates to:
+  /// **'Lecturas en reposo analizadas'**
+  String get evidenceDriftSamples;
+
+  /// No description provided for @evidenceDriftSpanWeeks.
+  ///
+  /// In es, this message translates to:
+  /// **'Semanas observadas'**
+  String get evidenceDriftSpanWeeks;
+
+  /// No description provided for @verdictTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Veredicto'**
+  String get verdictTitle;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

@@ -4,6 +4,7 @@ import '../../../l10n/app_localizations.dart';
 import 'dart:async';
 
 import '../../bms_service.dart';
+import '../../metrics/cell_drift.dart';
 import '../../metrics/degradation.dart';
 import '../../metrics/pack_health_report.dart';
 import '../../metrics/range_estimator.dart';
@@ -40,6 +41,10 @@ class _HealthTabState extends State<HealthTab> {
   /// stream. Loaded once and refreshed after a capacity measurement lands.
   Degradation? _degradation;
 
+  /// One entry per cell, worst first, or empty when the history is too
+  /// short to say anything either way. Read once with the degradation.
+  List<CellDrift> _drift = const [];
+
   @override
   void initState() {
     super.initState();
@@ -64,12 +69,19 @@ class _HealthTabState extends State<HealthTab> {
     final device = widget.service.activeDeviceId;
     if (repo == null || device == null) return;
 
+    final readings = await repo.allSnapshots(device, days: 365);
     final result = Degradation.from(
       tests: await repo.capacityTests(device),
-      readings: await repo.allSnapshots(device, days: 365),
+      readings: readings,
       advertisedAh: widget.service.catalogueCapacityAh,
     );
-    if (mounted) setState(() => _degradation = result);
+    final drift = const CellDriftAnalysis().analyse(readings);
+    if (mounted) {
+      setState(() {
+        _degradation = result;
+        _drift = drift;
+      });
+    }
   }
 
   @override
@@ -326,6 +338,9 @@ class _HealthTabState extends State<HealthTab> {
               degradationMeasurable: lost != null,
               usableWh: usableWh,
               grossWh: s.remainingCapacityAh * s.packVoltage,
+              degradation: degradation,
+              drift: _drift,
+              outlook: service.rangeOutlook,
             ),
           ),
         ),

@@ -2653,4 +2653,155 @@ class AppL10nEn extends AppL10n {
   @override
   String get licenseAdminBody =>
       'Full access on this phone: everything unlocked, no limits, no expiry.';
+
+  @override
+  String get adviceWhy => 'WHY';
+
+  @override
+  String get adviceWhyHide => 'HIDE';
+
+  @override
+  String get adviceHonestyNote =>
+      'Every sentence rests on a measured figure: tap it to see which. The BMS\'s cycle count and configured capacity can be edited from the official app, so they are always checked here against what the physics says.';
+
+  @override
+  String get verdictHealthMeasuredTitle =>
+      'Capacity against the best it has held';
+
+  @override
+  String verdictHealthMeasuredBody(String pct, String now, String best) {
+    return 'Your battery is at $pct % of the capacity it arrived with: $now Ah measured now against $best Ah, the best it has given. Measured over full discharges, not estimated.';
+  }
+
+  @override
+  String get verdictHealthNotMeasurableTitle => 'Wear cannot be measured yet';
+
+  @override
+  String verdictHealthNotMeasurableBody(String count) {
+    return '$count full discharge(s) measured so far. Two are needed to speak of loss: one gives a capacity, not a decline. The app takes the next one by itself when it happens.';
+  }
+
+  @override
+  String verdictCellDriftingTitle(String cell) {
+    return 'Cell $cell is pulling away from the rest';
+  }
+
+  @override
+  String verdictCellDriftingBody(String weeks, String dev, String rate) {
+    return 'For $weeks weeks it has been drifting: $dev V under the pack average and falling about $rate V a month. Consistent with a cell on its way out. Look at it before the pack shuts down in the street.';
+  }
+
+  @override
+  String get verdictNoCellDriftingTitle => 'No cell is going';
+
+  @override
+  String verdictNoCellDriftingBody(String weeks, String dev) {
+    return 'Over $weeks weeks of resting readings no cell is pulling away from the rest. The worst sits $dev V under the average and is not getting worse. Nothing to do.';
+  }
+
+  @override
+  String verdictRangeNowTitle(String km) {
+    return 'About $km km left, the way you ride';
+  }
+
+  @override
+  String verdictRangeNowBody(String wh, String learned) {
+    return 'From $wh Wh/km learned over $learned km of your own riding, applied to what the pack can deliver right now. An estimate: it moves with terrain, load and throttle.';
+  }
+
+  @override
+  String get verdictDeltaNormalTitle => 'Delta under load is normal';
+
+  @override
+  String verdictDeltaNormalBody(String loaded, String rest) {
+    return 'Under current the delta reaches $loaded V, against $rest V at rest. Nothing resistive to chase. Nothing to do.';
+  }
+
+  @override
+  String get evidenceRestingDelta => 'Delta at rest (session maximum)';
+
+  @override
+  String get evidenceLoadedDelta => 'Delta under load (session maximum)';
+
+  @override
+  String evidenceWeakCellShare(String cell) {
+    return 'Readings in which cell $cell was lowest';
+  }
+
+  @override
+  String get evidenceReadingsInSession => 'Readings this session';
+
+  @override
+  String get evidenceReportedCycles => 'Cycles per the BMS (editable figure)';
+
+  @override
+  String get evidenceEquivalentCycles =>
+      'Equivalent cycles from amp-hours that flowed';
+
+  @override
+  String get evidenceReportedSoh => 'SOH per the BMS';
+
+  @override
+  String get evidenceImpliedCapacity =>
+      'Capacity configured in the BMS (editable)';
+
+  @override
+  String get evidenceCatalogueCapacity => 'Advertised capacity';
+
+  @override
+  String get evidenceCapacityTests => 'Full discharges measured';
+
+  @override
+  String get evidenceHottestProbe => 'Hottest probe';
+
+  @override
+  String get evidenceBalanceStart => 'Balancer start voltage';
+
+  @override
+  String get evidenceCellOvp => 'Per-cell overvoltage limit';
+
+  @override
+  String get evidenceLearnedKm => 'Kilometres learned';
+
+  @override
+  String get evidenceWhPerKm => 'Learned consumption';
+
+  @override
+  String get evidenceUsableWh => 'Usable energy now';
+
+  @override
+  String get evidenceStrandedFraction => 'Energy stranded above cutoff';
+
+  @override
+  String get evidenceRangeBand => 'Estimate band';
+
+  @override
+  String evidenceBaselineCapacity(String date) {
+    return 'Best it has held ($date)';
+  }
+
+  @override
+  String evidenceCurrentCapacity(String date) {
+    return 'Latest measurement ($date)';
+  }
+
+  @override
+  String evidenceDriftDeviation(String cell) {
+    return 'Cell $cell under the pack average';
+  }
+
+  @override
+  String get evidenceDriftRate => 'Rate of separation';
+
+  @override
+  String get evidencePerMonth => 'month';
+
+  @override
+  String get evidenceDriftSamples => 'Resting readings analysed';
+
+  @override
+  String get evidenceDriftSpanWeeks => 'Weeks observed';
+
+  @override
+  String get verdictTitle => 'Verdict';
 }
