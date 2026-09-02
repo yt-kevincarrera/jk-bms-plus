@@ -1379,5 +1379,6 @@
   "rangeFullUnknown": "Hace falta una capacidad medida para poder decir esto.",
   "rangeFullFromAdvert": "Sale de la capacidad que pusiste tú, no de una medida.",
   "rangeFullFromMeasured": "Sale de una capacidad que esta batería midió de verdad.",
-  "rangeNoneLearned": "Todavía no ha aprendido nada, así que no hay distancia que valga la pena decir, a ninguna carga."
+  "rangeNoneLearned": "Todavía no ha aprendido nada, así que no hay distancia que valga la pena decir, a ninguna carga.",
+  "offlineRangeAtLastSeen": "Con la carga que tenía al final"
 }

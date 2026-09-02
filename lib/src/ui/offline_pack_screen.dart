@@ -5,6 +5,7 @@ import '../bms_service.dart';
 import '../data/database.dart';
 import '../metrics/cell_drift.dart';
 import '../metrics/range_estimator.dart';
+import '../metrics/range_outlook.dart';
 import 'theme.dart';
 import 'trends_screen.dart';
 import 'widgets/common.dart';
@@ -39,7 +40,7 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
   Snapshot? _last;
   List<Trip> _trips = const [];
   List<CapacityTest> _tests = const [];
-  double? _rangeKm;
+  RangeOutlook _outlook = RangeOutlook.unknown;
   DateTime? _firstAt;
   int _readingCount = 0;
   CellDrift? _drift;
@@ -83,13 +84,51 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
       );
     }
 
-    // Quoted from a full pack, using this pack's stated capacity when there is
-    // one. With none, there is no usable-energy figure to divide, so the range
-    // stays unknown rather than being invented from a nominal voltage.
-    final catalogue = widget.device.catalogueCapacityAh;
-    final usableWh = catalogue == null || newest == null
-        ? null
-        : catalogue * newest.packVoltage;
+    // Both figures, built exactly as the live screen builds them. This screen
+    // used to quote one range with a label that did not say which question it
+    // answered, and it happened to be the full-pack one computed a third
+    // different way. One definition now, in one place.
+    final measured = _bestMeasured(tests);
+    final capacity = measured ?? widget.device.catalogueCapacityAh;
+
+    final cells = newest == null
+        ? const <double>[]
+        : decodeCellVoltages(newest.cellVoltagesJson);
+    final averageCell = cells.isEmpty
+        ? 0.0
+        : cells.reduce((a, b) => a + b) / cells.length;
+    // The pack's own cutoff is not stored with a reading, so the app's default
+    // stands in. It is the same figure the live screen falls back to before the
+    // settings frame arrives.
+    const cutoffPerCell = 3.0;
+
+    final usableFraction = newest == null || cells.isEmpty
+        ? 1.0
+        : RangeEstimator.usableFractionOf(
+            minCellVoltage: newest.minCellVoltage,
+            averageCellVoltage: averageCell,
+            cutoffVoltagePerCell: cutoffPerCell,
+          );
+
+    final usableNow = newest == null || cells.isEmpty
+        ? 0.0
+        : RangeEstimator.usableWh(
+            remainingAh: newest.remainingAh,
+            packVoltage: newest.packVoltage,
+            cellCount: cells.length,
+            minCellVoltage: newest.minCellVoltage,
+            averageCellVoltage: averageCell,
+            cutoffVoltagePerCell: cutoffPerCell,
+          );
+
+    final outlook = RangeOutlook.from(
+      estimator: estimator,
+      usableWhNow: usableNow,
+      fullCapacityAh: capacity,
+      fullPackVoltage: cells.isEmpty ? null : cells.length * 3.7,
+      usableFraction: usableFraction,
+      capacityWasMeasured: measured != null,
+    );
 
     if (!mounted) return;
     setState(() {
@@ -103,10 +142,21 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
       _drift = _driftRanking.isNotEmpty && _driftRanking.first.isWorsening
           ? _driftRanking.first
           : null;
-      _rangeKm = estimator.hasLearned && usableWh != null
-          ? estimator.rangeKm(usableWh)
-          : null;
+      _outlook = outlook;
     });
+  }
+
+  /// The best capacity this pack has ever measured, ignoring tests with a hole
+  /// in the middle: those count low, and counting low here would understate
+  /// the pack for good.
+  static double? _bestMeasured(List<CapacityTest> tests) {
+    double? best;
+    for (final test in tests) {
+      if (!test.completed || test.measuredAh <= 0) continue;
+      if (test.gapSeconds > 120) continue;
+      if (best == null || test.measuredAh > best) best = test.measuredAh;
+    }
+    return best;
   }
 
   @override
@@ -333,14 +383,41 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
             t.offlineTotalKm,
             '${totalKm.toStringAsFixed(1)} km',
           ),
+          // Full pack first: with nothing connected, "how far can it go" is
+          // the question somebody is actually asking, and the charge the pack
+          // happened to be at when it was last seen is not it.
           InfoRow(
-            t.offlineRange,
-            _rangeKm == null
+            t.rangeFull,
+            _outlook.fullKm == null
                 ? t.offlineRangeUnknown
-                : '${_rangeKm!.toStringAsFixed(0)} km',
-            dim: _rangeKm == null,
+                : '${_outlook.fullKm!.toStringAsFixed(0)} km',
+            dim: _outlook.fullKm == null,
+            valueColor: _outlook.fullFromMeasuredCapacity
+                ? AppTheme.good
+                : null,
+          ),
+          InfoRow(
+            t.offlineRangeAtLastSeen,
+            _outlook.nowKm == null
+                ? t.offlineRangeUnknown
+                : '${_outlook.nowKm!.toStringAsFixed(0)} km',
+            dim: _outlook.nowKm == null,
             last: completed.isEmpty,
           ),
+          if (_outlook.fullKm != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                _outlook.fullFromMeasuredCapacity
+                    ? t.rangeFullFromMeasured
+                    : t.rangeFullFromAdvert,
+                style: const TextStyle(
+                  fontSize: 11,
+                  height: 1.35,
+                  color: AppTheme.textFaint,
+                ),
+              ),
+            ),
           if (completed.isNotEmpty) ...[
             const SizedBox(height: 8),
             Caption(t.capacityHistory, color: AppTheme.textFaint),

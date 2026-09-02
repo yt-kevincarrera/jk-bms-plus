@@ -170,4 +170,54 @@ void main() {
       expect(o.fullBandKm!.$2, greaterThan(o.fullKm!));
     });
   });
+
+  group('a weak cell shortens both figures, not just one', () {
+    // Shipped wrong for one release: the remaining range was derated by the
+    // imbalance and the full-pack one was not, so a fully charged pack with a
+    // weak cell showed a *larger* full-pack range than remaining range. The
+    // weakest cell reaches cutoff first whatever the charge was when it
+    // started.
+    test('the full-pack figure is derated too', () {
+      final balanced = RangeOutlook.from(
+        estimator: learned(whPerKm: 20),
+        usableWhNow: 2960,
+        fullCapacityAh: 40,
+        fullPackVoltage: 74,
+      );
+      final imbalanced = RangeOutlook.from(
+        estimator: learned(whPerKm: 20),
+        usableWhNow: 2960 * 0.8,
+        fullCapacityAh: 40,
+        fullPackVoltage: 74,
+        usableFraction: 0.8,
+      );
+
+      expect(imbalanced.fullKm, lessThan(balanced.fullKm!));
+      expect(imbalanced.fullKm, closeTo(balanced.fullKm! * 0.8, 0.5));
+    });
+
+    test('a full pack does not go further than it has left', () {
+      // The contradiction stated as an assertion: at full charge the two
+      // figures describe the same battery and must agree.
+      final o = RangeOutlook.from(
+        estimator: learned(whPerKm: 20),
+        usableWhNow: 40 * 74 * 0.8,
+        fullCapacityAh: 40,
+        fullPackVoltage: 74,
+        usableFraction: 0.8,
+      );
+      expect(o.fullKm, closeTo(o.nowKm!, 0.5));
+    });
+
+    test('a fraction of zero leaves no full-pack figure to quote', () {
+      final o = RangeOutlook.from(
+        estimator: learned(),
+        usableWhNow: 0,
+        fullCapacityAh: 40,
+        fullPackVoltage: 74,
+        usableFraction: 0,
+      );
+      expect(o.fullKm, isNull);
+    });
+  });
 }

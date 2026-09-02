@@ -4290,6 +4290,12 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Todavía no ha aprendido nada, así que no hay distancia que valga la pena decir, a ninguna carga.'**
   String get rangeNoneLearned;
+
+  /// No description provided for @offlineRangeAtLastSeen.
+  ///
+  /// In es, this message translates to:
+  /// **'Con la carga que tenía al final'**
+  String get offlineRangeAtLastSeen;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {
