@@ -981,10 +981,10 @@
   "connectRetry": "Search again",
   "storedManageHint": "Long-press a battery to rename or delete it.",
   "offlineHealthTitle": "Stored health",
-  "offlineMeasuredHealth": "Measured health",
-  "offlineImplied": "Total capacity",
-  "offlineImpliedHint": "Remaining amp-hours divided by the charge the BMS reports. It is the capacity its own counter implies, not an independent measurement.",
-  "offlineImpliedUnusable": "The last reading was at a very high or very low charge, where that division is only noise.",
+  "offlineMeasuredHealth": "Wear measured",
+  "offlineImplied": "Capacity the BMS is set to",
+  "offlineImpliedHint": "A setting inside the BMS, not a measurement of the cells. It is what every percentage the pack reports is scaled against, so it is worth seeing, and it stays the same however tired the battery gets.",
+  "offlineImpliedUnusable": "Only readable between about 25 % and 90 % charge.",
   "offlineSoh": "Health the BMS claims",
   "offlineCycles": "Cycles the BMS counts",
   "offlineWeakest": "Weakest cell",
@@ -1292,5 +1292,8 @@
   "rangeFullFromAdvert": "From the capacity you entered, not a measured one.",
   "rangeFullFromMeasured": "From a capacity this pack actually measured.",
   "rangeNoneLearned": "Nothing learned yet, so no distance is worth quoting at any charge.",
-  "offlineRangeAtLastSeen": "At the charge last seen"
+  "offlineRangeAtLastSeen": "At the charge last seen",
+  "offlineHealthNeedsTests": "Needs two full discharges before wear can be measured at all. One gives a capacity; it takes two to show a decline.",
+  "offlineHealthOneTest": "One measurement so far: {ah} Ah. A second one, months from now, is what turns it into wear.",
+  "healthCardShortOfAdvert": "Vs. advertised"
 }

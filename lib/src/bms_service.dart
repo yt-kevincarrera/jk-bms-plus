@@ -30,6 +30,7 @@ import 'metrics/range_outlook.dart';
 import 'metrics/sampling.dart';
 import 'metrics/ride_alerts.dart';
 import 'metrics/trip_autostart.dart';
+import 'metrics/trip_energy_repair.dart';
 import 'metrics/trip_recorder.dart';
 import 'metrics/snapshot_history.dart';
 import 'protocol/protocol_variant.dart';
@@ -273,6 +274,9 @@ class BmsService {
     // of it can happen at startup any more, because until a pack is connected
     // there is no history to speak of -- only several histories, and no way to
     // know which one applies.
+    // Before the relearn, so the estimator is rebuilt from mended figures
+    // rather than from the ones that made it refuse everything.
+    lastTripRepair = await repo.repairTripEnergy(id);
     await relearnRangeFromTrips();
     await resumeCapacityTest();
     await scanForCapacityCycles();
@@ -769,6 +773,9 @@ class BmsService {
     }
     bestMeasuredCapacityAh = best;
   }
+
+  /// What the last repair pass over old rides found, for the screen to say.
+  TripRepairReport lastTripRepair = TripRepairReport.none;
 
   /// Rebuilds the range estimate from every stored trip.
   ///

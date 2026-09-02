@@ -145,6 +145,21 @@ class _JkBmsAppState extends State<JkBmsApp> {
             // The notification for merely being connected. Its whole job is to
             // let the screen sleep without the readings stopping, so it shows
             // the reading rather than saying the app is running.
+            // Set here rather than only when a ride is started by hand. An
+            // auto-started trip got the English default and an empty body, and
+            // with the screen off that notification is the only thing the
+            // rider can see of a ride in progress.
+            _service.notificationTitle = t.tripNotificationTitle;
+            _service.notificationText = (trip, snapshot) {
+              final consumption = trip.whPerKm;
+              return [
+                '${trip.speedKmh.toStringAsFixed(0)} km/h',
+                '${trip.distanceKm.toStringAsFixed(2)} km',
+                if (snapshot != null) '${snapshot.soc.toStringAsFixed(0)} %',
+                if (consumption != null)
+                  '${consumption.toStringAsFixed(0)} Wh/km',
+              ].join('  ·  ');
+            };
             _service.downloadTitle = t.downloadNotifTitle;
             _service.downloadText = (pct) => t.downloadNotifText('$pct');
             // The update service does not know about foreground services and

@@ -1821,18 +1821,18 @@ class AppL10nEn extends AppL10n {
   String get offlineHealthTitle => 'Stored health';
 
   @override
-  String get offlineMeasuredHealth => 'Measured health';
+  String get offlineMeasuredHealth => 'Wear measured';
 
   @override
-  String get offlineImplied => 'Total capacity';
+  String get offlineImplied => 'Capacity the BMS is set to';
 
   @override
   String get offlineImpliedHint =>
-      'Remaining amp-hours divided by the charge the BMS reports. It is the capacity its own counter implies, not an independent measurement.';
+      'A setting inside the BMS, not a measurement of the cells. It is what every percentage the pack reports is scaled against, so it is worth seeing, and it stays the same however tired the battery gets.';
 
   @override
   String get offlineImpliedUnusable =>
-      'The last reading was at a very high or very low charge, where that division is only noise.';
+      'Only readable between about 25 % and 90 % charge.';
 
   @override
   String get offlineSoh => 'Health the BMS claims';
@@ -2395,4 +2395,16 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get offlineRangeAtLastSeen => 'At the charge last seen';
+
+  @override
+  String get offlineHealthNeedsTests =>
+      'Needs two full discharges before wear can be measured at all. One gives a capacity; it takes two to show a decline.';
+
+  @override
+  String offlineHealthOneTest(String ah) {
+    return 'One measurement so far: $ah Ah. A second one, months from now, is what turns it into wear.';
+  }
+
+  @override
+  String get healthCardShortOfAdvert => 'Vs. advertised';
 }

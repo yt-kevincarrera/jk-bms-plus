@@ -1829,18 +1829,18 @@ class AppL10nEs extends AppL10n {
   String get offlineHealthTitle => 'Salud guardada';
 
   @override
-  String get offlineMeasuredHealth => 'Salud medida';
+  String get offlineMeasuredHealth => 'Desgaste medido';
 
   @override
-  String get offlineImplied => 'Capacidad total';
+  String get offlineImplied => 'Capacidad configurada en el BMS';
 
   @override
   String get offlineImpliedHint =>
-      'Ah restantes divididos entre la carga que reporta el BMS. Es la capacidad que implica su propio contador, no una medición independiente.';
+      'Es un ajuste dentro del BMS, no una medición de las celdas. Es contra lo que se escala cada porcentaje que reporta la batería, así que vale la pena verlo, y se queda igual por muy cansada que esté la batería.';
 
   @override
   String get offlineImpliedUnusable =>
-      'La última lectura fue con la carga muy alta o muy baja, y ahí esa división es solo ruido.';
+      'Solo se puede leer entre un 25 % y un 90 % de carga.';
 
   @override
   String get offlineSoh => 'Salud que reporta el BMS';
@@ -2406,4 +2406,16 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get offlineRangeAtLastSeen => 'Con la carga que tenía al final';
+
+  @override
+  String get offlineHealthNeedsTests =>
+      'Hacen falta dos descargas completas para poder medir desgaste. Una da una capacidad; hacen falta dos para ver una caída.';
+
+  @override
+  String offlineHealthOneTest(String ah) {
+    return 'Una medición hasta ahora: $ah Ah. La segunda, dentro de unos meses, es la que la convierte en desgaste.';
+  }
+
+  @override
+  String get healthCardShortOfAdvert => 'Frente al anuncio';
 }

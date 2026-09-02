@@ -226,14 +226,14 @@ class _HealthTabState extends State<HealthTab> {
             childAspectRatio: 1.85,
             children: [
               StatCard(
-                label: t.healthCardLoss,
-                value: report.capacityLossFraction == null
+                label: t.healthCardShortOfAdvert,
+                value: report.shortOfAdvertisedFraction == null
                     ? '--'
-                    : (report.capacityLossFraction! * 100).toStringAsFixed(1),
+                    : (report.shortOfAdvertisedFraction! * 100).toStringAsFixed(1),
                 unit: '%',
-                color: report.capacityLossFraction == null
+                color: report.shortOfAdvertisedFraction == null
                     ? AppTheme.textFaint
-                    : _lossTone(report.capacityLossFraction! * 100),
+                    : _lossTone(report.shortOfAdvertisedFraction! * 100),
                 emphasis: true,
               ),
               StatCard(

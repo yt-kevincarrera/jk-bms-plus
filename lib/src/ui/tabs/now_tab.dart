@@ -525,8 +525,11 @@ class _FullPackRange extends StatelessWidget {
 
 /// Time until the pack is full, from what is going in right now.
   Widget _chargeEta(AppL10n t, BmsSnapshot s, BmsService service) {
-    // Uses the pack's own capacity rather than what it was advertised as: the
-    // charger is filling the battery that exists.
+    // Remaining over charge, which reads back the capacity the BMS is
+    // configured with. That cancellation makes it useless as a measurement of
+    // the cells and exactly right here: the question is how many amp-hours are
+    // left to put in, and the charger is filling the battery the BMS thinks it
+    // has. Not to be "corrected" to a measured capacity later.
     final capacity = s.remainingCapacityAh > 0 && s.soc > 1
         ? s.remainingCapacityAh / (s.soc / 100)
         : null;

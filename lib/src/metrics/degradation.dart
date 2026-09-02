@@ -6,9 +6,20 @@ enum CapacitySource {
   /// this app makes.
   measured,
 
-  /// Remaining amp-hours divided by the charge the BMS reports. Arithmetic on
-  /// what the BMS says about itself, useful and not the same thing.
-  implied,
+  /// What the BMS is configured to hold.
+  ///
+  /// Not a measurement of anything and it never was. This used to be derived
+  /// as remaining amp-hours over the charge the BMS reports, described as
+  /// "arithmetic on what the BMS says about itself", which was too generous:
+  /// the BMS computes remaining amp-hours *as* charge times configured
+  /// capacity, so dividing one by the other returns the configured capacity
+  /// and nothing else. Checked against a real pack at every charge level from
+  /// 53% to 70%: 40.0 Ah every time, varying only by the rounding of a
+  /// whole-number percentage.
+  ///
+  /// Which means health built on it read 40 over 40, or 100%, and would have
+  /// read 100% on a ruined pack just as cheerfully.
+  configured,
 }
 
 /// One capacity figure with its provenance and date.
@@ -47,6 +58,7 @@ class Degradation {
     required this.current,
     this.baseline,
     this.advertisedAh,
+    this.configuredAh,
     this.observations = 0,
   });
 
@@ -61,6 +73,9 @@ class Degradation {
 
   /// What the seller said, when the rider has said so.
   final double? advertisedAh;
+
+  /// What the BMS is configured to hold. A setting, not a measurement.
+  final double? configuredAh;
 
   /// How many capacity figures the picture is built from.
   ///
@@ -105,12 +120,11 @@ class Degradation {
     return short <= 0 ? 0 : short;
   }
 
-  /// Builds the picture from what is stored.
+  /// Builds the picture from completed capacity tests, and nothing else.
   ///
-  /// Real measurements outrank implied ones entirely: one capacity test is
-  /// worth more than a year of dividing remaining by percent, and mixing the
-  /// two would let a noisy implied high-water mark stand in as a baseline the
-  /// pack never actually reached.
+  /// [readings] is still taken so callers need not change, and is used only to
+  /// report what the BMS is configured for. It is deliberately not a source of
+  /// capacity figures any more: see [CapacitySource.configured].
   static Degradation from({
     required List<CapacityTest> tests,
     required List<Snapshot> readings,
@@ -136,48 +150,31 @@ class Degradation {
       );
     }
 
-    // Fewer than two measurements: fall back to what the BMS implies, which
-    // is available immediately and is at least about this pack rather than
-    // about an advert.
-    final implied = _impliedPoints(readings);
-    if (implied.isEmpty) {
-      return Degradation(
-        current: measured.isEmpty ? null : measured.single,
-        baseline: measured.isEmpty ? null : measured.single,
-        advertisedAh: advertisedAh,
-        observations: measured.length,
-      );
-    }
-
-    final best = implied.reduce((a, b) => a.ah >= b.ah ? a : b);
+    // Fewer than two measurements, and there is no substitute. There used to
+    // be one and it was a tautology, so the honest answer is a single point or
+    // nothing at all.
     return Degradation(
-      // A single real measurement is still the better answer for "what does it
-      // hold now" than any amount of arithmetic.
-      current: measured.isNotEmpty ? measured.single : implied.last,
-      baseline: best,
+      current: measured.isEmpty ? null : measured.single,
+      baseline: measured.isEmpty ? null : measured.single,
       advertisedAh: advertisedAh,
-      observations: measured.isNotEmpty ? 1 + implied.length : implied.length,
+      configuredAh: _configuredCapacity(readings),
+      observations: measured.length,
     );
   }
 
-  /// Capacity implied by the coulomb counter, from readings where that
-  /// division means anything.
-  static List<CapacityPointOfRecord> _impliedPoints(List<Snapshot> readings) {
-    final out = <CapacityPointOfRecord>[];
-    for (final r in readings) {
+  /// What the BMS is set to hold, read back off its own coulomb counter.
+  ///
+  /// Reported so the screen can show it plainly, labelled as a setting. It is
+  /// worth showing: it is the number every percentage the BMS reports is
+  /// scaled against, and if it disagrees with what the pack was sold as, that
+  /// disagreement is worth seeing. It is not worth calling health.
+  static double? _configuredCapacity(List<Snapshot> readings) {
+    for (final r in readings.reversed) {
       final fraction = r.soc / 100.0;
-      // Near the extremes this divides by a rounded percentage and becomes
-      // noise, and noise at the top would set a baseline no pack ever reached.
       if (fraction < 0.25 || fraction > 0.9) continue;
       if (r.remainingAh <= 0) continue;
-      out.add(
-        CapacityPointOfRecord(
-          ah: r.remainingAh / fraction,
-          at: r.timestamp,
-          source: CapacitySource.implied,
-        ),
-      );
+      return r.remainingAh / fraction;
     }
-    return out;
+    return null;
   }
 }

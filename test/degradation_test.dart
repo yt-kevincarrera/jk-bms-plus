@@ -145,35 +145,62 @@ void main() {
   });
 
   group('before any capacity has been measured', () {
-    test('falls back to what the BMS implies, and says so', () {
+    test('the readings cannot stand in for a measurement', () {
+      // These two tests used to assert the opposite, and they were wrong. The
+      // BMS computes remaining amp-hours *as* charge times configured
+      // capacity, so remaining over charge returns the configured capacity and
+      // nothing else. Checked against a real pack at every charge level from
+      // 53% to 70%: 40.0 Ah every time, varying only with the rounding of a
+      // whole-number percentage.
+      //
+      // So a health figure built on it was 40 divided by 40, and would have
+      // read 100% on a ruined battery just as cheerfully.
       final d = Degradation.from(
         tests: const [],
         readings: [
-          reading(y1, remainingAh: 24, soc: 60), // implies 40
-          reading(y2, remainingAh: 21.6, soc: 60), // implies 36
+          reading(y1, remainingAh: 24, soc: 60),
+          reading(y2, remainingAh: 21.6, soc: 60),
         ],
       );
 
-      expect(d.baselineIsMeasured, isFalse);
-      expect(d.baseline!.ah, closeTo(40, 0.001));
-      expect(d.current!.ah, closeTo(36, 0.001));
-      expect(d.lostFraction, closeTo(0.10, 0.001));
+      expect(d.current, isNull, reason: 'nothing here is a measurement');
+      expect(d.baseline, isNull);
+      expect(d.lostFraction, isNull);
     });
 
-    test('ignores readings near the ends of the range', () {
-      // Dividing by a rounded percentage there is noise, and a noisy high
-      // reading would set a baseline the pack never reached.
+    test('but they do report what the BMS is set to, plainly', () {
+      // Worth showing, because every percentage the pack reports is scaled
+      // against it and a disagreement with the advert is a finding. Just not
+      // under the word health.
       final d = Degradation.from(
         tests: const [],
-        readings: [
-          reading(y1, remainingAh: 39, soc: 95), // would imply 41
-          reading(y2, remainingAh: 20, soc: 50), // implies 40
-        ],
+        readings: [reading(y2, remainingAh: 21.6, soc: 60)],
+        advertisedAh: 45,
       );
-      expect(d.baseline!.ah, closeTo(40, 0.001));
+      expect(d.configuredAh, closeTo(36, 0.001));
+      expect(d.lostFraction, isNull);
     });
 
-    test('a single real measurement outranks any amount of arithmetic', () {
+    test('a charge too near the ends is not readable at all', () {
+      // Dividing by a rounded percentage there is noise.
+      final d = Degradation.from(
+        tests: const [],
+        readings: [reading(y1, remainingAh: 39, soc: 98)],
+      );
+      expect(d.configuredAh, isNull);
+    });
+
+    test('one real measurement is a capacity and still not wear', () {
+      final d = Degradation.from(
+        tests: [measurement(y1, 40)],
+        readings: [reading(y2, remainingAh: 24, soc: 60)],
+      );
+      expect(d.current!.ah, 40);
+      expect(d.current!.source, CapacitySource.measured);
+      expect(d.lostFraction, isNull, reason: 'a second one is what shows wear');
+    });
+
+    test('a single real measurement is the only thing that counts', () {
       final d = Degradation.from(
         tests: [measurement(y2, 36)],
         readings: [reading(y1, remainingAh: 24, soc: 60)],
