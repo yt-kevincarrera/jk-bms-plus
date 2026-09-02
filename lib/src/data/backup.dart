@@ -229,6 +229,13 @@ class BackupCodec {
         'descentM': t.descentM,
         'note': t.note,
         'demo': t.demo,
+        // Nullable, and written as null rather than zero. A restored ride from
+        // before conclusions were kept must stay a ride with no conclusions.
+        'whPerKmBefore': t.whPerKmBefore,
+        'whPerKmAfter': t.whPerKmAfter,
+        'learnedKm': t.learnedKm,
+        'rangeKmAtEnd': t.rangeKmAtEnd,
+        'confidence': t.confidence,
       };
 
   static Map<String, Object?> _point(TripPoint p) => {
@@ -317,6 +324,10 @@ class BackupCodec {
   static int _i(Object? raw, [int fallback = 0]) =>
       raw is num ? raw.toInt() : fallback;
 
+  /// A number, or null. Distinct from [_d]: for a nullable column, absent has
+  /// to stay absent rather than becoming a measurement of zero.
+  static double? _dn(Object? raw) => raw is num ? raw.toDouble() : null;
+
   static TripsCompanion _tripCompanion(Map<String, dynamic> t) =>
       TripsCompanion.insert(
         deviceId: Value(t['deviceId'] as String?),
@@ -339,6 +350,11 @@ class BackupCodec {
         descentM: _d(t['descentM']),
         note: Value(t['note'] as String? ?? ''),
         demo: Value(t['demo'] as bool? ?? false),
+        whPerKmBefore: Value(_dn(t['whPerKmBefore'])),
+        whPerKmAfter: Value(_dn(t['whPerKmAfter'])),
+        learnedKm: Value(_dn(t['learnedKm'])),
+        rangeKmAtEnd: Value(_dn(t['rangeKmAtEnd'])),
+        confidence: Value(t['confidence'] as String?),
       );
 
   static TripPointsCompanion _pointCompanion(

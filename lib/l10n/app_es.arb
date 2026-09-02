@@ -1240,5 +1240,31 @@
         "type": "String"
       }
     }
-  }
+  },
+  "linkLostTitle": "Se perdió la conexión",
+  "linkLostBody": "Estás fuera del alcance de la batería, o algo más tiene tomado el canal Bluetooth. Sigue reintentando solo; lo que ves en pantalla es la última lectura.",
+  "linkReconnectingTitle": "Reconectando",
+  "linkConnectingTitle": "Conectando",
+  "linkReadingAge": "Última lectura hace {age}",
+  "@linkReadingAge": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
+  },
+  "linkBack": "Leyendo otra vez",
+  "linkDetails": "Detalles",
+  "troubleBusy": "Algo más ya está conectado a la batería. El JK BMS acepta una sola conexión Bluetooth a la vez, así que cierra la app oficial de JK o cualquier otro registrador.",
+  "troubleOutOfRange": "La batería no respondió. O está fuera de alcance o apagada, o algo más tiene tomada su única conexión Bluetooth: la app oficial de JK, u otro registrador.",
+  "troubleBluetoothOff": "El Bluetooth del teléfono está apagado.",
+  "troublePermission": "La app no tiene permiso para usar Bluetooth. Concede Dispositivos cercanos en los ajustes de Android.",
+  "troubleLocationOff": "La ubicación del teléfono está apagada. Android la necesita encendida para buscar dispositivos Bluetooth.",
+  "troubleGeneric": "Problema de Bluetooth. Sigue reintentando solo.",
+  "troubleSlowFrames": "El teléfono concedió un tamaño de paquete Bluetooth menor del pedido. Las lecturas llegan en más trozos, lo que es más lento pero igual de correcto.",
+  "screenAwakeTitle": "Mantener la pantalla encendida",
+  "screenAwakeHint": "Antes se quedaba encendida todo el tiempo que esta pantalla estuviera abierta, lo cual está bien en un soporte de moto y mal en el sofá.",
+  "screenAwakeNever": "Nunca",
+  "screenAwakeRiding": "Mientras ruedas",
+  "screenAwakeAlways": "Siempre"
 }

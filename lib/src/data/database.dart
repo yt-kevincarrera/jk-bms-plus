@@ -120,6 +120,33 @@ class Trips extends Table {
   /// tracked packs at all -- see [BmsRepository.orphanCounts].
   TextColumn get deviceId => text().nullable()();
 
+  // What the app concluded when this ride ended.
+  //
+  // These are stored rather than recomputed because they cannot be
+  // recomputed. "The estimate moved from 41 to 39 Wh/km" is a statement about
+  // a moment: by the time anybody looks again the estimator has learned from
+  // every later ride, and asking it now returns today's answer to a question
+  // that was asked months ago. The conclusions used to appear once, in a sheet
+  // at the end of the ride, and be gone the moment it was dismissed.
+  //
+  // Null on every ride recorded before this was kept, which the screen says
+  // rather than filling in with a plausible number.
+
+  /// The learned consumption before this ride was folded in.
+  RealColumn get whPerKmBefore => real().nullable()();
+
+  /// And after, which is what the range was quoted from next.
+  RealColumn get whPerKmAfter => real().nullable()();
+
+  /// Kilometres of usable riding the estimate rested on at that point.
+  RealColumn get learnedKm => real().nullable()();
+
+  /// Range at the charge the ride ended on.
+  RealColumn get rangeKmAtEnd => real().nullable()();
+
+  /// How much the estimate was worth then, by name.
+  TextColumn get confidence => text().nullable()();
+
 }
 
 /// The track of a ride, one row per fix, with what the pack was doing at that
@@ -245,7 +272,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -298,6 +325,15 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 8) {
             await m.createTable(maintenanceEvents);
+          }
+          if (from < 9) {
+            // Rides recorded before this keep nulls. There is no honest way to
+            // backfill what the estimate used to say.
+            await m.addColumn(trips, trips.whPerKmBefore);
+            await m.addColumn(trips, trips.whPerKmAfter);
+            await m.addColumn(trips, trips.learnedKm);
+            await m.addColumn(trips, trips.rangeKmAtEnd);
+            await m.addColumn(trips, trips.confidence);
           }
         },
       );

@@ -3984,6 +3984,120 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Todavía no se ha registrado ninguna descarga.'**
   String get adviceDeepestNone;
+
+  /// No description provided for @linkLostTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Se perdió la conexión'**
+  String get linkLostTitle;
+
+  /// No description provided for @linkLostBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Estás fuera del alcance de la batería, o algo más tiene tomado el canal Bluetooth. Sigue reintentando solo; lo que ves en pantalla es la última lectura.'**
+  String get linkLostBody;
+
+  /// No description provided for @linkReconnectingTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Reconectando'**
+  String get linkReconnectingTitle;
+
+  /// No description provided for @linkConnectingTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Conectando'**
+  String get linkConnectingTitle;
+
+  /// No description provided for @linkReadingAge.
+  ///
+  /// In es, this message translates to:
+  /// **'Última lectura hace {age}'**
+  String linkReadingAge(String age);
+
+  /// No description provided for @linkBack.
+  ///
+  /// In es, this message translates to:
+  /// **'Leyendo otra vez'**
+  String get linkBack;
+
+  /// No description provided for @linkDetails.
+  ///
+  /// In es, this message translates to:
+  /// **'Detalles'**
+  String get linkDetails;
+
+  /// No description provided for @troubleBusy.
+  ///
+  /// In es, this message translates to:
+  /// **'Algo más ya está conectado a la batería. El JK BMS acepta una sola conexión Bluetooth a la vez, así que cierra la app oficial de JK o cualquier otro registrador.'**
+  String get troubleBusy;
+
+  /// No description provided for @troubleOutOfRange.
+  ///
+  /// In es, this message translates to:
+  /// **'La batería no respondió. O está fuera de alcance o apagada, o algo más tiene tomada su única conexión Bluetooth: la app oficial de JK, u otro registrador.'**
+  String get troubleOutOfRange;
+
+  /// No description provided for @troubleBluetoothOff.
+  ///
+  /// In es, this message translates to:
+  /// **'El Bluetooth del teléfono está apagado.'**
+  String get troubleBluetoothOff;
+
+  /// No description provided for @troublePermission.
+  ///
+  /// In es, this message translates to:
+  /// **'La app no tiene permiso para usar Bluetooth. Concede Dispositivos cercanos en los ajustes de Android.'**
+  String get troublePermission;
+
+  /// No description provided for @troubleLocationOff.
+  ///
+  /// In es, this message translates to:
+  /// **'La ubicación del teléfono está apagada. Android la necesita encendida para buscar dispositivos Bluetooth.'**
+  String get troubleLocationOff;
+
+  /// No description provided for @troubleGeneric.
+  ///
+  /// In es, this message translates to:
+  /// **'Problema de Bluetooth. Sigue reintentando solo.'**
+  String get troubleGeneric;
+
+  /// No description provided for @troubleSlowFrames.
+  ///
+  /// In es, this message translates to:
+  /// **'El teléfono concedió un tamaño de paquete Bluetooth menor del pedido. Las lecturas llegan en más trozos, lo que es más lento pero igual de correcto.'**
+  String get troubleSlowFrames;
+
+  /// No description provided for @screenAwakeTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Mantener la pantalla encendida'**
+  String get screenAwakeTitle;
+
+  /// No description provided for @screenAwakeHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Antes se quedaba encendida todo el tiempo que esta pantalla estuviera abierta, lo cual está bien en un soporte de moto y mal en el sofá.'**
+  String get screenAwakeHint;
+
+  /// No description provided for @screenAwakeNever.
+  ///
+  /// In es, this message translates to:
+  /// **'Nunca'**
+  String get screenAwakeNever;
+
+  /// No description provided for @screenAwakeRiding.
+  ///
+  /// In es, this message translates to:
+  /// **'Mientras ruedas'**
+  String get screenAwakeRiding;
+
+  /// No description provided for @screenAwakeAlways.
+  ///
+  /// In es, this message translates to:
+  /// **'Siempre'**
+  String get screenAwakeAlways;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

@@ -6,6 +6,24 @@ import 'package:shared_preferences/shared_preferences.dart';
 ///
 /// Kept out of the code because the moment someone else's pack is involved,
 /// a constant compiled into the binary becomes a lie about their battery.
+/// When to stop the phone from going to sleep.
+enum ScreenAwake {
+  /// Never. The phone behaves like a phone.
+  never,
+
+  /// Only while a ride is being recorded, which is when it is in a mount and
+  /// being read at a glance. The default.
+  whileRiding,
+
+  /// For as long as the app is open, for anybody who wants the old behaviour.
+  always;
+
+  static ScreenAwake parse(String? name) => ScreenAwake.values.firstWhere(
+        (v) => v.name == name,
+        orElse: () => ScreenAwake.whileRiding,
+      );
+}
+
 class AppSettings extends ChangeNotifier {
   static const _hapticKey = 'haptic_alerts';
   static const _rawFramesKey = 'record_raw_frames';
@@ -19,6 +37,7 @@ class AppSettings extends ChangeNotifier {
   static const _chargeWatchKey = 'charge_watch_enabled';
   static const _mutedKey = 'muted_alerts';
   static const _autoTripKey = 'auto_trip_enabled';
+  static const _screenAwakeKey = 'keep_screen_awake';
 
 
 
@@ -77,6 +96,14 @@ class AppSettings extends ChangeNotifier {
 
   bool hapticAlerts = true;
 
+  /// How long the screen is held awake.
+  ///
+  /// It used to be held awake for as long as the live screen was open, full
+  /// stop, on the reasoning that this app lives in a phone mount. True while
+  /// riding, wrong the rest of the time: reading the cell voltages on the sofa
+  /// is not a reason for a phone that never sleeps.
+  ScreenAwake screenAwake = ScreenAwake.whileRiding;
+
   /// Whether the 300-byte frames are kept. On by default and worth leaving on:
   /// it is what makes a wrongly-decoded byte offset recoverable rather than
   /// months of history lost.
@@ -99,6 +126,7 @@ class AppSettings extends ChangeNotifier {
       chargeWatchEnabled = prefs.getBool(_chargeWatchKey) ?? false;
       mutedAlerts = (prefs.getStringList(_mutedKey) ?? const []).toSet();
       autoTripEnabled = prefs.getBool(_autoTripKey) ?? true;
+      screenAwake = ScreenAwake.parse(prefs.getString(_screenAwakeKey));
       notifyListeners();
     } on Exception catch (_) {
       // Defaults are usable; a broken preference store is not worth failing on.
@@ -167,6 +195,17 @@ class AppSettings extends ChangeNotifier {
       await prefs.setStringList(_mutedKey, mutedAlerts.toList());
     } on Exception catch (_) {
       // Silenced for this session at least.
+    }
+  }
+
+  Future<void> setScreenAwake(ScreenAwake value) async {
+    screenAwake = value;
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_screenAwakeKey, value.name);
+    } on Exception catch (_) {
+      // Kept for this session at least.
     }
   }
 

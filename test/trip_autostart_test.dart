@@ -169,6 +169,69 @@ void main() {
     });
   });
 
+  group('a missing fix is not a parked bike', () {
+    test('does not end a ride when the GPS has nothing to say', () {
+      // The bug that cost a real ride. Coasting, or waiting at a barrier, puts
+      // the current under the idle threshold; with no fix to contradict it,
+      // three of those minutes used to read as a bike in a garage and the ride
+      // was closed on the spot, mid-route.
+      final d = TripAutoStart();
+      final actions =
+          feed(d, seconds: 600, current: 0, speedKmh: null, recording: true);
+      expect(actions, everyElement(AutoTripAction.none));
+    });
+
+    test('still ends it once a fix confirms the bike is standing still', () {
+      final d = TripAutoStart();
+      final actions =
+          feed(d, seconds: 240, current: 0, speedKmh: 0, recording: true);
+      expect(actions, contains(AutoTripAction.stop));
+    });
+
+    test('a ride whose GPS died does not stay open forever', () {
+      // The other side of the asymmetry. Leaving it open would append the next
+      // ride to this one, which is its own kind of data loss, so a pack that
+      // has drawn nothing for twenty minutes closes the trip even unwitnessed.
+      final d = TripAutoStart();
+      final actions =
+          feed(d, seconds: 1400, current: 0, speedKmh: null, recording: true);
+      expect(actions, contains(AutoTripAction.stop));
+    });
+
+    test('the long fuse does not fire on a bike that is still working', () {
+      // Twenty-three minutes of riding with no fix at all: no stillness, so
+      // nothing to end.
+      final d = TripAutoStart();
+      final actions =
+          feed(d, seconds: 1400, current: -20, speedKmh: null, recording: true);
+      expect(actions, everyElement(AutoTripAction.none));
+    });
+
+    test('current returning resets the long fuse', () {
+      // Nineteen minutes quiet, a minute of riding, nineteen more quiet. The
+      // fuse must start again rather than carry over.
+      final d = TripAutoStart();
+      var at = t0;
+      List<AutoTripAction> run(int seconds, double current, double? speed) {
+        final out = <AutoTripAction>[];
+        for (var i = 0; i < seconds; i++) {
+          out.add(d.evaluate(
+            at: at,
+            current: current,
+            speedKmh: speed,
+            recording: true,
+          ));
+          at = at.add(const Duration(seconds: 1));
+        }
+        return out;
+      }
+
+      expect(run(19 * 60, 0, null), everyElement(AutoTripAction.none));
+      expect(run(60, -20, null), everyElement(AutoTripAction.none));
+      expect(run(19 * 60, 0, null), everyElement(AutoTripAction.none));
+    });
+  });
+
   group('reset', () {
     test('forgets a run in progress', () {
       final d = TripAutoStart();

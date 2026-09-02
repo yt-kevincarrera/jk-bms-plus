@@ -21,6 +21,12 @@ enum AutoTripAction { none, start, stop }
 /// So starting needs current *and* movement, sustained. Current alone fires
 /// with the bike switched on at the kerb; movement alone fires with the phone
 /// in a car while the bike sits in range.
+///
+/// The two failure modes are not equally bad, and this used to treat them as
+/// if they were. A trip left open too long can be stopped by hand and the
+/// extra minutes trimmed; a trip cut off mid-ride cannot be rejoined, and the
+/// kilometres after the cut are gone. So where the evidence runs out, this
+/// keeps recording.
 class TripAutoStart {
   TripAutoStart({
     this.minCurrentAmps = 3.0,
@@ -29,6 +35,7 @@ class TripAutoStart {
     this.idleCurrentAmps = 1.5,
     this.idleSpeedKmh = 3.0,
     this.stopAfter = const Duration(minutes: 3),
+    this.stopWithoutFixAfter = const Duration(minutes: 20),
   });
 
   /// Discharge, in amps, that counts as the bike doing work.
@@ -51,17 +58,35 @@ class TripAutoStart {
   /// them long enough for the estimator to trust.
   final Duration stopAfter;
 
+  /// The fuse for a pack drawing nothing with no fix to judge it by.
+  ///
+  /// Without this a ride whose GPS died would stay open forever, which is its
+  /// own kind of data loss: the next real ride gets appended to it. Long
+  /// enough that it can only fire on a bike that is genuinely done, since a
+  /// dead-GPS ride still shows current whenever it is moving.
+  final Duration stopWithoutFixAfter;
+
   DateTime? _movingSince;
   DateTime? _stillSince;
+
+  /// When the pack went quiet, whether or not there was a fix to confirm it.
+  DateTime? _quietSince;
 
   /// Whether conditions currently look like riding.
   bool get looksLikeRiding => _movingSince != null;
 
   /// Feeds one reading. [recording] is whether a trip is already open.
   ///
-  /// [speedKmh] is null when there is no GPS fix yet, which is treated as not
-  /// moving: starting a ride on current alone is exactly the mistake this is
-  /// built to avoid.
+  /// [speedKmh] is null when there is no fresh GPS fix. That means *unknown*,
+  /// and the two questions read it in opposite directions on purpose:
+  ///
+  /// - For starting, unknown is not moving. Opening a ride on current alone is
+  ///   exactly the mistake this is built to avoid.
+  /// - For stopping, unknown is not stillness either. Reading a missing fix as
+  ///   a stationary bike is what ended real rides mid-route: the pack draw
+  ///   dips below the idle threshold often enough on a coast or at a light,
+  ///   and with no fix to contradict it three of those minutes looked exactly
+  ///   like a bike parked in a garage.
   AutoTripAction evaluate({
     required DateTime at,
     required double current,
@@ -74,8 +99,20 @@ class TripAutoStart {
     final moving = (speedKmh ?? 0) >= minSpeedKmh;
     final riding = drawing && moving;
 
+    // Stillness has to be witnessed, not assumed from silence.
     final idle = current.abs() <= idleCurrentAmps &&
-        (speedKmh ?? 0) <= idleSpeedKmh;
+        speedKmh != null &&
+        speedKmh <= idleSpeedKmh;
+
+    // A quiet pack, judged on current alone. Tracked even when a fix says the
+    // bike is moving, because that is the only thing left to go on if the fix
+    // stops arriving.
+    final quiet = current.abs() <= idleCurrentAmps;
+    if (quiet) {
+      _quietSince ??= at;
+    } else {
+      _quietSince = null;
+    }
 
     if (riding) {
       _stillSince = null;
@@ -88,11 +125,19 @@ class TripAutoStart {
       return AutoTripAction.none;
     }
 
-    // Not riding right now. Only sustained stillness ends anything; a hill
-    // where the current drops or a moment of lost GPS is not the end of a ride.
+    // Not riding right now. Only witnessed, sustained stillness ends anything.
+    // A hill where the current drops, a moment of lost GPS, or a pause the
+    // rider asked for is not the end of a ride.
     if (!idle) {
       _movingSince = null;
       _stillSince = null;
+      // The long fuse, for a ride whose GPS never came back. Only a pack that
+      // has drawn nothing for twenty minutes gets here.
+      if (recording && _quietSince != null &&
+          at.difference(_quietSince!) >= stopWithoutFixAfter) {
+        _quietSince = null;
+        return AutoTripAction.stop;
+      }
       return AutoTripAction.none;
     }
 
@@ -109,5 +154,6 @@ class TripAutoStart {
   void reset() {
     _movingSince = null;
     _stillSince = null;
+    _quietSince = null;
   }
 }

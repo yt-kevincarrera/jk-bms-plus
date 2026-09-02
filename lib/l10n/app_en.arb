@@ -1240,5 +1240,24 @@
         "type": "String"
       }
     }
-  }
+  },
+  "linkLostTitle": "Connection lost",
+  "linkLostBody": "Out of range of the pack, or something else is holding the Bluetooth channel. Keeps trying on its own; what is on screen is the last reading.",
+  "linkReconnectingTitle": "Reconnecting",
+  "linkConnectingTitle": "Connecting",
+  "linkReadingAge": "Last reading {age} ago",
+  "linkBack": "Reading again",
+  "linkDetails": "Details",
+  "troubleBusy": "Something else is already connected to the pack. The JK BMS accepts only one Bluetooth connection at a time, so close the official JK app or any other logger.",
+  "troubleOutOfRange": "The pack did not answer. Either it is out of range or switched off, or something else is holding its one Bluetooth connection: the official JK app, or another logger.",
+  "troubleBluetoothOff": "Bluetooth is off on the phone.",
+  "troublePermission": "The app is not allowed to use Bluetooth. Grant Nearby devices in Android settings.",
+  "troubleLocationOff": "Location is off on the phone. Android needs it on to scan for Bluetooth devices.",
+  "troubleGeneric": "Bluetooth trouble. Keeps trying on its own.",
+  "troubleSlowFrames": "The phone granted a smaller Bluetooth packet size than asked for. Readings arrive in more pieces, which is slower but still correct.",
+  "screenAwakeTitle": "Keep the screen on",
+  "screenAwakeHint": "It used to be held on for as long as this screen was open, which is right in a phone mount and wrong on the sofa.",
+  "screenAwakeNever": "Never",
+  "screenAwakeRiding": "While riding",
+  "screenAwakeAlways": "Always"
 }

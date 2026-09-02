@@ -149,11 +149,17 @@ class BmsRepository {
   }
 
   /// Fills in the row opened by [beginTrip] and stores the track.
+  /// Stores the finished ride, and what the app made of it.
+  ///
+  /// [conclusions] is optional so a caller with nothing to say stores nothing
+  /// rather than zeroes: a ride whose conclusions read 0 Wh/km would be
+  /// indistinguishable from one where the estimate collapsed.
   Future<void> finishTrip(
     int tripId,
     TripSummary summary,
-    List<TrackPoint> points,
-  ) async {
+    List<TrackPoint> points, {
+    TripConclusions? conclusions,
+  }) async {
     await flush();
     await db.updateTrip(
       tripId,
@@ -174,6 +180,11 @@ class BmsRepository {
         maxDeltaVolts: Value(summary.maxDeltaVolts),
         climbM: Value(summary.climbM),
         descentM: Value(summary.descentM),
+        whPerKmBefore: Value(conclusions?.whPerKmBefore),
+        whPerKmAfter: Value(conclusions?.whPerKmAfter),
+        learnedKm: Value(conclusions?.learnedKm),
+        rangeKmAtEnd: Value(conclusions?.rangeKmAtEnd),
+        confidence: Value(conclusions?.confidence.name),
       ),
     );
 
@@ -207,6 +218,22 @@ class BmsRepository {
   /// The estimator is rebuilt from these rather than kept as a running tally,
   /// so deleting a bad trip actually removes its influence instead of leaving
   /// it baked into a number nobody can unpick.
+  /// Stores, or corrects, what the app concluded about a finished ride.
+  Future<void> recordTripConclusions(
+    int tripId,
+    TripConclusions conclusions,
+  ) =>
+      db.updateTrip(
+        tripId,
+        TripsCompanion(
+          whPerKmBefore: Value(conclusions.whPerKmBefore),
+          whPerKmAfter: Value(conclusions.whPerKmAfter),
+          learnedKm: Value(conclusions.learnedKm),
+          rangeKmAtEnd: Value(conclusions.rangeKmAtEnd),
+          confidence: Value(conclusions.confidence.name),
+        ),
+      );
+
   Future<List<Trip>> tripsForLearning(String deviceId) async {
     final all = await db.recentTrips(deviceId, limit: 500);
     final usable = all

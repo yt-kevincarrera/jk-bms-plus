@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../../app_settings.dart';
 import '../../bms_service.dart';
 import '../../data/database.dart';
 import '../../data/repository.dart';
@@ -16,9 +17,14 @@ import '../widgets/common.dart';
 /// is why it was built last: a degradation curve drawn from two days of data
 /// would be a drawing, not a measurement.
 class HistoryTab extends StatelessWidget {
-  const HistoryTab({required this.service, super.key});
+  const HistoryTab({
+    required this.service,
+    required this.settings,
+    super.key,
+  });
 
   final BmsService service;
+  final AppSettings settings;
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +55,7 @@ class HistoryTab extends StatelessWidget {
         return ListView(
           padding: const EdgeInsets.only(top: 8, bottom: 28),
           children: [
-            _StartTripButton(service: service),
+            _StartTripButton(service: service, settings: settings),
             Section(
               title: t.historyTotals,
               children: [
@@ -117,7 +123,7 @@ class HistoryTab extends StatelessWidget {
   Widget _empty(AppL10n t, BmsService service) => ListView(
         padding: const EdgeInsets.only(top: 8),
         children: [
-          _StartTripButton(service: service),
+          _StartTripButton(service: service, settings: settings),
           const SizedBox(height: 40),
           const Icon(Icons.timeline, size: 40, color: AppTheme.textFaint),
           const SizedBox(height: 18),
@@ -152,9 +158,10 @@ class HistoryTab extends StatelessWidget {
 
 /// Starting a ride from the list of rides is where a hand goes looking for it.
 class _StartTripButton extends StatefulWidget {
-  const _StartTripButton({required this.service});
+  const _StartTripButton({required this.service, required this.settings});
 
   final BmsService service;
+  final AppSettings settings;
 
   @override
   State<_StartTripButton> createState() => _StartTripButtonState();
@@ -188,7 +195,8 @@ class _StartTripButtonState extends State<_StartTripButton> {
   Future<void> _open() async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => TripScreen(service: widget.service),
+        builder: (_) =>
+            TripScreen(service: widget.service, settings: widget.settings),
       ),
     );
     if (mounted) setState(() {});

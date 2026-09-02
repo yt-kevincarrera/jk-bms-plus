@@ -845,6 +845,61 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _whPerKmBeforeMeta = const VerificationMeta(
+    'whPerKmBefore',
+  );
+  @override
+  late final GeneratedColumn<double> whPerKmBefore = GeneratedColumn<double>(
+    'wh_per_km_before',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _whPerKmAfterMeta = const VerificationMeta(
+    'whPerKmAfter',
+  );
+  @override
+  late final GeneratedColumn<double> whPerKmAfter = GeneratedColumn<double>(
+    'wh_per_km_after',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _learnedKmMeta = const VerificationMeta(
+    'learnedKm',
+  );
+  @override
+  late final GeneratedColumn<double> learnedKm = GeneratedColumn<double>(
+    'learned_km',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rangeKmAtEndMeta = const VerificationMeta(
+    'rangeKmAtEnd',
+  );
+  @override
+  late final GeneratedColumn<double> rangeKmAtEnd = GeneratedColumn<double>(
+    'range_km_at_end',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _confidenceMeta = const VerificationMeta(
+    'confidence',
+  );
+  @override
+  late final GeneratedColumn<String> confidence = GeneratedColumn<String>(
+    'confidence',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -868,6 +923,11 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
     note,
     demo,
     deviceId,
+    whPerKmBefore,
+    whPerKmAfter,
+    learnedKm,
+    rangeKmAtEnd,
+    confidence,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1068,6 +1128,45 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
         deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
       );
     }
+    if (data.containsKey('wh_per_km_before')) {
+      context.handle(
+        _whPerKmBeforeMeta,
+        whPerKmBefore.isAcceptableOrUnknown(
+          data['wh_per_km_before']!,
+          _whPerKmBeforeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('wh_per_km_after')) {
+      context.handle(
+        _whPerKmAfterMeta,
+        whPerKmAfter.isAcceptableOrUnknown(
+          data['wh_per_km_after']!,
+          _whPerKmAfterMeta,
+        ),
+      );
+    }
+    if (data.containsKey('learned_km')) {
+      context.handle(
+        _learnedKmMeta,
+        learnedKm.isAcceptableOrUnknown(data['learned_km']!, _learnedKmMeta),
+      );
+    }
+    if (data.containsKey('range_km_at_end')) {
+      context.handle(
+        _rangeKmAtEndMeta,
+        rangeKmAtEnd.isAcceptableOrUnknown(
+          data['range_km_at_end']!,
+          _rangeKmAtEndMeta,
+        ),
+      );
+    }
+    if (data.containsKey('confidence')) {
+      context.handle(
+        _confidenceMeta,
+        confidence.isAcceptableOrUnknown(data['confidence']!, _confidenceMeta),
+      );
+    }
     return context;
   }
 
@@ -1161,6 +1260,26 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
         DriftSqlType.string,
         data['${effectivePrefix}device_id'],
       ),
+      whPerKmBefore: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}wh_per_km_before'],
+      ),
+      whPerKmAfter: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}wh_per_km_after'],
+      ),
+      learnedKm: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}learned_km'],
+      ),
+      rangeKmAtEnd: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}range_km_at_end'],
+      ),
+      confidence: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}confidence'],
+      ),
     );
   }
 
@@ -1204,6 +1323,21 @@ class Trip extends DataClass implements Insertable<Trip> {
   /// Which pack this was recorded on. Null for rows written before the app
   /// tracked packs at all -- see [BmsRepository.orphanCounts].
   final String? deviceId;
+
+  /// The learned consumption before this ride was folded in.
+  final double? whPerKmBefore;
+
+  /// And after, which is what the range was quoted from next.
+  final double? whPerKmAfter;
+
+  /// Kilometres of usable riding the estimate rested on at that point.
+  final double? learnedKm;
+
+  /// Range at the charge the ride ended on.
+  final double? rangeKmAtEnd;
+
+  /// How much the estimate was worth then, by name.
+  final String? confidence;
   const Trip({
     required this.id,
     required this.startedAt,
@@ -1226,6 +1360,11 @@ class Trip extends DataClass implements Insertable<Trip> {
     required this.note,
     required this.demo,
     this.deviceId,
+    this.whPerKmBefore,
+    this.whPerKmAfter,
+    this.learnedKm,
+    this.rangeKmAtEnd,
+    this.confidence,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1252,6 +1391,21 @@ class Trip extends DataClass implements Insertable<Trip> {
     map['demo'] = Variable<bool>(demo);
     if (!nullToAbsent || deviceId != null) {
       map['device_id'] = Variable<String>(deviceId);
+    }
+    if (!nullToAbsent || whPerKmBefore != null) {
+      map['wh_per_km_before'] = Variable<double>(whPerKmBefore);
+    }
+    if (!nullToAbsent || whPerKmAfter != null) {
+      map['wh_per_km_after'] = Variable<double>(whPerKmAfter);
+    }
+    if (!nullToAbsent || learnedKm != null) {
+      map['learned_km'] = Variable<double>(learnedKm);
+    }
+    if (!nullToAbsent || rangeKmAtEnd != null) {
+      map['range_km_at_end'] = Variable<double>(rangeKmAtEnd);
+    }
+    if (!nullToAbsent || confidence != null) {
+      map['confidence'] = Variable<String>(confidence);
     }
     return map;
   }
@@ -1281,6 +1435,21 @@ class Trip extends DataClass implements Insertable<Trip> {
       deviceId: deviceId == null && nullToAbsent
           ? const Value.absent()
           : Value(deviceId),
+      whPerKmBefore: whPerKmBefore == null && nullToAbsent
+          ? const Value.absent()
+          : Value(whPerKmBefore),
+      whPerKmAfter: whPerKmAfter == null && nullToAbsent
+          ? const Value.absent()
+          : Value(whPerKmAfter),
+      learnedKm: learnedKm == null && nullToAbsent
+          ? const Value.absent()
+          : Value(learnedKm),
+      rangeKmAtEnd: rangeKmAtEnd == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rangeKmAtEnd),
+      confidence: confidence == null && nullToAbsent
+          ? const Value.absent()
+          : Value(confidence),
     );
   }
 
@@ -1313,6 +1482,11 @@ class Trip extends DataClass implements Insertable<Trip> {
       note: serializer.fromJson<String>(json['note']),
       demo: serializer.fromJson<bool>(json['demo']),
       deviceId: serializer.fromJson<String?>(json['deviceId']),
+      whPerKmBefore: serializer.fromJson<double?>(json['whPerKmBefore']),
+      whPerKmAfter: serializer.fromJson<double?>(json['whPerKmAfter']),
+      learnedKm: serializer.fromJson<double?>(json['learnedKm']),
+      rangeKmAtEnd: serializer.fromJson<double?>(json['rangeKmAtEnd']),
+      confidence: serializer.fromJson<String?>(json['confidence']),
     );
   }
   @override
@@ -1340,6 +1514,11 @@ class Trip extends DataClass implements Insertable<Trip> {
       'note': serializer.toJson<String>(note),
       'demo': serializer.toJson<bool>(demo),
       'deviceId': serializer.toJson<String?>(deviceId),
+      'whPerKmBefore': serializer.toJson<double?>(whPerKmBefore),
+      'whPerKmAfter': serializer.toJson<double?>(whPerKmAfter),
+      'learnedKm': serializer.toJson<double?>(learnedKm),
+      'rangeKmAtEnd': serializer.toJson<double?>(rangeKmAtEnd),
+      'confidence': serializer.toJson<String?>(confidence),
     };
   }
 
@@ -1365,6 +1544,11 @@ class Trip extends DataClass implements Insertable<Trip> {
     String? note,
     bool? demo,
     Value<String?> deviceId = const Value.absent(),
+    Value<double?> whPerKmBefore = const Value.absent(),
+    Value<double?> whPerKmAfter = const Value.absent(),
+    Value<double?> learnedKm = const Value.absent(),
+    Value<double?> rangeKmAtEnd = const Value.absent(),
+    Value<String?> confidence = const Value.absent(),
   }) => Trip(
     id: id ?? this.id,
     startedAt: startedAt ?? this.startedAt,
@@ -1387,6 +1571,13 @@ class Trip extends DataClass implements Insertable<Trip> {
     note: note ?? this.note,
     demo: demo ?? this.demo,
     deviceId: deviceId.present ? deviceId.value : this.deviceId,
+    whPerKmBefore: whPerKmBefore.present
+        ? whPerKmBefore.value
+        : this.whPerKmBefore,
+    whPerKmAfter: whPerKmAfter.present ? whPerKmAfter.value : this.whPerKmAfter,
+    learnedKm: learnedKm.present ? learnedKm.value : this.learnedKm,
+    rangeKmAtEnd: rangeKmAtEnd.present ? rangeKmAtEnd.value : this.rangeKmAtEnd,
+    confidence: confidence.present ? confidence.value : this.confidence,
   );
   Trip copyWithCompanion(TripsCompanion data) {
     return Trip(
@@ -1433,6 +1624,19 @@ class Trip extends DataClass implements Insertable<Trip> {
       note: data.note.present ? data.note.value : this.note,
       demo: data.demo.present ? data.demo.value : this.demo,
       deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      whPerKmBefore: data.whPerKmBefore.present
+          ? data.whPerKmBefore.value
+          : this.whPerKmBefore,
+      whPerKmAfter: data.whPerKmAfter.present
+          ? data.whPerKmAfter.value
+          : this.whPerKmAfter,
+      learnedKm: data.learnedKm.present ? data.learnedKm.value : this.learnedKm,
+      rangeKmAtEnd: data.rangeKmAtEnd.present
+          ? data.rangeKmAtEnd.value
+          : this.rangeKmAtEnd,
+      confidence: data.confidence.present
+          ? data.confidence.value
+          : this.confidence,
     );
   }
 
@@ -1459,7 +1663,12 @@ class Trip extends DataClass implements Insertable<Trip> {
           ..write('descentM: $descentM, ')
           ..write('note: $note, ')
           ..write('demo: $demo, ')
-          ..write('deviceId: $deviceId')
+          ..write('deviceId: $deviceId, ')
+          ..write('whPerKmBefore: $whPerKmBefore, ')
+          ..write('whPerKmAfter: $whPerKmAfter, ')
+          ..write('learnedKm: $learnedKm, ')
+          ..write('rangeKmAtEnd: $rangeKmAtEnd, ')
+          ..write('confidence: $confidence')
           ..write(')'))
         .toString();
   }
@@ -1487,6 +1696,11 @@ class Trip extends DataClass implements Insertable<Trip> {
     note,
     demo,
     deviceId,
+    whPerKmBefore,
+    whPerKmAfter,
+    learnedKm,
+    rangeKmAtEnd,
+    confidence,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -1512,7 +1726,12 @@ class Trip extends DataClass implements Insertable<Trip> {
           other.descentM == this.descentM &&
           other.note == this.note &&
           other.demo == this.demo &&
-          other.deviceId == this.deviceId);
+          other.deviceId == this.deviceId &&
+          other.whPerKmBefore == this.whPerKmBefore &&
+          other.whPerKmAfter == this.whPerKmAfter &&
+          other.learnedKm == this.learnedKm &&
+          other.rangeKmAtEnd == this.rangeKmAtEnd &&
+          other.confidence == this.confidence);
 }
 
 class TripsCompanion extends UpdateCompanion<Trip> {
@@ -1537,6 +1756,11 @@ class TripsCompanion extends UpdateCompanion<Trip> {
   final Value<String> note;
   final Value<bool> demo;
   final Value<String?> deviceId;
+  final Value<double?> whPerKmBefore;
+  final Value<double?> whPerKmAfter;
+  final Value<double?> learnedKm;
+  final Value<double?> rangeKmAtEnd;
+  final Value<String?> confidence;
   const TripsCompanion({
     this.id = const Value.absent(),
     this.startedAt = const Value.absent(),
@@ -1559,6 +1783,11 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     this.note = const Value.absent(),
     this.demo = const Value.absent(),
     this.deviceId = const Value.absent(),
+    this.whPerKmBefore = const Value.absent(),
+    this.whPerKmAfter = const Value.absent(),
+    this.learnedKm = const Value.absent(),
+    this.rangeKmAtEnd = const Value.absent(),
+    this.confidence = const Value.absent(),
   });
   TripsCompanion.insert({
     this.id = const Value.absent(),
@@ -1582,6 +1811,11 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     this.note = const Value.absent(),
     this.demo = const Value.absent(),
     this.deviceId = const Value.absent(),
+    this.whPerKmBefore = const Value.absent(),
+    this.whPerKmAfter = const Value.absent(),
+    this.learnedKm = const Value.absent(),
+    this.rangeKmAtEnd = const Value.absent(),
+    this.confidence = const Value.absent(),
   }) : startedAt = Value(startedAt),
        endedAt = Value(endedAt),
        distanceKm = Value(distanceKm),
@@ -1621,6 +1855,11 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     Expression<String>? note,
     Expression<bool>? demo,
     Expression<String>? deviceId,
+    Expression<double>? whPerKmBefore,
+    Expression<double>? whPerKmAfter,
+    Expression<double>? learnedKm,
+    Expression<double>? rangeKmAtEnd,
+    Expression<String>? confidence,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1645,6 +1884,11 @@ class TripsCompanion extends UpdateCompanion<Trip> {
       if (note != null) 'note': note,
       if (demo != null) 'demo': demo,
       if (deviceId != null) 'device_id': deviceId,
+      if (whPerKmBefore != null) 'wh_per_km_before': whPerKmBefore,
+      if (whPerKmAfter != null) 'wh_per_km_after': whPerKmAfter,
+      if (learnedKm != null) 'learned_km': learnedKm,
+      if (rangeKmAtEnd != null) 'range_km_at_end': rangeKmAtEnd,
+      if (confidence != null) 'confidence': confidence,
     });
   }
 
@@ -1670,6 +1914,11 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     Value<String>? note,
     Value<bool>? demo,
     Value<String?>? deviceId,
+    Value<double?>? whPerKmBefore,
+    Value<double?>? whPerKmAfter,
+    Value<double?>? learnedKm,
+    Value<double?>? rangeKmAtEnd,
+    Value<String?>? confidence,
   }) {
     return TripsCompanion(
       id: id ?? this.id,
@@ -1693,6 +1942,11 @@ class TripsCompanion extends UpdateCompanion<Trip> {
       note: note ?? this.note,
       demo: demo ?? this.demo,
       deviceId: deviceId ?? this.deviceId,
+      whPerKmBefore: whPerKmBefore ?? this.whPerKmBefore,
+      whPerKmAfter: whPerKmAfter ?? this.whPerKmAfter,
+      learnedKm: learnedKm ?? this.learnedKm,
+      rangeKmAtEnd: rangeKmAtEnd ?? this.rangeKmAtEnd,
+      confidence: confidence ?? this.confidence,
     );
   }
 
@@ -1764,6 +2018,21 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     if (deviceId.present) {
       map['device_id'] = Variable<String>(deviceId.value);
     }
+    if (whPerKmBefore.present) {
+      map['wh_per_km_before'] = Variable<double>(whPerKmBefore.value);
+    }
+    if (whPerKmAfter.present) {
+      map['wh_per_km_after'] = Variable<double>(whPerKmAfter.value);
+    }
+    if (learnedKm.present) {
+      map['learned_km'] = Variable<double>(learnedKm.value);
+    }
+    if (rangeKmAtEnd.present) {
+      map['range_km_at_end'] = Variable<double>(rangeKmAtEnd.value);
+    }
+    if (confidence.present) {
+      map['confidence'] = Variable<String>(confidence.value);
+    }
     return map;
   }
 
@@ -1790,7 +2059,12 @@ class TripsCompanion extends UpdateCompanion<Trip> {
           ..write('descentM: $descentM, ')
           ..write('note: $note, ')
           ..write('demo: $demo, ')
-          ..write('deviceId: $deviceId')
+          ..write('deviceId: $deviceId, ')
+          ..write('whPerKmBefore: $whPerKmBefore, ')
+          ..write('whPerKmAfter: $whPerKmAfter, ')
+          ..write('learnedKm: $learnedKm, ')
+          ..write('rangeKmAtEnd: $rangeKmAtEnd, ')
+          ..write('confidence: $confidence')
           ..write(')'))
         .toString();
   }
@@ -5411,6 +5685,11 @@ typedef $$TripsTableCreateCompanionBuilder =
       Value<String> note,
       Value<bool> demo,
       Value<String?> deviceId,
+      Value<double?> whPerKmBefore,
+      Value<double?> whPerKmAfter,
+      Value<double?> learnedKm,
+      Value<double?> rangeKmAtEnd,
+      Value<String?> confidence,
     });
 typedef $$TripsTableUpdateCompanionBuilder =
     TripsCompanion Function({
@@ -5435,6 +5714,11 @@ typedef $$TripsTableUpdateCompanionBuilder =
       Value<String> note,
       Value<bool> demo,
       Value<String?> deviceId,
+      Value<double?> whPerKmBefore,
+      Value<double?> whPerKmAfter,
+      Value<double?> learnedKm,
+      Value<double?> rangeKmAtEnd,
+      Value<String?> confidence,
     });
 
 final class $$TripsTableReferences
@@ -5570,6 +5854,31 @@ class $$TripsTableFilterComposer extends Composer<_$AppDatabase, $TripsTable> {
 
   ColumnFilters<String> get deviceId => $composableBuilder(
     column: $table.deviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get whPerKmBefore => $composableBuilder(
+    column: $table.whPerKmBefore,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get whPerKmAfter => $composableBuilder(
+    column: $table.whPerKmAfter,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get learnedKm => $composableBuilder(
+    column: $table.learnedKm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get rangeKmAtEnd => $composableBuilder(
+    column: $table.rangeKmAtEnd,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get confidence => $composableBuilder(
+    column: $table.confidence,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5712,6 +6021,31 @@ class $$TripsTableOrderingComposer
     column: $table.deviceId,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get whPerKmBefore => $composableBuilder(
+    column: $table.whPerKmBefore,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get whPerKmAfter => $composableBuilder(
+    column: $table.whPerKmAfter,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get learnedKm => $composableBuilder(
+    column: $table.learnedKm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get rangeKmAtEnd => $composableBuilder(
+    column: $table.rangeKmAtEnd,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get confidence => $composableBuilder(
+    column: $table.confidence,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$TripsTableAnnotationComposer
@@ -5808,6 +6142,29 @@ class $$TripsTableAnnotationComposer
   GeneratedColumn<String> get deviceId =>
       $composableBuilder(column: $table.deviceId, builder: (column) => column);
 
+  GeneratedColumn<double> get whPerKmBefore => $composableBuilder(
+    column: $table.whPerKmBefore,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get whPerKmAfter => $composableBuilder(
+    column: $table.whPerKmAfter,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get learnedKm =>
+      $composableBuilder(column: $table.learnedKm, builder: (column) => column);
+
+  GeneratedColumn<double> get rangeKmAtEnd => $composableBuilder(
+    column: $table.rangeKmAtEnd,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get confidence => $composableBuilder(
+    column: $table.confidence,
+    builder: (column) => column,
+  );
+
   Expression<T> tripPointsRefs<T extends Object>(
     Expression<T> Function($$TripPointsTableAnnotationComposer a) f,
   ) {
@@ -5883,6 +6240,11 @@ class $$TripsTableTableManager
                 Value<String> note = const Value.absent(),
                 Value<bool> demo = const Value.absent(),
                 Value<String?> deviceId = const Value.absent(),
+                Value<double?> whPerKmBefore = const Value.absent(),
+                Value<double?> whPerKmAfter = const Value.absent(),
+                Value<double?> learnedKm = const Value.absent(),
+                Value<double?> rangeKmAtEnd = const Value.absent(),
+                Value<String?> confidence = const Value.absent(),
               }) => TripsCompanion(
                 id: id,
                 startedAt: startedAt,
@@ -5905,6 +6267,11 @@ class $$TripsTableTableManager
                 note: note,
                 demo: demo,
                 deviceId: deviceId,
+                whPerKmBefore: whPerKmBefore,
+                whPerKmAfter: whPerKmAfter,
+                learnedKm: learnedKm,
+                rangeKmAtEnd: rangeKmAtEnd,
+                confidence: confidence,
               ),
           createCompanionCallback:
               ({
@@ -5929,6 +6296,11 @@ class $$TripsTableTableManager
                 Value<String> note = const Value.absent(),
                 Value<bool> demo = const Value.absent(),
                 Value<String?> deviceId = const Value.absent(),
+                Value<double?> whPerKmBefore = const Value.absent(),
+                Value<double?> whPerKmAfter = const Value.absent(),
+                Value<double?> learnedKm = const Value.absent(),
+                Value<double?> rangeKmAtEnd = const Value.absent(),
+                Value<String?> confidence = const Value.absent(),
               }) => TripsCompanion.insert(
                 id: id,
                 startedAt: startedAt,
@@ -5951,6 +6323,11 @@ class $$TripsTableTableManager
                 note: note,
                 demo: demo,
                 deviceId: deviceId,
+                whPerKmBefore: whPerKmBefore,
+                whPerKmAfter: whPerKmAfter,
+                learnedKm: learnedKm,
+                rangeKmAtEnd: rangeKmAtEnd,
+                confidence: confidence,
               ),
           withReferenceMapper: (p0) => p0
               .map(
