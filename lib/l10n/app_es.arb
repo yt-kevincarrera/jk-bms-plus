@@ -60,7 +60,7 @@
   "waitingCellVoltages": "los voltajes de celda",
   "waitingTemperatures": "las temperaturas",
   "soc": "Carga",
-  "range": "Autonomía",
+  "range": "Autonomía restante",
   "rangeDisclaimer": "Estimación aproximada desde la energía restante. El valor real sale del Wh/km medido con GPS.",
   "power": "Potencia",
   "current": "Corriente",
@@ -1363,5 +1363,21 @@
         "type": "String"
       }
     }
-  }
+  },
+  "rangeFull": "Con la batería llena",
+  "rangeFullBand": "unos {low} a {high} km",
+  "@rangeFullBand": {
+    "placeholders": {
+      "low": {
+        "type": "String"
+      },
+      "high": {
+        "type": "String"
+      }
+    }
+  },
+  "rangeFullUnknown": "Hace falta una capacidad medida para poder decir esto.",
+  "rangeFullFromAdvert": "Sale de la capacidad que pusiste tú, no de una medida.",
+  "rangeFullFromMeasured": "Sale de una capacidad que esta batería midió de verdad.",
+  "rangeNoneLearned": "Todavía no ha aprendido nada, así que no hay distancia que valga la pena decir, a ninguna carga."
 }

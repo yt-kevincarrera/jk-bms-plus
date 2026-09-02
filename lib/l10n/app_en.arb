@@ -60,7 +60,7 @@
   "waitingCellVoltages": "cell voltages",
   "waitingTemperatures": "temperatures",
   "soc": "Charge",
-  "range": "Range",
+  "range": "Range left",
   "rangeDisclaimer": "Rough estimate from remaining energy. The real number comes from Wh/km measured against GPS.",
   "power": "Power",
   "current": "Current",
@@ -1285,5 +1285,11 @@
   "connectCouldNotSearch": "The radio never confirmed the search started, so nothing was actually looked for. Usually Bluetooth still waking up just after launch. Try again.",
   "backupShare": "Send it somewhere instead",
   "backupSaveDialog": "Where to put the copy",
-  "backupSaved": "Saved as {name}."
+  "backupSaved": "Saved as {name}.",
+  "rangeFull": "On a full pack",
+  "rangeFullBand": "about {low} to {high} km",
+  "rangeFullUnknown": "Needs a measured capacity before this can be said.",
+  "rangeFullFromAdvert": "From the capacity you entered, not a measured one.",
+  "rangeFullFromMeasured": "From a capacity this pack actually measured.",
+  "rangeNoneLearned": "Nothing learned yet, so no distance is worth quoting at any charge."
 }
