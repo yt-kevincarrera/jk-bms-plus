@@ -2267,6 +2267,10 @@ class AppL10nEn extends AppL10n {
       'That device has no JK Bluetooth service on it. It is not a JK BMS, or not one this app can talk to.';
 
   @override
+  String get troublePackMute =>
+      'The pack was connected but mute: not one byte in 20 seconds, despite being asked several times. The app let the connection go on purpose and is going back in within seconds; that is the only way to make the BMS\'s Bluetooth module drop the session it got stuck on.';
+
+  @override
   String get screenAwakeTitle => 'Keep the screen on';
 
   @override

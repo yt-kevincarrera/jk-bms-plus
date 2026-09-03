@@ -4093,6 +4093,12 @@ abstract class AppL10n {
   /// **'Ese dispositivo no tiene el servicio Bluetooth de JK. No es un BMS JK, o no uno con el que esta app pueda hablar.'**
   String get troubleNotJkBms;
 
+  /// No description provided for @troublePackMute.
+  ///
+  /// In es, this message translates to:
+  /// **'La batería estuvo conectada pero muda: no mandó ni un byte en 20 segundos, pese a pedírselo varias veces. La app soltó la conexión a propósito y vuelve a entrar en unos segundos; es la única forma de que el módulo Bluetooth del BMS suelte la sesión que se le quedó colgada.'**
+  String get troublePackMute;
+
   /// No description provided for @screenAwakeTitle.
   ///
   /// In es, this message translates to:

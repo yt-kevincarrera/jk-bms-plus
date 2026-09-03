@@ -97,6 +97,30 @@ void main() {
       );
     });
 
+    test('the evidence line says what was seen, not what was concluded', () {
+      // The headline is for the rider; this is for whoever reads the
+      // screenshot. It has to tell the three failures apart on its own.
+      final never = fresh();
+      never.onLinkState(BleLinkState.connecting, tap);
+      never.onLinkState(BleLinkState.failed, tap.add(s(8)));
+      final e1 = never.evidence(tap.add(s(25)));
+      expect(e1, contains('never reached connected'));
+      expect(e1, contains('failed'));
+      expect(e1, contains('0 bytes'));
+
+      final mute = fresh();
+      mute.onLinkState(BleLinkState.connected, tap.add(s(4)));
+      final e2 = mute.evidence(tap.add(s(16)));
+      expect(e2, contains('link up 4.0 s after tap'));
+      expect(e2, contains('connected 12.0 s'));
+      expect(e2, contains('0 bytes'));
+
+      final noisy = fresh();
+      noisy.onLinkState(BleLinkState.connected, tap.add(s(4)));
+      noisy.onBytesTotal(1300);
+      expect(noisy.evidence(tap.add(s(16))), contains('300 bytes'));
+    });
+
     test('a drop after connecting does not restart the silence clock', () {
       final c = fresh();
       c.onLinkState(BleLinkState.connected, tap.add(s(5)));

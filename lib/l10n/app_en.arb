@@ -1259,6 +1259,7 @@
   "troubleGeneric": "Bluetooth trouble. Keeps trying on its own.",
   "troubleSlowFrames": "The phone granted a smaller Bluetooth packet size than asked for. Readings arrive in more pieces, which is slower but still correct.",
   "troubleNotJkBms": "That device has no JK Bluetooth service on it. It is not a JK BMS, or not one this app can talk to.",
+  "troublePackMute": "The pack was connected but mute: not one byte in 20 seconds, despite being asked several times. The app let the connection go on purpose and is going back in within seconds; that is the only way to make the BMS's Bluetooth module drop the session it got stuck on.",
   "screenAwakeTitle": "Keep the screen on",
   "screenAwakeHint": "It used to be held on for as long as this screen was open, which is right in a phone mount and wrong on the sofa.",
   "screenAwakeNever": "Never",
