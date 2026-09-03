@@ -3421,6 +3421,24 @@ abstract class AppL10n {
   /// **'Se conectó, pero no llegó ninguna lectura de BMS. Casi seguro que ese dispositivo no es un BMS JK. Si crees que sí lo es, mira la consola de frames crudos en Ajustes.'**
   String get connectNotABms;
 
+  /// No description provided for @connectLinkNeverCameUp.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo levantar la conexión Bluetooth con la batería en 25 segundos, y la app lo intentó más de una vez. Comprueba que la batería esté encendida y cerca, y que la app oficial de JK esté cerrada del todo, no solo en segundo plano.'**
+  String get connectLinkNeverCameUp;
+
+  /// No description provided for @connectSilentJk.
+  ///
+  /// In es, this message translates to:
+  /// **'Se conectó, pero la batería no dijo nada en 12 segundos. Se anuncia como JK, así que sí es un BMS JK: su única sesión de datos la tiene otro, o se quedó colgada. Lo primero a mirar es la app oficial de JK, que se reconecta sola desde el segundo plano: fuérzala a detenerse en los ajustes de Android, no solo la cierres. Si no hay nadie más, el módulo Bluetooth del BMS suelta la sesión colgada por sí solo al cabo de un rato, y apagar y encender el Bluetooth del teléfono no lo acelera; con el vigilante de proximidad activado la app vuelve a intentarlo sola. La consola de frames crudos en Ajustes muestra si llega algo.'**
+  String get connectSilentJk;
+
+  /// No description provided for @connectTalkingUndecoded.
+  ///
+  /// In es, this message translates to:
+  /// **'Se conectó y están llegando bytes, pero ninguno se decodifica como un frame JK. Mira la consola de frames crudos en Ajustes: lo que aparezca ahí es lo que hace falta para añadir soporte.'**
+  String get connectTalkingUndecoded;
+
   /// No description provided for @storedCount.
   ///
   /// In es, this message translates to:
@@ -4068,6 +4086,12 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'El teléfono concedió un tamaño de paquete Bluetooth menor del pedido. Las lecturas llegan en más trozos, lo que es más lento pero igual de correcto.'**
   String get troubleSlowFrames;
+
+  /// No description provided for @troubleNotJkBms.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese dispositivo no tiene el servicio Bluetooth de JK. No es un BMS JK, o no uno con el que esta app pueda hablar.'**
+  String get troubleNotJkBms;
 
   /// No description provided for @screenAwakeTitle.
   ///

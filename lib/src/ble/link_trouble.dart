@@ -28,8 +28,27 @@ enum LinkTroubleKind {
   /// A smaller MTU than requested. Slower, still correct, not a failure.
   slowFrames,
 
+  /// The device connected and has no JK service on it: the wrong device.
+  notJkBms,
+
   /// Something else. The detail is all there is to go on.
   unknown,
+}
+
+/// A connected device that does not expose the JK service and characteristic.
+///
+/// Its own type because the transport must not treat it like a dropped link:
+/// reconnecting to a pair of headphones every 400 ms until the rider gives up
+/// is not persistence. It used to be a [StateError], which the transport's
+/// `on Exception` never caught, so the attempt died without a word, nothing
+/// reached the screen, and the screen blamed the pack for the silence.
+class NotAJkBmsException implements Exception {
+  const NotAJkBmsException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
 }
 
 /// One piece of Bluetooth trouble: what it is, and the raw text behind it.
@@ -58,6 +77,9 @@ class LinkTrouble {
   /// the text intact, which is the honest answer rather than a guess.
   static LinkTrouble from(Object error) {
     final text = error.toString();
+    if (error is NotAJkBmsException) {
+      return LinkTrouble(LinkTroubleKind.notJkBms, detail: text);
+    }
     final lower = text.toLowerCase();
 
     // Android GATT 133 is the catch-all for "the peripheral is not there":
