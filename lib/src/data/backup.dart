@@ -47,6 +47,7 @@ class BackupCodec {
     final snapshots = await db.allSnapshotsForBackup();
     final tests = await db.allCapacityTestsForBackup();
     final maintenance = await db.allMaintenanceForBackup();
+    final inspections = await db.allInspectionsForBackup();
     final frames = includeRawFrames
         ? await db.allRawFramesForBackup()
         : const <RawFrame>[];
@@ -63,11 +64,16 @@ class BackupCodec {
       'snapshots': snapshots.map(_snapshot).toList(),
       'capacityTests': tests.map(_test).toList(),
       'maintenance': maintenance.map(_maintenance).toList(),
+      'inspections': inspections.map(_inspection).toList(),
       'rawFrames': frames.map(_frame).toList(),
     };
 
     final dir = into ?? await getApplicationDocumentsDirectory();
-    final stamp = DateTime.now().toUtc().toIso8601String().split('.').first
+    final stamp = DateTime.now()
+        .toUtc()
+        .toIso8601String()
+        .split('.')
+        .first
         .replaceAll(':', '-');
     final file = File(p.join(dir.path, 'jk-bms-backup-$stamp.json'));
     await file.writeAsString(jsonEncode(payload));
@@ -84,10 +90,7 @@ class BackupCodec {
   /// Row ids are not preserved. They are local to a database and reusing them
   /// would collide with rows already present; trip points are re-pointed at
   /// the new trip ids as they are written.
-  Future<BackupImportResult> import(
-    File file, {
-    bool replace = false,
-  }) async {
+  Future<BackupImportResult> import(File file, {bool replace = false}) async {
     final Object? decoded;
     try {
       decoded = jsonDecode(await file.readAsString());
@@ -120,6 +123,8 @@ class BackupCodec {
     final tests = _list(decoded['capacityTests']);
     final frames = _list(decoded['rawFrames']);
     final maintenance = _list(decoded['maintenance']);
+    // Absent from every backup made before inspections existed.
+    final inspections = _list(decoded['inspections']);
 
     for (final d in devices) {
       await db.upsertDevice(
@@ -178,6 +183,25 @@ class BackupCodec {
       );
     }
 
+    for (final i in inspections) {
+      final at = _time(i['at']);
+      final bmsId = i['bmsId'];
+      if (at == null || bmsId is! String) continue;
+      await db.insertInspection(
+        InspectionsCompanion.insert(
+          at: at,
+          bmsId: bmsId,
+          bmsName: Value(i['bmsName'] as String? ?? ''),
+          model: Value(i['model'] as String? ?? ''),
+          serialNumber: Value(i['serialNumber'] as String? ?? ''),
+          light: i['light'] as String? ?? 'watch',
+          resultJson: i['result'] as String? ?? '{}',
+          samplesJson: i['samples'] as String? ?? '[]',
+          note: Value(i['note'] as String? ?? ''),
+        ),
+      );
+    }
+
     final frameRows = [for (final f in frames) _frameCompanion(f)];
     if (frameRows.isNotEmpty) await db.insertRawFrames(frameRows);
 
@@ -189,6 +213,7 @@ class BackupCodec {
       capacityTests: tests.length,
       rawFrames: frameRows.length,
       maintenance: maintenance.length,
+      inspections: inspections.length,
       exportedAt: _time(decoded['exportedAt']),
     );
   }
@@ -196,129 +221,139 @@ class BackupCodec {
   // --- to JSON ---
 
   static Map<String, Object?> _device(Device d) => {
-        'id': d.id,
-        'name': d.name,
-        'serialNumber': d.serialNumber,
-        'model': d.model,
-        'catalogueCapacityAh': d.catalogueCapacityAh,
-        'catalogueFromBms': d.catalogueFromBms,
-        'firstSeenAt': d.firstSeenAt.toIso8601String(),
-        'lastSeenAt': d.lastSeenAt.toIso8601String(),
-        'demo': d.demo,
-      };
+    'id': d.id,
+    'name': d.name,
+    'serialNumber': d.serialNumber,
+    'model': d.model,
+    'catalogueCapacityAh': d.catalogueCapacityAh,
+    'catalogueFromBms': d.catalogueFromBms,
+    'firstSeenAt': d.firstSeenAt.toIso8601String(),
+    'lastSeenAt': d.lastSeenAt.toIso8601String(),
+    'demo': d.demo,
+  };
 
   static Map<String, Object?> _trip(Trip t) => {
-        'id': t.id,
-        'deviceId': t.deviceId,
-        'startedAt': t.startedAt.toIso8601String(),
-        'endedAt': t.endedAt.toIso8601String(),
-        'distanceKm': t.distanceKm,
-        'movingSeconds': t.movingSeconds,
-        'totalSeconds': t.totalSeconds,
-        'maxSpeedKmh': t.maxSpeedKmh,
-        'energyOutWh': t.energyOutWh,
-        'energyInWh': t.energyInWh,
-        'startSoc': t.startSoc,
-        'endSoc': t.endSoc,
-        'minPackVoltage': t.minPackVoltage,
-        'maxPackVoltage': t.maxPackVoltage,
-        'maxDischargeCurrent': t.maxDischargeCurrent,
-        'maxTemperature': t.maxTemperature,
-        'maxDeltaVolts': t.maxDeltaVolts,
-        'climbM': t.climbM,
-        'descentM': t.descentM,
-        'note': t.note,
-        'demo': t.demo,
-        // Nullable, and written as null rather than zero. A restored ride from
-        // before conclusions were kept must stay a ride with no conclusions.
-        'whPerKmBefore': t.whPerKmBefore,
-        'whPerKmAfter': t.whPerKmAfter,
-        'learnedKm': t.learnedKm,
-        'rangeKmAtEnd': t.rangeKmAtEnd,
-        'confidence': t.confidence,
-        'ahOut': t.ahOut,
-        'energySource': t.energySource,
-      };
+    'id': t.id,
+    'deviceId': t.deviceId,
+    'startedAt': t.startedAt.toIso8601String(),
+    'endedAt': t.endedAt.toIso8601String(),
+    'distanceKm': t.distanceKm,
+    'movingSeconds': t.movingSeconds,
+    'totalSeconds': t.totalSeconds,
+    'maxSpeedKmh': t.maxSpeedKmh,
+    'energyOutWh': t.energyOutWh,
+    'energyInWh': t.energyInWh,
+    'startSoc': t.startSoc,
+    'endSoc': t.endSoc,
+    'minPackVoltage': t.minPackVoltage,
+    'maxPackVoltage': t.maxPackVoltage,
+    'maxDischargeCurrent': t.maxDischargeCurrent,
+    'maxTemperature': t.maxTemperature,
+    'maxDeltaVolts': t.maxDeltaVolts,
+    'climbM': t.climbM,
+    'descentM': t.descentM,
+    'note': t.note,
+    'demo': t.demo,
+    // Nullable, and written as null rather than zero. A restored ride from
+    // before conclusions were kept must stay a ride with no conclusions.
+    'whPerKmBefore': t.whPerKmBefore,
+    'whPerKmAfter': t.whPerKmAfter,
+    'learnedKm': t.learnedKm,
+    'rangeKmAtEnd': t.rangeKmAtEnd,
+    'confidence': t.confidence,
+    'ahOut': t.ahOut,
+    'energySource': t.energySource,
+  };
 
   static Map<String, Object?> _point(TripPoint p) => {
-        'tripId': p.tripId,
-        'timestamp': p.timestamp.toIso8601String(),
-        'latitude': p.latitude,
-        'longitude': p.longitude,
-        'speedKmh': p.speedKmh,
-        'altitudeM': p.altitudeM,
-        'packVoltage': p.packVoltage,
-        'current': p.current,
-        'soc': p.soc,
-      };
+    'tripId': p.tripId,
+    'timestamp': p.timestamp.toIso8601String(),
+    'latitude': p.latitude,
+    'longitude': p.longitude,
+    'speedKmh': p.speedKmh,
+    'altitudeM': p.altitudeM,
+    'packVoltage': p.packVoltage,
+    'current': p.current,
+    'soc': p.soc,
+  };
 
   static Map<String, Object?> _snapshot(Snapshot s) => {
-        'deviceId': s.deviceId,
-        'timestamp': s.timestamp.toIso8601String(),
-        'tripId': s.tripId,
-        'packVoltage': s.packVoltage,
-        'current': s.current,
-        'soc': s.soc,
-        'soh': s.soh,
-        'remainingAh': s.remainingAh,
-        'cycleCount': s.cycleCount,
-        'cycleCapacityAh': s.cycleCapacityAh,
-        'deltaVolts': s.deltaVolts,
-        'minCellVoltage': s.minCellVoltage,
-        'maxCellVoltage': s.maxCellVoltage,
-        'maxTemperature': s.maxTemperature,
-        'mosfetTemp': s.mosfetTemp,
-        'warningsMask': s.warningsMask,
-        'balancerActive': s.balancerActive,
-        'cellVoltagesJson': s.cellVoltagesJson,
-      };
+    'deviceId': s.deviceId,
+    'timestamp': s.timestamp.toIso8601String(),
+    'tripId': s.tripId,
+    'packVoltage': s.packVoltage,
+    'current': s.current,
+    'soc': s.soc,
+    'soh': s.soh,
+    'remainingAh': s.remainingAh,
+    'cycleCount': s.cycleCount,
+    'cycleCapacityAh': s.cycleCapacityAh,
+    'deltaVolts': s.deltaVolts,
+    'minCellVoltage': s.minCellVoltage,
+    'maxCellVoltage': s.maxCellVoltage,
+    'maxTemperature': s.maxTemperature,
+    'mosfetTemp': s.mosfetTemp,
+    'warningsMask': s.warningsMask,
+    'balancerActive': s.balancerActive,
+    'cellVoltagesJson': s.cellVoltagesJson,
+  };
 
   static Map<String, Object?> _test(CapacityTest t) => {
-        'deviceId': t.deviceId,
-        'startedAt': t.startedAt.toIso8601String(),
-        'endedAt': t.endedAt?.toIso8601String(),
-        'startSoc': t.startSoc,
-        'endSoc': t.endSoc,
-        'startPackVoltage': t.startPackVoltage,
-        'endPackVoltage': t.endPackVoltage,
-        'measuredAh': t.measuredAh,
-        'measuredWh': t.measuredWh,
-        'catalogueAh': t.catalogueAh,
-        'completed': t.completed,
-        'automatic': t.automatic,
-        'gapSeconds': t.gapSeconds,
-        'note': t.note,
-      };
+    'deviceId': t.deviceId,
+    'startedAt': t.startedAt.toIso8601String(),
+    'endedAt': t.endedAt?.toIso8601String(),
+    'startSoc': t.startSoc,
+    'endSoc': t.endSoc,
+    'startPackVoltage': t.startPackVoltage,
+    'endPackVoltage': t.endPackVoltage,
+    'measuredAh': t.measuredAh,
+    'measuredWh': t.measuredWh,
+    'catalogueAh': t.catalogueAh,
+    'completed': t.completed,
+    'automatic': t.automatic,
+    'gapSeconds': t.gapSeconds,
+    'note': t.note,
+  };
 
   static Map<String, Object?> _maintenance(MaintenanceEvent e) => {
-        'deviceId': e.deviceId,
-        'at': e.at.toIso8601String(),
-        'kind': e.kind,
-        'note': e.note,
-      };
+    'deviceId': e.deviceId,
+    'at': e.at.toIso8601String(),
+    'kind': e.kind,
+    'note': e.note,
+  };
+
+  static Map<String, Object?> _inspection(Inspection i) => {
+    'at': i.at.toIso8601String(),
+    'bmsId': i.bmsId,
+    'bmsName': i.bmsName,
+    'model': i.model,
+    'serialNumber': i.serialNumber,
+    'light': i.light,
+    // Kept as the JSON text it already is, rather than re-encoded, so a
+    // backup never subtly changes a stored result.
+    'result': i.resultJson,
+    'samples': i.samplesJson,
+    'note': i.note,
+  };
 
   static Map<String, Object?> _frame(RawFrame f) => {
-        'deviceId': f.deviceId,
-        'timestamp': f.timestamp.toIso8601String(),
-        'recordType': f.recordType,
-        // Hex, so the file stays readable and diffable. Base64 would be
-        // shorter; being able to eyeball a frame is worth the bytes.
-        'bytes': f.bytes
-            .map((b) => b.toRadixString(16).padLeft(2, '0'))
-            .join(),
-      };
+    'deviceId': f.deviceId,
+    'timestamp': f.timestamp.toIso8601String(),
+    'recordType': f.recordType,
+    // Hex, so the file stays readable and diffable. Base64 would be
+    // shorter; being able to eyeball a frame is worth the bytes.
+    'bytes': f.bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join(),
+  };
 
   // --- from JSON ---
 
-  static List<Map<String, dynamic>> _list(Object? raw) => raw is List
-      ? raw.whereType<Map<String, dynamic>>().toList()
-      : const [];
+  static List<Map<String, dynamic>> _list(Object? raw) =>
+      raw is List ? raw.whereType<Map<String, dynamic>>().toList() : const [];
 
   static DateTime? _time(Object? raw) =>
       raw is String ? DateTime.tryParse(raw)?.toUtc() : null;
 
-  static double? _double(Object? raw) =>
-      raw is num ? raw.toDouble() : null;
+  static double? _double(Object? raw) => raw is num ? raw.toDouble() : null;
 
   static double _d(Object? raw, [double fallback = 0]) =>
       raw is num ? raw.toDouble() : fallback;
@@ -364,43 +399,41 @@ class BackupCodec {
   static TripPointsCompanion _pointCompanion(
     Map<String, dynamic> p,
     int tripId,
-  ) =>
-      TripPointsCompanion.insert(
-        tripId: tripId,
-        timestamp: _time(p['timestamp'])!,
-        latitude: _d(p['latitude']),
-        longitude: _d(p['longitude']),
-        speedKmh: _d(p['speedKmh']),
-        altitudeM: _d(p['altitudeM']),
-        packVoltage: _d(p['packVoltage']),
-        current: _d(p['current']),
-        soc: _d(p['soc']),
-      );
+  ) => TripPointsCompanion.insert(
+    tripId: tripId,
+    timestamp: _time(p['timestamp'])!,
+    latitude: _d(p['latitude']),
+    longitude: _d(p['longitude']),
+    speedKmh: _d(p['speedKmh']),
+    altitudeM: _d(p['altitudeM']),
+    packVoltage: _d(p['packVoltage']),
+    current: _d(p['current']),
+    soc: _d(p['soc']),
+  );
 
   static SnapshotsCompanion _snapshotCompanion(
     Map<String, dynamic> s,
     Map<int, int> tripIds,
-  ) =>
-      SnapshotsCompanion.insert(
-        deviceId: Value(s['deviceId'] as String?),
-        timestamp: _time(s['timestamp'])!,
-        tripId: Value(tripIds[s['tripId']]),
-        packVoltage: _d(s['packVoltage']),
-        current: _d(s['current']),
-        soc: _d(s['soc']),
-        soh: _d(s['soh']),
-        remainingAh: _d(s['remainingAh']),
-        cycleCount: _d(s['cycleCount']),
-        cycleCapacityAh: Value(_d(s['cycleCapacityAh'])),
-        deltaVolts: _d(s['deltaVolts']),
-        minCellVoltage: _d(s['minCellVoltage']),
-        maxCellVoltage: _d(s['maxCellVoltage']),
-        maxTemperature: _d(s['maxTemperature']),
-        mosfetTemp: Value(_double(s['mosfetTemp'])),
-        warningsMask: _i(s['warningsMask']),
-        balancerActive: s['balancerActive'] as bool? ?? false,
-        cellVoltagesJson: s['cellVoltagesJson'] as String? ?? '[]',
-      );
+  ) => SnapshotsCompanion.insert(
+    deviceId: Value(s['deviceId'] as String?),
+    timestamp: _time(s['timestamp'])!,
+    tripId: Value(tripIds[s['tripId']]),
+    packVoltage: _d(s['packVoltage']),
+    current: _d(s['current']),
+    soc: _d(s['soc']),
+    soh: _d(s['soh']),
+    remainingAh: _d(s['remainingAh']),
+    cycleCount: _d(s['cycleCount']),
+    cycleCapacityAh: Value(_d(s['cycleCapacityAh'])),
+    deltaVolts: _d(s['deltaVolts']),
+    minCellVoltage: _d(s['minCellVoltage']),
+    maxCellVoltage: _d(s['maxCellVoltage']),
+    maxTemperature: _d(s['maxTemperature']),
+    mosfetTemp: Value(_double(s['mosfetTemp'])),
+    warningsMask: _i(s['warningsMask']),
+    balancerActive: s['balancerActive'] as bool? ?? false,
+    cellVoltagesJson: s['cellVoltagesJson'] as String? ?? '[]',
+  );
 
   static CapacityTestsCompanion _testCompanion(Map<String, dynamic> t) =>
       CapacityTestsCompanion.insert(
@@ -445,6 +478,7 @@ class BackupImportResult {
     required this.capacityTests,
     required this.rawFrames,
     this.maintenance = 0,
+    this.inspections = 0,
     this.exportedAt,
   });
 
@@ -455,6 +489,7 @@ class BackupImportResult {
   final int capacityTests;
   final int rawFrames;
   final int maintenance;
+  final int inspections;
   final DateTime? exportedAt;
 }
 

@@ -70,10 +70,12 @@ class _SystemTabState extends State<SystemTab> {
       s.deviceInfo.listen((v) => setState(() => _info = v)),
       s.settings.listen((v) => setState(() => _settings = v)),
       s.frameStats.listen((v) => setState(() => _stats = v)),
-      s.problems.listen((v) => setState(() {
-            _problems.insert(0, v);
-            if (_problems.length > 10) _problems.removeLast();
-          })),
+      s.problems.listen(
+        (v) => setState(() {
+          _problems.insert(0, v);
+          if (_problems.length > 10) _problems.removeLast();
+        }),
+      ),
     ]);
   }
 
@@ -133,8 +135,9 @@ class _SystemTabState extends State<SystemTab> {
                         ? t.systemPasscodeEmpty
                         : info.devicePasscode,
                     dim: info.devicePasscode.isEmpty,
-                    valueColor:
-                        info.devicePasscode.isEmpty ? null : AppTheme.watch,
+                    valueColor: info.devicePasscode.isEmpty
+                        ? null
+                        : AppTheme.watch,
                     hint: t.systemPasscodeHint,
                     last: true,
                   ),
@@ -160,18 +163,17 @@ class _SystemTabState extends State<SystemTab> {
             InfoRow(
               t.systemFramesBadChecksum,
               '${stats?.badChecksum ?? 0}',
-              valueColor:
-                  (stats?.badChecksum ?? 0) > 0 ? AppTheme.watch : null,
+              valueColor: (stats?.badChecksum ?? 0) > 0 ? AppTheme.watch : null,
             ),
-            InfoRow(t.systemFramesUnsupported, '${stats?.unsupportedType ?? 0}'),
+            InfoRow(
+              t.systemFramesUnsupported,
+              '${stats?.unsupportedType ?? 0}',
+            ),
             InfoRow(
               t.systemAcceptRate,
               '${((stats?.acceptRate ?? 1) * 100).toStringAsFixed(1)} %',
             ),
-            InfoRow(
-              t.systemBytesReceived,
-              '${stats?.bytesReceived ?? 0}',
-            ),
+            InfoRow(t.systemBytesReceived, '${stats?.bytesReceived ?? 0}'),
             // A diagnosis was made from a backup after the fact, and the
             // next one should not have to be. These three tell apart the
             // two ways a recording gets holes in it: the link going away,
@@ -179,8 +181,7 @@ class _SystemTabState extends State<SystemTab> {
             InfoRow(
               t.systemDrops,
               '${service.linkHealth.drops}',
-              valueColor:
-                  service.linkHealth.drops > 5 ? AppTheme.watch : null,
+              valueColor: service.linkHealth.drops > 5 ? AppTheme.watch : null,
             ),
             InfoRow(
               t.systemTimeDisconnected,
@@ -408,8 +409,6 @@ class _SystemTabState extends State<SystemTab> {
     );
   }
 
-
-
   /// Stores what this pack was sold as.
   ///
   /// Always against a specific pack. There is no app-wide version of this
@@ -421,6 +420,7 @@ class _SystemTabState extends State<SystemTab> {
     widget.service.catalogueSetByUser = true;
     if (mounted) setState(() {});
   }
+
   Widget _settingsSection(AppL10n t) {
     final configured = widget.service.configuredCapacityAh;
     // The connected pack's own figure, or null when nobody has stated it.
@@ -435,7 +435,8 @@ class _SystemTabState extends State<SystemTab> {
     final fromBms = device?.catalogueFromBms ?? false;
     // Half an amp-hour apart is rounding; more than that is two different
     // claims about the same pack.
-    final mismatch = configured != null &&
+    final mismatch =
+        configured != null &&
         catalogue != null &&
         (configured - catalogue).abs() > 0.5;
 
@@ -451,14 +452,14 @@ class _SystemTabState extends State<SystemTab> {
           catalogue == null
               ? t.catalogueUnset
               : fromBms
-                  ? '${catalogue.toStringAsFixed(1)} Ah  ·  ${t.catalogueFromBmsTag}'
-                  : '${catalogue.toStringAsFixed(1)} Ah',
+              ? '${catalogue.toStringAsFixed(1)} Ah  ·  ${t.catalogueFromBmsTag}'
+              : '${catalogue.toStringAsFixed(1)} Ah',
           dim: catalogue == null,
           valueColor: catalogue == null
               ? AppTheme.watch
               : fromBms
-                  ? AppTheme.cool
-                  : null,
+              ? AppTheme.cool
+              : null,
           hint: device == null
               ? t.settingsCatalogueHint
               : t.settingsCatalogueForPack(
@@ -583,9 +584,9 @@ class _SystemTabState extends State<SystemTab> {
         );
       } on Exception catch (_) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.exportFailed)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(t.exportFailed)));
       }
     }
 
@@ -623,6 +624,7 @@ class _SystemTabState extends State<SystemTab> {
       ],
     );
   }
+
   Widget _languageSection(AppL10n t) {
     final controller = widget.localeController;
     return Section(
@@ -705,45 +707,53 @@ class _SystemTabState extends State<SystemTab> {
   }
 
   String _languageLabel(AppL10n t, LanguageChoice c) => switch (c) {
-        LanguageChoice.spanish => t.systemLanguageSpanish,
-        LanguageChoice.english => t.systemLanguageEnglish,
-        LanguageChoice.system => t.systemLanguageSystem,
-      };
+    LanguageChoice.spanish => t.systemLanguageSpanish,
+    LanguageChoice.english => t.systemLanguageEnglish,
+    LanguageChoice.system => t.systemLanguageSystem,
+  };
 
   String _scenarioLabel(AppL10n t, DemoScenario s) => switch (s) {
-        DemoScenario.riding => t.demoScenarioRiding,
-        DemoScenario.charging => t.demoScenarioCharging,
-        DemoScenario.idle => t.demoScenarioIdle,
-        DemoScenario.weakCell => t.demoScenarioWeakCell,
-      };
+    DemoScenario.riding => t.demoScenarioRiding,
+    DemoScenario.charging => t.demoScenarioCharging,
+    DemoScenario.idle => t.demoScenarioIdle,
+    DemoScenario.weakCell => t.demoScenarioWeakCell,
+    DemoScenario.inspection => t.demoScenarioInspection,
+  };
 
   String _scenarioDescription(AppL10n t, DemoScenario s) => switch (s) {
-        DemoScenario.riding => t.demoScenarioRidingDesc,
-        DemoScenario.charging => t.demoScenarioChargingDesc,
-        DemoScenario.idle => t.demoScenarioIdleDesc,
-        DemoScenario.weakCell => t.demoScenarioWeakCellDesc,
-      };
+    DemoScenario.riding => t.demoScenarioRidingDesc,
+    DemoScenario.charging => t.demoScenarioChargingDesc,
+    DemoScenario.idle => t.demoScenarioIdleDesc,
+    DemoScenario.weakCell => t.demoScenarioWeakCellDesc,
+    DemoScenario.inspection => t.demoScenarioInspectionDesc,
+  };
 
   String _linkLabel(AppL10n t, BleLinkState state) => switch (state) {
-        BleLinkState.idle => t.linkIdle,
-        BleLinkState.scanning => t.linkScanning,
-        BleLinkState.connecting => t.linkConnecting,
-        BleLinkState.negotiating => t.linkNegotiating,
-        BleLinkState.connected => t.linkConnected,
-        BleLinkState.reconnecting => t.linkReconnecting,
-        BleLinkState.failed => t.linkFailed,
-      };
+    BleLinkState.idle => t.linkIdle,
+    BleLinkState.scanning => t.linkScanning,
+    BleLinkState.connecting => t.linkConnecting,
+    BleLinkState.negotiating => t.linkNegotiating,
+    BleLinkState.connected => t.linkConnected,
+    BleLinkState.reconnecting => t.linkReconnecting,
+    BleLinkState.failed => t.linkFailed,
+  };
 
   /// The detector reports a code, not a sentence, so the explanation can be
   /// written in the reader's language rather than baked into a protocol class.
   String _variantReason(AppL10n t, VariantDetection d) => switch (d.reason) {
-        VariantReason.unreadableVersion =>
-          t.variantReasonUnreadable(d.softwareVersion, d.model),
-        VariantReason.modernFirmware =>
-          t.variantReasonModern(d.softwareVersion, d.majorVersion ?? 0),
-        VariantReason.legacyFirmware =>
-          t.variantReasonLegacy(d.softwareVersion, d.majorVersion ?? 0),
-      };
+    VariantReason.unreadableVersion => t.variantReasonUnreadable(
+      d.softwareVersion,
+      d.model,
+    ),
+    VariantReason.modernFirmware => t.variantReasonModern(
+      d.softwareVersion,
+      d.majorVersion ?? 0,
+    ),
+    VariantReason.legacyFirmware => t.variantReasonLegacy(
+      d.softwareVersion,
+      d.majorVersion ?? 0,
+    ),
+  };
 
   static String _duration(int seconds) {
     final d = Duration(seconds: seconds);

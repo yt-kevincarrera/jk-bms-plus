@@ -15,8 +15,10 @@ import 'database.dart';
 /// the storage constantly for no benefit. Batches flush on a timer, and always
 /// on the way out, so a crash costs at most one interval.
 class BmsRepository {
-  BmsRepository({AppDatabase? database, this.flushInterval = const Duration(seconds: 5)})
-      : db = database ?? AppDatabase() {
+  BmsRepository({
+    AppDatabase? database,
+    this.flushInterval = const Duration(seconds: 5),
+  }) : db = database ?? AppDatabase() {
     _flushTimer = Timer.periodic(flushInterval, (_) => flush());
   }
 
@@ -72,8 +74,9 @@ class BmsRepository {
         deltaVolts: s.deltaCellVoltage,
         minCellVoltage: s.minCellVoltage,
         maxCellVoltage: s.maxCellVoltage,
-        maxTemperature:
-            temps.isEmpty ? 0 : temps.reduce((a, b) => a > b ? a : b),
+        maxTemperature: temps.isEmpty
+            ? 0
+            : temps.reduce((a, b) => a > b ? a : b),
         mosfetTemp: Value(s.mosfetTemp),
         warningsMask: s.warnings.raw,
         balancerActive: s.balancerActive,
@@ -116,7 +119,7 @@ class BmsRepository {
     }
   }
 
-    /// Opens a trip row as soon as recording starts.
+  /// Opens a trip row as soon as recording starts.
   ///
   /// The row exists from the first second so every reading taken during the
   /// ride can be attributed to it, and so a ride that ends in a crash or a flat
@@ -310,10 +313,7 @@ class BmsRepository {
   }
 
   /// Stores, or corrects, what the app concluded about a finished ride.
-  Future<void> recordTripConclusions(
-    int tripId,
-    TripConclusions conclusions,
-  ) =>
+  Future<void> recordTripConclusions(int tripId, TripConclusions conclusions) =>
       db.updateTrip(
         tripId,
         TripsCompanion(
@@ -327,10 +327,11 @@ class BmsRepository {
 
   Future<List<Trip>> tripsForLearning(String deviceId) async {
     final all = await db.recentTrips(deviceId, limit: 500);
-    final usable = all
-        .where((t) => t.distanceKm >= 0.2 && t.energyOutWh > t.energyInWh)
-        .toList()
-      ..sort((a, b) => a.startedAt.compareTo(b.startedAt));
+    final usable =
+        all
+            .where((t) => t.distanceKm >= 0.2 && t.energyOutWh > t.energyInWh)
+            .toList()
+          ..sort((a, b) => a.startedAt.compareTo(b.startedAt));
     return usable;
   }
 
@@ -347,8 +348,7 @@ class BmsRepository {
 
   /// Drops raw frames past their retention window. Cheap, and worth doing on
   /// every start rather than waiting for the phone to fill up.
-  Future<int> pruneRawFrames() =>
-      db.pruneRawFrames(keep: rawFrameRetention);
+  Future<int> pruneRawFrames() => db.pruneRawFrames(keep: rawFrameRetention);
 
   /// Thins readings older than a month down to one a minute.
   ///
@@ -358,11 +358,10 @@ class BmsRepository {
   Future<int> compactSnapshots() => db.compactSnapshots();
 
   Future<StorageStats> storageStats() async => StorageStats(
-        snapshots: await db.countSnapshots(),
-        rawFrames: await db.countRawFrames(),
-        bytes: await AppDatabase.fileSizeBytes(),
-      );
-
+    snapshots: await db.countSnapshots(),
+    rawFrames: await db.countRawFrames(),
+    bytes: await AppDatabase.fileSizeBytes(),
+  );
 
   // --- Capacity tests ---
 
@@ -371,19 +370,18 @@ class BmsRepository {
     required double startSoc,
     required double startPackVoltage,
     required double? catalogueAh,
-  }) =>
-      db.insertCapacityTest(
-        CapacityTestsCompanion.insert(
-          startedAt: startedAt,
-          startSoc: startSoc,
-          endSoc: startSoc,
-          startPackVoltage: startPackVoltage,
-          endPackVoltage: startPackVoltage,
-          measuredAh: 0,
-          measuredWh: 0,
-          catalogueAh: Value(catalogueAh),
-        ),
-      );
+  }) => db.insertCapacityTest(
+    CapacityTestsCompanion.insert(
+      startedAt: startedAt,
+      startSoc: startSoc,
+      endSoc: startSoc,
+      startPackVoltage: startPackVoltage,
+      endPackVoltage: startPackVoltage,
+      measuredAh: 0,
+      measuredWh: 0,
+      catalogueAh: Value(catalogueAh),
+    ),
+  );
 
   /// Called as the run goes, so a closed app costs seconds rather than hours.
   Future<void> updateCapacityProgress(
@@ -392,16 +390,15 @@ class BmsRepository {
     required double measuredWh,
     required double endSoc,
     required double endPackVoltage,
-  }) =>
-      db.updateCapacityTest(
-        id,
-        CapacityTestsCompanion(
-          measuredAh: Value(measuredAh),
-          measuredWh: Value(measuredWh),
-          endSoc: Value(endSoc),
-          endPackVoltage: Value(endPackVoltage),
-        ),
-      );
+  }) => db.updateCapacityTest(
+    id,
+    CapacityTestsCompanion(
+      measuredAh: Value(measuredAh),
+      measuredWh: Value(measuredWh),
+      endSoc: Value(endSoc),
+      endPackVoltage: Value(endPackVoltage),
+    ),
+  );
 
   Future<void> finishCapacityTest(
     int id, {
@@ -410,18 +407,17 @@ class BmsRepository {
     required double endPackVoltage,
     required double measuredAh,
     required double measuredWh,
-  }) =>
-      db.updateCapacityTest(
-        id,
-        CapacityTestsCompanion(
-          endedAt: Value(endedAt),
-          endSoc: Value(endSoc),
-          endPackVoltage: Value(endPackVoltage),
-          measuredAh: Value(measuredAh),
-          measuredWh: Value(measuredWh),
-          completed: const Value(true),
-        ),
-      );
+  }) => db.updateCapacityTest(
+    id,
+    CapacityTestsCompanion(
+      endedAt: Value(endedAt),
+      endSoc: Value(endSoc),
+      endPackVoltage: Value(endPackVoltage),
+      measuredAh: Value(measuredAh),
+      measuredWh: Value(measuredWh),
+      completed: const Value(true),
+    ),
+  );
 
   Future<void> deleteCapacityTest(int id) => db.deleteCapacityTest(id);
 
@@ -452,7 +448,10 @@ class BmsRepository {
     final existing = await db.allCapacityTests(deviceId);
     // Matched on the start instant: the same discharge scanned twice must not
     // become two measurements.
-    if (cycleAlreadyRecorded(cycle.startedAt, existing.map((t) => t.startedAt))) {
+    if (cycleAlreadyRecorded(
+      cycle.startedAt,
+      existing.map((t) => t.startedAt),
+    )) {
       return false;
     }
 
@@ -531,6 +530,23 @@ class BmsRepository {
 
   Future<List<Device>> devices() => db.allDevices();
 
+  // --- Inspections of other people's packs ---
+  //
+  // Deliberately not scoped to the active pack: an inspection is not a
+  // battery's history and the pack it looked at is never adopted.
+
+  Future<int> saveInspection(InspectionsCompanion row) =>
+      db.insertInspection(row);
+
+  Future<List<Inspection>> inspections() => db.allInspections();
+
+  Stream<List<Inspection>> watchInspections() => db.watchInspections();
+
+  Future<void> deleteInspection(int id) => db.deleteInspection(id);
+
+  Future<void> setInspectionNote(int id, String note) =>
+      db.setInspectionNote(id, note);
+
   Stream<List<Device>> watchDevices() => db.watchDevices();
 
   Future<Device?> device(String id) => db.device(id);
@@ -540,12 +556,12 @@ class BmsRepository {
 
   /// The rider stating what the pack was sold as. Sticks, and outranks the BMS.
   Future<void> setDeviceCatalogue(String id, double ah) => db.updateDevice(
-        id,
-        DevicesCompanion(
-          catalogueCapacityAh: Value(ah),
-          catalogueFromBms: const Value(false),
-        ),
-      );
+    id,
+    DevicesCompanion(
+      catalogueCapacityAh: Value(ah),
+      catalogueFromBms: const Value(false),
+    ),
+  );
 
   /// The app taking the BMS's configured nominal, so the health figures work
   /// on the first connection without anybody typing anything.
