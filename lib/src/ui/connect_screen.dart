@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../ble/ble_transport.dart';
+import '../ble/first_contact.dart';
 import '../app_settings.dart';
 import '../ble/proximity_watcher.dart';
 import '../ble/simulator/simulated_pack.dart';
@@ -63,6 +64,15 @@ class _ConnectScreenState extends State<ConnectScreen> {
   String? _message;
   bool _busyMessage = false;
 
+  /// Whether a link error was shown during the attempt in progress. When the
+  /// link never comes up, that error is the explanation and the verdict must
+  /// not paper over it.
+  bool _troubleDuringAttempt = false;
+
+  /// Set while a failed attempt is being torn down. A connect cancelled midway
+  /// complains on its way out, and that complaint is not news.
+  bool _settling = false;
+
   /// The raw exception behind [_message], when there was one.
   ///
   /// Kept separate so the screen can lead with a sentence and still hand over
@@ -81,12 +91,13 @@ class _ConnectScreenState extends State<ConnectScreen> {
     });
 
     _errorSub = widget.service.linkErrors.listen((e) {
-      if (mounted) {
+      if (mounted && !_settling) {
         setState(() {
           final trouble = e.trouble;
           // A smaller packet size is a note about speed, not a failure worth
           // colouring red on the screen somebody is trying to connect from.
           if (trouble != null && !trouble.isNoteworthy) return;
+          if (_connecting) _troubleDuringAttempt = true;
           _message = trouble == null
               ? e.message
               : linkTroubleWording(AppL10n.of(context), trouble);
@@ -624,6 +635,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
 
   Future<void> _connect(DiscoveredBms device) async {
     await _cancelScan();
+    _troubleDuringAttempt = false;
     if (mounted) {
       setState(() {
         _connecting = true;
@@ -633,28 +645,72 @@ class _ConnectScreenState extends State<ConnectScreen> {
       });
     }
 
-    unawaited(widget.service.connect(device.id, name: device.name));
-
     // Wait for proof that this is actually a BMS before opening anything.
     // Tapping a pair of headphones used to connect, open the live screens, and
     // sit on "waiting for the first reading" for as long as you let it: a
     // dead end with no way to tell a slow pack from the wrong device.
-    var isBms = true;
-    try {
-      await widget.service.snapshots.first
-          .timeout(const Duration(seconds: 14));
-    } on Object catch (_) {
-      isBms = false;
+    //
+    // The proof used to be a snapshot within fourteen seconds of the tap, and
+    // anything else was called "almost certainly not a JK BMS". That verdict
+    // landed on a real pack: fourteen seconds does not cover a failed connect
+    // plus a retry, a snapshot needs device info to have named the protocol
+    // variant first, and the screen then tore down a connect still in flight,
+    // which left the pack held by a link nobody was listening to, so the next
+    // tap found it mute too. [FirstContact] judges from what actually happened.
+    final contact = FirstContact(
+      startedAt: DateTime.now(),
+      bytesBefore: widget.service.stats.bytesReceived,
+    );
+    final subs = <StreamSubscription<Object?>>[
+      widget.service.linkState.listen(
+        (state) => contact.onLinkState(state, DateTime.now()),
+      ),
+      widget.service.frameStats.listen(
+        (stats) => contact.onBytesTotal(stats.bytesReceived),
+      ),
+      widget.service.deviceInfo.listen((_) => contact.onDecoded()),
+      widget.service.snapshots.listen((_) => contact.onDecoded()),
+    ];
+
+    unawaited(widget.service.connect(device.id, name: device.name));
+
+    final outcome = await _awaitVerdict(contact);
+    for (final sub in subs) {
+      await sub.cancel();
     }
 
-    if (!isBms) {
+    if (outcome != FirstContactOutcome.proven) {
+      _settling = true;
       await widget.service.disconnect();
+      _settling = false;
       _connecting = false;
       if (mounted) {
+        final t = t0(context);
         setState(() {
-          _message = t0(context).connectNotABms;
-          _messageDetail = '';
-          _busyMessage = false;
+          switch (outcome) {
+            case FirstContactOutcome.linkNeverCameUp:
+              // The link error already on screen, when there was one, says
+              // why. Only a silent failure needs words of its own.
+              if (!_troubleDuringAttempt) {
+                _message = t.connectLinkNeverCameUp;
+                _messageDetail = '';
+                _busyMessage = false;
+              }
+            case FirstContactOutcome.connectedButSilent:
+              // A device that announces itself as JK and then says nothing is
+              // a JK BMS with its attention elsewhere, not a pair of
+              // headphones, and the advice is different.
+              _message =
+                  device.likelyBms ? t.connectSilentJk : t.connectNotABms;
+              _messageDetail = '';
+              _busyMessage = false;
+            case FirstContactOutcome.talkingButUndecoded:
+              _message = t.connectTalkingUndecoded;
+              _messageDetail = '';
+              _busyMessage = false;
+            case FirstContactOutcome.proven:
+              break;
+          }
         });
       }
       return;
@@ -674,6 +730,15 @@ class _ConnectScreenState extends State<ConnectScreen> {
     await _openHome(device.name);
     await widget.service.disconnect();
     _connecting = false;
+  }
+
+  /// Asks the judge four times a second until it has a verdict.
+  Future<FirstContactOutcome> _awaitVerdict(FirstContact contact) async {
+    while (true) {
+      final outcome = contact.judge(DateTime.now());
+      if (outcome != null) return outcome;
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+    }
   }
 
   /// Localisations without needing them threaded through every helper.

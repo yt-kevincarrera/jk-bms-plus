@@ -1879,6 +1879,18 @@ class AppL10nEs extends AppL10n {
       'Se conectó, pero no llegó ninguna lectura de BMS. Casi seguro que ese dispositivo no es un BMS JK. Si crees que sí lo es, mira la consola de frames crudos en Ajustes.';
 
   @override
+  String get connectLinkNeverCameUp =>
+      'No se pudo levantar la conexión Bluetooth con la batería en 25 segundos, y la app lo intentó más de una vez. Comprueba que la batería esté encendida y cerca, y que la app oficial de JK esté cerrada del todo, no solo en segundo plano.';
+
+  @override
+  String get connectSilentJk =>
+      'Se conectó, pero la batería no dijo nada en 12 segundos. Se anuncia como JK, así que sí es un BMS JK: su única sesión de datos la tiene otro, o se quedó colgada. Lo primero a mirar es la app oficial de JK, que se reconecta sola desde el segundo plano: fuérzala a detenerse en los ajustes de Android, no solo la cierres. Si no hay nadie más, el módulo Bluetooth del BMS suelta la sesión colgada por sí solo al cabo de un rato, y apagar y encender el Bluetooth del teléfono no lo acelera; con el vigilante de proximidad activado la app vuelve a intentarlo sola. La consola de frames crudos en Ajustes muestra si llega algo.';
+
+  @override
+  String get connectTalkingUndecoded =>
+      'Se conectó y están llegando bytes, pero ninguno se decodifica como un frame JK. Mira la consola de frames crudos en Ajustes: lo que aparezca ahí es lo que hace falta para añadir soporte.';
+
+  @override
   String storedCount(String count) {
     return '$count guardadas';
   }
@@ -2259,6 +2271,10 @@ class AppL10nEs extends AppL10n {
   @override
   String get troubleSlowFrames =>
       'El teléfono concedió un tamaño de paquete Bluetooth menor del pedido. Las lecturas llegan en más trozos, lo que es más lento pero igual de correcto.';
+
+  @override
+  String get troubleNotJkBms =>
+      'Ese dispositivo no tiene el servicio Bluetooth de JK. No es un BMS JK, o no uno con el que esta app pueda hablar.';
 
   @override
   String get screenAwakeTitle => 'Mantener la pantalla encendida';
