@@ -1705,5 +1705,293 @@
   "evidencePerMonth": "mes",
   "evidenceDriftSamples": "Lecturas en reposo analizadas",
   "evidenceDriftSpanWeeks": "Semanas observadas",
-  "verdictTitle": "Veredicto"
+  "verdictTitle": "Veredicto",
+  "demoScenarioInspection": "Ensayo de inspección",
+  "demoScenarioInspectionDesc": "35 s quieta, luces 20 s, tirón fuerte 8 s y suelta. La celda 7 es la débil.",
+  "inspectionEntry": "Inspeccionar otra batería",
+  "inspectionModeTitle": "Modo inspección",
+  "inspectionModeBanner": "La batería que conectes ahora no se guarda en tu historial ni enseña nada a tu autonomía. Pide al vendedor que cierre su app JK y elige su BMS en la lista.",
+  "inspectionModeExit": "Salir del modo inspección",
+  "inspectionRehearse": "Ensayar con el pack demo",
+  "inspectionTitle": "Inspección rápida",
+  "inspectionWaitingReadings": "Esperando lecturas del BMS…",
+  "inspectionStepRestTitle": "No toques nada",
+  "inspectionStepRestBody": "La app toma la foto en reposo. Que nadie acelere ni encienda nada.",
+  "inspectionStepLightTitle": "Enciende las luces",
+  "inspectionStepLightBody": "Una carga pequeña y estable. La app avanza sola cuando la detecta.",
+  "inspectionStepHeavyTitle": "Ahora una carga fuerte",
+  "inspectionStepHeavyBody": "Rueda trasera al aire y acelera, o 50 metros en la moto con el teléfono en el bolsillo, o el cargador conectado. Cualquiera sirve: la app mide la corriente.",
+  "inspectionStepRecoveryTitle": "Suelta todo y espera",
+  "inspectionStepRecoveryBody": "Sin corriente. La app mira cuánto tarda cada celda en volver a su voltaje de reposo.",
+  "inspectionStepDoneTitle": "Listo",
+  "inspectionCurrentNow": "Corriente ahora",
+  "inspectionLoadEnough": "Carga detectada: {amps} A, suficiente.",
+  "@inspectionLoadEnough": {
+    "placeholders": {
+      "amps": {
+        "type": "String"
+      }
+    }
+  },
+  "inspectionLoadTooLow": "Muy poca corriente ({amps} A). Dale más.",
+  "@inspectionLoadTooLow": {
+    "placeholders": {
+      "amps": {
+        "type": "String"
+      }
+    }
+  },
+  "inspectionNotQuiet": "Hay corriente ({amps} A). Hace falta reposo.",
+  "@inspectionNotQuiet": {
+    "placeholders": {
+      "amps": {
+        "type": "String"
+      }
+    }
+  },
+  "inspectionQuietOk": "En reposo.",
+  "inspectionSecondsLeft": "{seconds} s",
+  "@inspectionSecondsLeft": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "inspectionStepSkipHint": "Si esta carga no se puede generar, la app pasa al siguiente paso sola en {seconds} s y lo dice en el veredicto.",
+  "@inspectionStepSkipHint": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "inspectionSkipStep": "Saltar este paso",
+  "inspectionAbort": "Terminar ahora",
+  "inspectionQuickTestLabel": "TEST RÁPIDO · ESTIMACIÓN",
+  "inspectionLightGood": "Nada grave a la vista",
+  "inspectionLightWatch": "Hay algo que mirar",
+  "inspectionLightProblem": "No compres a ciegas: hay un problema",
+  "inspectionFidelityNote": "Un test rápido detecta la estafa obvia y la celda mala; no mide capacidad real. Para capacidad real hace falta una descarga completa.",
+  "inspectionCaveatsTitle": "Lo que este test no pudo ver",
+  "inspectionCaveatNoHeavyLoad": "Sin carga fuerte: la caída por celda no se pudo medir.",
+  "inspectionCaveatNoLightLoad": "Sin carga ligera: el paso de las luces no ocurrió.",
+  "inspectionCaveatRestNoisy": "El pack nunca estuvo quieto del todo: la foto en reposo es aproximada.",
+  "inspectionCaveatNoRecovery": "La carga no se soltó: la recuperación no se midió.",
+  "inspectionCaveatStepTooSmall": "El salto de corriente fue pequeño: la resistencia estimada es ruido.",
+  "inspectionCaveatFewReadings": "Pocas lecturas: el BMS habló poco.",
+  "inspectionCellsTitle": "Celda por celda",
+  "inspectionCellHeaderRest": "Reposo",
+  "inspectionCellHeaderSag": "Caída",
+  "inspectionCellHeaderIr": "R est.",
+  "inspectionCellHeaderRec": "Recup.",
+  "inspectionReportedTitle": "Lo que dice el BMS (editable)",
+  "inspectionReportedHint": "Ciclos, capacidad configurada y SOH se cambian desde la app oficial en un minuto. Se muestran; no se creen.",
+  "inspectionReportedCycles": "Ciclos",
+  "inspectionReportedCapacity": "Capacidad configurada",
+  "inspectionReportedSoc": "Carga",
+  "inspectionReportedSoh": "SOH",
+  "inspectionReportedModel": "Modelo",
+  "inspectionSummaryLine": "{cells} celdas · pico {amps} A · {seconds} s · {readings} lecturas",
+  "@inspectionSummaryLine": {
+    "placeholders": {
+      "cells": {
+        "type": "String"
+      },
+      "amps": {
+        "type": "String"
+      },
+      "seconds": {
+        "type": "String"
+      },
+      "readings": {
+        "type": "String"
+      }
+    }
+  },
+  "inspectionSave": "Guardar inspección",
+  "inspectionSaved": "Inspección guardada.",
+  "inspectionDiscard": "Descartar",
+  "inspectionNoteHint": "Nota: vendedor, precio pedido, lo que dijo…",
+  "inspectionsTitle": "Inspecciones",
+  "inspectionsIntro": "Baterías ajenas que has mirado con el test rápido. No forman parte de tu historial.",
+  "inspectionsEmpty": "Todavía no has inspeccionado ninguna batería.",
+  "inspectionsOpen": "Ver inspecciones",
+  "inspectionDeleted": "Inspección borrada.",
+  "inspectionDeleteConfirmTitle": "¿Borrar esta inspección?",
+  "inspectionDeleteConfirmBody": "Se pierden el veredicto y las lecturas capturadas.",
+  "inspectionCreditsLeft": "Esta inspección consume un chequeo. Te quedan {count}.",
+  "@inspectionCreditsLeft": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "inspectionCreditsGone": "No te quedan chequeos. Consigue más en Licencia.",
+  "verdictInspCellSaggingTitle": "La celda {cell} cae mucho más que las demás",
+  "@verdictInspCellSaggingTitle": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspCellSaggingBody": "Bajo la carga fuerte cayó {excess} V más que la mediana del pack. Coherente con una celda gastada o con una conexión mala en esa celda. Es la razón principal para no pagar el precio pedido sin más pruebas.",
+  "@verdictInspCellSaggingBody": {
+    "placeholders": {
+      "excess": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspSagUniformTitle": "Todas las celdas caen parejo",
+  "verdictInspSagUniformBody": "Bajo la carga fuerte la peor celda cayó solo {excess} V más que la mediana. Ninguna se rinde antes que las demás.",
+  "@verdictInspSagUniformBody": {
+    "placeholders": {
+      "excess": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspRestDeltaWideTitle": "Las celdas están desparejas en reposo",
+  "verdictInspRestDeltaWideBody": "Con la moto quieta el delta es de {delta} V y la más baja es la celda {cell}. Sin corriente eso no es resistencia: son celdas que guardan cantidades distintas de carga, o un balanceador que no trabaja.",
+  "@verdictInspRestDeltaWideBody": {
+    "placeholders": {
+      "delta": {
+        "type": "String"
+      },
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspRestDeltaOkTitle": "Celdas parejas en reposo",
+  "verdictInspRestDeltaOkBody": "Delta de {delta} V con la moto quieta. Bien.",
+  "@verdictInspRestDeltaOkBody": {
+    "placeholders": {
+      "delta": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspWeakLightTitle": "La celda {cell} cae con casi nada",
+  "@verdictInspWeakLightTitle": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspWeakLightBody": "Con solo las luces ({amps} A) cayó {extra} V más que las demás. Una celda que se rinde con uno o dos amperios es una celda muy cansada.",
+  "@verdictInspWeakLightBody": {
+    "placeholders": {
+      "amps": {
+        "type": "String"
+      },
+      "extra": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspSlowRecoveryTitle": "La celda {cell} rebota lento",
+  "@verdictInspSlowRecoveryTitle": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspSlowRecoveryBody": "Tardó {extra} s más que la mediana en volver a su voltaje de reposo tras soltar la carga, o no volvió. Las celdas cansadas rebotan lento; es un indicador poco mirado y muy bueno.",
+  "@verdictInspSlowRecoveryBody": {
+    "placeholders": {
+      "extra": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspRecoveryOkTitle": "Recuperación pareja",
+  "verdictInspRecoveryOkBody": "Tras soltar la carga las celdas volvieron a su reposo en unos {seconds} s, todas al mismo paso.",
+  "@verdictInspRecoveryOkBody": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspHotTitle": "El pack estaba caliente",
+  "verdictInspHotBody": "Llegó a {temp} °C durante el test. Un pack caliente en reposo o con poca carga no es normal.",
+  "@verdictInspHotBody": {
+    "placeholders": {
+      "temp": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspAlarmsTitle": "El BMS tuvo alarmas durante el test",
+  "verdictInspAlarmsBody": "{count} alarma(s) activas en algún momento. Pregunta por qué: un BMS que protesta en dos minutos protesta en la calle.",
+  "@verdictInspAlarmsBody": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspCountersTitle": "Ciclos y capacidad según el BMS: no confiar",
+  "verdictInspCountersBody": "El BMS reporta {cycles} ciclos. Ese dato y la capacidad configurada se editan desde la app oficial en un minuto. El veredicto se apoya en la física de arriba, no en estos contadores.",
+  "@verdictInspCountersBody": {
+    "placeholders": {
+      "cycles": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspNoHeavyLoadTitle": "Sin carga fuerte: fidelidad reducida",
+  "verdictInspNoHeavyLoadBody": "La corriente máxima vista fue {amps} A. Sin un tirón fuerte no se puede medir cuánto cae cada celda, que es donde sale la verdad. Repite con la rueda al aire o 50 metros en la moto.",
+  "@verdictInspNoHeavyLoadBody": {
+    "placeholders": {
+      "amps": {
+        "type": "String"
+      }
+    }
+  },
+  "evidenceCellSag": "Caída de la celda {cell} bajo carga",
+  "@evidenceCellSag": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
+  "evidenceMedianSag": "Caída mediana del pack",
+  "evidenceCurrentStep": "Salto de corriente (carga menos reposo)",
+  "evidenceCellResistance": "Resistencia estimada de la celda {cell}",
+  "@evidenceCellResistance": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
+  "evidenceMedianResistance": "Resistencia estimada mediana",
+  "evidenceLowestRestCell": "Celda más baja en reposo (celda {cell})",
+  "@evidenceLowestRestCell": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
+  "evidenceLightLoadAmps": "Corriente con las luces",
+  "evidenceRecoverySeconds": "Recuperación de la celda {cell}",
+  "@evidenceRecoverySeconds": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
+  "evidenceMedianRecoverySeconds": "Recuperación mediana",
+  "evidenceAlarmCount": "Alarmas vistas",
+  "evidencePeakCurrent": "Corriente máxima vista"
 }

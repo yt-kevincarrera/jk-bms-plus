@@ -78,6 +78,42 @@ enum AdviceCode {
 
   /// The charge cutoff leaves usable energy stranded because of imbalance.
   imbalanceCostingRange,
+
+  // --- Inspection of somebody else's pack (quick test) ---
+
+  /// One cell sagged far more than the rest under the hard pull.
+  inspectionCellSagging,
+
+  /// Every cell sagged about the same: nothing giving up under load.
+  inspectionSagUniform,
+
+  /// Cells sat apart with no current flowing.
+  inspectionRestDeltaWide,
+
+  /// Cells sat together at rest.
+  inspectionRestDeltaOk,
+
+  /// A cell fell behind with only the lights on.
+  inspectionWeakUnderLightLoad,
+
+  /// A cell took much longer than the others to climb back after the load.
+  inspectionSlowRecovery,
+
+  /// Every cell climbed back at about the same pace.
+  inspectionRecoveryOk,
+
+  /// The pack was hot during the test.
+  inspectionHot,
+
+  /// The BMS raised a fault at some point during the test.
+  inspectionAlarmsSeen,
+
+  /// Cycles and configured capacity as the BMS reports them: editable, so
+  /// shown and never trusted.
+  inspectionCountersEditable,
+
+  /// No load big enough to measure sag was seen: reduced fidelity.
+  inspectionNoHeavyLoad,
 }
 
 /// One measured thing a verdict rests on.
@@ -111,6 +147,18 @@ enum EvidenceKind {
   driftRate,
   driftSamples,
   driftSpanWeeks,
+  // Inspection
+  cellSag,
+  medianSag,
+  currentStep,
+  cellResistance,
+  medianResistance,
+  lowestRestCell,
+  lightLoadAmps,
+  recoverySeconds,
+  medianRecoverySeconds,
+  alarmCount,
+  peakCurrent,
 }
 
 class Evidence {

@@ -1603,5 +1603,293 @@
   "evidencePerMonth": "month",
   "evidenceDriftSamples": "Resting readings analysed",
   "evidenceDriftSpanWeeks": "Weeks observed",
-  "verdictTitle": "Verdict"
+  "verdictTitle": "Verdict",
+  "demoScenarioInspection": "Inspection rehearsal",
+  "demoScenarioInspectionDesc": "Quiet 35 s, lights 20 s, hard pull 8 s, then released. Cell 7 is the weak one.",
+  "inspectionEntry": "Inspect somebody else's battery",
+  "inspectionModeTitle": "Inspection mode",
+  "inspectionModeBanner": "The battery you connect now is not saved to your history and teaches your range nothing. Ask the seller to close their JK app and pick their BMS from the list.",
+  "inspectionModeExit": "Leave inspection mode",
+  "inspectionRehearse": "Rehearse with the demo pack",
+  "inspectionTitle": "Quick inspection",
+  "inspectionWaitingReadings": "Waiting for readings from the BMS…",
+  "inspectionStepRestTitle": "Don't touch anything",
+  "inspectionStepRestBody": "The app takes the resting picture. Nobody revs, nobody switches anything on.",
+  "inspectionStepLightTitle": "Turn the lights on",
+  "inspectionStepLightBody": "A small, steady draw. The app moves on by itself when it sees it.",
+  "inspectionStepHeavyTitle": "Now a hard pull",
+  "inspectionStepHeavyBody": "Rear wheel in the air and throttle, or 50 metres down the road with the phone in your pocket, or the charger plugged in. Any of them works: the app measures the current.",
+  "inspectionStepRecoveryTitle": "Let go and wait",
+  "inspectionStepRecoveryBody": "No current. The app watches how long each cell takes to climb back to where it rested.",
+  "inspectionStepDoneTitle": "Done",
+  "inspectionCurrentNow": "Current now",
+  "inspectionLoadEnough": "Load detected: {amps} A, enough.",
+  "@inspectionLoadEnough": {
+    "placeholders": {
+      "amps": {
+        "type": "String"
+      }
+    }
+  },
+  "inspectionLoadTooLow": "Too little current ({amps} A). Give it more.",
+  "@inspectionLoadTooLow": {
+    "placeholders": {
+      "amps": {
+        "type": "String"
+      }
+    }
+  },
+  "inspectionNotQuiet": "There is current ({amps} A). It needs to rest.",
+  "@inspectionNotQuiet": {
+    "placeholders": {
+      "amps": {
+        "type": "String"
+      }
+    }
+  },
+  "inspectionQuietOk": "At rest.",
+  "inspectionSecondsLeft": "{seconds} s",
+  "@inspectionSecondsLeft": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "inspectionStepSkipHint": "If this load cannot be produced, the app moves on by itself in {seconds} s and says so in the verdict.",
+  "@inspectionStepSkipHint": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "inspectionSkipStep": "Skip this step",
+  "inspectionAbort": "Finish now",
+  "inspectionQuickTestLabel": "QUICK TEST · ESTIMATE",
+  "inspectionLightGood": "Nothing serious in sight",
+  "inspectionLightWatch": "Something to look at",
+  "inspectionLightProblem": "Don't buy blind: there is a problem",
+  "inspectionFidelityNote": "A quick test catches the obvious scam and the bad cell; it does not measure real capacity. Real capacity takes a full discharge.",
+  "inspectionCaveatsTitle": "What this test could not see",
+  "inspectionCaveatNoHeavyLoad": "No hard pull: per-cell sag could not be measured.",
+  "inspectionCaveatNoLightLoad": "No light load: the lights step never happened.",
+  "inspectionCaveatRestNoisy": "The pack was never fully quiet: the resting picture is approximate.",
+  "inspectionCaveatNoRecovery": "The load was never released: recovery was not measured.",
+  "inspectionCaveatStepTooSmall": "The current step was small: the estimated resistance is noise.",
+  "inspectionCaveatFewReadings": "Few readings: the BMS said little.",
+  "inspectionCellsTitle": "Cell by cell",
+  "inspectionCellHeaderRest": "Rest",
+  "inspectionCellHeaderSag": "Sag",
+  "inspectionCellHeaderIr": "Est. R",
+  "inspectionCellHeaderRec": "Recov.",
+  "inspectionReportedTitle": "What the BMS says (editable)",
+  "inspectionReportedHint": "Cycles, configured capacity and SOH can be changed from the official app in a minute. Shown; not believed.",
+  "inspectionReportedCycles": "Cycles",
+  "inspectionReportedCapacity": "Configured capacity",
+  "inspectionReportedSoc": "Charge",
+  "inspectionReportedSoh": "SOH",
+  "inspectionReportedModel": "Model",
+  "inspectionSummaryLine": "{cells} cells · peak {amps} A · {seconds} s · {readings} readings",
+  "@inspectionSummaryLine": {
+    "placeholders": {
+      "cells": {
+        "type": "String"
+      },
+      "amps": {
+        "type": "String"
+      },
+      "seconds": {
+        "type": "String"
+      },
+      "readings": {
+        "type": "String"
+      }
+    }
+  },
+  "inspectionSave": "Save inspection",
+  "inspectionSaved": "Inspection saved.",
+  "inspectionDiscard": "Discard",
+  "inspectionNoteHint": "Note: seller, asking price, what was said…",
+  "inspectionsTitle": "Inspections",
+  "inspectionsIntro": "Other people's batteries you have looked at with the quick test. Not part of your history.",
+  "inspectionsEmpty": "You have not inspected any battery yet.",
+  "inspectionsOpen": "See inspections",
+  "inspectionDeleted": "Inspection deleted.",
+  "inspectionDeleteConfirmTitle": "Delete this inspection?",
+  "inspectionDeleteConfirmBody": "The verdict and the captured readings are lost.",
+  "inspectionCreditsLeft": "This inspection uses one check. You have {count} left.",
+  "@inspectionCreditsLeft": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "inspectionCreditsGone": "No checks left. Get more under Licence.",
+  "verdictInspCellSaggingTitle": "Cell {cell} sags far more than the rest",
+  "@verdictInspCellSaggingTitle": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspCellSaggingBody": "Under the hard pull it dropped {excess} V more than the pack median. Consistent with a worn cell or a bad connection at that cell. This is the main reason not to pay the asking price without more tests.",
+  "@verdictInspCellSaggingBody": {
+    "placeholders": {
+      "excess": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspSagUniformTitle": "Every cell sags evenly",
+  "verdictInspSagUniformBody": "Under the hard pull the worst cell dropped only {excess} V more than the median. None gives up before the others.",
+  "@verdictInspSagUniformBody": {
+    "placeholders": {
+      "excess": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspRestDeltaWideTitle": "Cells sit apart at rest",
+  "verdictInspRestDeltaWideBody": "With the bike still the delta is {delta} V and the lowest is cell {cell}. With no current that is not resistance: the cells hold different amounts of charge, or the balancer is not working.",
+  "@verdictInspRestDeltaWideBody": {
+    "placeholders": {
+      "delta": {
+        "type": "String"
+      },
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspRestDeltaOkTitle": "Cells sit together at rest",
+  "verdictInspRestDeltaOkBody": "Delta of {delta} V with the bike still. Fine.",
+  "@verdictInspRestDeltaOkBody": {
+    "placeholders": {
+      "delta": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspWeakLightTitle": "Cell {cell} drops with almost nothing asked",
+  "@verdictInspWeakLightTitle": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspWeakLightBody": "With only the lights on ({amps} A) it dropped {extra} V more than the rest. A cell that gives up at one or two amps is a very tired cell.",
+  "@verdictInspWeakLightBody": {
+    "placeholders": {
+      "amps": {
+        "type": "String"
+      },
+      "extra": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspSlowRecoveryTitle": "Cell {cell} climbs back slowly",
+  "@verdictInspSlowRecoveryTitle": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspSlowRecoveryBody": "It took {extra} s longer than the median to return to its resting voltage after the load, or never did. Tired cells rebound slowly; it is a rarely watched and very good sign.",
+  "@verdictInspSlowRecoveryBody": {
+    "placeholders": {
+      "extra": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspRecoveryOkTitle": "Even recovery",
+  "verdictInspRecoveryOkBody": "After the load the cells were back at rest in about {seconds} s, all at the same pace.",
+  "@verdictInspRecoveryOkBody": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspHotTitle": "The pack was hot",
+  "verdictInspHotBody": "It reached {temp} °C during the test. A pack that is hot at rest or under light load is not normal.",
+  "@verdictInspHotBody": {
+    "placeholders": {
+      "temp": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspAlarmsTitle": "The BMS raised alarms during the test",
+  "verdictInspAlarmsBody": "{count} alarm(s) active at some point. Ask why: a BMS that complains in two minutes complains in the street.",
+  "@verdictInspAlarmsBody": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspCountersTitle": "Cycles and capacity per the BMS: do not trust",
+  "verdictInspCountersBody": "The BMS reports {cycles} cycles. That figure and the configured capacity can be edited from the official app in a minute. The verdict rests on the physics above, not on these counters.",
+  "@verdictInspCountersBody": {
+    "placeholders": {
+      "cycles": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspNoHeavyLoadTitle": "No hard pull: reduced fidelity",
+  "verdictInspNoHeavyLoadBody": "The highest current seen was {amps} A. Without a hard pull there is no way to measure how far each cell drops, which is where the truth comes out. Repeat with the wheel in the air or 50 metres on the bike.",
+  "@verdictInspNoHeavyLoadBody": {
+    "placeholders": {
+      "amps": {
+        "type": "String"
+      }
+    }
+  },
+  "evidenceCellSag": "Sag of cell {cell} under load",
+  "@evidenceCellSag": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
+  "evidenceMedianSag": "Median sag of the pack",
+  "evidenceCurrentStep": "Current step (load minus rest)",
+  "evidenceCellResistance": "Estimated resistance of cell {cell}",
+  "@evidenceCellResistance": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
+  "evidenceMedianResistance": "Median estimated resistance",
+  "evidenceLowestRestCell": "Lowest cell at rest (cell {cell})",
+  "@evidenceLowestRestCell": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
+  "evidenceLightLoadAmps": "Current with the lights on",
+  "evidenceRecoverySeconds": "Recovery of cell {cell}",
+  "@evidenceRecoverySeconds": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
+  "evidenceMedianRecoverySeconds": "Median recovery",
+  "evidenceAlarmCount": "Alarms seen",
+  "evidencePeakCurrent": "Highest current seen"
 }

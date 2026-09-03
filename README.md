@@ -104,7 +104,8 @@ Spanish by default, English available, remembered across restarts.
 | M6 — derived metrics | Done: range learning, health report, advice, capacity test, charge report and the long-term curves. The curves need months of riding before they mean much, and say so themselves |
 | M7 — licences | Done, and switched off: device code, Ed25519 keys checked on the phone, 7-day Pro trial, Pro/Workshop/credits/admin tiers, gating. Nothing shows and nothing is gated until the author generates the key pair, which is the launch switch (see [docs/LICENSING.md](docs/LICENSING.md)) |
 | M8 — verdicts | Done: every sentence the app says about a pack carries the measured facts behind it, one tap away. Headlines for measured wear, a cell drifting over weeks, kilometres left in the rider's own terms, and an explicit all-clear on the delta under load. One engine feeds the Health tab and the saved-pack screen. Thresholds live in one object, to be calibrated on real packs |
-| M9 — inspection, M10 — PDF | Not started. Specified in [docs/PRD-monetizacion-inspeccion.md](docs/PRD-monetizacion-inspeccion.md) |
+| M9 — inspection | Done: a separate mode on the connect screen for somebody else's pack. One instruction at a time in large letters (rest, light load, heavy load, release), the step advances on the current the BMS reports, no timers and no next button. The analysis runs once at the end over everything captured: per-cell sag under load, resistance from the current step, recovery time, the resting spread, temperature and alarms; the verdict is one traffic light plus the same evidence-backed sentences the Health tab uses, next to what the BMS reports about itself marked as editable. The stranger's pack is never adopted, so the rider's history and range never learn from it; inspections are stored on their own and listed from Settings. A demo rehearsal plays a seller's battery with one weak cell |
+| M10 — PDF | Not started. Specified in [docs/PRD-monetizacion-inspeccion.md](docs/PRD-monetizacion-inspeccion.md) |
 
 ## Running it
 
@@ -151,7 +152,7 @@ watching the first real connection, settle these:
 flutter test
 ```
 
-479 tests, no device needed. The protocol ones run against 11 real 300-byte
+526 tests, no device needed. The protocol ones run against 11 real 300-byte
 frames captured from JK hardware, with expected values taken from the reference
 implementation's byte-layout tables rather than from this parser's own output.
 
@@ -175,10 +176,11 @@ lib/src/
   license/    license_payload, license_key, device_code, license_verifier,
               entitlements, license_controller, device_identity,
               license_public_key (the author's public key; see docs/LICENSING.md)
-
+  inspection/ inspection_session (the guided steps, driven by the readings),
+              inspection_result (the analysis), inspection_verdicts
   platform/   live_notification (the foreground service)
-  ui/         theme, tabs/, widgets/, trip_screen, trip_detail_screen,
-              trends_screen
+  ui/         theme, tabs/, widgets/, inspection/, trip_screen,
+              trip_detail_screen, trends_screen
   bms_service.dart   the single stream everything else reads from
 ```
 

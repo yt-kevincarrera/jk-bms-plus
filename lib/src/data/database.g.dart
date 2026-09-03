@@ -5459,6 +5459,611 @@ class MaintenanceEventsCompanion extends UpdateCompanion<MaintenanceEvent> {
   }
 }
 
+class $InspectionsTable extends Inspections
+    with TableInfo<$InspectionsTable, Inspection> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $InspectionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _atMeta = const VerificationMeta('at');
+  @override
+  late final GeneratedColumn<DateTime> at = GeneratedColumn<DateTime>(
+    'at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bmsIdMeta = const VerificationMeta('bmsId');
+  @override
+  late final GeneratedColumn<String> bmsId = GeneratedColumn<String>(
+    'bms_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bmsNameMeta = const VerificationMeta(
+    'bmsName',
+  );
+  @override
+  late final GeneratedColumn<String> bmsName = GeneratedColumn<String>(
+    'bms_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _modelMeta = const VerificationMeta('model');
+  @override
+  late final GeneratedColumn<String> model = GeneratedColumn<String>(
+    'model',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _serialNumberMeta = const VerificationMeta(
+    'serialNumber',
+  );
+  @override
+  late final GeneratedColumn<String> serialNumber = GeneratedColumn<String>(
+    'serial_number',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _lightMeta = const VerificationMeta('light');
+  @override
+  late final GeneratedColumn<String> light = GeneratedColumn<String>(
+    'light',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _resultJsonMeta = const VerificationMeta(
+    'resultJson',
+  );
+  @override
+  late final GeneratedColumn<String> resultJson = GeneratedColumn<String>(
+    'result_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _samplesJsonMeta = const VerificationMeta(
+    'samplesJson',
+  );
+  @override
+  late final GeneratedColumn<String> samplesJson = GeneratedColumn<String>(
+    'samples_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    at,
+    bmsId,
+    bmsName,
+    model,
+    serialNumber,
+    light,
+    resultJson,
+    samplesJson,
+    note,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'inspections';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Inspection> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('at')) {
+      context.handle(_atMeta, at.isAcceptableOrUnknown(data['at']!, _atMeta));
+    } else if (isInserting) {
+      context.missing(_atMeta);
+    }
+    if (data.containsKey('bms_id')) {
+      context.handle(
+        _bmsIdMeta,
+        bmsId.isAcceptableOrUnknown(data['bms_id']!, _bmsIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bmsIdMeta);
+    }
+    if (data.containsKey('bms_name')) {
+      context.handle(
+        _bmsNameMeta,
+        bmsName.isAcceptableOrUnknown(data['bms_name']!, _bmsNameMeta),
+      );
+    }
+    if (data.containsKey('model')) {
+      context.handle(
+        _modelMeta,
+        model.isAcceptableOrUnknown(data['model']!, _modelMeta),
+      );
+    }
+    if (data.containsKey('serial_number')) {
+      context.handle(
+        _serialNumberMeta,
+        serialNumber.isAcceptableOrUnknown(
+          data['serial_number']!,
+          _serialNumberMeta,
+        ),
+      );
+    }
+    if (data.containsKey('light')) {
+      context.handle(
+        _lightMeta,
+        light.isAcceptableOrUnknown(data['light']!, _lightMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_lightMeta);
+    }
+    if (data.containsKey('result_json')) {
+      context.handle(
+        _resultJsonMeta,
+        resultJson.isAcceptableOrUnknown(data['result_json']!, _resultJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_resultJsonMeta);
+    }
+    if (data.containsKey('samples_json')) {
+      context.handle(
+        _samplesJsonMeta,
+        samplesJson.isAcceptableOrUnknown(
+          data['samples_json']!,
+          _samplesJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_samplesJsonMeta);
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Inspection map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Inspection(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      at: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}at'],
+      )!,
+      bmsId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bms_id'],
+      )!,
+      bmsName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bms_name'],
+      )!,
+      model: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}model'],
+      )!,
+      serialNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}serial_number'],
+      )!,
+      light: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}light'],
+      )!,
+      resultJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}result_json'],
+      )!,
+      samplesJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}samples_json'],
+      )!,
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      )!,
+    );
+  }
+
+  @override
+  $InspectionsTable createAlias(String alias) {
+    return $InspectionsTable(attachedDatabase, alias);
+  }
+}
+
+class Inspection extends DataClass implements Insertable<Inspection> {
+  final int id;
+
+  /// When the test started, phone clock.
+  final DateTime at;
+
+  /// The BMS's BLE address, so two inspections of the same pack can be told
+  /// apart from two packs. Not a foreign key: there is no Devices row.
+  final String bmsId;
+  final String bmsName;
+  final String model;
+  final String serialNumber;
+
+  /// One of [InspectionLight], by name.
+  final String light;
+
+  /// The [InspectionResult], as JSON. Everything the verdict screen shows is
+  /// recomputed from this, so an old inspection reads the same way later.
+  final String resultJson;
+
+  /// The captured readings, compacted, as JSON. The PRD asks for the whole
+  /// buffer to be kept so the arithmetic can be redone when the thresholds
+  /// are calibrated.
+  final String samplesJson;
+
+  /// Free text: whose pack, the asking price, what was said.
+  final String note;
+  const Inspection({
+    required this.id,
+    required this.at,
+    required this.bmsId,
+    required this.bmsName,
+    required this.model,
+    required this.serialNumber,
+    required this.light,
+    required this.resultJson,
+    required this.samplesJson,
+    required this.note,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['at'] = Variable<DateTime>(at);
+    map['bms_id'] = Variable<String>(bmsId);
+    map['bms_name'] = Variable<String>(bmsName);
+    map['model'] = Variable<String>(model);
+    map['serial_number'] = Variable<String>(serialNumber);
+    map['light'] = Variable<String>(light);
+    map['result_json'] = Variable<String>(resultJson);
+    map['samples_json'] = Variable<String>(samplesJson);
+    map['note'] = Variable<String>(note);
+    return map;
+  }
+
+  InspectionsCompanion toCompanion(bool nullToAbsent) {
+    return InspectionsCompanion(
+      id: Value(id),
+      at: Value(at),
+      bmsId: Value(bmsId),
+      bmsName: Value(bmsName),
+      model: Value(model),
+      serialNumber: Value(serialNumber),
+      light: Value(light),
+      resultJson: Value(resultJson),
+      samplesJson: Value(samplesJson),
+      note: Value(note),
+    );
+  }
+
+  factory Inspection.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Inspection(
+      id: serializer.fromJson<int>(json['id']),
+      at: serializer.fromJson<DateTime>(json['at']),
+      bmsId: serializer.fromJson<String>(json['bmsId']),
+      bmsName: serializer.fromJson<String>(json['bmsName']),
+      model: serializer.fromJson<String>(json['model']),
+      serialNumber: serializer.fromJson<String>(json['serialNumber']),
+      light: serializer.fromJson<String>(json['light']),
+      resultJson: serializer.fromJson<String>(json['resultJson']),
+      samplesJson: serializer.fromJson<String>(json['samplesJson']),
+      note: serializer.fromJson<String>(json['note']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'at': serializer.toJson<DateTime>(at),
+      'bmsId': serializer.toJson<String>(bmsId),
+      'bmsName': serializer.toJson<String>(bmsName),
+      'model': serializer.toJson<String>(model),
+      'serialNumber': serializer.toJson<String>(serialNumber),
+      'light': serializer.toJson<String>(light),
+      'resultJson': serializer.toJson<String>(resultJson),
+      'samplesJson': serializer.toJson<String>(samplesJson),
+      'note': serializer.toJson<String>(note),
+    };
+  }
+
+  Inspection copyWith({
+    int? id,
+    DateTime? at,
+    String? bmsId,
+    String? bmsName,
+    String? model,
+    String? serialNumber,
+    String? light,
+    String? resultJson,
+    String? samplesJson,
+    String? note,
+  }) => Inspection(
+    id: id ?? this.id,
+    at: at ?? this.at,
+    bmsId: bmsId ?? this.bmsId,
+    bmsName: bmsName ?? this.bmsName,
+    model: model ?? this.model,
+    serialNumber: serialNumber ?? this.serialNumber,
+    light: light ?? this.light,
+    resultJson: resultJson ?? this.resultJson,
+    samplesJson: samplesJson ?? this.samplesJson,
+    note: note ?? this.note,
+  );
+  Inspection copyWithCompanion(InspectionsCompanion data) {
+    return Inspection(
+      id: data.id.present ? data.id.value : this.id,
+      at: data.at.present ? data.at.value : this.at,
+      bmsId: data.bmsId.present ? data.bmsId.value : this.bmsId,
+      bmsName: data.bmsName.present ? data.bmsName.value : this.bmsName,
+      model: data.model.present ? data.model.value : this.model,
+      serialNumber: data.serialNumber.present
+          ? data.serialNumber.value
+          : this.serialNumber,
+      light: data.light.present ? data.light.value : this.light,
+      resultJson: data.resultJson.present
+          ? data.resultJson.value
+          : this.resultJson,
+      samplesJson: data.samplesJson.present
+          ? data.samplesJson.value
+          : this.samplesJson,
+      note: data.note.present ? data.note.value : this.note,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Inspection(')
+          ..write('id: $id, ')
+          ..write('at: $at, ')
+          ..write('bmsId: $bmsId, ')
+          ..write('bmsName: $bmsName, ')
+          ..write('model: $model, ')
+          ..write('serialNumber: $serialNumber, ')
+          ..write('light: $light, ')
+          ..write('resultJson: $resultJson, ')
+          ..write('samplesJson: $samplesJson, ')
+          ..write('note: $note')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    at,
+    bmsId,
+    bmsName,
+    model,
+    serialNumber,
+    light,
+    resultJson,
+    samplesJson,
+    note,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Inspection &&
+          other.id == this.id &&
+          other.at == this.at &&
+          other.bmsId == this.bmsId &&
+          other.bmsName == this.bmsName &&
+          other.model == this.model &&
+          other.serialNumber == this.serialNumber &&
+          other.light == this.light &&
+          other.resultJson == this.resultJson &&
+          other.samplesJson == this.samplesJson &&
+          other.note == this.note);
+}
+
+class InspectionsCompanion extends UpdateCompanion<Inspection> {
+  final Value<int> id;
+  final Value<DateTime> at;
+  final Value<String> bmsId;
+  final Value<String> bmsName;
+  final Value<String> model;
+  final Value<String> serialNumber;
+  final Value<String> light;
+  final Value<String> resultJson;
+  final Value<String> samplesJson;
+  final Value<String> note;
+  const InspectionsCompanion({
+    this.id = const Value.absent(),
+    this.at = const Value.absent(),
+    this.bmsId = const Value.absent(),
+    this.bmsName = const Value.absent(),
+    this.model = const Value.absent(),
+    this.serialNumber = const Value.absent(),
+    this.light = const Value.absent(),
+    this.resultJson = const Value.absent(),
+    this.samplesJson = const Value.absent(),
+    this.note = const Value.absent(),
+  });
+  InspectionsCompanion.insert({
+    this.id = const Value.absent(),
+    required DateTime at,
+    required String bmsId,
+    this.bmsName = const Value.absent(),
+    this.model = const Value.absent(),
+    this.serialNumber = const Value.absent(),
+    required String light,
+    required String resultJson,
+    required String samplesJson,
+    this.note = const Value.absent(),
+  }) : at = Value(at),
+       bmsId = Value(bmsId),
+       light = Value(light),
+       resultJson = Value(resultJson),
+       samplesJson = Value(samplesJson);
+  static Insertable<Inspection> custom({
+    Expression<int>? id,
+    Expression<DateTime>? at,
+    Expression<String>? bmsId,
+    Expression<String>? bmsName,
+    Expression<String>? model,
+    Expression<String>? serialNumber,
+    Expression<String>? light,
+    Expression<String>? resultJson,
+    Expression<String>? samplesJson,
+    Expression<String>? note,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (at != null) 'at': at,
+      if (bmsId != null) 'bms_id': bmsId,
+      if (bmsName != null) 'bms_name': bmsName,
+      if (model != null) 'model': model,
+      if (serialNumber != null) 'serial_number': serialNumber,
+      if (light != null) 'light': light,
+      if (resultJson != null) 'result_json': resultJson,
+      if (samplesJson != null) 'samples_json': samplesJson,
+      if (note != null) 'note': note,
+    });
+  }
+
+  InspectionsCompanion copyWith({
+    Value<int>? id,
+    Value<DateTime>? at,
+    Value<String>? bmsId,
+    Value<String>? bmsName,
+    Value<String>? model,
+    Value<String>? serialNumber,
+    Value<String>? light,
+    Value<String>? resultJson,
+    Value<String>? samplesJson,
+    Value<String>? note,
+  }) {
+    return InspectionsCompanion(
+      id: id ?? this.id,
+      at: at ?? this.at,
+      bmsId: bmsId ?? this.bmsId,
+      bmsName: bmsName ?? this.bmsName,
+      model: model ?? this.model,
+      serialNumber: serialNumber ?? this.serialNumber,
+      light: light ?? this.light,
+      resultJson: resultJson ?? this.resultJson,
+      samplesJson: samplesJson ?? this.samplesJson,
+      note: note ?? this.note,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (at.present) {
+      map['at'] = Variable<DateTime>(at.value);
+    }
+    if (bmsId.present) {
+      map['bms_id'] = Variable<String>(bmsId.value);
+    }
+    if (bmsName.present) {
+      map['bms_name'] = Variable<String>(bmsName.value);
+    }
+    if (model.present) {
+      map['model'] = Variable<String>(model.value);
+    }
+    if (serialNumber.present) {
+      map['serial_number'] = Variable<String>(serialNumber.value);
+    }
+    if (light.present) {
+      map['light'] = Variable<String>(light.value);
+    }
+    if (resultJson.present) {
+      map['result_json'] = Variable<String>(resultJson.value);
+    }
+    if (samplesJson.present) {
+      map['samples_json'] = Variable<String>(samplesJson.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('InspectionsCompanion(')
+          ..write('id: $id, ')
+          ..write('at: $at, ')
+          ..write('bmsId: $bmsId, ')
+          ..write('bmsName: $bmsName, ')
+          ..write('model: $model, ')
+          ..write('serialNumber: $serialNumber, ')
+          ..write('light: $light, ')
+          ..write('resultJson: $resultJson, ')
+          ..write('samplesJson: $samplesJson, ')
+          ..write('note: $note')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -5470,6 +6075,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CapacityTestsTable capacityTests = $CapacityTestsTable(this);
   late final $MaintenanceEventsTable maintenanceEvents =
       $MaintenanceEventsTable(this);
+  late final $InspectionsTable inspections = $InspectionsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5482,6 +6088,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     rawFrames,
     capacityTests,
     maintenanceEvents,
+    inspections,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -8207,6 +8814,301 @@ typedef $$MaintenanceEventsTableProcessedTableManager =
       MaintenanceEvent,
       PrefetchHooks Function()
     >;
+typedef $$InspectionsTableCreateCompanionBuilder =
+    InspectionsCompanion Function({
+      Value<int> id,
+      required DateTime at,
+      required String bmsId,
+      Value<String> bmsName,
+      Value<String> model,
+      Value<String> serialNumber,
+      required String light,
+      required String resultJson,
+      required String samplesJson,
+      Value<String> note,
+    });
+typedef $$InspectionsTableUpdateCompanionBuilder =
+    InspectionsCompanion Function({
+      Value<int> id,
+      Value<DateTime> at,
+      Value<String> bmsId,
+      Value<String> bmsName,
+      Value<String> model,
+      Value<String> serialNumber,
+      Value<String> light,
+      Value<String> resultJson,
+      Value<String> samplesJson,
+      Value<String> note,
+    });
+
+class $$InspectionsTableFilterComposer
+    extends Composer<_$AppDatabase, $InspectionsTable> {
+  $$InspectionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get at => $composableBuilder(
+    column: $table.at,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bmsId => $composableBuilder(
+    column: $table.bmsId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bmsName => $composableBuilder(
+    column: $table.bmsName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get model => $composableBuilder(
+    column: $table.model,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get serialNumber => $composableBuilder(
+    column: $table.serialNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get light => $composableBuilder(
+    column: $table.light,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get resultJson => $composableBuilder(
+    column: $table.resultJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get samplesJson => $composableBuilder(
+    column: $table.samplesJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$InspectionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $InspectionsTable> {
+  $$InspectionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get at => $composableBuilder(
+    column: $table.at,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bmsId => $composableBuilder(
+    column: $table.bmsId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bmsName => $composableBuilder(
+    column: $table.bmsName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get model => $composableBuilder(
+    column: $table.model,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get serialNumber => $composableBuilder(
+    column: $table.serialNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get light => $composableBuilder(
+    column: $table.light,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get resultJson => $composableBuilder(
+    column: $table.resultJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get samplesJson => $composableBuilder(
+    column: $table.samplesJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$InspectionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $InspectionsTable> {
+  $$InspectionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get at =>
+      $composableBuilder(column: $table.at, builder: (column) => column);
+
+  GeneratedColumn<String> get bmsId =>
+      $composableBuilder(column: $table.bmsId, builder: (column) => column);
+
+  GeneratedColumn<String> get bmsName =>
+      $composableBuilder(column: $table.bmsName, builder: (column) => column);
+
+  GeneratedColumn<String> get model =>
+      $composableBuilder(column: $table.model, builder: (column) => column);
+
+  GeneratedColumn<String> get serialNumber => $composableBuilder(
+    column: $table.serialNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get light =>
+      $composableBuilder(column: $table.light, builder: (column) => column);
+
+  GeneratedColumn<String> get resultJson => $composableBuilder(
+    column: $table.resultJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get samplesJson => $composableBuilder(
+    column: $table.samplesJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+}
+
+class $$InspectionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $InspectionsTable,
+          Inspection,
+          $$InspectionsTableFilterComposer,
+          $$InspectionsTableOrderingComposer,
+          $$InspectionsTableAnnotationComposer,
+          $$InspectionsTableCreateCompanionBuilder,
+          $$InspectionsTableUpdateCompanionBuilder,
+          (
+            Inspection,
+            BaseReferences<_$AppDatabase, $InspectionsTable, Inspection>,
+          ),
+          Inspection,
+          PrefetchHooks Function()
+        > {
+  $$InspectionsTableTableManager(_$AppDatabase db, $InspectionsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$InspectionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$InspectionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$InspectionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<DateTime> at = const Value.absent(),
+                Value<String> bmsId = const Value.absent(),
+                Value<String> bmsName = const Value.absent(),
+                Value<String> model = const Value.absent(),
+                Value<String> serialNumber = const Value.absent(),
+                Value<String> light = const Value.absent(),
+                Value<String> resultJson = const Value.absent(),
+                Value<String> samplesJson = const Value.absent(),
+                Value<String> note = const Value.absent(),
+              }) => InspectionsCompanion(
+                id: id,
+                at: at,
+                bmsId: bmsId,
+                bmsName: bmsName,
+                model: model,
+                serialNumber: serialNumber,
+                light: light,
+                resultJson: resultJson,
+                samplesJson: samplesJson,
+                note: note,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required DateTime at,
+                required String bmsId,
+                Value<String> bmsName = const Value.absent(),
+                Value<String> model = const Value.absent(),
+                Value<String> serialNumber = const Value.absent(),
+                required String light,
+                required String resultJson,
+                required String samplesJson,
+                Value<String> note = const Value.absent(),
+              }) => InspectionsCompanion.insert(
+                id: id,
+                at: at,
+                bmsId: bmsId,
+                bmsName: bmsName,
+                model: model,
+                serialNumber: serialNumber,
+                light: light,
+                resultJson: resultJson,
+                samplesJson: samplesJson,
+                note: note,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$InspectionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $InspectionsTable,
+      Inspection,
+      $$InspectionsTableFilterComposer,
+      $$InspectionsTableOrderingComposer,
+      $$InspectionsTableAnnotationComposer,
+      $$InspectionsTableCreateCompanionBuilder,
+      $$InspectionsTableUpdateCompanionBuilder,
+      (
+        Inspection,
+        BaseReferences<_$AppDatabase, $InspectionsTable, Inspection>,
+      ),
+      Inspection,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -8225,4 +9127,6 @@ class $AppDatabaseManager {
       $$CapacityTestsTableTableManager(_db, _db.capacityTests);
   $$MaintenanceEventsTableTableManager get maintenanceEvents =>
       $$MaintenanceEventsTableTableManager(_db, _db.maintenanceEvents);
+  $$InspectionsTableTableManager get inspections =>
+      $$InspectionsTableTableManager(_db, _db.inspections);
 }

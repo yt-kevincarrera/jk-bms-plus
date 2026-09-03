@@ -2834,4 +2834,375 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get verdictTitle => 'Veredicto';
+
+  @override
+  String get demoScenarioInspection => 'Ensayo de inspección';
+
+  @override
+  String get demoScenarioInspectionDesc =>
+      '35 s quieta, luces 20 s, tirón fuerte 8 s y suelta. La celda 7 es la débil.';
+
+  @override
+  String get inspectionEntry => 'Inspeccionar otra batería';
+
+  @override
+  String get inspectionModeTitle => 'Modo inspección';
+
+  @override
+  String get inspectionModeBanner =>
+      'La batería que conectes ahora no se guarda en tu historial ni enseña nada a tu autonomía. Pide al vendedor que cierre su app JK y elige su BMS en la lista.';
+
+  @override
+  String get inspectionModeExit => 'Salir del modo inspección';
+
+  @override
+  String get inspectionRehearse => 'Ensayar con el pack demo';
+
+  @override
+  String get inspectionTitle => 'Inspección rápida';
+
+  @override
+  String get inspectionWaitingReadings => 'Esperando lecturas del BMS…';
+
+  @override
+  String get inspectionStepRestTitle => 'No toques nada';
+
+  @override
+  String get inspectionStepRestBody =>
+      'La app toma la foto en reposo. Que nadie acelere ni encienda nada.';
+
+  @override
+  String get inspectionStepLightTitle => 'Enciende las luces';
+
+  @override
+  String get inspectionStepLightBody =>
+      'Una carga pequeña y estable. La app avanza sola cuando la detecta.';
+
+  @override
+  String get inspectionStepHeavyTitle => 'Ahora una carga fuerte';
+
+  @override
+  String get inspectionStepHeavyBody =>
+      'Rueda trasera al aire y acelera, o 50 metros en la moto con el teléfono en el bolsillo, o el cargador conectado. Cualquiera sirve: la app mide la corriente.';
+
+  @override
+  String get inspectionStepRecoveryTitle => 'Suelta todo y espera';
+
+  @override
+  String get inspectionStepRecoveryBody =>
+      'Sin corriente. La app mira cuánto tarda cada celda en volver a su voltaje de reposo.';
+
+  @override
+  String get inspectionStepDoneTitle => 'Listo';
+
+  @override
+  String get inspectionCurrentNow => 'Corriente ahora';
+
+  @override
+  String inspectionLoadEnough(String amps) {
+    return 'Carga detectada: $amps A, suficiente.';
+  }
+
+  @override
+  String inspectionLoadTooLow(String amps) {
+    return 'Muy poca corriente ($amps A). Dale más.';
+  }
+
+  @override
+  String inspectionNotQuiet(String amps) {
+    return 'Hay corriente ($amps A). Hace falta reposo.';
+  }
+
+  @override
+  String get inspectionQuietOk => 'En reposo.';
+
+  @override
+  String inspectionSecondsLeft(String seconds) {
+    return '$seconds s';
+  }
+
+  @override
+  String inspectionStepSkipHint(String seconds) {
+    return 'Si esta carga no se puede generar, la app pasa al siguiente paso sola en $seconds s y lo dice en el veredicto.';
+  }
+
+  @override
+  String get inspectionSkipStep => 'Saltar este paso';
+
+  @override
+  String get inspectionAbort => 'Terminar ahora';
+
+  @override
+  String get inspectionQuickTestLabel => 'TEST RÁPIDO · ESTIMACIÓN';
+
+  @override
+  String get inspectionLightGood => 'Nada grave a la vista';
+
+  @override
+  String get inspectionLightWatch => 'Hay algo que mirar';
+
+  @override
+  String get inspectionLightProblem => 'No compres a ciegas: hay un problema';
+
+  @override
+  String get inspectionFidelityNote =>
+      'Un test rápido detecta la estafa obvia y la celda mala; no mide capacidad real. Para capacidad real hace falta una descarga completa.';
+
+  @override
+  String get inspectionCaveatsTitle => 'Lo que este test no pudo ver';
+
+  @override
+  String get inspectionCaveatNoHeavyLoad =>
+      'Sin carga fuerte: la caída por celda no se pudo medir.';
+
+  @override
+  String get inspectionCaveatNoLightLoad =>
+      'Sin carga ligera: el paso de las luces no ocurrió.';
+
+  @override
+  String get inspectionCaveatRestNoisy =>
+      'El pack nunca estuvo quieto del todo: la foto en reposo es aproximada.';
+
+  @override
+  String get inspectionCaveatNoRecovery =>
+      'La carga no se soltó: la recuperación no se midió.';
+
+  @override
+  String get inspectionCaveatStepTooSmall =>
+      'El salto de corriente fue pequeño: la resistencia estimada es ruido.';
+
+  @override
+  String get inspectionCaveatFewReadings =>
+      'Pocas lecturas: el BMS habló poco.';
+
+  @override
+  String get inspectionCellsTitle => 'Celda por celda';
+
+  @override
+  String get inspectionCellHeaderRest => 'Reposo';
+
+  @override
+  String get inspectionCellHeaderSag => 'Caída';
+
+  @override
+  String get inspectionCellHeaderIr => 'R est.';
+
+  @override
+  String get inspectionCellHeaderRec => 'Recup.';
+
+  @override
+  String get inspectionReportedTitle => 'Lo que dice el BMS (editable)';
+
+  @override
+  String get inspectionReportedHint =>
+      'Ciclos, capacidad configurada y SOH se cambian desde la app oficial en un minuto. Se muestran; no se creen.';
+
+  @override
+  String get inspectionReportedCycles => 'Ciclos';
+
+  @override
+  String get inspectionReportedCapacity => 'Capacidad configurada';
+
+  @override
+  String get inspectionReportedSoc => 'Carga';
+
+  @override
+  String get inspectionReportedSoh => 'SOH';
+
+  @override
+  String get inspectionReportedModel => 'Modelo';
+
+  @override
+  String inspectionSummaryLine(
+    String cells,
+    String amps,
+    String seconds,
+    String readings,
+  ) {
+    return '$cells celdas · pico $amps A · $seconds s · $readings lecturas';
+  }
+
+  @override
+  String get inspectionSave => 'Guardar inspección';
+
+  @override
+  String get inspectionSaved => 'Inspección guardada.';
+
+  @override
+  String get inspectionDiscard => 'Descartar';
+
+  @override
+  String get inspectionNoteHint =>
+      'Nota: vendedor, precio pedido, lo que dijo…';
+
+  @override
+  String get inspectionsTitle => 'Inspecciones';
+
+  @override
+  String get inspectionsIntro =>
+      'Baterías ajenas que has mirado con el test rápido. No forman parte de tu historial.';
+
+  @override
+  String get inspectionsEmpty =>
+      'Todavía no has inspeccionado ninguna batería.';
+
+  @override
+  String get inspectionsOpen => 'Ver inspecciones';
+
+  @override
+  String get inspectionDeleted => 'Inspección borrada.';
+
+  @override
+  String get inspectionDeleteConfirmTitle => '¿Borrar esta inspección?';
+
+  @override
+  String get inspectionDeleteConfirmBody =>
+      'Se pierden el veredicto y las lecturas capturadas.';
+
+  @override
+  String inspectionCreditsLeft(String count) {
+    return 'Esta inspección consume un chequeo. Te quedan $count.';
+  }
+
+  @override
+  String get inspectionCreditsGone =>
+      'No te quedan chequeos. Consigue más en Licencia.';
+
+  @override
+  String verdictInspCellSaggingTitle(String cell) {
+    return 'La celda $cell cae mucho más que las demás';
+  }
+
+  @override
+  String verdictInspCellSaggingBody(String excess) {
+    return 'Bajo la carga fuerte cayó $excess V más que la mediana del pack. Coherente con una celda gastada o con una conexión mala en esa celda. Es la razón principal para no pagar el precio pedido sin más pruebas.';
+  }
+
+  @override
+  String get verdictInspSagUniformTitle => 'Todas las celdas caen parejo';
+
+  @override
+  String verdictInspSagUniformBody(String excess) {
+    return 'Bajo la carga fuerte la peor celda cayó solo $excess V más que la mediana. Ninguna se rinde antes que las demás.';
+  }
+
+  @override
+  String get verdictInspRestDeltaWideTitle =>
+      'Las celdas están desparejas en reposo';
+
+  @override
+  String verdictInspRestDeltaWideBody(String delta, String cell) {
+    return 'Con la moto quieta el delta es de $delta V y la más baja es la celda $cell. Sin corriente eso no es resistencia: son celdas que guardan cantidades distintas de carga, o un balanceador que no trabaja.';
+  }
+
+  @override
+  String get verdictInspRestDeltaOkTitle => 'Celdas parejas en reposo';
+
+  @override
+  String verdictInspRestDeltaOkBody(String delta) {
+    return 'Delta de $delta V con la moto quieta. Bien.';
+  }
+
+  @override
+  String verdictInspWeakLightTitle(String cell) {
+    return 'La celda $cell cae con casi nada';
+  }
+
+  @override
+  String verdictInspWeakLightBody(String amps, String extra) {
+    return 'Con solo las luces ($amps A) cayó $extra V más que las demás. Una celda que se rinde con uno o dos amperios es una celda muy cansada.';
+  }
+
+  @override
+  String verdictInspSlowRecoveryTitle(String cell) {
+    return 'La celda $cell rebota lento';
+  }
+
+  @override
+  String verdictInspSlowRecoveryBody(String extra) {
+    return 'Tardó $extra s más que la mediana en volver a su voltaje de reposo tras soltar la carga, o no volvió. Las celdas cansadas rebotan lento; es un indicador poco mirado y muy bueno.';
+  }
+
+  @override
+  String get verdictInspRecoveryOkTitle => 'Recuperación pareja';
+
+  @override
+  String verdictInspRecoveryOkBody(String seconds) {
+    return 'Tras soltar la carga las celdas volvieron a su reposo en unos $seconds s, todas al mismo paso.';
+  }
+
+  @override
+  String get verdictInspHotTitle => 'El pack estaba caliente';
+
+  @override
+  String verdictInspHotBody(String temp) {
+    return 'Llegó a $temp °C durante el test. Un pack caliente en reposo o con poca carga no es normal.';
+  }
+
+  @override
+  String get verdictInspAlarmsTitle => 'El BMS tuvo alarmas durante el test';
+
+  @override
+  String verdictInspAlarmsBody(String count) {
+    return '$count alarma(s) activas en algún momento. Pregunta por qué: un BMS que protesta en dos minutos protesta en la calle.';
+  }
+
+  @override
+  String get verdictInspCountersTitle =>
+      'Ciclos y capacidad según el BMS: no confiar';
+
+  @override
+  String verdictInspCountersBody(String cycles) {
+    return 'El BMS reporta $cycles ciclos. Ese dato y la capacidad configurada se editan desde la app oficial en un minuto. El veredicto se apoya en la física de arriba, no en estos contadores.';
+  }
+
+  @override
+  String get verdictInspNoHeavyLoadTitle =>
+      'Sin carga fuerte: fidelidad reducida';
+
+  @override
+  String verdictInspNoHeavyLoadBody(String amps) {
+    return 'La corriente máxima vista fue $amps A. Sin un tirón fuerte no se puede medir cuánto cae cada celda, que es donde sale la verdad. Repite con la rueda al aire o 50 metros en la moto.';
+  }
+
+  @override
+  String evidenceCellSag(String cell) {
+    return 'Caída de la celda $cell bajo carga';
+  }
+
+  @override
+  String get evidenceMedianSag => 'Caída mediana del pack';
+
+  @override
+  String get evidenceCurrentStep => 'Salto de corriente (carga menos reposo)';
+
+  @override
+  String evidenceCellResistance(String cell) {
+    return 'Resistencia estimada de la celda $cell';
+  }
+
+  @override
+  String get evidenceMedianResistance => 'Resistencia estimada mediana';
+
+  @override
+  String evidenceLowestRestCell(String cell) {
+    return 'Celda más baja en reposo (celda $cell)';
+  }
+
+  @override
+  String get evidenceLightLoadAmps => 'Corriente con las luces';
+
+  @override
+  String evidenceRecoverySeconds(String cell) {
+    return 'Recuperación de la celda $cell';
+  }
+
+  @override
+  String get evidenceMedianRecoverySeconds => 'Recuperación mediana';
+
+  @override
+  String get evidenceAlarmCount => 'Alarmas vistas';
+
+  @override
+  String get evidencePeakCurrent => 'Corriente máxima vista';
 }

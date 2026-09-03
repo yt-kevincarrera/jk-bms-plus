@@ -20,6 +20,10 @@ import 'app_settings_screen.dart';
 import 'offline_pack_screen.dart';
 import 'widgets/common.dart';
 import '../update/update_service.dart';
+import '../license/entitlements.dart';
+import 'inspection/inspection_screen.dart';
+import 'license_scope.dart';
+import 'widgets/pro_gate.dart';
 
 /// Scan, pick a BMS, or open demo mode.
 class ConnectScreen extends StatefulWidget {
@@ -79,13 +83,25 @@ class _ConnectScreenState extends State<ConnectScreen> {
   /// the original text on request. It used to be the message.
   String _messageDetail = '';
 
+  /// Whether the next connection is a look at somebody else's pack.
+  ///
+  /// In this mode the pack tapped is never adopted: nothing about it reaches
+  /// the rider's history, the proximity watcher is not told to look for it,
+  /// and the screens that open are the guided quick test, not the live tabs.
+  /// The mode ends by itself once one inspection has finished, so a rider who
+  /// forgets they were in it cannot connect to their own bike as a stranger.
+  bool _inspecting = false;
+
   @override
   void initState() {
     super.initState();
     // When the watcher spots the bike, walk straight in. This is the whole
     // point of the feature: get on, ride, and the app is already recording.
     _foundSub = widget.proximity.found.listen((device) {
-      if (!mounted || _connecting) return;
+      // Not while inspecting: the watcher exists to find the rider's own
+      // bike, and that is the one pack the quick test must never be run on
+      // by accident.
+      if (!mounted || _connecting || _inspecting) return;
       _connecting = true;
       _connect(device);
     });
@@ -223,11 +239,9 @@ class _ConnectScreenState extends State<ConnectScreen> {
   }
 
   Future<void> _loadStored() async {
-
     final devices = await widget.service.repository?.devices();
     if (mounted && devices != null) setState(() => _stored = devices);
   }
-
 
   /// The batteries already on record, openable with nothing connected.
   ///
@@ -272,10 +286,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 2),
               child: Row(
                 children: [
-                  Text(
-                    t.storedTitle,
-                    style: const TextStyle(fontSize: 15),
-                  ),
+                  Text(t.storedTitle, style: const TextStyle(fontSize: 15)),
                 ],
               ),
             ),
@@ -340,7 +351,6 @@ class _ConnectScreenState extends State<ConnectScreen> {
     await _loadStored();
   }
 
-
   /// Rename or delete a stored battery, from the list itself.
   ///
   /// Deleting takes everything recorded on that pack with it, so it asks
@@ -355,10 +365,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-              child: Text(
-                label,
-                style: const TextStyle(fontSize: 15),
-              ),
+              child: Text(label, style: const TextStyle(fontSize: 15)),
             ),
             ListTile(
               leading: const Icon(Icons.edit_outlined),
@@ -553,7 +560,6 @@ class _ConnectScreenState extends State<ConnectScreen> {
     );
   }
 
-
   /// The scan results, with the likely ones first and everything else below.
   ///
   /// The "other devices" group is the whole point of the fix: a rider whose BMS
@@ -672,7 +678,13 @@ class _ConnectScreenState extends State<ConnectScreen> {
       widget.service.snapshots.listen((_) => contact.onDecoded()),
     ];
 
-    unawaited(widget.service.connect(device.id, name: device.name));
+    unawaited(
+      widget.service.connect(
+        device.id,
+        name: device.name,
+        inspecting: _inspecting,
+      ),
+    );
 
     final outcome = await _awaitVerdict(contact);
     for (final sub in subs) {
@@ -700,8 +712,9 @@ class _ConnectScreenState extends State<ConnectScreen> {
               // A device that announces itself as JK and then says nothing is
               // a JK BMS with its attention elsewhere, not a pair of
               // headphones, and the advice is different.
-              _message =
-                  device.likelyBms ? t.connectSilentJk : t.connectNotABms;
+              _message = device.likelyBms
+                  ? t.connectSilentJk
+                  : t.connectNotABms;
               _messageDetail = '';
               _busyMessage = false;
             case FirstContactOutcome.talkingButUndecoded:
@@ -716,16 +729,27 @@ class _ConnectScreenState extends State<ConnectScreen> {
       return;
     }
 
-    // Only now is it worth remembering: the proximity watcher exists to
-    // reconnect to a BMS, and remembering whatever was tapped last would have
-    // it chasing a speaker.
-    await widget.proximity.remember(device.id, device.name);
     if (mounted) {
       setState(() {
         _message = null;
         _messageDetail = '';
       });
     }
+
+    if (_inspecting) {
+      // Somebody else's pack: nothing to remember, nothing to adopt. The
+      // guided test runs, the verdict is shown, and the link is dropped.
+      await _openInspection(device.id, device.name);
+      await widget.service.disconnect();
+      _connecting = false;
+      if (mounted) setState(() => _inspecting = false);
+      return;
+    }
+
+    // Only now is it worth remembering: the proximity watcher exists to
+    // reconnect to a BMS, and remembering whatever was tapped last would have
+    // it chasing a speaker.
+    await widget.proximity.remember(device.id, device.name);
 
     await _openHome(device.name);
     await widget.service.disconnect();
@@ -747,9 +771,62 @@ class _ConnectScreenState extends State<ConnectScreen> {
   Future<void> _startDemo() async {
     final t = AppL10n.of(context);
     await _cancelScan();
+    if (_inspecting) {
+      // A rehearsal: the simulated pack plays a seller's battery with one
+      // weak cell, so the rider can see the whole test once before doing it
+      // in front of somebody.
+      await widget.service.enterDemoMode(scenario: DemoScenario.inspection);
+      await _openInspection(BmsService.demoDeviceId, t.demoPackName);
+      await widget.service.exitDemoMode();
+      if (mounted) setState(() => _inspecting = false);
+      return;
+    }
     await widget.service.enterDemoMode(scenario: DemoScenario.riding);
     await _openHome(t.demoPackName);
     await widget.service.exitDemoMode();
+  }
+
+  /// Switches the screen into inspection mode, if the licence allows it.
+  ///
+  /// With licensing switched off everything is allowed and this is just a
+  /// toggle. With it on, a rider without credits is sent to the licence
+  /// screen instead, and one with a finite number is told what the next
+  /// inspection costs before they connect to anything.
+  void _enterInspection() {
+    final t = AppL10n.of(context);
+    final controller = LicenseScope.of(context);
+    final entitlements = controller.entitlements;
+    if (!entitlements.allows(Feature.inspection)) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(t.inspectionCreditsGone)));
+      openLicenseScreen(context);
+      return;
+    }
+    if (controller.enabled && !entitlements.isWorkshop) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            t.inspectionCreditsLeft('${entitlements.inspectionCreditsLeft}'),
+          ),
+        ),
+      );
+    }
+    setState(() {
+      _inspecting = true;
+      _message = null;
+      _messageDetail = '';
+    });
+  }
+
+  Future<void> _openInspection(String id, String name) async {
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            InspectionScreen(service: widget.service, bmsId: id, bmsName: name),
+      ),
+    );
   }
 
   Future<void> _openHome(String name) async {
@@ -779,159 +856,234 @@ class _ConnectScreenState extends State<ConnectScreen> {
           IconButton(
             tooltip: t.appSettingsTitle,
             icon: const Icon(Icons.tune),
-            onPressed: _openSettings,          ),
+            onPressed: _openSettings,
+          ),
         ],
       ),
       body: SafeArea(
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceRaised,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppTheme.hairline),
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (_inspecting) _inspectionBanner(t) else _oneConnectionNote(t),
+            if (_message != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
+                child: LinkTroubleText(
+                  message: _message!,
+                  detail: _messageDetail,
+                  color: _busyMessage ? AppTheme.watch : AppTheme.bad,
+                ),
               ),
-              padding: const EdgeInsets.all(14),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(
-                    Icons.info_outline,
-                    size: 17,
-                    color: AppTheme.textSecondary,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      t.connectOneConnectionWarning,
-                      style: const TextStyle(
-                        fontSize: 12.5,
-                        height: 1.4,
-                        color: AppTheme.textSecondary,
+            // Always, not only when the scan came up empty. A battery you have
+            // already used outranks whatever headphones happen to be in the
+            // room, and opening its history needs no radio at all.
+            _storedPacks(t),
+            Expanded(
+              child: _devices.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_scanning) ...[
+                            const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppTheme.goodDim,
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                          ],
+                          Text(
+                            _scanning
+                                ? t.connectScanning
+                                : _searched
+                                ? t.connectScanFinished
+                                : t.connectNoDevices,
+                            style: const TextStyle(
+                              color: AppTheme.textSecondary,
+                            ),
+                          ),
+                          // Only once the search has actually ended. While it is
+                          // running there is nothing to explain yet, and the
+                          // whole bug this replaced was a screen that could
+                          // never reach this state at all.
+                          if (!_scanning && _searched) ...[
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Text(
+                                t.connectSeenCount('${_devices.length}'),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.textFaint,
+                                ),
+                              ),
+                            ),
+                          ],
+                          if (!_scanning && _searched)
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(24, 14, 24, 0),
+                              child: Text(
+                                t.connectNothingFoundHelp,
+                                style: const TextStyle(
+                                  fontSize: 12.5,
+                                  height: 1.5,
+                                  color: AppTheme.textFaint,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
+                    )
+                  : _deviceList(t),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: _scanning
+                  ? OutlinedButton.icon(
+                      // No message. Cancelling is something the rider chose to
+                      // do, and reporting it in the same red banner the app uses
+                      // for genuine failures makes a deliberate act look like
+                      // something went wrong.
+                      onPressed: _cancelScan,
+                      icon: const Icon(Icons.stop_circle_outlined, size: 19),
+                      label: Text(t.connectCancelScan),
+                    )
+                  : FilledButton.icon(
+                      onPressed: _startScan,
+                      icon: const Icon(Icons.bluetooth_searching, size: 19),
+                      label: Text(_searched ? t.connectRetry : t.connectScan),
+                    ),
+            ),
+            // Demo is a way to look around with no hardware, not something a
+            // rider with a bike outside wants competing with the scan button.
+            // A quiet text link, and the paragraph explaining it moves into the
+            // screen it opens.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton(
+                    onPressed: _connecting ? null : _startDemo,
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppTheme.textFaint,
+                      textStyle: const TextStyle(fontSize: 12.5),
+                    ),
+                    child: Text(
+                      _inspecting ? t.inspectionRehearse : t.connectDemoButton,
                     ),
                   ),
+                  // Inspecting is something a buyer does a few times a year,
+                  // so it sits beside the demo link rather than competing with
+                  // the scan button the rider presses every day.
+                  if (!_inspecting)
+                    TextButton(
+                      onPressed: _connecting ? null : _enterInspection,
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppTheme.textFaint,
+                        textStyle: const TextStyle(fontSize: 12.5),
+                      ),
+                      child: Text(t.inspectionEntry),
+                    ),
                 ],
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _oneConnectionNote(AppL10n t) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+    child: Container(
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceRaised,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.hairline),
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.info_outline,
+            size: 17,
+            color: AppTheme.textSecondary,
           ),
-          if (_message != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
-              child: LinkTroubleText(
-                message: _message!,
-                detail: _messageDetail,
-                color: _busyMessage ? AppTheme.watch : AppTheme.bad,
-              ),
-            ),
-          // Always, not only when the scan came up empty. A battery you have
-          // already used outranks whatever headphones happen to be in the
-          // room, and opening its history needs no radio at all.
-          _storedPacks(t),
+          const SizedBox(width: 10),
           Expanded(
-            child: _devices.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_scanning) ...[
-                          const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppTheme.goodDim,
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                        ],
-                        Text(
-                          _scanning
-                              ? t.connectScanning
-                              : _searched
-                                  ? t.connectScanFinished
-                                  : t.connectNoDevices,
-                          style: const TextStyle(
-                            color: AppTheme.textSecondary,
-                          ),
-                        ),
-                        // Only once the search has actually ended. While it is
-                        // running there is nothing to explain yet, and the
-                        // whole bug this replaced was a screen that could
-                        // never reach this state at all.
-                        if (!_scanning && _searched) ...[
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Text(
-                              t.connectSeenCount('${_devices.length}'),
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppTheme.textFaint,
-                              ),
-                            ),
-                          ),
-                        ],
-                        if (!_scanning && _searched)
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(24, 14, 24, 0),
-                            child: Text(
-                              t.connectNothingFoundHelp,
-                              style: const TextStyle(
-                                fontSize: 12.5,
-                                height: 1.5,
-                                color: AppTheme.textFaint,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  )
-                : _deviceList(t),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: _scanning
-                ? OutlinedButton.icon(
-                    // No message. Cancelling is something the rider chose to
-                    // do, and reporting it in the same red banner the app uses
-                    // for genuine failures makes a deliberate act look like
-                    // something went wrong.
-                    onPressed: _cancelScan,
-                    icon: const Icon(Icons.stop_circle_outlined, size: 19),
-                    label: Text(t.connectCancelScan),
-                  )
-                : FilledButton.icon(
-                    onPressed: _startScan,
-                    icon: const Icon(
-                      Icons.bluetooth_searching,
-                      size: 19,
-                    ),
-                    label: Text(_searched ? t.connectRetry : t.connectScan),
-                  ),
-          ),
-          // Demo is a way to look around with no hardware, not something a
-          // rider with a bike outside wants competing with the scan button.
-          // A quiet text link, and the paragraph explaining it moves into the
-          // screen it opens.
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: TextButton(
-              onPressed: _startDemo,
-              style: TextButton.styleFrom(
-                foregroundColor: AppTheme.textFaint,
-                textStyle: const TextStyle(fontSize: 12.5),
+            child: Text(
+              t.connectOneConnectionWarning,
+              style: const TextStyle(
+                fontSize: 12.5,
+                height: 1.4,
+                color: AppTheme.textSecondary,
               ),
-              child: Text(t.connectDemoButton),
             ),
           ),
         ],
       ),
+    ),
+  );
+
+  /// Replaces the one-connection note while inspecting. Same place, a
+  /// different colour, so the mode is impossible to miss on the screen where
+  /// the tap that matters happens.
+  Widget _inspectionBanner(AppL10n t) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+    child: Container(
+      decoration: BoxDecoration(
+        color: AppTheme.cool.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.cool.withValues(alpha: 0.55)),
       ),
-    );
-  }
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.fact_check_outlined,
+                size: 18,
+                color: AppTheme.cool,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                t.inspectionModeTitle,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.cool,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            t.inspectionModeBanner,
+            style: const TextStyle(
+              fontSize: 12.5,
+              height: 1.4,
+              color: AppTheme.textSecondary,
+            ),
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: _connecting
+                  ? null
+                  : () => setState(() => _inspecting = false),
+              child: Text(t.inspectionModeExit),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 
   Color _rssiColour(int rssi) {
     if (rssi > -60) return AppTheme.good;
