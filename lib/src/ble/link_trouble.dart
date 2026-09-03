@@ -31,6 +31,10 @@ enum LinkTroubleKind {
   /// The device connected and has no JK service on it: the wrong device.
   notJkBms,
 
+  /// The pack was connected and sent nothing for long enough that the
+  /// transport let go on purpose, to make its module drop a stuck session.
+  packMute,
+
   /// Something else. The detail is all there is to go on.
   unknown,
 }
