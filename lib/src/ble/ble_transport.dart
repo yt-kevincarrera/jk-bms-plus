@@ -432,6 +432,15 @@ class BleTransport implements BmsLink {
         autoConnect: false,
       );
 
+      // A disconnect that arrived while the connect was in flight wins. The
+      // attach used to carry on regardless: the screen had given up, told the
+      // transport to let go, and the transport went on to negotiate, subscribe
+      // and start nudging a pack nobody wanted any more. The BMS then had its
+      // one connection held by a link the app had already written off, and
+      // the next tap found it mute, and the one after that, until Bluetooth
+      // was switched off and on.
+      if (await _abandonedMidway(device)) return;
+
       _setState(BleLinkState.negotiating);
 
       // Ask for a big MTU straight away. Android may grant less; the frame
@@ -453,7 +462,9 @@ class BleTransport implements BmsLink {
         );
       }
 
+      if (await _abandonedMidway(device)) return;
       final characteristic = await _findCharacteristic(device);
+      if (await _abandonedMidway(device)) return;
       _characteristic = characteristic;
 
       await _notifySub?.cancel();
@@ -469,6 +480,7 @@ class BleTransport implements BmsLink {
             _errorController.add(BleLinkError.from(e)),
       );
       await characteristic.setNotifyValue(true);
+      if (await _abandonedMidway(device)) return;
 
       _setState(BleLinkState.connected);
       final since = _droppedAt;
@@ -484,10 +496,43 @@ class BleTransport implements BmsLink {
 
       _pollTimer?.cancel();
       _pollTimer = Timer.periodic(pollInterval, (_) => _nudgeIfQuiet());
+    } on NotAJkBmsException catch (e) {
+      // The wrong device, not a bad link. Stop wanting it so the reconnect
+      // loop does not chase it, and let go so it is not held either.
+      _wantConnection = false;
+      _setState(BleLinkState.failed);
+      _errorController.add(BleLinkError.from(e));
+      await _letGo(device);
     } on Exception catch (e) {
+      // An attempt that disconnect() abandoned midway is not trouble: the
+      // cancelled connect throws, and reporting that would land a generic
+      // Bluetooth complaint on top of whatever the screen was about to say.
+      if (!_wantConnection) return;
       _setState(BleLinkState.failed);
       _errorController.add(_describeConnectFailure(e));
-      if (_wantConnection) _scheduleReconnect();
+      _scheduleReconnect();
+    }
+  }
+
+  /// True when [disconnect] was called while an attach was in flight. Gives
+  /// back whatever the attach had gained since, so the pack is free for the
+  /// next attempt instead of held by a link nobody is listening to.
+  Future<bool> _abandonedMidway(BluetoothDevice device) async {
+    if (_wantConnection && !_disposed) return false;
+    _pollTimer?.cancel();
+    await _notifySub?.cancel();
+    _notifySub = null;
+    _characteristic = null;
+    await _letGo(device);
+    _setState(BleLinkState.idle);
+    return true;
+  }
+
+  Future<void> _letGo(BluetoothDevice device) async {
+    try {
+      await device.disconnect();
+    } on Exception catch (_) {
+      // Already gone, which was the point.
     }
   }
 
@@ -504,7 +549,7 @@ class BleTransport implements BmsLink {
         if (c.properties.notify || c.properties.indicate) return c;
       }
     }
-    throw StateError(
+    throw NotAJkBmsException(
       'This device does not expose a notifying $jkCharacteristicUuid16 '
       'characteristic on service $jkServiceUuid16, so it is not a JK BMS '
       'this app can talk to.',
