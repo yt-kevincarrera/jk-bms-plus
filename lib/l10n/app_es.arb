@@ -57,6 +57,12 @@
     }
   },
   "waitingFirstReading": "la primera lectura",
+  "waitingWhyLinkDown": "El enlace Bluetooth no está conectado ahora mismo. La app sigue intentándolo sola; si no vuelve, arriba aparece el motivo.",
+  "waitingWhyNoFrames": "Conectado, pero no ha llegado ni un frame del BMS. O la batería está callada con la app, o algo más tiene su sesión de datos.",
+  "waitingWhyOnlyDeviceInfo": "Llegó la información del dispositivo, pero ninguna lectura de celdas. La app se la vuelve a pedir a la batería cada 3 segundos.",
+  "waitingWhyVariantUnknown": "Llegan lecturas de celdas, pero la app no pudo determinar qué variante del protocolo habla esta batería y no las decodifica. Elige la variante a mano en Sistema.",
+  "waitingWhyDecodeFailing": "Llegan lecturas de celdas, pero fallan al decodificar. El motivo exacto está en los avisos de abajo y en Sistema.",
+  "waitingWhyUnexplained": "Llegan lecturas, se decodifican y se emiten, pero ninguna alcanzó esta pantalla. Eso es un fallo de la app: haz captura de esta pantalla y mándala.",
   "waitingCellVoltages": "los voltajes de celda",
   "waitingTemperatures": "las temperaturas",
   "soc": "Carga",

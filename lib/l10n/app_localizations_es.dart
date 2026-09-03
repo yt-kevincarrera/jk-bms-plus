@@ -153,6 +153,30 @@ class AppL10nEs extends AppL10n {
   String get waitingFirstReading => 'la primera lectura';
 
   @override
+  String get waitingWhyLinkDown =>
+      'El enlace Bluetooth no está conectado ahora mismo. La app sigue intentándolo sola; si no vuelve, arriba aparece el motivo.';
+
+  @override
+  String get waitingWhyNoFrames =>
+      'Conectado, pero no ha llegado ni un frame del BMS. O la batería está callada con la app, o algo más tiene su sesión de datos.';
+
+  @override
+  String get waitingWhyOnlyDeviceInfo =>
+      'Llegó la información del dispositivo, pero ninguna lectura de celdas. La app se la vuelve a pedir a la batería cada 3 segundos.';
+
+  @override
+  String get waitingWhyVariantUnknown =>
+      'Llegan lecturas de celdas, pero la app no pudo determinar qué variante del protocolo habla esta batería y no las decodifica. Elige la variante a mano en Sistema.';
+
+  @override
+  String get waitingWhyDecodeFailing =>
+      'Llegan lecturas de celdas, pero fallan al decodificar. El motivo exacto está en los avisos de abajo y en Sistema.';
+
+  @override
+  String get waitingWhyUnexplained =>
+      'Llegan lecturas, se decodifican y se emiten, pero ninguna alcanzó esta pantalla. Eso es un fallo de la app: haz captura de esta pantalla y mándala.';
+
+  @override
   String get waitingCellVoltages => 'los voltajes de celda';
 
   @override

@@ -355,6 +355,42 @@ abstract class AppL10n {
   /// **'la primera lectura'**
   String get waitingFirstReading;
 
+  /// No description provided for @waitingWhyLinkDown.
+  ///
+  /// In es, this message translates to:
+  /// **'El enlace Bluetooth no está conectado ahora mismo. La app sigue intentándolo sola; si no vuelve, arriba aparece el motivo.'**
+  String get waitingWhyLinkDown;
+
+  /// No description provided for @waitingWhyNoFrames.
+  ///
+  /// In es, this message translates to:
+  /// **'Conectado, pero no ha llegado ni un frame del BMS. O la batería está callada con la app, o algo más tiene su sesión de datos.'**
+  String get waitingWhyNoFrames;
+
+  /// No description provided for @waitingWhyOnlyDeviceInfo.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegó la información del dispositivo, pero ninguna lectura de celdas. La app se la vuelve a pedir a la batería cada 3 segundos.'**
+  String get waitingWhyOnlyDeviceInfo;
+
+  /// No description provided for @waitingWhyVariantUnknown.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegan lecturas de celdas, pero la app no pudo determinar qué variante del protocolo habla esta batería y no las decodifica. Elige la variante a mano en Sistema.'**
+  String get waitingWhyVariantUnknown;
+
+  /// No description provided for @waitingWhyDecodeFailing.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegan lecturas de celdas, pero fallan al decodificar. El motivo exacto está en los avisos de abajo y en Sistema.'**
+  String get waitingWhyDecodeFailing;
+
+  /// No description provided for @waitingWhyUnexplained.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegan lecturas, se decodifican y se emiten, pero ninguna alcanzó esta pantalla. Eso es un fallo de la app: haz captura de esta pantalla y mándala.'**
+  String get waitingWhyUnexplained;
+
   /// No description provided for @waitingCellVoltages.
   ///
   /// In es, this message translates to:

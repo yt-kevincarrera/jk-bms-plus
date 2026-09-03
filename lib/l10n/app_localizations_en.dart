@@ -153,6 +153,30 @@ class AppL10nEn extends AppL10n {
   String get waitingFirstReading => 'the first reading';
 
   @override
+  String get waitingWhyLinkDown =>
+      'The Bluetooth link is not up right now. The app keeps retrying on its own; if it does not come back, the reason appears above.';
+
+  @override
+  String get waitingWhyNoFrames =>
+      'Connected, but not one frame has arrived from the BMS. Either the pack is silent towards the app, or something else holds its data session.';
+
+  @override
+  String get waitingWhyOnlyDeviceInfo =>
+      'Device information arrived, but no cell readings. The app asks the pack for them again every 3 seconds.';
+
+  @override
+  String get waitingWhyVariantUnknown =>
+      'Cell readings arrive, but the app could not work out which protocol variant this pack speaks, so it does not decode them. Pick the variant by hand in System.';
+
+  @override
+  String get waitingWhyDecodeFailing =>
+      'Cell readings arrive but fail to decode. The exact reason is in the notices below and in System.';
+
+  @override
+  String get waitingWhyUnexplained =>
+      'Readings arrive, decode and are emitted, yet none reached this screen. That is a fault in the app: screenshot this screen and send it.';
+
+  @override
   String get waitingCellVoltages => 'cell voltages';
 
   @override

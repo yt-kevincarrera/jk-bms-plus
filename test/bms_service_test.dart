@@ -6,6 +6,8 @@ import 'package:jk_bms/src/ble/ble_transport.dart';
 import 'package:jk_bms/src/ble/bms_link.dart';
 import 'package:jk_bms/src/bms_service.dart';
 import 'package:jk_bms/src/model/bms_snapshot.dart';
+import 'package:jk_bms/src/protocol/jk_frame.dart';
+import 'package:jk_bms/src/protocol/jk_parser.dart';
 import 'package:jk_bms/src/protocol/protocol_variant.dart';
 
 import 'fixtures/captured_frames.dart';
@@ -55,6 +57,17 @@ class FakeLink implements BmsLink {
       _bytes.add(frame.sublist(i, (i + chunk).clamp(0, frame.length)));
     }
     await pumpEventQueue();
+  }
+}
+
+/// A parser whose cell info always fails, standing in for a firmware whose
+/// frames this app gets wrong.
+class BrokenCellInfoParser extends JkParser {
+  const BrokenCellInfoParser();
+
+  @override
+  BmsSnapshot parseCellInfo(JkFrame frame, JkProtocolVariant variant) {
+    throw StateError('offset 300 is past the end of a 300-byte frame');
   }
 }
 
@@ -218,5 +231,31 @@ void main() {
 
     expect(snapshots, hasLength(1));
     expect(snapshots.single.frameCounter, 0x8D);
+  });
+
+  test('a cell info frame that will not decode is said, not swallowed', () async {
+    // _handleCellInfo is not awaited by its caller, so a throw from the parser
+    // used to vanish: no notice, no reading, and every tab waiting for the
+    // first reading indefinitely. The rider saw exactly that.
+    await service.dispose();
+    link = FakeLink();
+    service = BmsService(transport: link, parser: const BrokenCellInfoParser());
+    final problems = <String>[];
+    service.problems.listen(problems.add);
+    await service.connect('pack');
+
+    await link.deliver(deviceInfoFrames[0]);
+    await link.deliver(cellInfo24s[0]);
+    await link.deliver(cellInfo24s[1]);
+
+    expect(service.deviceInfoFrames, 1);
+    expect(service.cellInfoFrames, 2);
+    expect(service.decodeFailures, 2);
+    expect(service.snapshotsEmitted, 0);
+    expect(
+      problems.where((p) => p.contains('Could not decode cell info')),
+      hasLength(2),
+    );
+    expect(service.recentProblems.first, contains('offset 300'));
   });
 }
