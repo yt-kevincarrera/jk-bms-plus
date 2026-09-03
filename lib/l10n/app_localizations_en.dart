@@ -1876,7 +1876,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get connectSilentJk =>
-      'It connected, but the pack said nothing for 12 seconds. It announces itself as JK, so it is a JK BMS: most likely something else still holds its one connection (the official JK app, another logger), or the phone\'s Bluetooth is hanging on to an earlier session. Close the official app, switch the phone\'s Bluetooth off and on, and try again. The raw frame console in Settings shows whether anything arrives.';
+      'It connected, but the pack said nothing for 12 seconds. It announces itself as JK, so it is a JK BMS: its one data session belongs to someone else, or is stuck. Look first at the official JK app, which reconnects on its own from the background: force-stop it in Android settings, do not just close it. If nobody else is there, the BMS\'s Bluetooth module lets a stuck session go by itself after a while, and switching the phone\'s Bluetooth off and on does not hurry it; with the proximity watcher on, the app retries on its own. The raw frame console in Settings shows whether anything arrives.';
 
   @override
   String get connectTalkingUndecoded =>

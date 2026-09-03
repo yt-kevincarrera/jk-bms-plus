@@ -1884,7 +1884,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get connectSilentJk =>
-      'Se conectó, pero la batería no dijo nada en 12 segundos. Se anuncia como JK, así que sí es un BMS JK: lo más probable es que otra cosa siga ocupando su única conexión (la app oficial de JK, otro registrador) o que el Bluetooth del teléfono tenga colgada una sesión anterior. Cierra la app oficial, apaga y enciende el Bluetooth del teléfono y vuelve a intentarlo. La consola de frames crudos en Ajustes muestra si llega algo.';
+      'Se conectó, pero la batería no dijo nada en 12 segundos. Se anuncia como JK, así que sí es un BMS JK: su única sesión de datos la tiene otro, o se quedó colgada. Lo primero a mirar es la app oficial de JK, que se reconecta sola desde el segundo plano: fuérzala a detenerse en los ajustes de Android, no solo la cierres. Si no hay nadie más, el módulo Bluetooth del BMS suelta la sesión colgada por sí solo al cabo de un rato, y apagar y encender el Bluetooth del teléfono no lo acelera; con el vigilante de proximidad activado la app vuelve a intentarlo sola. La consola de frames crudos en Ajustes muestra si llega algo.';
 
   @override
   String get connectTalkingUndecoded =>
