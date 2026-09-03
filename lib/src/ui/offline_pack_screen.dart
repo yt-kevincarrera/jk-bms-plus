@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../bms_service.dart';
 import '../data/database.dart';
+import '../metrics/advice_engine.dart';
 import '../metrics/cell_drift.dart';
 import '../metrics/degradation.dart';
 import '../metrics/range_estimator.dart';
 import '../metrics/range_outlook.dart';
 import 'theme.dart';
 import 'trends_screen.dart';
+import 'widgets/advice_list.dart';
 import 'widgets/common.dart';
 import 'widgets/maintenance_card.dart';
 
@@ -44,8 +46,11 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
   RangeOutlook _outlook = RangeOutlook.unknown;
   DateTime? _firstAt;
   int _readingCount = 0;
-  CellDrift? _drift;
   List<CellDrift> _driftRanking = const [];
+
+  /// The learned consumption behind the range figures, kept so the verdicts
+  /// can cite it.
+  RangeEstimator? _estimator;
 
   @override
   void initState() {
@@ -85,10 +90,7 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
     for (final t in trips.where(
       (t) => t.distanceKm >= 0.2 && t.energyOutWh > t.energyInWh,
     )) {
-      estimator.addSegment(
-        wh: t.energyOutWh - t.energyInWh,
-        km: t.distanceKm,
-      );
+      estimator.addSegment(wh: t.energyOutWh - t.energyInWh, km: t.distanceKm);
     }
 
     // Both figures, built exactly as the live screen builds them. This screen
@@ -146,10 +148,8 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
       _firstAt = oldest;
       _readingCount = totalReadings;
       _driftRanking = const CellDriftAnalysis().analyse(readings);
-      _drift = _driftRanking.isNotEmpty && _driftRanking.first.isWorsening
-          ? _driftRanking.first
-          : null;
       _outlook = outlook;
+      _estimator = estimator;
     });
   }
 
@@ -321,10 +321,8 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
             hint: lost != null
                 ? null
                 : wear.current == null
-                    ? t.offlineHealthNeedsTests
-                    : t.offlineHealthOneTest(
-                        wear.current!.ah.toStringAsFixed(1),
-                      ),
+                ? t.offlineHealthNeedsTests
+                : t.offlineHealthOneTest(wear.current!.ah.toStringAsFixed(1)),
           ),
           InfoRow(
             t.offlineImplied,
@@ -365,40 +363,16 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
           ),
         ],
       ),
-      Section(
-        title: t.driftTitle,
-        intro: t.driftWhy,
-        children: [
-          if (_drift == null)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Text(
-                _driftRanking.isEmpty ? t.driftNotEnough : t.driftNone,
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  height: 1.45,
-                  color: AppTheme.textFaint,
-                ),
-              ),
-            )
-          else
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Text(
-                t.driftFound(
-                  '${_drift!.index + 1}',
-                  _drift!.currentDeviationVolts.toStringAsFixed(3),
-                  _drift!.changeVoltsPerMonth.toStringAsFixed(3),
-                ),
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  height: 1.45,
-                  color: AppTheme.watch,
-                ),
-              ),
-            ),
-          const SizedBox(height: 4),
-        ],
+      // The same sentences the Health tab says about a connected pack, from
+      // what is on disk. One engine, so the two screens cannot disagree.
+      AdviceList(
+        title: t.verdictTitle,
+        advice: const AdviceEngine().headlines(
+          degradation: wear,
+          drift: _driftRanking,
+          outlook: _readingIsStale ? null : _outlook,
+          estimator: _estimator,
+        ),
       ),
       if (widget.service.repository != null)
         MaintenanceCard(
@@ -410,10 +384,7 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
         title: t.offlineTrips,
         children: [
           InfoRow(t.offlineTrips, t.offlineTripsCount('${_trips.length}')),
-          InfoRow(
-            t.offlineTotalKm,
-            '${totalKm.toStringAsFixed(1)} km',
-          ),
+          InfoRow(t.offlineTotalKm, '${totalKm.toStringAsFixed(1)} km'),
           // Full pack first: with nothing connected, "how far can it go" is
           // the question somebody is actually asking, and the charge the pack
           // happened to be at when it was last seen is not it.
@@ -476,7 +447,7 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
                 test.catalogueAh == null
                     ? '${test.measuredAh.toStringAsFixed(1)} Ah'
                     : '${test.measuredAh.toStringAsFixed(1)} Ah  ·  '
-                        '${(test.measuredAh / test.catalogueAh! * 100).toStringAsFixed(0)} %',
+                          '${(test.measuredAh / test.catalogueAh! * 100).toStringAsFixed(0)} %',
                 last: test == completed.last,
               ),
           ],

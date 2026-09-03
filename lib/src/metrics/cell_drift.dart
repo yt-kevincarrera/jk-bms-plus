@@ -8,6 +8,7 @@ class CellDrift {
     required this.earlyDeviationVolts,
     required this.changeVoltsPerMonth,
     required this.samples,
+    this.spanDays = 0,
   });
 
   /// Zero-based position in the pack. Add one for the number on the label.
@@ -24,6 +25,10 @@ class CellDrift {
   final double changeVoltsPerMonth;
 
   final int samples;
+
+  /// How many days of readings the trend spans. What "per month" was
+  /// measured over, and what "for three weeks" in a sentence refers to.
+  final int spanDays;
 
   /// Whether this cell is drifting away rather than just sitting low.
   ///
@@ -107,10 +112,9 @@ class CellDriftAnalysis {
           earlyDeviationVolts: earlyDev[i],
           changeVoltsPerMonth: (lateDev[i] - earlyDev[i]) / months,
           samples: resting.length,
+          spanDays: span.inDays,
         ),
-    ]..sort(
-        (a, b) => b.changeVoltsPerMonth.compareTo(a.changeVoltsPerMonth),
-      );
+    ]..sort((a, b) => b.changeVoltsPerMonth.compareTo(a.changeVoltsPerMonth));
     return out;
   }
 

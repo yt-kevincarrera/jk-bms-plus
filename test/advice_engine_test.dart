@@ -133,9 +133,12 @@ bool has(List<Advice> advice, AdviceCode code) =>
 
 void main() {
   group('AdviceEngine', () {
-    test('a healthy pack gets no advice at all', () {
+    test('a healthy pack gets no findings, only good news', () {
+      // Silence and a clean bill of health look the same on a screen. A pack
+      // that was actually checked under load is told so, and nothing else.
       final advice = run(restingDelta: 0.008, loadedDelta: 0.020);
-      expect(advice, isEmpty);
+      expect(advice.map((a) => a.level), everyElement(AdviceLevel.good));
+      expect(has(advice, AdviceCode.deltaUnderLoadNormal), isTrue);
     });
 
     test('a delta present at rest is called capacity, not resistance', () {
