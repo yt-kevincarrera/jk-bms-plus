@@ -152,7 +152,7 @@ watching the first real connection, settle these:
 flutter test
 ```
 
-526 tests, no device needed. The protocol ones run against 11 real 300-byte
+527 tests, no device needed. The protocol ones run against 11 real 300-byte
 frames captured from JK hardware, with expected values taken from the reference
 implementation's byte-layout tables rather than from this parser's own output.
 
