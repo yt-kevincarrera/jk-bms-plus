@@ -19,6 +19,7 @@ String linkTroubleWording(AppL10n t, LinkTrouble trouble) =>
       LinkTroubleKind.permission => t.troublePermission,
       LinkTroubleKind.locationOff => t.troubleLocationOff,
       LinkTroubleKind.slowFrames => t.troubleSlowFrames,
+      LinkTroubleKind.notJkBms => t.troubleNotJkBms,
       LinkTroubleKind.unknown => t.troubleGeneric,
     };
 
