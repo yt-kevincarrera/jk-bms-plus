@@ -254,10 +254,11 @@ class BleTransport implements BmsLink {
   /// serving somebody else, or its Bluetooth module is still bound to a session
   /// that ended without a proper disconnect. The rider's report: the pack
   /// connects and stays mute across app restarts and the phone's Bluetooth
-  /// being switched off and on, then some minutes later answers as if nothing
-  /// happened. Nudging a link in that state forever is what the transport used
-  /// to do. Now it lets go cleanly, which is the one thing the module can act
-  /// on, and comes back after [muteRetryDelay].
+  /// being switched off and on, and only after enough taps, rescans and
+  /// retries does one attempt land and answer as if nothing happened. Nudging
+  /// a link in that state forever is what the transport used to do. Now it
+  /// lets go cleanly, which is the one thing the module can act on, and comes
+  /// back after [muteRetryDelay], so the retrying happens without the thumb.
   final Duration muteBefore;
 
   /// The pause before reconnecting to a pack that was connected and mute.
