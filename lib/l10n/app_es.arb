@@ -1560,5 +1560,151 @@
   },
   "chargeWatchProHint": "Es Pro: requiere licencia para mantener la conexión con la app cerrada.",
   "licenseStatusAdmin": "Admin",
-  "licenseAdminBody": "Acceso total en este teléfono: todo desbloqueado, sin límites ni caducidad."
+  "licenseAdminBody": "Acceso total en este teléfono: todo desbloqueado, sin límites ni caducidad.",
+  "adviceWhy": "POR QUÉ",
+  "adviceWhyHide": "OCULTAR",
+  "adviceHonestyNote": "Cada frase se apoya en un dato medido: tócala para verlo. Los ciclos y la capacidad configurada del BMS se pueden editar desde la app oficial, así que aquí se contrastan siempre con lo que dice la física.",
+  "verdictHealthMeasuredTitle": "Capacidad frente a la mejor que ha dado",
+  "verdictHealthMeasuredBody": "Tu batería está al {pct} % de la capacidad con la que llegó: {now} Ah medidos ahora frente a {best} Ah, lo mejor que ha dado. Medido en descargas completas, no estimado.",
+  "@verdictHealthMeasuredBody": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      },
+      "now": {
+        "type": "String"
+      },
+      "best": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictHealthNotMeasurableTitle": "El desgaste todavía no se puede medir",
+  "verdictHealthNotMeasurableBody": "Hay {count} descarga(s) completa(s) medidas. Hacen falta dos para hablar de pérdida: una da una capacidad, no una caída. La app toma la siguiente sola cuando ocurra.",
+  "@verdictHealthNotMeasurableBody": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictCellDriftingTitle": "La celda {cell} se está separando del resto",
+  "@verdictCellDriftingTitle": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictCellDriftingBody": "Lleva {weeks} semanas alejándose: va {dev} V por debajo de la media del pack y baja unos {rate} V al mes. Coherente con una celda en camino de irse. Revísala antes de que el pack se apague en la calle.",
+  "@verdictCellDriftingBody": {
+    "placeholders": {
+      "weeks": {
+        "type": "String"
+      },
+      "dev": {
+        "type": "String"
+      },
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictNoCellDriftingTitle": "Ninguna celda se está yendo",
+  "verdictNoCellDriftingBody": "En {weeks} semanas de lecturas en reposo ninguna celda se separa del resto. La peor va {dev} V bajo la media y no empeora. Nada que hacer.",
+  "@verdictNoCellDriftingBody": {
+    "placeholders": {
+      "weeks": {
+        "type": "String"
+      },
+      "dev": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictRangeNowTitle": "Te quedan ~{km} km con cómo tú manejas",
+  "@verdictRangeNowTitle": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictRangeNowBody": "Sale de {wh} Wh/km aprendidos en {learned} km tuyos, aplicados a la energía que el pack puede entregar ahora. Es una estimación: cambia con el terreno, la carga y el acelerador.",
+  "@verdictRangeNowBody": {
+    "placeholders": {
+      "wh": {
+        "type": "String"
+      },
+      "learned": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictDeltaNormalTitle": "Delta bajo carga normal",
+  "verdictDeltaNormalBody": "Con corriente el delta llega a {loaded} V, contra {rest} V en reposo. No hay nada resistivo que perseguir. Nada que hacer.",
+  "@verdictDeltaNormalBody": {
+    "placeholders": {
+      "loaded": {
+        "type": "String"
+      },
+      "rest": {
+        "type": "String"
+      }
+    }
+  },
+  "evidenceRestingDelta": "Delta en reposo (máximo en la sesión)",
+  "evidenceLoadedDelta": "Delta bajo carga (máximo en la sesión)",
+  "evidenceWeakCellShare": "Lecturas en que la celda {cell} fue la más baja",
+  "@evidenceWeakCellShare": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
+  "evidenceReadingsInSession": "Lecturas en esta sesión",
+  "evidenceReportedCycles": "Ciclos según el BMS (dato editable)",
+  "evidenceEquivalentCycles": "Ciclos equivalentes por los amperios que pasaron",
+  "evidenceReportedSoh": "SOH según el BMS",
+  "evidenceImpliedCapacity": "Capacidad configurada en el BMS (editable)",
+  "evidenceCatalogueCapacity": "Capacidad anunciada",
+  "evidenceCapacityTests": "Descargas completas medidas",
+  "evidenceHottestProbe": "Sonda más caliente",
+  "evidenceBalanceStart": "Voltaje de arranque del balanceador",
+  "evidenceCellOvp": "Límite de sobretensión por celda",
+  "evidenceLearnedKm": "Kilómetros aprendidos",
+  "evidenceWhPerKm": "Consumo aprendido",
+  "evidenceUsableWh": "Energía aprovechable ahora",
+  "evidenceStrandedFraction": "Energía atrapada sobre el corte",
+  "evidenceRangeBand": "Banda de la estimación",
+  "evidenceBaselineCapacity": "Lo mejor que ha dado ({date})",
+  "@evidenceBaselineCapacity": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "evidenceCurrentCapacity": "Última medición ({date})",
+  "@evidenceCurrentCapacity": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "evidenceDriftDeviation": "Celda {cell} bajo la media del pack",
+  "@evidenceDriftDeviation": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
+  "evidenceDriftRate": "Ritmo de separación",
+  "evidencePerMonth": "mes",
+  "evidenceDriftSamples": "Lecturas en reposo analizadas",
+  "evidenceDriftSpanWeeks": "Semanas observadas",
+  "verdictTitle": "Veredicto"
 }

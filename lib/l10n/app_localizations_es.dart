@@ -2686,4 +2686,156 @@ class AppL10nEs extends AppL10n {
   @override
   String get licenseAdminBody =>
       'Acceso total en este teléfono: todo desbloqueado, sin límites ni caducidad.';
+
+  @override
+  String get adviceWhy => 'POR QUÉ';
+
+  @override
+  String get adviceWhyHide => 'OCULTAR';
+
+  @override
+  String get adviceHonestyNote =>
+      'Cada frase se apoya en un dato medido: tócala para verlo. Los ciclos y la capacidad configurada del BMS se pueden editar desde la app oficial, así que aquí se contrastan siempre con lo que dice la física.';
+
+  @override
+  String get verdictHealthMeasuredTitle =>
+      'Capacidad frente a la mejor que ha dado';
+
+  @override
+  String verdictHealthMeasuredBody(String pct, String now, String best) {
+    return 'Tu batería está al $pct % de la capacidad con la que llegó: $now Ah medidos ahora frente a $best Ah, lo mejor que ha dado. Medido en descargas completas, no estimado.';
+  }
+
+  @override
+  String get verdictHealthNotMeasurableTitle =>
+      'El desgaste todavía no se puede medir';
+
+  @override
+  String verdictHealthNotMeasurableBody(String count) {
+    return 'Hay $count descarga(s) completa(s) medidas. Hacen falta dos para hablar de pérdida: una da una capacidad, no una caída. La app toma la siguiente sola cuando ocurra.';
+  }
+
+  @override
+  String verdictCellDriftingTitle(String cell) {
+    return 'La celda $cell se está separando del resto';
+  }
+
+  @override
+  String verdictCellDriftingBody(String weeks, String dev, String rate) {
+    return 'Lleva $weeks semanas alejándose: va $dev V por debajo de la media del pack y baja unos $rate V al mes. Coherente con una celda en camino de irse. Revísala antes de que el pack se apague en la calle.';
+  }
+
+  @override
+  String get verdictNoCellDriftingTitle => 'Ninguna celda se está yendo';
+
+  @override
+  String verdictNoCellDriftingBody(String weeks, String dev) {
+    return 'En $weeks semanas de lecturas en reposo ninguna celda se separa del resto. La peor va $dev V bajo la media y no empeora. Nada que hacer.';
+  }
+
+  @override
+  String verdictRangeNowTitle(String km) {
+    return 'Te quedan ~$km km con cómo tú manejas';
+  }
+
+  @override
+  String verdictRangeNowBody(String wh, String learned) {
+    return 'Sale de $wh Wh/km aprendidos en $learned km tuyos, aplicados a la energía que el pack puede entregar ahora. Es una estimación: cambia con el terreno, la carga y el acelerador.';
+  }
+
+  @override
+  String get verdictDeltaNormalTitle => 'Delta bajo carga normal';
+
+  @override
+  String verdictDeltaNormalBody(String loaded, String rest) {
+    return 'Con corriente el delta llega a $loaded V, contra $rest V en reposo. No hay nada resistivo que perseguir. Nada que hacer.';
+  }
+
+  @override
+  String get evidenceRestingDelta => 'Delta en reposo (máximo en la sesión)';
+
+  @override
+  String get evidenceLoadedDelta => 'Delta bajo carga (máximo en la sesión)';
+
+  @override
+  String evidenceWeakCellShare(String cell) {
+    return 'Lecturas en que la celda $cell fue la más baja';
+  }
+
+  @override
+  String get evidenceReadingsInSession => 'Lecturas en esta sesión';
+
+  @override
+  String get evidenceReportedCycles => 'Ciclos según el BMS (dato editable)';
+
+  @override
+  String get evidenceEquivalentCycles =>
+      'Ciclos equivalentes por los amperios que pasaron';
+
+  @override
+  String get evidenceReportedSoh => 'SOH según el BMS';
+
+  @override
+  String get evidenceImpliedCapacity =>
+      'Capacidad configurada en el BMS (editable)';
+
+  @override
+  String get evidenceCatalogueCapacity => 'Capacidad anunciada';
+
+  @override
+  String get evidenceCapacityTests => 'Descargas completas medidas';
+
+  @override
+  String get evidenceHottestProbe => 'Sonda más caliente';
+
+  @override
+  String get evidenceBalanceStart => 'Voltaje de arranque del balanceador';
+
+  @override
+  String get evidenceCellOvp => 'Límite de sobretensión por celda';
+
+  @override
+  String get evidenceLearnedKm => 'Kilómetros aprendidos';
+
+  @override
+  String get evidenceWhPerKm => 'Consumo aprendido';
+
+  @override
+  String get evidenceUsableWh => 'Energía aprovechable ahora';
+
+  @override
+  String get evidenceStrandedFraction => 'Energía atrapada sobre el corte';
+
+  @override
+  String get evidenceRangeBand => 'Banda de la estimación';
+
+  @override
+  String evidenceBaselineCapacity(String date) {
+    return 'Lo mejor que ha dado ($date)';
+  }
+
+  @override
+  String evidenceCurrentCapacity(String date) {
+    return 'Última medición ($date)';
+  }
+
+  @override
+  String evidenceDriftDeviation(String cell) {
+    return 'Celda $cell bajo la media del pack';
+  }
+
+  @override
+  String get evidenceDriftRate => 'Ritmo de separación';
+
+  @override
+  String get evidencePerMonth => 'mes';
+
+  @override
+  String get evidenceDriftSamples => 'Lecturas en reposo analizadas';
+
+  @override
+  String get evidenceDriftSpanWeeks => 'Semanas observadas';
+
+  @override
+  String get verdictTitle => 'Veredicto';
 }

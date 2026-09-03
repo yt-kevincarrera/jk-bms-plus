@@ -29,9 +29,14 @@ what the pack was sold as. Honest full-equivalent cycles against the BMS's
 inflated counter. Amp-hours stranded by the weakest cell. Which cell keeps
 coming last.
 
-**Advice.** Plain-language conclusions from what has actually been measured — a
-delta present at rest means capacity mismatch, a delta that only appears under
-load means a connection, and those are different jobs with different fixes.
+**Verdicts.** Plain-language conclusions from what has actually been measured —
+a delta present at rest means capacity mismatch, a delta that only appears under
+load means a connection, and those are different jobs with different fixes. Each
+sentence opens on a tap to show the numbers it rests on, and the app says
+"nothing to do" out loud when it checked and found nothing, because silence and
+a clean bill of health look the same on a screen. Figures the BMS lets anyone
+edit, cycles and configured capacity, are always set against what the amp-hours
+actually say.
 
 **Capacity test.** The one honest measurement here: charge to full, ride to
 cutoff, and it counts the amp-hours that actually came out. Everything else in
@@ -98,7 +103,8 @@ Spanish by default, English available, remembered across restarts.
 | M5 — reconnection robustness | Partly: auto-reconnect and resync are in, not yet exercised against a real radio |
 | M6 — derived metrics | Done: range learning, health report, advice, capacity test, charge report and the long-term curves. The curves need months of riding before they mean much, and say so themselves |
 | M7 — licences | Done, and switched off: device code, Ed25519 keys checked on the phone, 7-day Pro trial, Pro/Workshop/credits/admin tiers, gating. Nothing shows and nothing is gated until the author generates the key pair, which is the launch switch (see [docs/LICENSING.md](docs/LICENSING.md)) |
-| M8 — verdicts, M9 — inspection, M10 — PDF | Not started. Specified in [docs/PRD-monetizacion-inspeccion.md](docs/PRD-monetizacion-inspeccion.md) |
+| M8 — verdicts | Done: every sentence the app says about a pack carries the measured facts behind it, one tap away. Headlines for measured wear, a cell drifting over weeks, kilometres left in the rider's own terms, and an explicit all-clear on the delta under load. One engine feeds the Health tab and the saved-pack screen. Thresholds live in one object, to be calibrated on real packs |
+| M9 — inspection, M10 — PDF | Not started. Specified in [docs/PRD-monetizacion-inspeccion.md](docs/PRD-monetizacion-inspeccion.md) |
 
 ## Running it
 
