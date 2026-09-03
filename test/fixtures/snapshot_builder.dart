@@ -4,6 +4,7 @@ import 'package:jk_bms/src/protocol/protocol_variant.dart';
 
 /// A plausible reading, with only the parts a test cares about spelled out.
 BmsSnapshot buildSnapshot({
+  DateTime? timestamp,
   List<double>? cells,
   double soc = 78,
   double remainingAh = 35.1,
@@ -16,7 +17,7 @@ BmsSnapshot buildSnapshot({
 }) {
   final v = cells ?? List.filled(20, 3.90);
   return BmsSnapshot(
-    timestamp: DateTime.utc(2026, 1, 1),
+    timestamp: timestamp ?? DateTime.utc(2026, 1, 1),
     variant: JkProtocolVariant.jk02_24s,
     frameCounter: 1,
     cellVoltages: v,

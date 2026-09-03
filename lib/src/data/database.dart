@@ -49,7 +49,8 @@ class Devices extends Table {
   /// as what the pack was sold as -- which is the comparison the whole health
   /// section is built on, and the one place a borrowed figure would quietly
   /// erase a real finding.
-  BoolColumn get catalogueFromBms => boolean().withDefault(const Constant(false))();
+  BoolColumn get catalogueFromBms =>
+      boolean().withDefault(const Constant(false))();
 
   DateTimeColumn get firstSeenAt => dateTime()();
   DateTimeColumn get lastSeenAt => dateTime()();
@@ -116,6 +117,7 @@ class Trips extends Table {
   /// from the totals: a made-up ride teaching the real range estimate is
   /// exactly the kind of quiet wrongness this app is built to avoid.
   BoolColumn get demo => boolean().withDefault(const Constant(false))();
+
   /// Which pack this was recorded on. Null for rows written before the app
   /// tracked packs at all -- see [BmsRepository.orphanCounts].
   TextColumn get deviceId => text().nullable()();
@@ -160,7 +162,6 @@ class Trips extends Table {
   /// real ride. A stored figure with no provenance cannot be re-examined, and
   /// every ride recorded before this fix has one that is far too low.
   TextColumn get energySource => text().nullable()();
-
 }
 
 /// The track of a ride, one row per fix, with what the pack was doing at that
@@ -212,10 +213,10 @@ class Snapshots extends Table {
   /// Cell voltages as a JSON array. A column per cell would mean a schema
   /// migration every time a pack with a different cell count turns up.
   TextColumn get cellVoltagesJson => text()();
+
   /// Which pack this was recorded on. Null for rows written before the app
   /// tracked packs at all -- see [BmsRepository.orphanCounts].
   TextColumn get deviceId => text().nullable()();
-
 }
 
 /// The raw 300-byte frames, exactly as they arrived.
@@ -229,10 +230,10 @@ class RawFrames extends Table {
   DateTimeColumn get timestamp => dateTime()();
   IntColumn get recordType => integer()();
   BlobColumn get bytes => blob()();
+
   /// Which pack this was recorded on. Null for rows written before the app
   /// tracked packs at all -- see [BmsRepository.orphanCounts].
   TextColumn get deviceId => text().nullable()();
-
 }
 
 /// A guided full-discharge capacity measurement.
@@ -264,10 +265,46 @@ class CapacityTests extends Table {
   /// Seconds of the discharge that were not observed. Zero on a clean run.
   IntColumn get gapSeconds => integer().withDefault(const Constant(0))();
   TextColumn get note => text().withDefault(const Constant(''))();
+
   /// Which pack this was recorded on. Null for rows written before the app
   /// tracked packs at all -- see [BmsRepository.orphanCounts].
   TextColumn get deviceId => text().nullable()();
+}
 
+/// One quick test of somebody else's battery.
+///
+/// Kept apart from everything above on purpose. Every other table is the
+/// rider's own history, keyed on packs the app has adopted. An inspection is
+/// a stranger's pack judged in a yard for two minutes: it must never become a
+/// saved battery, never teach the range estimate, never appear in the trends.
+/// So the readings it captured live here, compacted, as one row per test.
+class Inspections extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// When the test started, phone clock.
+  DateTimeColumn get at => dateTime()();
+
+  /// The BMS's BLE address, so two inspections of the same pack can be told
+  /// apart from two packs. Not a foreign key: there is no Devices row.
+  TextColumn get bmsId => text()();
+  TextColumn get bmsName => text().withDefault(const Constant(''))();
+  TextColumn get model => text().withDefault(const Constant(''))();
+  TextColumn get serialNumber => text().withDefault(const Constant(''))();
+
+  /// One of [InspectionLight], by name.
+  TextColumn get light => text()();
+
+  /// The [InspectionResult], as JSON. Everything the verdict screen shows is
+  /// recomputed from this, so an old inspection reads the same way later.
+  TextColumn get resultJson => text()();
+
+  /// The captured readings, compacted, as JSON. The PRD asks for the whole
+  /// buffer to be kept so the arithmetic can be redone when the thresholds
+  /// are calibrated.
+  TextColumn get samplesJson => text()();
+
+  /// Free text: whose pack, the asking price, what was said.
+  TextColumn get note => text().withDefault(const Constant(''))();
 }
 
 @DriftDatabase(
@@ -279,6 +316,7 @@ class CapacityTests extends Table {
     RawFrames,
     CapacityTests,
     MaintenanceEvents,
+    Inspections,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -286,75 +324,80 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onUpgrade: (m, from, to) async {
-          if (from < 2) {
-            // Demo rides used to be indistinguishable from real ones.
-            await m.addColumn(trips, trips.demo);
-          }
-          if (from < 3) {
-            // Capacity measurements used to be manual only.
-            await m.addColumn(capacityTests, capacityTests.automatic);
-            await m.addColumn(capacityTests, capacityTests.gapSeconds);
-          }
-          if (from < 4) {
-            // Until now every reading landed in one pile regardless of which
-            // pack produced it. Existing rows keep a null deviceId rather than
-            // being guessed into a pack: the app can offer to adopt them, and
-            // a wrong guess here would be indistinguishable from a measurement.
-            await m.createTable(devices);
-            await m.addColumn(trips, trips.deviceId);
-            await m.addColumn(snapshots, snapshots.deviceId);
-            await m.addColumn(rawFrames, rawFrames.deviceId);
-            await m.addColumn(capacityTests, capacityTests.deviceId);
-          }
-          // Each step has to work from every older version, not just the one
-          // before it. Recreating a table always builds it from the *current*
-          // schema, so a later column has to be declared as new here or the
-          // copy fails looking for a column the old table never had.
-          if (from < 5) {
-            // The catalogue capacity becomes nullable, and every existing row
-            // is cleared. Nothing recorded whether a value had been entered or
-            // was the old 45 Ah default, and a wrong catalogue does not fail
-            // loudly -- it quietly rescales every health figure for that pack.
-            // Asking once beats carrying a number that might be fiction.
-            await m.alterTable(
-              TableMigration(devices, newColumns: [devices.catalogueFromBms]),
-            );
-            await m.alterTable(TableMigration(capacityTests));
-            await customStatement('UPDATE devices SET catalogue_capacity_ah = NULL');
-          }
-          // Only from exactly 5: anything older has already been handed the
-          // column, either by createTable or by the recreation above. Adding
-          // it twice fails with a duplicate-column error that stops the app
-          // opening at all.
-          if (from == 5) {
-            await m.addColumn(devices, devices.catalogueFromBms);
-          }
-          if (from < 7) {
-            await m.addColumn(snapshots, snapshots.cycleCapacityAh);
-          }
-          if (from < 8) {
-            await m.createTable(maintenanceEvents);
-          }
-          if (from < 9) {
-            // Rides recorded before this keep nulls. There is no honest way to
-            // backfill what the estimate used to say.
-            await m.addColumn(trips, trips.whPerKmBefore);
-            await m.addColumn(trips, trips.whPerKmAfter);
-            await m.addColumn(trips, trips.learnedKm);
-            await m.addColumn(trips, trips.rangeKmAtEnd);
-            await m.addColumn(trips, trips.confidence);
-          }
-          if (from < 10) {
-            await m.addColumn(trips, trips.ahOut);
-            await m.addColumn(trips, trips.energySource);
-          }
-        },
-      );
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        // Demo rides used to be indistinguishable from real ones.
+        await m.addColumn(trips, trips.demo);
+      }
+      if (from < 3) {
+        // Capacity measurements used to be manual only.
+        await m.addColumn(capacityTests, capacityTests.automatic);
+        await m.addColumn(capacityTests, capacityTests.gapSeconds);
+      }
+      if (from < 4) {
+        // Until now every reading landed in one pile regardless of which
+        // pack produced it. Existing rows keep a null deviceId rather than
+        // being guessed into a pack: the app can offer to adopt them, and
+        // a wrong guess here would be indistinguishable from a measurement.
+        await m.createTable(devices);
+        await m.addColumn(trips, trips.deviceId);
+        await m.addColumn(snapshots, snapshots.deviceId);
+        await m.addColumn(rawFrames, rawFrames.deviceId);
+        await m.addColumn(capacityTests, capacityTests.deviceId);
+      }
+      // Each step has to work from every older version, not just the one
+      // before it. Recreating a table always builds it from the *current*
+      // schema, so a later column has to be declared as new here or the
+      // copy fails looking for a column the old table never had.
+      if (from < 5) {
+        // The catalogue capacity becomes nullable, and every existing row
+        // is cleared. Nothing recorded whether a value had been entered or
+        // was the old 45 Ah default, and a wrong catalogue does not fail
+        // loudly -- it quietly rescales every health figure for that pack.
+        // Asking once beats carrying a number that might be fiction.
+        await m.alterTable(
+          TableMigration(devices, newColumns: [devices.catalogueFromBms]),
+        );
+        await m.alterTable(TableMigration(capacityTests));
+        await customStatement(
+          'UPDATE devices SET catalogue_capacity_ah = NULL',
+        );
+      }
+      // Only from exactly 5: anything older has already been handed the
+      // column, either by createTable or by the recreation above. Adding
+      // it twice fails with a duplicate-column error that stops the app
+      // opening at all.
+      if (from == 5) {
+        await m.addColumn(devices, devices.catalogueFromBms);
+      }
+      if (from < 7) {
+        await m.addColumn(snapshots, snapshots.cycleCapacityAh);
+      }
+      if (from < 8) {
+        await m.createTable(maintenanceEvents);
+      }
+      if (from < 9) {
+        // Rides recorded before this keep nulls. There is no honest way to
+        // backfill what the estimate used to say.
+        await m.addColumn(trips, trips.whPerKmBefore);
+        await m.addColumn(trips, trips.whPerKmAfter);
+        await m.addColumn(trips, trips.learnedKm);
+        await m.addColumn(trips, trips.rangeKmAtEnd);
+        await m.addColumn(trips, trips.confidence);
+      }
+      if (from < 10) {
+        await m.addColumn(trips, trips.ahOut);
+        await m.addColumn(trips, trips.energySource);
+      }
+      if (from < 11) {
+        await m.createTable(inspections);
+      }
+    },
+  );
 
   /// Thins old readings down to one per bucket.
   ///
@@ -390,40 +433,40 @@ class AppDatabase extends _$AppDatabase {
       '  SELECT MAX(id) FROM snapshots WHERE timestamp < ?1'
       '  GROUP BY device_id, timestamp / ?2'
       ')',
-      variables: [
-        Variable<int>(cutoffSeconds),
-        Variable<int>(bucketSeconds),
-      ],
+      variables: [Variable<int>(cutoffSeconds), Variable<int>(bucketSeconds)],
       updates: {snapshots},
     );
   }
 
   /// How many readings are stored for one pack, without loading any of them.
   Future<int> snapshotCountFor(String deviceId) async {
-    final row = await (selectOnly(snapshots)
-          ..addColumns([snapshots.id.count()])
-          ..where(snapshots.deviceId.equals(deviceId)))
-        .getSingle();
+    final row =
+        await (selectOnly(snapshots)
+              ..addColumns([snapshots.id.count()])
+              ..where(snapshots.deviceId.equals(deviceId)))
+            .getSingle();
     return row.read(snapshots.id.count()) ?? 0;
   }
 
   /// The oldest reading for a pack, for saying how far the history goes back
   /// without reading the history.
   Future<DateTime?> firstSnapshotAt(String deviceId) async {
-    final row = await (select(snapshots)
-          ..where((s) => s.deviceId.equals(deviceId))
-          ..orderBy([(s) => OrderingTerm.asc(s.timestamp)])
-          ..limit(1))
-        .getSingleOrNull();
+    final row =
+        await (select(snapshots)
+              ..where((s) => s.deviceId.equals(deviceId))
+              ..orderBy([(s) => OrderingTerm.asc(s.timestamp)])
+              ..limit(1))
+            .getSingleOrNull();
     return row?.timestamp;
   }
 
   /// The most recent reading for a pack.
-  Future<Snapshot?> lastSnapshotFor(String deviceId) => (select(snapshots)
-        ..where((s) => s.deviceId.equals(deviceId))
-        ..orderBy([(s) => OrderingTerm.desc(s.timestamp)])
-        ..limit(1))
-      .getSingleOrNull();
+  Future<Snapshot?> lastSnapshotFor(String deviceId) =>
+      (select(snapshots)
+            ..where((s) => s.deviceId.equals(deviceId))
+            ..orderBy([(s) => OrderingTerm.desc(s.timestamp)])
+            ..limit(1))
+          .getSingleOrNull();
 
   // --- Maintenance ---
 
@@ -445,6 +488,33 @@ class AppDatabase extends _$AppDatabase {
 
   Future<List<MaintenanceEvent>> allMaintenanceForBackup() =>
       select(maintenanceEvents).get();
+
+  // --- Inspections ---
+
+  Future<int> insertInspection(InspectionsCompanion row) =>
+      into(inspections).insert(row);
+
+  /// Newest first. Every inspection, whatever pack: they are not a battery's
+  /// history, they are the rider's record of what they looked at.
+  Future<List<Inspection>> allInspections() =>
+      (select(inspections)..orderBy([(i) => OrderingTerm.desc(i.at)])).get();
+
+  Stream<List<Inspection>> watchInspections() =>
+      (select(inspections)..orderBy([(i) => OrderingTerm.desc(i.at)])).watch();
+
+  Future<Inspection?> inspection(int id) =>
+      (select(inspections)..where((i) => i.id.equals(id))).getSingleOrNull();
+
+  Future<void> setInspectionNote(int id, String note) =>
+      (update(inspections)..where((i) => i.id.equals(id))).write(
+        InspectionsCompanion(note: Value(note)),
+      );
+
+  Future<void> deleteInspection(int id) =>
+      (delete(inspections)..where((i) => i.id.equals(id))).go();
+
+  Future<List<Inspection>> allInspectionsForBackup() =>
+      select(inspections).get();
 
   // --- Backup ---
 
@@ -468,6 +538,7 @@ class AppDatabase extends _$AppDatabase {
     await delete(rawFrames).go();
     await delete(capacityTests).go();
     await delete(maintenanceEvents).go();
+    await delete(inspections).go();
     await delete(devices).go();
   }
 
@@ -480,20 +551,22 @@ class AppDatabase extends _$AppDatabase {
       (select(devices)..where((d) => d.id.equals(id))).getSingleOrNull();
 
   /// Most recently seen first, so the pack in your hand is at the top.
-  Future<List<Device>> allDevices() =>
-      (select(devices)..orderBy([(d) => OrderingTerm.desc(d.lastSeenAt)])).get();
+  Future<List<Device>> allDevices() => (select(
+    devices,
+  )..orderBy([(d) => OrderingTerm.desc(d.lastSeenAt)])).get();
 
-  Stream<List<Device>> watchDevices() =>
-      (select(devices)..orderBy([(d) => OrderingTerm.desc(d.lastSeenAt)]))
-          .watch();
+  Stream<List<Device>> watchDevices() => (select(
+    devices,
+  )..orderBy([(d) => OrderingTerm.desc(d.lastSeenAt)])).watch();
 
   Future<void> updateDevice(String id, DevicesCompanion values) =>
       (update(devices)..where((d) => d.id.equals(id))).write(values);
 
   /// Removes a pack and everything recorded on it.
   Future<void> deleteDevice(String id) async {
-    final rides = await (select(trips)..where((t) => t.deviceId.equals(id)))
-        .get();
+    final rides = await (select(
+      trips,
+    )..where((t) => t.deviceId.equals(id))).get();
     for (final ride in rides) {
       await (delete(tripPoints)..where((p) => p.tripId.equals(ride.id))).go();
     }
@@ -507,7 +580,10 @@ class AppDatabase extends _$AppDatabase {
 
   // --- Rows written before the app knew about packs ---
 
-  Future<int> _countOrphans(TableInfo<Table, dynamic> table, GeneratedColumn<String> col) async {
+  Future<int> _countOrphans(
+    TableInfo<Table, dynamic> table,
+    GeneratedColumn<String> col,
+  ) async {
     final row = await customSelect(
       'SELECT COUNT(*) AS c FROM ${table.actualTableName} WHERE ${col.name} IS NULL',
       readsFrom: {table},
@@ -517,12 +593,11 @@ class AppDatabase extends _$AppDatabase {
 
   /// How much history has no pack attached, per table.
   Future<Map<String, int>> orphanCounts() async => {
-        'trips': await _countOrphans(trips, trips.deviceId),
-        'snapshots': await _countOrphans(snapshots, snapshots.deviceId),
-        'rawFrames': await _countOrphans(rawFrames, rawFrames.deviceId),
-        'capacityTests':
-            await _countOrphans(capacityTests, capacityTests.deviceId),
-      };
+    'trips': await _countOrphans(trips, trips.deviceId),
+    'snapshots': await _countOrphans(snapshots, snapshots.deviceId),
+    'rawFrames': await _countOrphans(rawFrames, rawFrames.deviceId),
+    'capacityTests': await _countOrphans(capacityTests, capacityTests.deviceId),
+  };
 
   /// Assigns every unattached row to one pack.
   ///
@@ -555,22 +630,32 @@ class AppDatabase extends _$AppDatabase {
   /// Discards unattached rows outright, for a rider who would rather start
   /// clean than guess.
   Future<void> discardOrphans() async {
-    await customUpdate('DELETE FROM trip_points WHERE trip_id IN '
-        '(SELECT id FROM trips WHERE device_id IS NULL)', updates: {tripPoints});
-    await customUpdate('DELETE FROM trips WHERE device_id IS NULL',
-        updates: {trips});
-    await customUpdate('DELETE FROM snapshots WHERE device_id IS NULL',
-        updates: {snapshots});
-    await customUpdate('DELETE FROM raw_frames WHERE device_id IS NULL',
-        updates: {rawFrames});
-    await customUpdate('DELETE FROM capacity_tests WHERE device_id IS NULL',
-        updates: {capacityTests});
+    await customUpdate(
+      'DELETE FROM trip_points WHERE trip_id IN '
+      '(SELECT id FROM trips WHERE device_id IS NULL)',
+      updates: {tripPoints},
+    );
+    await customUpdate(
+      'DELETE FROM trips WHERE device_id IS NULL',
+      updates: {trips},
+    );
+    await customUpdate(
+      'DELETE FROM snapshots WHERE device_id IS NULL',
+      updates: {snapshots},
+    );
+    await customUpdate(
+      'DELETE FROM raw_frames WHERE device_id IS NULL',
+      updates: {rawFrames},
+    );
+    await customUpdate(
+      'DELETE FROM capacity_tests WHERE device_id IS NULL',
+      updates: {capacityTests},
+    );
   }
 
   // --- Trips ---
 
-  Future<int> insertTrip(TripsCompanion trip) =>
-      into(trips).insert(trip);
+  Future<int> insertTrip(TripsCompanion trip) => into(trips).insert(trip);
 
   Future<void> insertTripPoints(List<TripPointsCompanion> points) =>
       batch((b) => b.insertAll(tripPoints, points));
@@ -609,8 +694,9 @@ class AppDatabase extends _$AppDatabase {
       (update(trips)..where((t) => t.id.equals(tripId))).write(values);
 
   Future<void> setTripNote(int tripId, String note) =>
-      (update(trips)..where((t) => t.id.equals(tripId)))
-          .write(TripsCompanion(note: Value(note)));
+      (update(trips)..where((t) => t.id.equals(tripId))).write(
+        TripsCompanion(note: Value(note)),
+      );
 
   // --- Snapshots ---
 
@@ -638,8 +724,9 @@ class AppDatabase extends _$AppDatabase {
   /// without rotation this would fill the phone in a couple of months.
   Future<int> pruneRawFrames({Duration keep = const Duration(days: 30)}) {
     final cutoff = DateTime.now().toUtc().subtract(keep);
-    return (delete(rawFrames)..where((f) => f.timestamp.isSmallerThanValue(cutoff)))
-        .go();
+    return (delete(
+      rawFrames,
+    )..where((f) => f.timestamp.isSmallerThanValue(cutoff))).go();
   }
 
   Future<List<RawFrame>> rawFramesSince(String deviceId, DateTime from) =>
@@ -650,9 +737,9 @@ class AppDatabase extends _$AppDatabase {
           .get();
 
   Future<int> countRawFrames() async {
-    final row = await (selectOnly(rawFrames)
-          ..addColumns([rawFrames.id.count()]))
-        .getSingle();
+    final row = await (selectOnly(
+      rawFrames,
+    )..addColumns([rawFrames.id.count()])).getSingle();
     return row.read(rawFrames.id.count()) ?? 0;
   }
 
@@ -660,15 +747,16 @@ class AppDatabase extends _$AppDatabase {
   /// rather than for anything a rider reads, since a count across packs is not
   /// a fact about any battery.
   Future<int> totalTripCount() async {
-    final row = await (selectOnly(trips)..addColumns([trips.id.count()]))
-        .getSingle();
+    final row = await (selectOnly(
+      trips,
+    )..addColumns([trips.id.count()])).getSingle();
     return row.read(trips.id.count()) ?? 0;
   }
 
   Future<int> countSnapshots() async {
-    final row = await (selectOnly(snapshots)
-          ..addColumns([snapshots.id.count()]))
-        .getSingle();
+    final row = await (selectOnly(
+      snapshots,
+    )..addColumns([snapshots.id.count()])).getSingle();
     return row.read(snapshots.id.count()) ?? 0;
   }
 

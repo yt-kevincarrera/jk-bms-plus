@@ -4998,6 +4998,599 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Veredicto'**
   String get verdictTitle;
+
+  /// No description provided for @demoScenarioInspection.
+  ///
+  /// In es, this message translates to:
+  /// **'Ensayo de inspección'**
+  String get demoScenarioInspection;
+
+  /// No description provided for @demoScenarioInspectionDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'35 s quieta, luces 20 s, tirón fuerte 8 s y suelta. La celda 7 es la débil.'**
+  String get demoScenarioInspectionDesc;
+
+  /// No description provided for @inspectionEntry.
+  ///
+  /// In es, this message translates to:
+  /// **'Inspeccionar otra batería'**
+  String get inspectionEntry;
+
+  /// No description provided for @inspectionModeTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Modo inspección'**
+  String get inspectionModeTitle;
+
+  /// No description provided for @inspectionModeBanner.
+  ///
+  /// In es, this message translates to:
+  /// **'La batería que conectes ahora no se guarda en tu historial ni enseña nada a tu autonomía. Pide al vendedor que cierre su app JK y elige su BMS en la lista.'**
+  String get inspectionModeBanner;
+
+  /// No description provided for @inspectionModeExit.
+  ///
+  /// In es, this message translates to:
+  /// **'Salir del modo inspección'**
+  String get inspectionModeExit;
+
+  /// No description provided for @inspectionRehearse.
+  ///
+  /// In es, this message translates to:
+  /// **'Ensayar con el pack demo'**
+  String get inspectionRehearse;
+
+  /// No description provided for @inspectionTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Inspección rápida'**
+  String get inspectionTitle;
+
+  /// No description provided for @inspectionWaitingReadings.
+  ///
+  /// In es, this message translates to:
+  /// **'Esperando lecturas del BMS…'**
+  String get inspectionWaitingReadings;
+
+  /// No description provided for @inspectionStepRestTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'No toques nada'**
+  String get inspectionStepRestTitle;
+
+  /// No description provided for @inspectionStepRestBody.
+  ///
+  /// In es, this message translates to:
+  /// **'La app toma la foto en reposo. Que nadie acelere ni encienda nada.'**
+  String get inspectionStepRestBody;
+
+  /// No description provided for @inspectionStepLightTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Enciende las luces'**
+  String get inspectionStepLightTitle;
+
+  /// No description provided for @inspectionStepLightBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Una carga pequeña y estable. La app avanza sola cuando la detecta.'**
+  String get inspectionStepLightBody;
+
+  /// No description provided for @inspectionStepHeavyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Ahora una carga fuerte'**
+  String get inspectionStepHeavyTitle;
+
+  /// No description provided for @inspectionStepHeavyBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Rueda trasera al aire y acelera, o 50 metros en la moto con el teléfono en el bolsillo, o el cargador conectado. Cualquiera sirve: la app mide la corriente.'**
+  String get inspectionStepHeavyBody;
+
+  /// No description provided for @inspectionStepRecoveryTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Suelta todo y espera'**
+  String get inspectionStepRecoveryTitle;
+
+  /// No description provided for @inspectionStepRecoveryBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin corriente. La app mira cuánto tarda cada celda en volver a su voltaje de reposo.'**
+  String get inspectionStepRecoveryBody;
+
+  /// No description provided for @inspectionStepDoneTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo'**
+  String get inspectionStepDoneTitle;
+
+  /// No description provided for @inspectionCurrentNow.
+  ///
+  /// In es, this message translates to:
+  /// **'Corriente ahora'**
+  String get inspectionCurrentNow;
+
+  /// No description provided for @inspectionLoadEnough.
+  ///
+  /// In es, this message translates to:
+  /// **'Carga detectada: {amps} A, suficiente.'**
+  String inspectionLoadEnough(String amps);
+
+  /// No description provided for @inspectionLoadTooLow.
+  ///
+  /// In es, this message translates to:
+  /// **'Muy poca corriente ({amps} A). Dale más.'**
+  String inspectionLoadTooLow(String amps);
+
+  /// No description provided for @inspectionNotQuiet.
+  ///
+  /// In es, this message translates to:
+  /// **'Hay corriente ({amps} A). Hace falta reposo.'**
+  String inspectionNotQuiet(String amps);
+
+  /// No description provided for @inspectionQuietOk.
+  ///
+  /// In es, this message translates to:
+  /// **'En reposo.'**
+  String get inspectionQuietOk;
+
+  /// No description provided for @inspectionSecondsLeft.
+  ///
+  /// In es, this message translates to:
+  /// **'{seconds} s'**
+  String inspectionSecondsLeft(String seconds);
+
+  /// No description provided for @inspectionStepSkipHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Si esta carga no se puede generar, la app pasa al siguiente paso sola en {seconds} s y lo dice en el veredicto.'**
+  String inspectionStepSkipHint(String seconds);
+
+  /// No description provided for @inspectionSkipStep.
+  ///
+  /// In es, this message translates to:
+  /// **'Saltar este paso'**
+  String get inspectionSkipStep;
+
+  /// No description provided for @inspectionAbort.
+  ///
+  /// In es, this message translates to:
+  /// **'Terminar ahora'**
+  String get inspectionAbort;
+
+  /// No description provided for @inspectionQuickTestLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'TEST RÁPIDO · ESTIMACIÓN'**
+  String get inspectionQuickTestLabel;
+
+  /// No description provided for @inspectionLightGood.
+  ///
+  /// In es, this message translates to:
+  /// **'Nada grave a la vista'**
+  String get inspectionLightGood;
+
+  /// No description provided for @inspectionLightWatch.
+  ///
+  /// In es, this message translates to:
+  /// **'Hay algo que mirar'**
+  String get inspectionLightWatch;
+
+  /// No description provided for @inspectionLightProblem.
+  ///
+  /// In es, this message translates to:
+  /// **'No compres a ciegas: hay un problema'**
+  String get inspectionLightProblem;
+
+  /// No description provided for @inspectionFidelityNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Un test rápido detecta la estafa obvia y la celda mala; no mide capacidad real. Para capacidad real hace falta una descarga completa.'**
+  String get inspectionFidelityNote;
+
+  /// No description provided for @inspectionCaveatsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que este test no pudo ver'**
+  String get inspectionCaveatsTitle;
+
+  /// No description provided for @inspectionCaveatNoHeavyLoad.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin carga fuerte: la caída por celda no se pudo medir.'**
+  String get inspectionCaveatNoHeavyLoad;
+
+  /// No description provided for @inspectionCaveatNoLightLoad.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin carga ligera: el paso de las luces no ocurrió.'**
+  String get inspectionCaveatNoLightLoad;
+
+  /// No description provided for @inspectionCaveatRestNoisy.
+  ///
+  /// In es, this message translates to:
+  /// **'El pack nunca estuvo quieto del todo: la foto en reposo es aproximada.'**
+  String get inspectionCaveatRestNoisy;
+
+  /// No description provided for @inspectionCaveatNoRecovery.
+  ///
+  /// In es, this message translates to:
+  /// **'La carga no se soltó: la recuperación no se midió.'**
+  String get inspectionCaveatNoRecovery;
+
+  /// No description provided for @inspectionCaveatStepTooSmall.
+  ///
+  /// In es, this message translates to:
+  /// **'El salto de corriente fue pequeño: la resistencia estimada es ruido.'**
+  String get inspectionCaveatStepTooSmall;
+
+  /// No description provided for @inspectionCaveatFewReadings.
+  ///
+  /// In es, this message translates to:
+  /// **'Pocas lecturas: el BMS habló poco.'**
+  String get inspectionCaveatFewReadings;
+
+  /// No description provided for @inspectionCellsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Celda por celda'**
+  String get inspectionCellsTitle;
+
+  /// No description provided for @inspectionCellHeaderRest.
+  ///
+  /// In es, this message translates to:
+  /// **'Reposo'**
+  String get inspectionCellHeaderRest;
+
+  /// No description provided for @inspectionCellHeaderSag.
+  ///
+  /// In es, this message translates to:
+  /// **'Caída'**
+  String get inspectionCellHeaderSag;
+
+  /// No description provided for @inspectionCellHeaderIr.
+  ///
+  /// In es, this message translates to:
+  /// **'R est.'**
+  String get inspectionCellHeaderIr;
+
+  /// No description provided for @inspectionCellHeaderRec.
+  ///
+  /// In es, this message translates to:
+  /// **'Recup.'**
+  String get inspectionCellHeaderRec;
+
+  /// No description provided for @inspectionReportedTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que dice el BMS (editable)'**
+  String get inspectionReportedTitle;
+
+  /// No description provided for @inspectionReportedHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Ciclos, capacidad configurada y SOH se cambian desde la app oficial en un minuto. Se muestran; no se creen.'**
+  String get inspectionReportedHint;
+
+  /// No description provided for @inspectionReportedCycles.
+  ///
+  /// In es, this message translates to:
+  /// **'Ciclos'**
+  String get inspectionReportedCycles;
+
+  /// No description provided for @inspectionReportedCapacity.
+  ///
+  /// In es, this message translates to:
+  /// **'Capacidad configurada'**
+  String get inspectionReportedCapacity;
+
+  /// No description provided for @inspectionReportedSoc.
+  ///
+  /// In es, this message translates to:
+  /// **'Carga'**
+  String get inspectionReportedSoc;
+
+  /// No description provided for @inspectionReportedSoh.
+  ///
+  /// In es, this message translates to:
+  /// **'SOH'**
+  String get inspectionReportedSoh;
+
+  /// No description provided for @inspectionReportedModel.
+  ///
+  /// In es, this message translates to:
+  /// **'Modelo'**
+  String get inspectionReportedModel;
+
+  /// No description provided for @inspectionSummaryLine.
+  ///
+  /// In es, this message translates to:
+  /// **'{cells} celdas · pico {amps} A · {seconds} s · {readings} lecturas'**
+  String inspectionSummaryLine(
+    String cells,
+    String amps,
+    String seconds,
+    String readings,
+  );
+
+  /// No description provided for @inspectionSave.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar inspección'**
+  String get inspectionSave;
+
+  /// No description provided for @inspectionSaved.
+  ///
+  /// In es, this message translates to:
+  /// **'Inspección guardada.'**
+  String get inspectionSaved;
+
+  /// No description provided for @inspectionDiscard.
+  ///
+  /// In es, this message translates to:
+  /// **'Descartar'**
+  String get inspectionDiscard;
+
+  /// No description provided for @inspectionNoteHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Nota: vendedor, precio pedido, lo que dijo…'**
+  String get inspectionNoteHint;
+
+  /// No description provided for @inspectionsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Inspecciones'**
+  String get inspectionsTitle;
+
+  /// No description provided for @inspectionsIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Baterías ajenas que has mirado con el test rápido. No forman parte de tu historial.'**
+  String get inspectionsIntro;
+
+  /// No description provided for @inspectionsEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía no has inspeccionado ninguna batería.'**
+  String get inspectionsEmpty;
+
+  /// No description provided for @inspectionsOpen.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver inspecciones'**
+  String get inspectionsOpen;
+
+  /// No description provided for @inspectionDeleted.
+  ///
+  /// In es, this message translates to:
+  /// **'Inspección borrada.'**
+  String get inspectionDeleted;
+
+  /// No description provided for @inspectionDeleteConfirmTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Borrar esta inspección?'**
+  String get inspectionDeleteConfirmTitle;
+
+  /// No description provided for @inspectionDeleteConfirmBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Se pierden el veredicto y las lecturas capturadas.'**
+  String get inspectionDeleteConfirmBody;
+
+  /// No description provided for @inspectionCreditsLeft.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta inspección consume un chequeo. Te quedan {count}.'**
+  String inspectionCreditsLeft(String count);
+
+  /// No description provided for @inspectionCreditsGone.
+  ///
+  /// In es, this message translates to:
+  /// **'No te quedan chequeos. Consigue más en Licencia.'**
+  String get inspectionCreditsGone;
+
+  /// No description provided for @verdictInspCellSaggingTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'La celda {cell} cae mucho más que las demás'**
+  String verdictInspCellSaggingTitle(String cell);
+
+  /// No description provided for @verdictInspCellSaggingBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Bajo la carga fuerte cayó {excess} V más que la mediana del pack. Coherente con una celda gastada o con una conexión mala en esa celda. Es la razón principal para no pagar el precio pedido sin más pruebas.'**
+  String verdictInspCellSaggingBody(String excess);
+
+  /// No description provided for @verdictInspSagUniformTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Todas las celdas caen parejo'**
+  String get verdictInspSagUniformTitle;
+
+  /// No description provided for @verdictInspSagUniformBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Bajo la carga fuerte la peor celda cayó solo {excess} V más que la mediana. Ninguna se rinde antes que las demás.'**
+  String verdictInspSagUniformBody(String excess);
+
+  /// No description provided for @verdictInspRestDeltaWideTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Las celdas están desparejas en reposo'**
+  String get verdictInspRestDeltaWideTitle;
+
+  /// No description provided for @verdictInspRestDeltaWideBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Con la moto quieta el delta es de {delta} V y la más baja es la celda {cell}. Sin corriente eso no es resistencia: son celdas que guardan cantidades distintas de carga, o un balanceador que no trabaja.'**
+  String verdictInspRestDeltaWideBody(String delta, String cell);
+
+  /// No description provided for @verdictInspRestDeltaOkTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Celdas parejas en reposo'**
+  String get verdictInspRestDeltaOkTitle;
+
+  /// No description provided for @verdictInspRestDeltaOkBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Delta de {delta} V con la moto quieta. Bien.'**
+  String verdictInspRestDeltaOkBody(String delta);
+
+  /// No description provided for @verdictInspWeakLightTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'La celda {cell} cae con casi nada'**
+  String verdictInspWeakLightTitle(String cell);
+
+  /// No description provided for @verdictInspWeakLightBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Con solo las luces ({amps} A) cayó {extra} V más que las demás. Una celda que se rinde con uno o dos amperios es una celda muy cansada.'**
+  String verdictInspWeakLightBody(String amps, String extra);
+
+  /// No description provided for @verdictInspSlowRecoveryTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'La celda {cell} rebota lento'**
+  String verdictInspSlowRecoveryTitle(String cell);
+
+  /// No description provided for @verdictInspSlowRecoveryBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Tardó {extra} s más que la mediana en volver a su voltaje de reposo tras soltar la carga, o no volvió. Las celdas cansadas rebotan lento; es un indicador poco mirado y muy bueno.'**
+  String verdictInspSlowRecoveryBody(String extra);
+
+  /// No description provided for @verdictInspRecoveryOkTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Recuperación pareja'**
+  String get verdictInspRecoveryOkTitle;
+
+  /// No description provided for @verdictInspRecoveryOkBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Tras soltar la carga las celdas volvieron a su reposo en unos {seconds} s, todas al mismo paso.'**
+  String verdictInspRecoveryOkBody(String seconds);
+
+  /// No description provided for @verdictInspHotTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'El pack estaba caliente'**
+  String get verdictInspHotTitle;
+
+  /// No description provided for @verdictInspHotBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegó a {temp} °C durante el test. Un pack caliente en reposo o con poca carga no es normal.'**
+  String verdictInspHotBody(String temp);
+
+  /// No description provided for @verdictInspAlarmsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'El BMS tuvo alarmas durante el test'**
+  String get verdictInspAlarmsTitle;
+
+  /// No description provided for @verdictInspAlarmsBody.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} alarma(s) activas en algún momento. Pregunta por qué: un BMS que protesta en dos minutos protesta en la calle.'**
+  String verdictInspAlarmsBody(String count);
+
+  /// No description provided for @verdictInspCountersTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Ciclos y capacidad según el BMS: no confiar'**
+  String get verdictInspCountersTitle;
+
+  /// No description provided for @verdictInspCountersBody.
+  ///
+  /// In es, this message translates to:
+  /// **'El BMS reporta {cycles} ciclos. Ese dato y la capacidad configurada se editan desde la app oficial en un minuto. El veredicto se apoya en la física de arriba, no en estos contadores.'**
+  String verdictInspCountersBody(String cycles);
+
+  /// No description provided for @verdictInspNoHeavyLoadTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin carga fuerte: fidelidad reducida'**
+  String get verdictInspNoHeavyLoadTitle;
+
+  /// No description provided for @verdictInspNoHeavyLoadBody.
+  ///
+  /// In es, this message translates to:
+  /// **'La corriente máxima vista fue {amps} A. Sin un tirón fuerte no se puede medir cuánto cae cada celda, que es donde sale la verdad. Repite con la rueda al aire o 50 metros en la moto.'**
+  String verdictInspNoHeavyLoadBody(String amps);
+
+  /// No description provided for @evidenceCellSag.
+  ///
+  /// In es, this message translates to:
+  /// **'Caída de la celda {cell} bajo carga'**
+  String evidenceCellSag(String cell);
+
+  /// No description provided for @evidenceMedianSag.
+  ///
+  /// In es, this message translates to:
+  /// **'Caída mediana del pack'**
+  String get evidenceMedianSag;
+
+  /// No description provided for @evidenceCurrentStep.
+  ///
+  /// In es, this message translates to:
+  /// **'Salto de corriente (carga menos reposo)'**
+  String get evidenceCurrentStep;
+
+  /// No description provided for @evidenceCellResistance.
+  ///
+  /// In es, this message translates to:
+  /// **'Resistencia estimada de la celda {cell}'**
+  String evidenceCellResistance(String cell);
+
+  /// No description provided for @evidenceMedianResistance.
+  ///
+  /// In es, this message translates to:
+  /// **'Resistencia estimada mediana'**
+  String get evidenceMedianResistance;
+
+  /// No description provided for @evidenceLowestRestCell.
+  ///
+  /// In es, this message translates to:
+  /// **'Celda más baja en reposo (celda {cell})'**
+  String evidenceLowestRestCell(String cell);
+
+  /// No description provided for @evidenceLightLoadAmps.
+  ///
+  /// In es, this message translates to:
+  /// **'Corriente con las luces'**
+  String get evidenceLightLoadAmps;
+
+  /// No description provided for @evidenceRecoverySeconds.
+  ///
+  /// In es, this message translates to:
+  /// **'Recuperación de la celda {cell}'**
+  String evidenceRecoverySeconds(String cell);
+
+  /// No description provided for @evidenceMedianRecoverySeconds.
+  ///
+  /// In es, this message translates to:
+  /// **'Recuperación mediana'**
+  String get evidenceMedianRecoverySeconds;
+
+  /// No description provided for @evidenceAlarmCount.
+  ///
+  /// In es, this message translates to:
+  /// **'Alarmas vistas'**
+  String get evidenceAlarmCount;
+
+  /// No description provided for @evidencePeakCurrent.
+  ///
+  /// In es, this message translates to:
+  /// **'Corriente máxima vista'**
+  String get evidencePeakCurrent;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

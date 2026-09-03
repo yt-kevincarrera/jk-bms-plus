@@ -2824,4 +2824,370 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get verdictTitle => 'Verdict';
+
+  @override
+  String get demoScenarioInspection => 'Inspection rehearsal';
+
+  @override
+  String get demoScenarioInspectionDesc =>
+      'Quiet 35 s, lights 20 s, hard pull 8 s, then released. Cell 7 is the weak one.';
+
+  @override
+  String get inspectionEntry => 'Inspect somebody else\'s battery';
+
+  @override
+  String get inspectionModeTitle => 'Inspection mode';
+
+  @override
+  String get inspectionModeBanner =>
+      'The battery you connect now is not saved to your history and teaches your range nothing. Ask the seller to close their JK app and pick their BMS from the list.';
+
+  @override
+  String get inspectionModeExit => 'Leave inspection mode';
+
+  @override
+  String get inspectionRehearse => 'Rehearse with the demo pack';
+
+  @override
+  String get inspectionTitle => 'Quick inspection';
+
+  @override
+  String get inspectionWaitingReadings => 'Waiting for readings from the BMS…';
+
+  @override
+  String get inspectionStepRestTitle => 'Don\'t touch anything';
+
+  @override
+  String get inspectionStepRestBody =>
+      'The app takes the resting picture. Nobody revs, nobody switches anything on.';
+
+  @override
+  String get inspectionStepLightTitle => 'Turn the lights on';
+
+  @override
+  String get inspectionStepLightBody =>
+      'A small, steady draw. The app moves on by itself when it sees it.';
+
+  @override
+  String get inspectionStepHeavyTitle => 'Now a hard pull';
+
+  @override
+  String get inspectionStepHeavyBody =>
+      'Rear wheel in the air and throttle, or 50 metres down the road with the phone in your pocket, or the charger plugged in. Any of them works: the app measures the current.';
+
+  @override
+  String get inspectionStepRecoveryTitle => 'Let go and wait';
+
+  @override
+  String get inspectionStepRecoveryBody =>
+      'No current. The app watches how long each cell takes to climb back to where it rested.';
+
+  @override
+  String get inspectionStepDoneTitle => 'Done';
+
+  @override
+  String get inspectionCurrentNow => 'Current now';
+
+  @override
+  String inspectionLoadEnough(String amps) {
+    return 'Load detected: $amps A, enough.';
+  }
+
+  @override
+  String inspectionLoadTooLow(String amps) {
+    return 'Too little current ($amps A). Give it more.';
+  }
+
+  @override
+  String inspectionNotQuiet(String amps) {
+    return 'There is current ($amps A). It needs to rest.';
+  }
+
+  @override
+  String get inspectionQuietOk => 'At rest.';
+
+  @override
+  String inspectionSecondsLeft(String seconds) {
+    return '$seconds s';
+  }
+
+  @override
+  String inspectionStepSkipHint(String seconds) {
+    return 'If this load cannot be produced, the app moves on by itself in $seconds s and says so in the verdict.';
+  }
+
+  @override
+  String get inspectionSkipStep => 'Skip this step';
+
+  @override
+  String get inspectionAbort => 'Finish now';
+
+  @override
+  String get inspectionQuickTestLabel => 'QUICK TEST · ESTIMATE';
+
+  @override
+  String get inspectionLightGood => 'Nothing serious in sight';
+
+  @override
+  String get inspectionLightWatch => 'Something to look at';
+
+  @override
+  String get inspectionLightProblem => 'Don\'t buy blind: there is a problem';
+
+  @override
+  String get inspectionFidelityNote =>
+      'A quick test catches the obvious scam and the bad cell; it does not measure real capacity. Real capacity takes a full discharge.';
+
+  @override
+  String get inspectionCaveatsTitle => 'What this test could not see';
+
+  @override
+  String get inspectionCaveatNoHeavyLoad =>
+      'No hard pull: per-cell sag could not be measured.';
+
+  @override
+  String get inspectionCaveatNoLightLoad =>
+      'No light load: the lights step never happened.';
+
+  @override
+  String get inspectionCaveatRestNoisy =>
+      'The pack was never fully quiet: the resting picture is approximate.';
+
+  @override
+  String get inspectionCaveatNoRecovery =>
+      'The load was never released: recovery was not measured.';
+
+  @override
+  String get inspectionCaveatStepTooSmall =>
+      'The current step was small: the estimated resistance is noise.';
+
+  @override
+  String get inspectionCaveatFewReadings =>
+      'Few readings: the BMS said little.';
+
+  @override
+  String get inspectionCellsTitle => 'Cell by cell';
+
+  @override
+  String get inspectionCellHeaderRest => 'Rest';
+
+  @override
+  String get inspectionCellHeaderSag => 'Sag';
+
+  @override
+  String get inspectionCellHeaderIr => 'Est. R';
+
+  @override
+  String get inspectionCellHeaderRec => 'Recov.';
+
+  @override
+  String get inspectionReportedTitle => 'What the BMS says (editable)';
+
+  @override
+  String get inspectionReportedHint =>
+      'Cycles, configured capacity and SOH can be changed from the official app in a minute. Shown; not believed.';
+
+  @override
+  String get inspectionReportedCycles => 'Cycles';
+
+  @override
+  String get inspectionReportedCapacity => 'Configured capacity';
+
+  @override
+  String get inspectionReportedSoc => 'Charge';
+
+  @override
+  String get inspectionReportedSoh => 'SOH';
+
+  @override
+  String get inspectionReportedModel => 'Model';
+
+  @override
+  String inspectionSummaryLine(
+    String cells,
+    String amps,
+    String seconds,
+    String readings,
+  ) {
+    return '$cells cells · peak $amps A · $seconds s · $readings readings';
+  }
+
+  @override
+  String get inspectionSave => 'Save inspection';
+
+  @override
+  String get inspectionSaved => 'Inspection saved.';
+
+  @override
+  String get inspectionDiscard => 'Discard';
+
+  @override
+  String get inspectionNoteHint => 'Note: seller, asking price, what was said…';
+
+  @override
+  String get inspectionsTitle => 'Inspections';
+
+  @override
+  String get inspectionsIntro =>
+      'Other people\'s batteries you have looked at with the quick test. Not part of your history.';
+
+  @override
+  String get inspectionsEmpty => 'You have not inspected any battery yet.';
+
+  @override
+  String get inspectionsOpen => 'See inspections';
+
+  @override
+  String get inspectionDeleted => 'Inspection deleted.';
+
+  @override
+  String get inspectionDeleteConfirmTitle => 'Delete this inspection?';
+
+  @override
+  String get inspectionDeleteConfirmBody =>
+      'The verdict and the captured readings are lost.';
+
+  @override
+  String inspectionCreditsLeft(String count) {
+    return 'This inspection uses one check. You have $count left.';
+  }
+
+  @override
+  String get inspectionCreditsGone => 'No checks left. Get more under Licence.';
+
+  @override
+  String verdictInspCellSaggingTitle(String cell) {
+    return 'Cell $cell sags far more than the rest';
+  }
+
+  @override
+  String verdictInspCellSaggingBody(String excess) {
+    return 'Under the hard pull it dropped $excess V more than the pack median. Consistent with a worn cell or a bad connection at that cell. This is the main reason not to pay the asking price without more tests.';
+  }
+
+  @override
+  String get verdictInspSagUniformTitle => 'Every cell sags evenly';
+
+  @override
+  String verdictInspSagUniformBody(String excess) {
+    return 'Under the hard pull the worst cell dropped only $excess V more than the median. None gives up before the others.';
+  }
+
+  @override
+  String get verdictInspRestDeltaWideTitle => 'Cells sit apart at rest';
+
+  @override
+  String verdictInspRestDeltaWideBody(String delta, String cell) {
+    return 'With the bike still the delta is $delta V and the lowest is cell $cell. With no current that is not resistance: the cells hold different amounts of charge, or the balancer is not working.';
+  }
+
+  @override
+  String get verdictInspRestDeltaOkTitle => 'Cells sit together at rest';
+
+  @override
+  String verdictInspRestDeltaOkBody(String delta) {
+    return 'Delta of $delta V with the bike still. Fine.';
+  }
+
+  @override
+  String verdictInspWeakLightTitle(String cell) {
+    return 'Cell $cell drops with almost nothing asked';
+  }
+
+  @override
+  String verdictInspWeakLightBody(String amps, String extra) {
+    return 'With only the lights on ($amps A) it dropped $extra V more than the rest. A cell that gives up at one or two amps is a very tired cell.';
+  }
+
+  @override
+  String verdictInspSlowRecoveryTitle(String cell) {
+    return 'Cell $cell climbs back slowly';
+  }
+
+  @override
+  String verdictInspSlowRecoveryBody(String extra) {
+    return 'It took $extra s longer than the median to return to its resting voltage after the load, or never did. Tired cells rebound slowly; it is a rarely watched and very good sign.';
+  }
+
+  @override
+  String get verdictInspRecoveryOkTitle => 'Even recovery';
+
+  @override
+  String verdictInspRecoveryOkBody(String seconds) {
+    return 'After the load the cells were back at rest in about $seconds s, all at the same pace.';
+  }
+
+  @override
+  String get verdictInspHotTitle => 'The pack was hot';
+
+  @override
+  String verdictInspHotBody(String temp) {
+    return 'It reached $temp °C during the test. A pack that is hot at rest or under light load is not normal.';
+  }
+
+  @override
+  String get verdictInspAlarmsTitle => 'The BMS raised alarms during the test';
+
+  @override
+  String verdictInspAlarmsBody(String count) {
+    return '$count alarm(s) active at some point. Ask why: a BMS that complains in two minutes complains in the street.';
+  }
+
+  @override
+  String get verdictInspCountersTitle =>
+      'Cycles and capacity per the BMS: do not trust';
+
+  @override
+  String verdictInspCountersBody(String cycles) {
+    return 'The BMS reports $cycles cycles. That figure and the configured capacity can be edited from the official app in a minute. The verdict rests on the physics above, not on these counters.';
+  }
+
+  @override
+  String get verdictInspNoHeavyLoadTitle => 'No hard pull: reduced fidelity';
+
+  @override
+  String verdictInspNoHeavyLoadBody(String amps) {
+    return 'The highest current seen was $amps A. Without a hard pull there is no way to measure how far each cell drops, which is where the truth comes out. Repeat with the wheel in the air or 50 metres on the bike.';
+  }
+
+  @override
+  String evidenceCellSag(String cell) {
+    return 'Sag of cell $cell under load';
+  }
+
+  @override
+  String get evidenceMedianSag => 'Median sag of the pack';
+
+  @override
+  String get evidenceCurrentStep => 'Current step (load minus rest)';
+
+  @override
+  String evidenceCellResistance(String cell) {
+    return 'Estimated resistance of cell $cell';
+  }
+
+  @override
+  String get evidenceMedianResistance => 'Median estimated resistance';
+
+  @override
+  String evidenceLowestRestCell(String cell) {
+    return 'Lowest cell at rest (cell $cell)';
+  }
+
+  @override
+  String get evidenceLightLoadAmps => 'Current with the lights on';
+
+  @override
+  String evidenceRecoverySeconds(String cell) {
+    return 'Recovery of cell $cell';
+  }
+
+  @override
+  String get evidenceMedianRecoverySeconds => 'Median recovery';
+
+  @override
+  String get evidenceAlarmCount => 'Alarms seen';
+
+  @override
+  String get evidencePeakCurrent => 'Highest current seen';
 }

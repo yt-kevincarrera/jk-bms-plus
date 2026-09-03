@@ -292,6 +292,41 @@ class _EvidenceRow extends StatelessWidget {
       t.evidenceDriftSpanWeeks,
       v.toStringAsFixed(1),
     ),
+    EvidenceKind.cellSag => (t.evidenceCellSag('${e.cell ?? 0}'), volts(v)),
+    EvidenceKind.medianSag => (t.evidenceMedianSag, volts(v)),
+    EvidenceKind.currentStep => (
+      t.evidenceCurrentStep,
+      '${v.toStringAsFixed(1)} A',
+    ),
+    EvidenceKind.cellResistance => (
+      t.evidenceCellResistance('${e.cell ?? 0}'),
+      '${(v * 1000).toStringAsFixed(1)} mΩ',
+    ),
+    EvidenceKind.medianResistance => (
+      t.evidenceMedianResistance,
+      '${(v * 1000).toStringAsFixed(1)} mΩ',
+    ),
+    EvidenceKind.lowestRestCell => (
+      t.evidenceLowestRestCell('${e.cell ?? 0}'),
+      volts(v),
+    ),
+    EvidenceKind.lightLoadAmps => (
+      t.evidenceLightLoadAmps,
+      '${v.toStringAsFixed(1)} A',
+    ),
+    EvidenceKind.recoverySeconds => (
+      t.evidenceRecoverySeconds('${e.cell ?? 0}'),
+      '${v.toStringAsFixed(1)} s',
+    ),
+    EvidenceKind.medianRecoverySeconds => (
+      t.evidenceMedianRecoverySeconds,
+      '${v.toStringAsFixed(1)} s',
+    ),
+    EvidenceKind.alarmCount => (t.evidenceAlarmCount, whole(v)),
+    EvidenceKind.peakCurrent => (
+      t.evidencePeakCurrent,
+      '${v.toStringAsFixed(1)} A',
+    ),
   };
 }
 
@@ -317,6 +352,21 @@ String adviceTitle(AppL10n t, Advice advice) {
     AdviceCode.overvoltageSetHigh => t.adviceOvervoltageHighTitle,
     AdviceCode.rangeStillLearning => t.adviceRangeLearningTitle,
     AdviceCode.imbalanceCostingRange => t.adviceImbalanceCostingTitle,
+    AdviceCode.inspectionCellSagging => t.verdictInspCellSaggingTitle('$cell'),
+    AdviceCode.inspectionSagUniform => t.verdictInspSagUniformTitle,
+    AdviceCode.inspectionRestDeltaWide => t.verdictInspRestDeltaWideTitle,
+    AdviceCode.inspectionRestDeltaOk => t.verdictInspRestDeltaOkTitle,
+    AdviceCode.inspectionWeakUnderLightLoad => t.verdictInspWeakLightTitle(
+      '$cell',
+    ),
+    AdviceCode.inspectionSlowRecovery => t.verdictInspSlowRecoveryTitle(
+      '$cell',
+    ),
+    AdviceCode.inspectionRecoveryOk => t.verdictInspRecoveryOkTitle,
+    AdviceCode.inspectionHot => t.verdictInspHotTitle,
+    AdviceCode.inspectionAlarmsSeen => t.verdictInspAlarmsTitle,
+    AdviceCode.inspectionCountersEditable => t.verdictInspCountersTitle,
+    AdviceCode.inspectionNoHeavyLoad => t.verdictInspNoHeavyLoadTitle,
   };
 }
 
@@ -386,6 +436,39 @@ String adviceBody(AppL10n t, Advice advice) {
     ),
     AdviceCode.imbalanceCostingRange => t.adviceImbalanceCostingBody(
       v.toStringAsFixed(0),
+    ),
+    AdviceCode.inspectionCellSagging => t.verdictInspCellSaggingBody(
+      v.toStringAsFixed(3),
+    ),
+    AdviceCode.inspectionSagUniform => t.verdictInspSagUniformBody(
+      v.toStringAsFixed(3),
+    ),
+    AdviceCode.inspectionRestDeltaWide => t.verdictInspRestDeltaWideBody(
+      v.toStringAsFixed(3),
+      '$cell',
+    ),
+    AdviceCode.inspectionRestDeltaOk => t.verdictInspRestDeltaOkBody(
+      v.toStringAsFixed(3),
+    ),
+    AdviceCode.inspectionWeakUnderLightLoad => t.verdictInspWeakLightBody(
+      f(EvidenceKind.lightLoadAmps, 1),
+      v.toStringAsFixed(3),
+    ),
+    AdviceCode.inspectionSlowRecovery => t.verdictInspSlowRecoveryBody(
+      v.toStringAsFixed(0),
+    ),
+    AdviceCode.inspectionRecoveryOk => t.verdictInspRecoveryOkBody(
+      v.toStringAsFixed(0),
+    ),
+    AdviceCode.inspectionHot => t.verdictInspHotBody(v.toStringAsFixed(0)),
+    AdviceCode.inspectionAlarmsSeen => t.verdictInspAlarmsBody(
+      v.toStringAsFixed(0),
+    ),
+    AdviceCode.inspectionCountersEditable => t.verdictInspCountersBody(
+      advice.value == null ? '--' : v.toStringAsFixed(0),
+    ),
+    AdviceCode.inspectionNoHeavyLoad => t.verdictInspNoHeavyLoadBody(
+      v.toStringAsFixed(1),
     ),
   };
 }

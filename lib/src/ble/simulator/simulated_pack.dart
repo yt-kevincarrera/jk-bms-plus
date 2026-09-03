@@ -17,7 +17,15 @@ enum DemoScenario {
   idle('Parked', 'No current, cells relaxed'),
 
   /// One cell dragging badly, balancer working, warnings firing.
-  weakCell('Weak cell', 'Cell 7 sagging hard, balancer on, warnings raised');
+  weakCell('Weak cell', 'Cell 7 sagging hard, balancer on, warnings raised'),
+
+  /// A scripted rehearsal of the guided quick test: quiet, then the lights,
+  /// then a hard pull, then released. Cell 7 is the weak one, so the verdict
+  /// has something to find.
+  inspection(
+    'Inspection rehearsal',
+    'Quiet 35 s, lights 20 s, hard pull 8 s, then released. Cell 7 weak',
+  );
 
   const DemoScenario(this.label, this.description);
   final String label;
@@ -36,8 +44,8 @@ class SimulatedPack {
     this.nominalCapacityAh = 45,
     DemoScenario scenario = DemoScenario.riding,
     int seed = 20250826,
-  })  : _scenario = scenario,
-        _random = math.Random(seed) {
+  }) : _scenario = scenario,
+       _random = math.Random(seed) {
     // A spread of internal resistances, with cell 7 the worst of them. Real
     // packs are never uniform, and a screen that only ever sees uniform cells
     // hides exactly the problem this app exists for.
@@ -70,6 +78,7 @@ class SimulatedPack {
 
   set scenario(DemoScenario value) {
     _scenario = value;
+    _scenarioTicks = 0;
     _throttle = 0;
   }
 
@@ -85,6 +94,9 @@ class SimulatedPack {
   double _packTemp = 24.5;
   double _mosfetTemp = 27.0;
   int _ticks = 0;
+
+  /// Ticks since the scenario was last set, for scripted scenarios.
+  int _scenarioTicks = 0;
   int _cycleCount = 63;
 
   /// Simulated road speed, km/h. Demo mode needs a distance to feed the range
@@ -171,7 +183,10 @@ class SimulatedPack {
   }
 
   double _sagGain(int index) {
-    if (_scenario != DemoScenario.weakCell) return 1.0;
+    if (_scenario != DemoScenario.weakCell &&
+        _scenario != DemoScenario.inspection) {
+      return 1.0;
+    }
     return index == _weakCellIndex ? 3.4 : 1.0;
   }
 
@@ -217,9 +232,26 @@ class SimulatedPack {
   /// Advances the model by [dt].
   void tick(Duration dt) {
     _ticks++;
+    _scenarioTicks++;
     final seconds = dt.inMilliseconds / 1000.0 * timeScale;
 
     switch (_scenario) {
+      case DemoScenario.inspection:
+        // The script the PRD describes, in wall-clock ticks so it lines up
+        // with the session's own step timing. After the pull it stays quiet
+        // for good: the test ends, the pack sits.
+        final t = _scenarioTicks * dt.inMilliseconds / 1000.0;
+        _throttle = 0;
+        if (t < 35) {
+          _current = 0;
+        } else if (t < 55) {
+          _current = -1.8;
+        } else if (t < 63) {
+          _current = -38;
+          _throttle = 0.55;
+        } else {
+          _current = 0;
+        }
       case DemoScenario.riding:
       case DemoScenario.weakCell:
         // Throttle wanders, with the occasional hard pull. The step changes are
@@ -245,6 +277,7 @@ class SimulatedPack {
     // feed the range estimator with; the real one arrives from GPS in M3.
     final targetSpeed = switch (_scenario) {
       DemoScenario.riding || DemoScenario.weakCell => 12 + _throttle * 58,
+      // Wheel in the air on the stand: current without kilometres.
       _ => 0.0,
     };
     _speedKmh += (targetSpeed - _speedKmh) * 0.25;
@@ -275,7 +308,7 @@ class SimulatedPack {
     // Temperature follows current with a long lag, and bleeds off to ambient.
     final heating = (_current.abs() / 70).clamp(0.0, 1.0) * 0.05;
     _packTemp += heating * seconds - (_packTemp - 24.0) * 0.004 * seconds;
-    _mosfetTemp += heating * 1.7 * seconds -
-        (_mosfetTemp - 25.0) * 0.006 * seconds;
+    _mosfetTemp +=
+        heating * 1.7 * seconds - (_mosfetTemp - 25.0) * 0.006 * seconds;
   }
 }

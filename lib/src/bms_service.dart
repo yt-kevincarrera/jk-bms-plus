@@ -75,9 +75,9 @@ class BmsService {
     BmsLink? transport,
     JkParser parser = const JkParser(),
     LocationSource Function()? locationFactory,
-  })  : _transport = transport ?? SwitchableLink(),
-        _parser = parser,
-        _locationFactory = locationFactory {
+  }) : _transport = transport ?? SwitchableLink(),
+       _parser = parser,
+       _locationFactory = locationFactory {
     _assembler.onRejected = (_) => _statsController.add(_assembler.stats);
     _bytesSub = _transport.bytes.listen(_onBytes);
     _stateSub = _transport.state.listen((s) {
@@ -354,8 +354,24 @@ class BmsService {
     tripAutoStart.reset();
   }
 
-  Future<void> connect(String deviceId, {String name = ''}) async {
+  /// True while the connected pack is somebody else's, being inspected.
+  ///
+  /// Nothing about it is filed: no Devices row, no readings, no raw frames,
+  /// no range learning, no home-screen widget. The PRD's rule is that an
+  /// inspection never contaminates the rider's own history, and the cheapest
+  /// way to honour it is to never promote the device to a battery at all.
+  /// The repository already drops every write with no active pack, so the
+  /// only thing this flag has to do is keep the promotion from happening.
+  bool get inspecting => _inspecting;
+  bool _inspecting = false;
+
+  Future<void> connect(
+    String deviceId, {
+    String name = '',
+    bool inspecting = false,
+  }) async {
     _assembler.reset();
+    _inspecting = inspecting;
     // Held, not stored. A device only becomes a battery on record once it has
     // sent a frame this app can parse: connecting is not proof of anything,
     // and a tapped pair of headphones used to be filed away as a pack, with a
@@ -375,6 +391,8 @@ class BmsService {
     final id = _pendingDeviceId;
     if (id == null) return;
     _pendingDeviceId = null;
+    // A pack under inspection is looked at, not adopted.
+    if (_inspecting) return;
     await _activate(id: id, name: _pendingDeviceName, demo: false);
   }
 
@@ -394,6 +412,7 @@ class BmsService {
 
   Future<void> disconnect() async {
     _pendingDeviceId = null;
+    _inspecting = false;
     _silenceTimer?.cancel();
     await _transport.disconnect();
     _assembler.reset();
@@ -454,9 +473,7 @@ class BmsService {
         'variant produces wrong numbers rather than an error.',
       );
     } else if (!info.detection.confident && _override == null) {
-      _problemController.add(
-        'Assuming ${info.variant!.name}.',
-      );
+      _problemController.add('Assuming ${info.variant!.name}.');
     }
   }
 
@@ -511,7 +528,6 @@ class BmsService {
     _settingsController.add(settings);
   }
 
-
   // --- Trip recording ---
   //
   // Distance and speed come from the phone, everything else from the pack. The
@@ -536,8 +552,10 @@ class BmsService {
     // The row is opened now rather than at the end, so readings taken during
     // the ride can be attributed to it and so a ride that ends badly still
     // leaves something behind.
-    _currentTripId =
-        await repository?.beginTrip(DateTime.now().toUtc(), demo: isDemo);
+    _currentTripId = await repository?.beginTrip(
+      DateTime.now().toUtc(),
+      demo: isDemo,
+    );
     await _updateForegroundService();
     return null;
   }
@@ -671,7 +689,8 @@ class BmsService {
     // In demo mode the position comes from the simulated pack, so the riding
     // screens can be judged with no window and no satellites.
     final simulator = _switchable?.simulator;
-    final source = _locationFactory?.call() ??
+    final source =
+        _locationFactory?.call() ??
         (simulator != null
             ? SimulatedLocationSource(pack: simulator.pack)
             : GeolocatorSource());
@@ -801,10 +820,7 @@ class BmsService {
     final trips = await repo.tripsForLearning(device);
     final rebuilt = RangeEstimator();
     for (final t in trips) {
-      rebuilt.addSegment(
-        wh: t.energyOutWh - t.energyInWh,
-        km: t.distanceKm,
-      );
+      rebuilt.addSegment(wh: t.energyOutWh - t.energyInWh, km: t.distanceKm);
     }
     rangeEstimator = rebuilt;
     return trips.length;
@@ -911,18 +927,18 @@ class BmsService {
   bool get isWatchingLink => _serviceOwner == ServiceClaim.link;
 
   String _serviceTitle(ServiceClaim claim) => switch (claim) {
-        ServiceClaim.trip => notificationTitle,
-        ServiceClaim.charge => chargeWatchTitle,
-        ServiceClaim.update => downloadTitle,
-        ServiceClaim.link => linkWatchTitle,
-      };
+    ServiceClaim.trip => notificationTitle,
+    ServiceClaim.charge => chargeWatchTitle,
+    ServiceClaim.update => downloadTitle,
+    ServiceClaim.link => linkWatchTitle,
+  };
 
   String _serviceText(ServiceClaim claim) => switch (claim) {
-        ServiceClaim.trip => notificationText?.call(trip, _lastSnapshot) ?? '',
-        ServiceClaim.charge => chargeWatchText?.call(_lastSnapshot) ?? '',
-        ServiceClaim.update => downloadText?.call(_download ?? 0) ?? '',
-        ServiceClaim.link => linkWatchText?.call(_lastSnapshot) ?? '',
-      };
+    ServiceClaim.trip => notificationText?.call(trip, _lastSnapshot) ?? '',
+    ServiceClaim.charge => chargeWatchText?.call(_lastSnapshot) ?? '',
+    ServiceClaim.update => downloadText?.call(_download ?? 0) ?? '',
+    ServiceClaim.link => linkWatchText?.call(_lastSnapshot) ?? '',
+  };
 
   /// Brings the one service into line with whoever has the strongest claim.
   ///
@@ -1104,7 +1120,9 @@ class BmsService {
     final drawing = snapshot.current <= -tripAutoStart.minCurrentAmps;
     if (drawing && _location == null) {
       await _ensureLocation();
-    } else if (!drawing && _location != null && !tripAutoStart.looksLikeRiding) {
+    } else if (!drawing &&
+        _location != null &&
+        !tripAutoStart.looksLikeRiding) {
       // Stood down. The speed goes with it: a stale one would let a later
       // burst of current start a ride on a fix from an hour ago.
       _lastAutoSpeedKmh = null;
@@ -1457,8 +1475,6 @@ class BmsService {
   }
 
   Future<void> dispose() async {
-
-
     _silenceTimer?.cancel();
     _notificationTimer?.cancel();
     _notificationTimer = null;

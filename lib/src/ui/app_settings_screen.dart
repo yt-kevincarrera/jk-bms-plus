@@ -11,6 +11,7 @@ import 'theme.dart';
 import '../license/entitlements.dart';
 import 'license_scope.dart';
 import 'license_screen.dart';
+import 'inspection/inspections_list_screen.dart';
 import 'widgets/backup_card.dart';
 import 'widgets/pro_gate.dart';
 import 'widgets/packs_card.dart';
@@ -63,6 +64,23 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
             UpdateCard(service: widget.updateService, settings: settings),
             const LicenseCard(),
             PacksCard(service: widget.service),
+            Section(
+              title: t.inspectionsTitle,
+              intro: t.inspectionsIntro,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) =>
+                          InspectionsListScreen(service: widget.service),
+                    ),
+                  ),
+                  icon: const Icon(Icons.fact_check_outlined, size: 18),
+                  label: Text(t.inspectionsOpen),
+                ),
+                const SizedBox(height: 6),
+              ],
+            ),
             ProGate(
               feature: Feature.backupExportImport,
               child: BackupCard(service: widget.service),
