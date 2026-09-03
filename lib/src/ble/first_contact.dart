@@ -63,6 +63,9 @@ class FirstContact {
   late int _bytesNow = bytesBefore;
   bool _proven = false;
 
+  /// The last thing the link said about itself, for the evidence line.
+  BleLinkState? lastState;
+
   /// When the link first reached `connected`, null before that.
   DateTime? get connectedAt => _connectedAt;
 
@@ -70,6 +73,7 @@ class FirstContact {
   int get bytesHeard => _bytesNow - bytesBefore;
 
   void onLinkState(BleLinkState state, DateTime now) {
+    lastState = state;
     if (state == BleLinkState.connected) _connectedAt ??= now;
   }
 
@@ -95,4 +99,30 @@ class FirstContact {
         ? FirstContactOutcome.talkingButUndecoded
         : FirstContactOutcome.connectedButSilent;
   }
+
+  /// The evidence behind a verdict, for the details line under the headline.
+  ///
+  /// Terse and technical on purpose, and the same in every language, like the
+  /// exception text it sits beside: the headline says what happened in the
+  /// rider's words, this says what the app saw, so a screenshot is enough to
+  /// tell a slow link from a mute pack from bytes that would not decode.
+  String evidence(DateTime now) {
+    final parts = <String>[];
+    final connectedAt = _connectedAt;
+    if (connectedAt == null) {
+      parts.add(
+        'link never reached connected in ${_secs(now.difference(startedAt))}',
+      );
+      final last = lastState;
+      if (last != null) parts.add('last state ${last.name}');
+    } else {
+      parts.add('link up ${_secs(connectedAt.difference(startedAt))} after tap');
+      parts.add('connected ${_secs(now.difference(connectedAt))}');
+    }
+    parts.add('$bytesHeard bytes received');
+    return parts.join(' · ');
+  }
+
+  static String _secs(Duration d) =>
+      '${(d.inMilliseconds / 1000).toStringAsFixed(1)} s';
 }

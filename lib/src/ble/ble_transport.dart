@@ -279,6 +279,9 @@ class BleTransport implements BmsLink {
   /// of not polling can be seen rather than assumed.
   int nudges = 0;
 
+  /// Nudges on the current link only, for the mute report to quote.
+  int _nudgesThisLink = 0;
+
   final _stateController = StreamController<BleLinkState>.broadcast();
   final _bytesController = StreamController<List<int>>.broadcast();
   final _errorController = StreamController<BleLinkError>.broadcast();
@@ -518,6 +521,7 @@ class BleTransport implements BmsLink {
 
       _setState(BleLinkState.connected);
       _connectedAt = DateTime.now();
+      _nudgesThisLink = 0;
       final since = _droppedAt;
       if (since != null) {
         timeDisconnected += DateTime.now().difference(since);
@@ -641,6 +645,21 @@ class BleTransport implements BmsLink {
     if (device == null || !_wantConnection) return;
     _nextReconnectDelay = muteRetryDelay;
     _pollTimer?.cancel();
+
+    // Said before it is done, so the screen can name the reason while the
+    // link is being re-established rather than showing a bare "lost".
+    final now = DateTime.now();
+    final since = _lastCellInfoAt ?? _connectedAt ?? now;
+    final detail = 'connected, ${now.difference(since).inSeconds} s without a '
+        'byte, $_nudgesThisLink nudge(s) unanswered, MTU ${negotiatedMtu ?? '?'}; '
+        'letting go, back in ${muteRetryDelay.inSeconds} s';
+    _errorController.add(
+      BleLinkError(
+        detail,
+        trouble: LinkTrouble(LinkTroubleKind.packMute, detail: detail),
+      ),
+    );
+
     await _letGo(device);
     if (_wantConnection) _onDropped();
   }
@@ -668,6 +687,7 @@ class BleTransport implements BmsLink {
       return;
     }
     nudges++;
+    _nudgesThisLink++;
     await requestCellInfo();
   }
 
