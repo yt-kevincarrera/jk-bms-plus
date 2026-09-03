@@ -180,6 +180,8 @@ class BleTransport implements BmsLink {
     this.connectTimeout = const Duration(seconds: 8),
     this.pollInterval = const Duration(seconds: 5),
     this.quietBefore = const Duration(seconds: 6),
+    this.muteBefore = const Duration(seconds: 20),
+    this.muteRetryDelay = const Duration(seconds: 3),
   });
 
   /// MTU we ask for on connect. 244 is the largest an Android BLE stack will
@@ -245,9 +247,33 @@ class BleTransport implements BmsLink {
   /// so ordinary jitter never triggers a write.
   final Duration quietBefore;
 
+  /// Silence long enough to conclude the link is up and dead.
+  ///
+  /// Not the nudge threshold: by now three nudges have gone unanswered. A JK
+  /// BMS that is connected and says nothing for this long is not slow, it is
+  /// serving somebody else, or its Bluetooth module is still bound to a session
+  /// that ended without a proper disconnect. The rider's report: the pack
+  /// connects and stays mute across app restarts and the phone's Bluetooth
+  /// being switched off and on, and only after enough taps, rescans and
+  /// retries does one attempt land and answer as if nothing happened. Nudging
+  /// a link in that state forever is what the transport used to do. Now it
+  /// lets go cleanly, which is the one thing the module can act on, and comes
+  /// back after [muteRetryDelay], so the retrying happens without the thumb.
+  final Duration muteBefore;
+
+  /// The pause before reconnecting to a pack that was connected and mute.
+  ///
+  /// Longer than [reconnectDelay] on purpose: 400 ms is right for a link that
+  /// dropped, and too quick for a module that needs to notice it was let go.
+  final Duration muteRetryDelay;
+
   /// When a cell-info frame last arrived, which is the only thing that proves
   /// the pack is still talking.
   DateTime? _lastCellInfoAt;
+
+  /// When the current link came up, so a pack that has never spoken since
+  /// connecting can be timed too.
+  DateTime? _connectedAt;
 
   /// Nudges sent because the pack really had gone quiet. Counted so the effect
   /// of not polling can be seen rather than assumed.
@@ -284,6 +310,14 @@ class BleTransport implements BmsLink {
 
   bool _wantConnection = false;
   bool _disposed = false;
+
+  /// The pending reconnect, so a drop noticed twice (once by the connection
+  /// state stream, once by the attach that failed) schedules one attempt, not
+  /// two racing each other for the same pack.
+  Timer? _reconnectTimer;
+
+  /// The pause the next reconnect should take instead of [reconnectDelay].
+  Duration? _nextReconnectDelay;
 
   /// Scans for BLE devices and reports every one of them.
   ///
@@ -432,6 +466,15 @@ class BleTransport implements BmsLink {
         autoConnect: false,
       );
 
+      // A disconnect that arrived while the connect was in flight wins. The
+      // attach used to carry on regardless: the screen had given up, told the
+      // transport to let go, and the transport went on to negotiate, subscribe
+      // and start nudging a pack nobody wanted any more. The BMS then had its
+      // one connection held by a link the app had already written off, and
+      // the next tap found it mute, and the one after that, until Bluetooth
+      // was switched off and on.
+      if (await _abandonedMidway(device)) return;
+
       _setState(BleLinkState.negotiating);
 
       // Ask for a big MTU straight away. Android may grant less; the frame
@@ -453,7 +496,9 @@ class BleTransport implements BmsLink {
         );
       }
 
+      if (await _abandonedMidway(device)) return;
       final characteristic = await _findCharacteristic(device);
+      if (await _abandonedMidway(device)) return;
       _characteristic = characteristic;
 
       await _notifySub?.cancel();
@@ -469,8 +514,10 @@ class BleTransport implements BmsLink {
             _errorController.add(BleLinkError.from(e)),
       );
       await characteristic.setNotifyValue(true);
+      if (await _abandonedMidway(device)) return;
 
       _setState(BleLinkState.connected);
+      _connectedAt = DateTime.now();
       final since = _droppedAt;
       if (since != null) {
         timeDisconnected += DateTime.now().difference(since);
@@ -484,10 +531,43 @@ class BleTransport implements BmsLink {
 
       _pollTimer?.cancel();
       _pollTimer = Timer.periodic(pollInterval, (_) => _nudgeIfQuiet());
+    } on NotAJkBmsException catch (e) {
+      // The wrong device, not a bad link. Stop wanting it so the reconnect
+      // loop does not chase it, and let go so it is not held either.
+      _wantConnection = false;
+      _setState(BleLinkState.failed);
+      _errorController.add(BleLinkError.from(e));
+      await _letGo(device);
     } on Exception catch (e) {
+      // An attempt that disconnect() abandoned midway is not trouble: the
+      // cancelled connect throws, and reporting that would land a generic
+      // Bluetooth complaint on top of whatever the screen was about to say.
+      if (!_wantConnection) return;
       _setState(BleLinkState.failed);
       _errorController.add(_describeConnectFailure(e));
-      if (_wantConnection) _scheduleReconnect();
+      _scheduleReconnect();
+    }
+  }
+
+  /// True when [disconnect] was called while an attach was in flight. Gives
+  /// back whatever the attach had gained since, so the pack is free for the
+  /// next attempt instead of held by a link nobody is listening to.
+  Future<bool> _abandonedMidway(BluetoothDevice device) async {
+    if (_wantConnection && !_disposed) return false;
+    _pollTimer?.cancel();
+    await _notifySub?.cancel();
+    _notifySub = null;
+    _characteristic = null;
+    await _letGo(device);
+    _setState(BleLinkState.idle);
+    return true;
+  }
+
+  Future<void> _letGo(BluetoothDevice device) async {
+    try {
+      await device.disconnect();
+    } on Exception catch (_) {
+      // Already gone, which was the point.
     }
   }
 
@@ -504,7 +584,7 @@ class BleTransport implements BmsLink {
         if (c.properties.notify || c.properties.indicate) return c;
       }
     }
-    throw StateError(
+    throw NotAJkBmsException(
       'This device does not expose a notifying $jkCharacteristicUuid16 '
       'characteristic on service $jkServiceUuid16, so it is not a JK BMS '
       'this app can talk to.',
@@ -522,10 +602,14 @@ class BleTransport implements BmsLink {
   BleLinkError _describeConnectFailure(Object e) => BleLinkError.from(e);
 
   void _onDropped() {
+    // Once per drop. A mute-link reset reports the drop itself and the
+    // connection-state stream reports it again a moment later.
+    if (_currentState == BleLinkState.reconnecting) return;
     drops++;
     // Forgotten on a drop, so the first check after reconnecting nudges rather
     // than trusting a timestamp from before the link went away.
     _lastCellInfoAt = null;
+    _connectedAt = null;
     _droppedAt ??= DateTime.now();
     _pollTimer?.cancel();
     _notifySub?.cancel();
@@ -537,9 +621,28 @@ class BleTransport implements BmsLink {
 
   void _scheduleReconnect() {
     if (!_wantConnection || _disposed) return;
-    Timer(reconnectDelay, () {
+    _reconnectTimer?.cancel();
+    final delay = _nextReconnectDelay ?? reconnectDelay;
+    _nextReconnectDelay = null;
+    _reconnectTimer = Timer(delay, () {
+      _reconnectTimer = null;
       if (_wantConnection && !_disposed) _attach();
     });
+  }
+
+  /// Lets go of a link that is up and has said nothing for [muteBefore].
+  ///
+  /// Counted as a drop, because from the rider's side that is what it was: no
+  /// readings for that long, followed by a reconnect. [_onDropped] is called
+  /// here rather than left to the connection-state stream, so a disconnect the
+  /// stack fails to report cannot leave the link down for good.
+  Future<void> _resetMuteLink() async {
+    final device = _device;
+    if (device == null || !_wantConnection) return;
+    _nextReconnectDelay = muteRetryDelay;
+    _pollTimer?.cancel();
+    await _letGo(device);
+    if (_wantConnection) _onDropped();
   }
 
   /// Asks the BMS for a device info frame (record type 0x03).
@@ -548,11 +651,18 @@ class BleTransport implements BmsLink {
   /// Asks the BMS for a cell info frame (record type 0x02).
   Future<void> requestCellInfo() => _writeCommand(commandCellInfo);
 
-  /// Asks again, but only if the pack has actually stopped talking.
+  /// Asks again, but only if the pack has actually stopped talking. Gives up
+  /// on the link altogether once it has been mute for [muteBefore].
   Future<void> _nudgeIfQuiet() async {
+    final now = DateTime.now();
+    final lastSign = _lastCellInfoAt ?? _connectedAt;
+    if (lastSign != null && now.difference(lastSign) > muteBefore) {
+      await _resetMuteLink();
+      return;
+    }
     if (!shouldNudge(
       lastHeardAt: _lastCellInfoAt,
-      now: DateTime.now(),
+      now: now,
       quietBefore: quietBefore,
     )) {
       return;
@@ -595,6 +705,9 @@ class BleTransport implements BmsLink {
   Future<void> disconnect() async {
     _wantConnection = false;
     _pollTimer?.cancel();
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    _nextReconnectDelay = null;
     await _notifySub?.cancel();
     await _connectionSub?.cancel();
     _notifySub = null;

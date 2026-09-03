@@ -1871,6 +1871,18 @@ class AppL10nEn extends AppL10n {
       'It connected, but no BMS reading arrived. That device is almost certainly not a JK BMS. If you believe it is, check the raw frame console in Settings.';
 
   @override
+  String get connectLinkNeverCameUp =>
+      'The Bluetooth link to the pack did not come up in 25 seconds, and the app tried more than once. Check that the pack is on and nearby, and that the official JK app is fully closed, not just in the background.';
+
+  @override
+  String get connectSilentJk =>
+      'It connected, but the pack said nothing for 12 seconds. It announces itself as JK, so it is a JK BMS: its one data session belongs to someone else, or is stuck. Look first at the official JK app, which reconnects on its own from the background: force-stop it in Android settings, do not just close it. If nobody else is there, the BMS\'s Bluetooth module lets a stuck session go by itself after a while, and switching the phone\'s Bluetooth off and on does not hurry it; with the proximity watcher on, the app retries on its own. The raw frame console in Settings shows whether anything arrives.';
+
+  @override
+  String get connectTalkingUndecoded =>
+      'It connected and bytes are arriving, but none of them decode as a JK frame. Check the raw frame console in Settings: what shows up there is what is needed to add support.';
+
+  @override
   String storedCount(String count) {
     return '$count stored';
   }
@@ -2249,6 +2261,10 @@ class AppL10nEn extends AppL10n {
   @override
   String get troubleSlowFrames =>
       'The phone granted a smaller Bluetooth packet size than asked for. Readings arrive in more pieces, which is slower but still correct.';
+
+  @override
+  String get troubleNotJkBms =>
+      'That device has no JK Bluetooth service on it. It is not a JK BMS, or not one this app can talk to.';
 
   @override
   String get screenAwakeTitle => 'Keep the screen on';
