@@ -477,7 +477,14 @@ class BmsService {
     // Everything below writes to that battery's history, so it has to come
     // first, and is awaited so the very first reading is not dropped for want
     // of a battery to file it under.
-    await _activatePending();
+    try {
+      await _activatePending();
+    } on Object catch (e) {
+      // Filing the battery away failed. The reading is still real, and losing
+      // it to a storage fault would look, from the connect screen, exactly
+      // like a pack that never spoke.
+      _problemController.add('Could not record this battery: $e');
+    }
     _lastSnapshot = snapshot;
     history.add(snapshot);
     trip.addSnapshot(snapshot);
