@@ -686,6 +686,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
       _connecting = false;
       if (mounted) {
         final t = t0(context);
+        // What the app saw, under "details": the headline says what happened,
+        // this is the evidence, so a screenshot settles which failure it was.
+        final evidence = '${contact.evidence(DateTime.now())} · MTU '
+            '${widget.service.negotiatedMtu ?? '?'}';
         setState(() {
           switch (outcome) {
             case FirstContactOutcome.linkNeverCameUp:
@@ -693,7 +697,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
               // why. Only a silent failure needs words of its own.
               if (!_troubleDuringAttempt) {
                 _message = t.connectLinkNeverCameUp;
-                _messageDetail = '';
+                _messageDetail = evidence;
                 _busyMessage = false;
               }
             case FirstContactOutcome.connectedButSilent:
@@ -702,11 +706,11 @@ class _ConnectScreenState extends State<ConnectScreen> {
               // headphones, and the advice is different.
               _message =
                   device.likelyBms ? t.connectSilentJk : t.connectNotABms;
-              _messageDetail = '';
+              _messageDetail = evidence;
               _busyMessage = false;
             case FirstContactOutcome.talkingButUndecoded:
               _message = t.connectTalkingUndecoded;
-              _messageDetail = '';
+              _messageDetail = evidence;
               _busyMessage = false;
             case FirstContactOutcome.proven:
               break;
