@@ -105,7 +105,8 @@ Spanish by default, English available, remembered across restarts.
 | M7 — licences | Done, and switched off: device code, Ed25519 keys checked on the phone, 7-day Pro trial, Pro/Workshop/credits/admin tiers, gating. Nothing shows and nothing is gated until the author generates the key pair, which is the launch switch (see [docs/LICENSING.md](docs/LICENSING.md)) |
 | M8 — verdicts | Done: every sentence the app says about a pack carries the measured facts behind it, one tap away. Headlines for measured wear, a cell drifting over weeks, kilometres left in the rider's own terms, and an explicit all-clear on the delta under load. One engine feeds the Health tab and the saved-pack screen. Thresholds live in one object, to be calibrated on real packs |
 | M9 — inspection | Done: a separate mode on the connect screen for somebody else's pack. One instruction at a time in large letters (rest, light load, heavy load, release), the step advances on the current the BMS reports, no timers and no next button. The analysis runs once at the end over everything captured: per-cell sag under load, resistance from the current step, recovery time, the resting spread, temperature and alarms; the verdict is one traffic light plus the same evidence-backed sentences the Health tab uses, next to what the BMS reports about itself marked as editable. The stranger's pack is never adopted, so the rider's history and range never learn from it; inspections are stored on their own and listed from Settings. A demo rehearsal plays a seller's battery with one weak cell |
-| M10 — PDF | Not started. Specified in [docs/PRD-monetizacion-inspeccion.md](docs/PRD-monetizacion-inspeccion.md) |
+| M10 — PDF and certificate | Done: two printable sheets. The battery sheet is what a rider takes to a workshop or attaches to an advert, with the measured capacity, the wear against the pack's own best, the learned range, the drifting cells, the verdicts with their evidence, and the recorded maintenance; what the BMS merely claims is printed apart from what was measured. The inspection sheet is the same verdict a buyer saw in the yard, cell table included. Either can be signed as a seller certificate: the phone makes its own Ed25519 key at first use, the signature covers the whole result, and a QR plus a short code let anybody check it back in the app with no key, no account and no network. The signature proves the figures were not edited after the app produced them, and the sheet says in as many words that it proves nothing else |
+| M11 — onboarding, M12 — background alerts, M13 — config audit | Not started. Specified in [docs/PRD-monetizacion-inspeccion.md](docs/PRD-monetizacion-inspeccion.md) |
 
 ## Running it
 
@@ -152,7 +153,7 @@ watching the first real connection, settle these:
 flutter test
 ```
 
-527 tests, no device needed. The protocol ones run against 11 real 300-byte
+576 tests, no device needed. The protocol ones run against 11 real 300-byte
 frames captured from JK hardware, with expected values taken from the reference
 implementation's byte-layout tables rather than from this parser's own output.
 
@@ -178,6 +179,8 @@ lib/src/
               license_public_key (the author's public key; see docs/LICENSING.md)
   inspection/ inspection_session (the guided steps, driven by the readings),
               inspection_result (the analysis), inspection_verdicts
+  report/     report_data, pdf_reports (the printed sheets), certificate
+              (signing and checking), report_sharing
   platform/   live_notification (the foreground service)
   ui/         theme, tabs/, widgets/, inspection/, trip_screen,
               trip_detail_screen, trends_screen

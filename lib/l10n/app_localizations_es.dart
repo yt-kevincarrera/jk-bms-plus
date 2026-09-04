@@ -3284,4 +3284,280 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get evidencePeakCurrent => 'Corriente máxima vista';
+
+  @override
+  String get reportPackTitle => 'Informe de batería';
+
+  @override
+  String get reportInspectionTitle => 'Informe de inspección';
+
+  @override
+  String get reportCertificateTitle => 'Certificado de inspección';
+
+  @override
+  String reportGeneratedAt(String date) {
+    return 'Generado el $date';
+  }
+
+  @override
+  String reportAppVersion(String version) {
+    return 'Versión $version';
+  }
+
+  @override
+  String reportPageOf(String page, String total) {
+    return 'Página $page de $total';
+  }
+
+  @override
+  String get reportUnknownPack => 'Batería sin nombre';
+
+  @override
+  String get reportSectionNow => 'Cómo está ahora';
+
+  @override
+  String get reportLastReading => 'Última lectura';
+
+  @override
+  String get reportPackVoltage => 'Tensión del pack';
+
+  @override
+  String get reportCellCount => 'Celdas';
+
+  @override
+  String get reportDelta => 'Diferencia entre celdas';
+
+  @override
+  String get reportCellRange => 'Celda más baja y más alta';
+
+  @override
+  String get reportMaxTemperature => 'Temperatura máxima';
+
+  @override
+  String get reportSectionCapacity => 'Capacidad';
+
+  @override
+  String get reportConfiguredCapacity => 'Configurada en el BMS';
+
+  @override
+  String get reportAdvertisedCapacity => 'Anunciada al comprarla';
+
+  @override
+  String get reportCapacityTests => 'Tests de capacidad completados';
+
+  @override
+  String get reportCapacityNote =>
+      'Solo la mejor medición real proviene de una descarga completa contada por la app. La capacidad configurada es un ajuste del BMS, no una medida, y se puede cambiar en un minuto.';
+
+  @override
+  String get reportSectionRange => 'Autonomía';
+
+  @override
+  String get reportConsumption => 'Consumo aprendido';
+
+  @override
+  String get reportRangeBasis => 'Calculada a partir de';
+
+  @override
+  String get reportRangeFromMeasured => 'capacidad medida';
+
+  @override
+  String get reportRangeFromCatalogue => 'capacidad anunciada';
+
+  @override
+  String get reportSectionCells => 'Celdas';
+
+  @override
+  String get reportCell => 'Celda';
+
+  @override
+  String get reportDeviation => 'Bajo la media';
+
+  @override
+  String get reportTrend => 'Tendencia';
+
+  @override
+  String get reportSpan => 'Medido sobre';
+
+  @override
+  String reportDays(String count) {
+    return '$count días';
+  }
+
+  @override
+  String get reportCellsNote =>
+      'Una celda que siempre estuvo baja es un pack fabricado así. Una que se separa mes a mes es una celda que se va.';
+
+  @override
+  String get reportSectionHistory => 'Historial';
+
+  @override
+  String get reportReadings => 'Lecturas guardadas';
+
+  @override
+  String get reportSectionMaintenance => 'Mantenimiento registrado';
+
+  @override
+  String get reportDate => 'Fecha';
+
+  @override
+  String get reportEvent => 'Evento';
+
+  @override
+  String get reportNote => 'Nota';
+
+  @override
+  String get reportHonestyPack =>
+      'Las cifras vienen de lo que informa el BMS y de lo que esta app ha contado durante el uso. La autonomía es una estimación aprendida de viajes reales, no una promesa. La capacidad medida requiere una descarga completa registrada por la app; sin ella, no hay medida, hay lo que dice el BMS.';
+
+  @override
+  String get reportSectionTest => 'El test';
+
+  @override
+  String get reportTestedAt => 'Realizado el';
+
+  @override
+  String get reportPeakCurrent => 'Corriente máxima alcanzada';
+
+  @override
+  String get reportRestDelta => 'Diferencia en reposo';
+
+  @override
+  String get reportMedianSag => 'Caída mediana bajo carga';
+
+  @override
+  String get reportMedianResistance => 'Resistencia mediana';
+
+  @override
+  String get reportMedianRecovery => 'Recuperación mediana';
+
+  @override
+  String get reportDuration => 'Duración';
+
+  @override
+  String reportReadingsInline(String count) {
+    return '($count lecturas)';
+  }
+
+  @override
+  String get reportRestVolts => 'Reposo (V)';
+
+  @override
+  String get reportSag => 'Caída (V)';
+
+  @override
+  String get reportResistance => 'Resistencia (mOhm)';
+
+  @override
+  String get reportRecovery => 'Recuperación (s)';
+
+  @override
+  String get reportNotRecovered => 'no volvió';
+
+  @override
+  String get reportCellTableNote =>
+      'La caída es cuánto bajó cada celda bajo la carga fuerte. La resistencia se estima del salto de corriente, no se mide con instrumento.';
+
+  @override
+  String get reportSectionReported => 'Lo que dice el BMS de sí mismo';
+
+  @override
+  String get reportModel => 'Modelo';
+
+  @override
+  String get reportSerial => 'Número de serie';
+
+  @override
+  String get reportSoftware => 'Versión del firmware';
+
+  @override
+  String get reportCycles => 'Ciclos contados';
+
+  @override
+  String get reportReportedSoh => 'Salud declarada';
+
+  @override
+  String get reportReportedNote =>
+      'Estos valores son editables desde la app oficial del BMS en menos de un minuto. Se imprimen aparte a propósito: son una declaración, no una medida.';
+
+  @override
+  String get reportSectionCaveats => 'Lo que este test no pudo ver';
+
+  @override
+  String get reportSectionNote => 'Nota del inspector';
+
+  @override
+  String get reportSectionCertificate => 'Certificado';
+
+  @override
+  String get reportCertificateCode => 'Código del certificado';
+
+  @override
+  String get reportCertificateIssuer => 'Emisor (instalación)';
+
+  @override
+  String get reportCertificateIssuedAt => 'Firmado el';
+
+  @override
+  String get reportCertificateExplain =>
+      'La firma demuestra que estas cifras salieron de la app ese día y no se han cambiado desde entonces. No demuestra que la batería sea buena ni que el vendedor sea honesto. Escanea el QR o pega el código en la app para comprobarlo.';
+
+  @override
+  String reportHonestyInspection(String date) {
+    return 'Verificado con test rápido el $date. La capacidad es estimada, no medida: para medirla hace falta una descarga completa. Este test detecta la celda mala y la estafa obvia, y no sustituye a una revisión en taller.';
+  }
+
+  @override
+  String get reportPackButton => 'Informe PDF';
+
+  @override
+  String get reportInspectionPdfButton => 'Informe PDF';
+
+  @override
+  String get reportCertificateButton => 'Certificado firmado';
+
+  @override
+  String get reportBuilding => 'Preparando el PDF...';
+
+  @override
+  String get reportFailed => 'No se pudo crear el PDF.';
+
+  @override
+  String get reportShareText => 'Informe generado con JK BMS +';
+
+  @override
+  String get certificateVerifyTitle => 'Verificar certificado';
+
+  @override
+  String get certificateVerifyIntro =>
+      'Pega aquí el código que acompaña a un certificado, o el texto del QR. La app comprueba la firma y te muestra exactamente las cifras que se firmaron.';
+
+  @override
+  String get certificateVerifyHint => 'JKC1....';
+
+  @override
+  String get certificateVerifyButton => 'Comprobar';
+
+  @override
+  String get certificateVerifyOpen => 'Verificar un certificado';
+
+  @override
+  String get certificateValid =>
+      'Firma correcta. Estas son las cifras firmadas.';
+
+  @override
+  String get certificateBadSignature =>
+      'La firma no cuadra: el contenido se modificó después de firmarlo.';
+
+  @override
+  String get certificateMalformed => 'Eso no es un certificado válido.';
+
+  @override
+  String certificateCreditsLeft(String count) {
+    return 'Firmar un certificado consume un crédito. Te quedan $count.';
+  }
+
+  @override
+  String get certificateCreditsGone =>
+      'No te quedan créditos de certificado. Consigue más en Licencia.';
 }

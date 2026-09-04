@@ -11,6 +11,7 @@ import 'theme.dart';
 import '../license/entitlements.dart';
 import 'license_scope.dart';
 import 'license_screen.dart';
+import 'inspection/certificate_verify_screen.dart';
 import 'inspection/inspections_list_screen.dart';
 import 'widgets/backup_card.dart';
 import 'widgets/pro_gate.dart';
@@ -77,6 +78,18 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                   ),
                   icon: const Icon(Icons.fact_check_outlined, size: 18),
                   label: Text(t.inspectionsOpen),
+                ),
+                const SizedBox(height: 8),
+                // The buyer's half: check a certificate somebody else's phone
+                // produced, with no keys and no network.
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const CertificateVerifyScreen(),
+                    ),
+                  ),
+                  icon: const Icon(Icons.verified_outlined, size: 18),
+                  label: Text(t.certificateVerifyOpen),
                 ),
                 const SizedBox(height: 6),
               ],

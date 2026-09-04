@@ -56,6 +56,7 @@ dependencies:
   cryptography: ^2.9.0
   # A stable per-install identifier for the device code a licence is bound to.
   android_id: ^0.5.2
+  pdf: ^3.13.0
 
 dev_dependencies:
   flutter_test:

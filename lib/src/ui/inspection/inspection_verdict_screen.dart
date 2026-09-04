@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../bms_service.dart';
@@ -10,6 +11,10 @@ import '../../inspection/inspection_result.dart';
 import '../../inspection/inspection_session.dart';
 import '../../inspection/inspection_verdicts.dart';
 import '../../license/entitlements.dart';
+import '../../report/certificate.dart';
+import '../../report/pdf_reports.dart';
+import '../../report/report_data.dart';
+import '../../report/report_sharing.dart';
 import '../license_scope.dart';
 import '../theme.dart';
 import '../widgets/advice_list.dart';
@@ -57,10 +62,25 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
   bool _saving = false;
   int? _savedId;
 
+  /// Set while a sheet is being built and handed to the share sheet, so two
+  /// taps cannot produce two files.
+  bool _sharing = false;
+
+  /// Which build printed the sheet. Read once; absent is not worth blocking a
+  /// report over, so the line is simply left off.
+  String _appVersion = '';
+
+  final CertificateIdentity _identity = CertificateIdentity();
+
   @override
   void initState() {
     super.initState();
     _savedId = widget.savedId;
+    PackageInfo.fromPlatform()
+        .then((info) {
+          if (mounted) setState(() => _appVersion = info.version);
+        })
+        .catchError((Object _) {});
   }
 
   @override
@@ -179,6 +199,7 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
             ),
             _cellsSection(t, r),
             _reportedSection(t, r),
+            _sheetSection(t),
             Section(
               title: t.inspectionsTitle,
               children: [
@@ -230,6 +251,119 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
     final who = model.isEmpty ? name : '$name · $model';
     return '$who\n${_date(r.at)}  ·  '
         '${t.inspectionSummaryLine('${r.cellCount}', r.peakDischargeAmps.toStringAsFixed(0), '${r.durationSeconds}', '${r.readings}')}';
+  }
+
+  /// The two ways this test leaves the phone.
+  ///
+  /// The plain sheet is free: the inspection was already paid for by running
+  /// it, and a buyer who cannot show anybody what they found has bought
+  /// nothing. The signed certificate is the seller's product, so it is the one
+  /// that costs a credit.
+  Widget _sheetSection(AppL10n t) {
+    final e = LicenseScope.entitlements(context);
+    final canSign = e.allows(Feature.sellerCertificate);
+    return Section(
+      title: t.reportSectionCertificate,
+      children: [
+        OutlinedButton.icon(
+          onPressed: _sharing ? null : () => _sharePdf(t, sign: false),
+          icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+          label: Text(t.reportInspectionPdfButton),
+        ),
+        const SizedBox(height: 8),
+        FilledButton.icon(
+          onPressed: _sharing || !canSign
+              ? null
+              : () => _sharePdf(t, sign: true),
+          icon: const Icon(Icons.verified_outlined, size: 18),
+          label: Text(t.reportCertificateButton),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          _certificateCreditsLine(t, e),
+          style: const TextStyle(
+            fontSize: 11.5,
+            height: 1.45,
+            color: AppTheme.textFaint,
+          ),
+        ),
+        const SizedBox(height: 4),
+      ],
+    );
+  }
+
+  String _certificateCreditsLine(AppL10n t, Entitlements e) {
+    if (!LicenseScope.of(context).enabled || e.isWorkshop) {
+      return t.reportCertificateExplain;
+    }
+    return e.allows(Feature.sellerCertificate)
+        ? t.certificateCreditsLeft('${e.certificateCreditsLeft}')
+        : t.certificateCreditsGone;
+  }
+
+  /// Builds the sheet and hands it to the phone's share sheet.
+  ///
+  /// The credit for a certificate is spent only once the signature exists: a
+  /// share the rider cancels has still produced the document, but a failure
+  /// while building one must not cost anything.
+  Future<void> _sharePdf(AppL10n t, {required bool sign}) async {
+    setState(() => _sharing = true);
+    final messenger = ScaffoldMessenger.of(context);
+    final license = LicenseScope.of(context);
+    try {
+      final r = widget.result;
+      Certificate? certificate;
+      if (sign) {
+        if (!await license.consumeCertificate()) {
+          messenger.showSnackBar(
+            SnackBar(content: Text(t.certificateCreditsGone)),
+          );
+          return;
+        }
+        certificate = await const Certificates().issue(
+          CertificateContent(
+            issuedAt: DateTime.now().toUtc(),
+            packName: _packLabel(),
+            result: r,
+            note: _note.text.trim(),
+          ),
+          await _identity.keyPair(),
+        );
+      }
+
+      final bytes = await const PdfReports().inspectionReport(
+        t,
+        InspectionReportData(
+          generatedAt: DateTime.now().toUtc(),
+          result: r,
+          light: _verdicts.light(r),
+          advice: _verdicts.evaluate(r),
+          packName: _packLabel(),
+          note: _note.text.trim(),
+          appVersion: _appVersion,
+          certificate: certificate,
+        ),
+      );
+      await const ReportSharing().share(
+        bytes,
+        fileName: ReportSharing.fileName(
+          sign ? 'certificado' : 'inspeccion',
+          _packLabel(),
+          r.at,
+        ),
+        text: t.reportShareText,
+      );
+    } on Object {
+      messenger.showSnackBar(SnackBar(content: Text(t.reportFailed)));
+    } finally {
+      if (mounted) setState(() => _sharing = false);
+    }
+  }
+
+  String _packLabel() {
+    final name = widget.bmsName.isEmpty ? widget.bmsId : widget.bmsName;
+    final model = widget.result.reported.model;
+    return model.isEmpty ? name : '$name  $model';
   }
 
   Widget _creditsLine(AppL10n t) {
