@@ -2350,6 +2350,40 @@
       }
     }
   },
+  "representativeAskBodyUpNoKm": "Salió en {whPerKm} Wh/km, un {percent}% por encima de lo tuyo. Ya lo conté: tu consumo aprendido pasó de {before} a {after} Wh/km.",
+  "@representativeAskBodyUpNoKm": {
+    "placeholders": {
+      "whPerKm": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      },
+      "before": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      }
+    }
+  },
+  "representativeAskBodyDownNoKm": "Salió en {whPerKm} Wh/km, un {percent}% por debajo de lo tuyo. Ya lo conté: tu consumo aprendido pasó de {before} a {after} Wh/km.",
+  "@representativeAskBodyDownNoKm": {
+    "placeholders": {
+      "whPerKm": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      },
+      "before": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      }
+    }
+  },
   "representativeYes": "Es normal",
   "representativeNo": "Fue una excepción",
   "representativeDone": "Listo. Tu autonomía queda en {km} km.",
@@ -2360,10 +2394,26 @@
       }
     }
   },
-  "representativeMarkedException": "Marcado como excepción. Tu autonomía queda en {km} km.",
+  "representativeDoneNoKm": "Listo. Tu consumo aprendido queda en {whPerKm} Wh/km.",
+  "@representativeDoneNoKm": {
+    "placeholders": {
+      "whPerKm": {
+        "type": "String"
+      }
+    }
+  },
+  "representativeMarkedException": "Listo. Tu autonomía sigue en {km} km.",
   "@representativeMarkedException": {
     "placeholders": {
       "km": {
+        "type": "String"
+      }
+    }
+  },
+  "representativeMarkedExceptionNoKm": "Listo. Tu consumo aprendido sigue en {whPerKm} Wh/km.",
+  "@representativeMarkedExceptionNoKm": {
+    "placeholders": {
+      "whPerKm": {
         "type": "String"
       }
     }

@@ -68,5 +68,4 @@ void main() {
       expect(e.whPerKm, e.defaultWhPerKm);
     });
   });
-
 }

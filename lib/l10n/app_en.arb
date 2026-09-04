@@ -2231,6 +2231,40 @@
       }
     }
   },
+  "representativeAskBodyUpNoKm": "It came in at {whPerKm} Wh/km, {percent}% above your usual. Already counted: your learned consumption went from {before} to {after} Wh/km.",
+  "@representativeAskBodyUpNoKm": {
+    "placeholders": {
+      "whPerKm": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      },
+      "before": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      }
+    }
+  },
+  "representativeAskBodyDownNoKm": "It came in at {whPerKm} Wh/km, {percent}% below your usual. Already counted: your learned consumption went from {before} to {after} Wh/km.",
+  "@representativeAskBodyDownNoKm": {
+    "placeholders": {
+      "whPerKm": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      },
+      "before": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      }
+    }
+  },
   "representativeYes": "That's normal",
   "representativeNo": "That was an exception",
   "representativeDone": "Done. Your range is now {km} km.",
@@ -2241,10 +2275,26 @@
       }
     }
   },
-  "representativeMarkedException": "Marked as an exception. Your range is now {km} km.",
+  "representativeDoneNoKm": "Done. Your learned consumption is now {whPerKm} Wh/km.",
+  "@representativeDoneNoKm": {
+    "placeholders": {
+      "whPerKm": {
+        "type": "String"
+      }
+    }
+  },
+  "representativeMarkedException": "Done. Your range stays at {km} km.",
   "@representativeMarkedException": {
     "placeholders": {
       "km": {
+        "type": "String"
+      }
+    }
+  },
+  "representativeMarkedExceptionNoKm": "Done. Your learned consumption stays at {whPerKm} Wh/km.",
+  "@representativeMarkedExceptionNoKm": {
+    "placeholders": {
+      "whPerKm": {
         "type": "String"
       }
     }

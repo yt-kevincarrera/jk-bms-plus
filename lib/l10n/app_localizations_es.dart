@@ -3740,6 +3740,26 @@ class AppL10nEs extends AppL10n {
   }
 
   @override
+  String representativeAskBodyUpNoKm(
+    String whPerKm,
+    String percent,
+    String before,
+    String after,
+  ) {
+    return 'Salió en $whPerKm Wh/km, un $percent% por encima de lo tuyo. Ya lo conté: tu consumo aprendido pasó de $before a $after Wh/km.';
+  }
+
+  @override
+  String representativeAskBodyDownNoKm(
+    String whPerKm,
+    String percent,
+    String before,
+    String after,
+  ) {
+    return 'Salió en $whPerKm Wh/km, un $percent% por debajo de lo tuyo. Ya lo conté: tu consumo aprendido pasó de $before a $after Wh/km.';
+  }
+
+  @override
   String get representativeYes => 'Es normal';
 
   @override
@@ -3751,8 +3771,18 @@ class AppL10nEs extends AppL10n {
   }
 
   @override
+  String representativeDoneNoKm(String whPerKm) {
+    return 'Listo. Tu consumo aprendido queda en $whPerKm Wh/km.';
+  }
+
+  @override
   String representativeMarkedException(String km) {
-    return 'Marcado como excepción. Tu autonomía queda en $km km.';
+    return 'Listo. Tu autonomía sigue en $km km.';
+  }
+
+  @override
+  String representativeMarkedExceptionNoKm(String whPerKm) {
+    return 'Listo. Tu consumo aprendido sigue en $whPerKm Wh/km.';
   }
 
   @override

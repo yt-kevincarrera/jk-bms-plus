@@ -6448,6 +6448,28 @@ abstract class AppL10n {
     String after,
   );
 
+  /// No description provided for @representativeAskBodyUpNoKm.
+  ///
+  /// In es, this message translates to:
+  /// **'Salió en {whPerKm} Wh/km, un {percent}% por encima de lo tuyo. Ya lo conté: tu consumo aprendido pasó de {before} a {after} Wh/km.'**
+  String representativeAskBodyUpNoKm(
+    String whPerKm,
+    String percent,
+    String before,
+    String after,
+  );
+
+  /// No description provided for @representativeAskBodyDownNoKm.
+  ///
+  /// In es, this message translates to:
+  /// **'Salió en {whPerKm} Wh/km, un {percent}% por debajo de lo tuyo. Ya lo conté: tu consumo aprendido pasó de {before} a {after} Wh/km.'**
+  String representativeAskBodyDownNoKm(
+    String whPerKm,
+    String percent,
+    String before,
+    String after,
+  );
+
   /// No description provided for @representativeYes.
   ///
   /// In es, this message translates to:
@@ -6466,11 +6488,23 @@ abstract class AppL10n {
   /// **'Listo. Tu autonomía queda en {km} km.'**
   String representativeDone(String km);
 
+  /// No description provided for @representativeDoneNoKm.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo. Tu consumo aprendido queda en {whPerKm} Wh/km.'**
+  String representativeDoneNoKm(String whPerKm);
+
   /// No description provided for @representativeMarkedException.
   ///
   /// In es, this message translates to:
-  /// **'Marcado como excepción. Tu autonomía queda en {km} km.'**
+  /// **'Listo. Tu autonomía sigue en {km} km.'**
   String representativeMarkedException(String km);
+
+  /// No description provided for @representativeMarkedExceptionNoKm.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo. Tu consumo aprendido sigue en {whPerKm} Wh/km.'**
+  String representativeMarkedExceptionNoKm(String whPerKm);
 
   /// No description provided for @representativeChange.
   ///

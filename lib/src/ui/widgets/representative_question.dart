@@ -16,6 +16,22 @@ bool shouldAskAbout({required double shiftFraction, required bool? answered}) =>
     answered == null &&
     shiftFraction > RangeEstimator.askThresholdFraction;
 
+/// How far a ride moved the learned consumption, as a fraction of where it
+/// stood before the ride.
+///
+/// Free function, next to [shouldAskAbout], so the arithmetic this task exists
+/// to fix is exercised directly rather than only from inside `build()`. Zero
+/// whenever there is nothing honest to compare: no `before` (the first ride
+/// ever, or one stored before these columns existed), a `before` that is zero
+/// or negative, or no `after`. Dividing anyway in any of those cases would
+/// manufacture a number that looks like a measurement (including, for a zero
+/// `before`, an infinite one) and could push a meaningless ride past the ask
+/// threshold.
+double shiftFraction({required double? before, required double? after}) {
+  if (before == null || before <= 0 || after == null) return 0.0;
+  return (after - before).abs() / before;
+}
+
 /// Asks whether one ride represents how this bike normally gets ridden.
 ///
 /// The estimator has no notion of context: one deliberately gentle ride to
@@ -64,9 +80,7 @@ class RepresentativeQuestion extends StatelessWidget {
     // once by stopTrip and never touched again, are the only honest source.
     final before = view.whPerKmBefore;
     final after = view.whPerKmAfter;
-    final shift = (before == null || before <= 0 || after == null)
-        ? 0.0
-        : (after - before).abs() / before;
+    final shift = shiftFraction(before: before, after: after);
     if (!shouldAskAbout(shiftFraction: shift, answered: null)) {
       return const SizedBox.shrink();
     }
@@ -77,25 +91,45 @@ class RepresentativeQuestion extends StatelessWidget {
     final afterKm = _fullPackKm(after!);
     final percent = ((rideWhPerKm - before).abs() / before * 100).round();
     final higher = rideWhPerKm > before;
+    final rideWh = rideWhPerKm.toStringAsFixed(0);
+    final percentStr = '$percent';
+
+    // Kilometres only when there is a real full-pack figure to quote them
+    // from. Substituting the remaining range instead (charge-dependent, and
+    // exactly the conflation RangeOutlook's own doc warns about) would put a
+    // number in the rider's head that is not the one the sentence promises.
+    // No capacity measured or catalogued is an everyday state, not an edge
+    // case, so this sentence has to exist and say something true: the same
+    // shift, in the unit the app can still stand behind.
+    final String body;
+    if (beforeKm != null && afterKm != null) {
+      body = higher
+          ? t.representativeAskBodyUp(
+              rideWh,
+              percentStr,
+              beforeKm.toStringAsFixed(0),
+              afterKm.toStringAsFixed(0),
+            )
+          : t.representativeAskBodyDown(
+              rideWh,
+              percentStr,
+              beforeKm.toStringAsFixed(0),
+              afterKm.toStringAsFixed(0),
+            );
+    } else {
+      final beforeWh = before.toStringAsFixed(1);
+      final afterWh = after.toStringAsFixed(1);
+      body = higher
+          ? t.representativeAskBodyUpNoKm(rideWh, percentStr, beforeWh, afterWh)
+          : t.representativeAskBodyDownNoKm(rideWh, percentStr, beforeWh, afterWh);
+    }
 
     return Section(
       title: t.representativeAsk,
       accent: AppTheme.watch,
       children: [
         Text(
-          higher
-              ? t.representativeAskBodyUp(
-                  rideWhPerKm.toStringAsFixed(0),
-                  '$percent',
-                  beforeKm.toStringAsFixed(0),
-                  afterKm.toStringAsFixed(0),
-                )
-              : t.representativeAskBodyDown(
-                  rideWhPerKm.toStringAsFixed(0),
-                  '$percent',
-                  beforeKm.toStringAsFixed(0),
-                  afterKm.toStringAsFixed(0),
-                ),
+          body,
           style: const TextStyle(
             fontSize: 12.5,
             height: 1.45,
@@ -126,42 +160,47 @@ class RepresentativeQuestion extends StatelessWidget {
   }
 
   /// Full-pack kilometres at a given consumption, so the two halves of the
-  /// sentence are comparable.
+  /// sentence are comparable. Null when there is no full-pack figure to
+  /// convert, which the caller must handle by saying the same thing in
+  /// Wh/km instead, never by reaching for [RangeOutlook.nowKm].
   ///
   /// [outlook.fullKm] and [service.rangeEstimator.whPerKm] are both read off
   /// the same current estimator, so their product is the pack's full energy
   /// in watt-hours regardless of what "current" happens to be at the moment
   /// this builds; dividing that back by [whPerKm] is what turns one reference
-  /// point into a figure for a different consumption. Falls back to the
-  /// remaining range when no capacity has been measured, which is the honest
-  /// thing the rest of the app already does.
-  double _fullPackKm(double whPerKm) {
-    final outlook = service.rangeOutlook;
-    final reference = outlook.fullKm ?? outlook.nowKm ?? 0;
+  /// point into a figure for a different consumption.
+  double? _fullPackKm(double whPerKm) {
+    final fullKm = service.rangeOutlook.fullKm;
     final learned = service.rangeEstimator.whPerKm;
-    if (reference <= 0 || whPerKm <= 0 || learned <= 0) return 0;
-    return reference * learned / whPerKm;
+    if (fullKm == null || fullKm <= 0 || whPerKm <= 0 || learned <= 0) {
+      return null;
+    }
+    return fullKm * learned / whPerKm;
   }
 
   Future<void> _answer(BuildContext context, int tripId, bool normal) async {
     final messenger = ScaffoldMessenger.of(context);
     await service.setTripRepresentative(tripId, normal);
-    // The consequence, not the action, and true either way: setTripRepresentative
-    // has already relearned by the time this reads, so both answers report the
-    // range that resulted rather than "saved", which would tell the rider
-    // nothing they could not already see.
-    final km = service.rangeOutlook.fullKm ?? service.rangeOutlook.nowKm;
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(
-          km == null
-              ? (normal ? t.representativeYes : t.representativeNo)
-              : (normal
-                  ? t.representativeDone(km.toStringAsFixed(0))
-                  : t.representativeMarkedException(km.toStringAsFixed(0))),
-        ),
-      ),
-    );
+    // The consequence, not the action, and true either way:
+    // setTripRepresentative has already relearned by the time this reads, so
+    // both answers report what resulted rather than "saved", which would tell
+    // the rider nothing they could not already see. Wh/km rather than km when
+    // there is no full-pack figure, for the same reason the ask body falls
+    // back the same way: nowKm is a different quantity and substituting it
+    // would confirm a number the rider never actually asked about.
+    final fullKm = service.rangeOutlook.fullKm;
+    final message = fullKm != null
+        ? (normal
+              ? t.representativeDone(fullKm.toStringAsFixed(0))
+              : t.representativeMarkedException(fullKm.toStringAsFixed(0)))
+        : (normal
+              ? t.representativeDoneNoKm(
+                  service.rangeEstimator.whPerKm.toStringAsFixed(1),
+                )
+              : t.representativeMarkedExceptionNoKm(
+                  service.rangeEstimator.whPerKm.toStringAsFixed(1),
+                ));
+    messenger.showSnackBar(SnackBar(content: Text(message)));
   }
 }
 
