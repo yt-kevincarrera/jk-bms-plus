@@ -57,19 +57,6 @@ class _TripScreenState extends State<TripScreen> {
   Future<void> _start() async {
     final t = AppL10n.of(context);
 
-    // The wording lives here, where the translations are. The service only
-    // knows how to keep the notification alive and when to refresh it.
-    widget.service.notificationTitle = t.tripNotificationTitle;
-    widget.service.notificationText = (trip, snapshot) {
-      final consumption = trip.whPerKm;
-      return [
-        '${trip.speedKmh.toStringAsFixed(0)} km/h',
-        '${trip.distanceKm.toStringAsFixed(2)} km',
-        if (snapshot != null) '${snapshot.soc.toStringAsFixed(0)} %',
-        if (consumption != null) '${consumption.toStringAsFixed(0)} Wh/km',
-      ].join('  ·  ');
-    };
-
     final problem = await widget.service.startTrip();
     if (!mounted) return;
     setState(() {

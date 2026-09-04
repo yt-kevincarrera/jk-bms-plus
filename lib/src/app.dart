@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
@@ -5,6 +7,7 @@ import 'app_settings.dart';
 import 'ble/proximity_watcher.dart';
 import 'bms_service.dart';
 import 'data/repository.dart';
+import 'metrics/trip_autostart.dart';
 import 'license/entitlements.dart';
 import 'license/license_controller.dart';
 import 'ui/license_scope.dart';
@@ -46,11 +49,30 @@ class _JkBmsAppState extends State<JkBmsApp> {
   /// lookup can never make a stale build look newer than what is published.
   final UpdateService _updates = UpdateService();
 
+  /// So a ride that starts or ends with no trip screen open can still say so.
+  ///
+  /// The events had no listener at all: two translated strings that could
+  /// never appear, and a ride recorded in a pocket that the rider learned
+  /// about only by going looking for it.
+  final GlobalKey<ScaffoldMessengerState> _messenger =
+      GlobalKey<ScaffoldMessengerState>();
+
+  StreamSubscription<AutoTripAction>? _autoTripSub;
+
+  /// Set once the localisations exist, and read by the subscription below.
+  /// The stream fires from the service, which has no opinion about language.
+  String Function(AutoTripAction)? _autoTripMessage;
+
   @override
   void initState() {
     super.initState();
     _locale.load();
     _service.repository = _repository;
+    _autoTripSub = _service.autoTripEvents.listen((action) {
+      final text = _autoTripMessage?.call(action);
+      if (text == null) return;
+      _messenger.currentState?.showSnackBar(SnackBar(content: Text(text)));
+    });
     _service.notifications.ensureInitialised(
       channelName: 'Trip recording',
       channelDescription:
@@ -101,6 +123,7 @@ class _JkBmsAppState extends State<JkBmsApp> {
     _license.dispose();
     _updates.dispose();
     _locale.dispose();
+    unawaited(_autoTripSub?.cancel());
     super.dispose();
   }
 
@@ -138,6 +161,7 @@ class _JkBmsAppState extends State<JkBmsApp> {
         builder: (context, _) => MaterialApp(
           title: 'JK BMS +',
           debugShowCheckedModeBanner: false,
+          scaffoldMessengerKey: _messenger,
           theme: AppTheme.build(),
           // Spanish unless the rider says otherwise. `locale: null` hands the
           // choice back to the phone.
@@ -170,6 +194,15 @@ class _JkBmsAppState extends State<JkBmsApp> {
                       s.packVoltage.toStringAsFixed(1),
                       s.current.toStringAsFixed(1),
                     );
+              // The case `none` never comes from the service, but the switch
+              // stays exhaustive without a `default` that would swallow a
+              // future case in silence.
+              _autoTripMessage = (action) => switch (action) {
+                AutoTripAction.start => t.autoTripStarted,
+                AutoTripAction.stop => t.autoTripStopped,
+                AutoTripAction.blocked => t.autoTripBlocked,
+                AutoTripAction.none => '',
+              };
               // The notification for merely being connected. Its whole job is to
               // let the screen sleep without the readings stopping, so it shows
               // the reading rather than saying the app is running.

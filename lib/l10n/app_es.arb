@@ -1215,6 +1215,7 @@
   "autoTripHint": "Abre y cierra el viaje al detectar que estás rodando: hace falta consumo del pack y movimiento del GPS a la vez, sostenidos. Sin esto el aprendizaje depende de que te acuerdes de darle a empezar, y los viajes que se olvidan no son al azar: son los cortos y los que llevabas prisa. Usa GPS mientras rueda.",
   "autoTripStarted": "Viaje iniciado solo",
   "autoTripStopped": "Viaje guardado",
+  "autoTripBlocked": "No pude grabar el viaje: falta el permiso de ubicación. Sin él la app no aprende tu autonomía.",
   "degNowTitle": "Capacidad ahora",
   "degBaseline": "La mejor que ha dado",
   "degBaselineOn": "medida el {date}",

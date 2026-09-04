@@ -3991,6 +3991,12 @@ abstract class AppL10n {
   /// **'Viaje guardado'**
   String get autoTripStopped;
 
+  /// No description provided for @autoTripBlocked.
+  ///
+  /// In es, this message translates to:
+  /// **'No pude grabar el viaje: falta el permiso de ubicación. Sin él la app no aprende tu autonomía.'**
+  String get autoTripBlocked;
+
   /// No description provided for @degNowTitle.
   ///
   /// In es, this message translates to:

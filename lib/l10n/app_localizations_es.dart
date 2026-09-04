@@ -2224,6 +2224,10 @@ class AppL10nEs extends AppL10n {
   String get autoTripStopped => 'Viaje guardado';
 
   @override
+  String get autoTripBlocked =>
+      'No pude grabar el viaje: falta el permiso de ubicación. Sin él la app no aprende tu autonomía.';
+
+  @override
   String get degNowTitle => 'Capacidad ahora';
 
   @override

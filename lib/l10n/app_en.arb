@@ -1215,6 +1215,7 @@
   "autoTripHint": "Opens and closes the ride when it detects you are riding: it needs pack current and GPS movement together, sustained. Without it the learning depends on remembering to press start, and the rides people forget are not a random sample: they are the short ones and the ones you were late for. Uses GPS while riding.",
   "autoTripStarted": "Ride started automatically",
   "autoTripStopped": "Ride saved",
+  "autoTripBlocked": "Could not record the ride: location permission is missing. Without it the app learns no range.",
   "degNowTitle": "Capacity now",
   "degBaseline": "Best it has ever held",
   "degBaselineOn": "measured on {date}",

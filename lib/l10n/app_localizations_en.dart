@@ -2216,6 +2216,10 @@ class AppL10nEn extends AppL10n {
   String get autoTripStopped => 'Ride saved';
 
   @override
+  String get autoTripBlocked =>
+      'Could not record the ride: location permission is missing. Without it the app learns no range.';
+
+  @override
   String get degNowTitle => 'Capacity now';
 
   @override
