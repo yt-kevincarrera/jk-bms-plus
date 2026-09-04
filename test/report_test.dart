@@ -436,8 +436,11 @@ void main() {
 
       final text = _textOf(bytes);
       // Every run is on the page, with its date, so a reader can count them.
-      expect(text, contains('02/03/2026'));
-      expect(text, contains('06/04/2026'));
+      // The date each run prints is the day it falls on where the sheet is
+      // being read: `at` is the instant the test was run, not a calendar
+      // date, so the expectation is built the same way the sheet builds it.
+      expect(text, contains(_localDate(earlier[0].at)));
+      expect(text, contains(_localDate(earlier[1].at)));
       // And the sentence a repeat earns.
       expect(text, contains(t.verdictInspRepeatSameCellBody.split(':').first));
     });
@@ -668,3 +671,15 @@ int _indexOf(Uint8List haystack, String needle, int from) {
 /// Every PDF starts with the same five bytes, whatever produced it.
 bool _isPdf(Uint8List bytes) =>
     bytes.length > 5 && String.fromCharCodes(bytes.sublist(0, 5)) == '%PDF-';
+
+/// The day an instant falls on for whoever is holding the sheet.
+///
+/// The sheet prints stored timestamps in local time, because they are
+/// instants rather than calendar dates. Building the expected string the
+/// same way keeps the assertion about what the reader sees, so it holds at
+/// any UTC offset instead of only where local time happens to be UTC.
+String _localDate(DateTime utc) {
+  final d = utc.toLocal();
+  String two(int n) => n.toString().padLeft(2, '0');
+  return '${two(d.day)}/${two(d.month)}/${d.year}';
+}
