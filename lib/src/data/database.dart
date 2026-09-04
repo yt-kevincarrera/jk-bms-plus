@@ -162,6 +162,26 @@ class Trips extends Table {
   /// real ride. A stored figure with no provenance cannot be re-examined, and
   /// every ride recorded before this fix has one that is far too low.
   TextColumn get energySource => text().nullable()();
+
+  /// Whether this ride represents how the rider normally rides.
+  ///
+  /// Null means nobody was asked, which is different from "yes". A ride
+  /// recorded before the question existed, or one whose question was never
+  /// answered, counts towards the learning exactly as it did before, and still
+  /// reads as unanswered on screen. Only an explicit false takes a ride out.
+  ///
+  /// The point of it: the estimator has no notion of context, so one
+  /// deliberately gentle ride to nurse a low charge moves the learned figure a
+  /// third of the way towards a number that is not how this bike gets ridden.
+  BoolColumn get representative => boolean().nullable()();
+
+  /// Whether the rider has seen this ride's summary.
+  ///
+  /// Rides end in a pocket. The summary sheet used to be shown by the stop
+  /// button and by nothing else, so a ride that closed itself was stored with
+  /// its conclusions and never shown to anybody.
+  BoolColumn get summarySeen =>
+      boolean().withDefault(const Constant(false))();
 }
 
 /// The track of a ride, one row per fix, with what the pack was doing at that
@@ -324,7 +344,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -395,6 +415,12 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 11) {
         await m.createTable(inspections);
+      }
+      if (from < 12) {
+        // Both nullable-or-defaulted, so every existing ride lands in the
+        // right place with no backfill: unanswered, and unseen.
+        await m.addColumn(trips, trips.representative);
+        await m.addColumn(trips, trips.summarySeen);
       }
     },
   );

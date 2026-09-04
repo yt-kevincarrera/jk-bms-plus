@@ -161,7 +161,7 @@ void main() {
     test('the migration runs and the schema lands on the current version', () async {
       // Any query forces drift to open the database and run the upgrade.
       await db.allDevices();
-      expect(raw.userVersion, 11);
+      expect(raw.userVersion, 12);
     });
 
     test('nothing that was stored is lost', () async {
@@ -189,6 +189,21 @@ void main() {
 
       // And they belong to no pack until the rider says otherwise.
       expect(await db.recentTrips('AA:BB'), isEmpty);
+    });
+
+    test('an upgrade leaves old rides unanswered and unseen', () async {
+      // Null is not false here. A ride recorded before the question existed
+      // was never asked about, and saying "the rider called it normal" would
+      // be putting words in their mouth. It counts as normal for the
+      // learning, which is the old behaviour, while still reading as
+      // unanswered on screen.
+      final trips = await db.select(db.trips).get();
+      expect(trips, isNotEmpty);
+
+      for (final trip in trips) {
+        expect(trip.representative, isNull);
+        expect(trip.summarySeen, isFalse);
+      }
     });
 
     test('a pack can be created afterwards and adopt them', () async {

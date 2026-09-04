@@ -920,6 +920,35 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _representativeMeta = const VerificationMeta(
+    'representative',
+  );
+  @override
+  late final GeneratedColumn<bool> representative = GeneratedColumn<bool>(
+    'representative',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("representative" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _summarySeenMeta = const VerificationMeta(
+    'summarySeen',
+  );
+  @override
+  late final GeneratedColumn<bool> summarySeen = GeneratedColumn<bool>(
+    'summary_seen',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("summary_seen" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -950,6 +979,8 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
     confidence,
     ahOut,
     energySource,
+    representative,
+    summarySeen,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1204,6 +1235,24 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
         ),
       );
     }
+    if (data.containsKey('representative')) {
+      context.handle(
+        _representativeMeta,
+        representative.isAcceptableOrUnknown(
+          data['representative']!,
+          _representativeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('summary_seen')) {
+      context.handle(
+        _summarySeenMeta,
+        summarySeen.isAcceptableOrUnknown(
+          data['summary_seen']!,
+          _summarySeenMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1325,6 +1374,14 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
         DriftSqlType.string,
         data['${effectivePrefix}energy_source'],
       ),
+      representative: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}representative'],
+      ),
+      summarySeen: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}summary_seen'],
+      )!,
     );
   }
 
@@ -1397,6 +1454,25 @@ class Trip extends DataClass implements Insertable<Trip> {
   /// real ride. A stored figure with no provenance cannot be re-examined, and
   /// every ride recorded before this fix has one that is far too low.
   final String? energySource;
+
+  /// Whether this ride represents how the rider normally rides.
+  ///
+  /// Null means nobody was asked, which is different from "yes". A ride
+  /// recorded before the question existed, or one whose question was never
+  /// answered, counts towards the learning exactly as it did before, and still
+  /// reads as unanswered on screen. Only an explicit false takes a ride out.
+  ///
+  /// The point of it: the estimator has no notion of context, so one
+  /// deliberately gentle ride to nurse a low charge moves the learned figure a
+  /// third of the way towards a number that is not how this bike gets ridden.
+  final bool? representative;
+
+  /// Whether the rider has seen this ride's summary.
+  ///
+  /// Rides end in a pocket. The summary sheet used to be shown by the stop
+  /// button and by nothing else, so a ride that closed itself was stored with
+  /// its conclusions and never shown to anybody.
+  final bool summarySeen;
   const Trip({
     required this.id,
     required this.startedAt,
@@ -1426,6 +1502,8 @@ class Trip extends DataClass implements Insertable<Trip> {
     this.confidence,
     this.ahOut,
     this.energySource,
+    this.representative,
+    required this.summarySeen,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1474,6 +1552,10 @@ class Trip extends DataClass implements Insertable<Trip> {
     if (!nullToAbsent || energySource != null) {
       map['energy_source'] = Variable<String>(energySource);
     }
+    if (!nullToAbsent || representative != null) {
+      map['representative'] = Variable<bool>(representative);
+    }
+    map['summary_seen'] = Variable<bool>(summarySeen);
     return map;
   }
 
@@ -1523,6 +1605,10 @@ class Trip extends DataClass implements Insertable<Trip> {
       energySource: energySource == null && nullToAbsent
           ? const Value.absent()
           : Value(energySource),
+      representative: representative == null && nullToAbsent
+          ? const Value.absent()
+          : Value(representative),
+      summarySeen: Value(summarySeen),
     );
   }
 
@@ -1562,6 +1648,8 @@ class Trip extends DataClass implements Insertable<Trip> {
       confidence: serializer.fromJson<String?>(json['confidence']),
       ahOut: serializer.fromJson<double?>(json['ahOut']),
       energySource: serializer.fromJson<String?>(json['energySource']),
+      representative: serializer.fromJson<bool?>(json['representative']),
+      summarySeen: serializer.fromJson<bool>(json['summarySeen']),
     );
   }
   @override
@@ -1596,6 +1684,8 @@ class Trip extends DataClass implements Insertable<Trip> {
       'confidence': serializer.toJson<String?>(confidence),
       'ahOut': serializer.toJson<double?>(ahOut),
       'energySource': serializer.toJson<String?>(energySource),
+      'representative': serializer.toJson<bool?>(representative),
+      'summarySeen': serializer.toJson<bool>(summarySeen),
     };
   }
 
@@ -1628,6 +1718,8 @@ class Trip extends DataClass implements Insertable<Trip> {
     Value<String?> confidence = const Value.absent(),
     Value<double?> ahOut = const Value.absent(),
     Value<String?> energySource = const Value.absent(),
+    Value<bool?> representative = const Value.absent(),
+    bool? summarySeen,
   }) => Trip(
     id: id ?? this.id,
     startedAt: startedAt ?? this.startedAt,
@@ -1659,6 +1751,10 @@ class Trip extends DataClass implements Insertable<Trip> {
     confidence: confidence.present ? confidence.value : this.confidence,
     ahOut: ahOut.present ? ahOut.value : this.ahOut,
     energySource: energySource.present ? energySource.value : this.energySource,
+    representative: representative.present
+        ? representative.value
+        : this.representative,
+    summarySeen: summarySeen ?? this.summarySeen,
   );
   Trip copyWithCompanion(TripsCompanion data) {
     return Trip(
@@ -1722,6 +1818,12 @@ class Trip extends DataClass implements Insertable<Trip> {
       energySource: data.energySource.present
           ? data.energySource.value
           : this.energySource,
+      representative: data.representative.present
+          ? data.representative.value
+          : this.representative,
+      summarySeen: data.summarySeen.present
+          ? data.summarySeen.value
+          : this.summarySeen,
     );
   }
 
@@ -1755,7 +1857,9 @@ class Trip extends DataClass implements Insertable<Trip> {
           ..write('rangeKmAtEnd: $rangeKmAtEnd, ')
           ..write('confidence: $confidence, ')
           ..write('ahOut: $ahOut, ')
-          ..write('energySource: $energySource')
+          ..write('energySource: $energySource, ')
+          ..write('representative: $representative, ')
+          ..write('summarySeen: $summarySeen')
           ..write(')'))
         .toString();
   }
@@ -1790,6 +1894,8 @@ class Trip extends DataClass implements Insertable<Trip> {
     confidence,
     ahOut,
     energySource,
+    representative,
+    summarySeen,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -1822,7 +1928,9 @@ class Trip extends DataClass implements Insertable<Trip> {
           other.rangeKmAtEnd == this.rangeKmAtEnd &&
           other.confidence == this.confidence &&
           other.ahOut == this.ahOut &&
-          other.energySource == this.energySource);
+          other.energySource == this.energySource &&
+          other.representative == this.representative &&
+          other.summarySeen == this.summarySeen);
 }
 
 class TripsCompanion extends UpdateCompanion<Trip> {
@@ -1854,6 +1962,8 @@ class TripsCompanion extends UpdateCompanion<Trip> {
   final Value<String?> confidence;
   final Value<double?> ahOut;
   final Value<String?> energySource;
+  final Value<bool?> representative;
+  final Value<bool> summarySeen;
   const TripsCompanion({
     this.id = const Value.absent(),
     this.startedAt = const Value.absent(),
@@ -1883,6 +1993,8 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     this.confidence = const Value.absent(),
     this.ahOut = const Value.absent(),
     this.energySource = const Value.absent(),
+    this.representative = const Value.absent(),
+    this.summarySeen = const Value.absent(),
   });
   TripsCompanion.insert({
     this.id = const Value.absent(),
@@ -1913,6 +2025,8 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     this.confidence = const Value.absent(),
     this.ahOut = const Value.absent(),
     this.energySource = const Value.absent(),
+    this.representative = const Value.absent(),
+    this.summarySeen = const Value.absent(),
   }) : startedAt = Value(startedAt),
        endedAt = Value(endedAt),
        distanceKm = Value(distanceKm),
@@ -1959,6 +2073,8 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     Expression<String>? confidence,
     Expression<double>? ahOut,
     Expression<String>? energySource,
+    Expression<bool>? representative,
+    Expression<bool>? summarySeen,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1990,6 +2106,8 @@ class TripsCompanion extends UpdateCompanion<Trip> {
       if (confidence != null) 'confidence': confidence,
       if (ahOut != null) 'ah_out': ahOut,
       if (energySource != null) 'energy_source': energySource,
+      if (representative != null) 'representative': representative,
+      if (summarySeen != null) 'summary_seen': summarySeen,
     });
   }
 
@@ -2022,6 +2140,8 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     Value<String?>? confidence,
     Value<double?>? ahOut,
     Value<String?>? energySource,
+    Value<bool?>? representative,
+    Value<bool>? summarySeen,
   }) {
     return TripsCompanion(
       id: id ?? this.id,
@@ -2052,6 +2172,8 @@ class TripsCompanion extends UpdateCompanion<Trip> {
       confidence: confidence ?? this.confidence,
       ahOut: ahOut ?? this.ahOut,
       energySource: energySource ?? this.energySource,
+      representative: representative ?? this.representative,
+      summarySeen: summarySeen ?? this.summarySeen,
     );
   }
 
@@ -2144,6 +2266,12 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     if (energySource.present) {
       map['energy_source'] = Variable<String>(energySource.value);
     }
+    if (representative.present) {
+      map['representative'] = Variable<bool>(representative.value);
+    }
+    if (summarySeen.present) {
+      map['summary_seen'] = Variable<bool>(summarySeen.value);
+    }
     return map;
   }
 
@@ -2177,7 +2305,9 @@ class TripsCompanion extends UpdateCompanion<Trip> {
           ..write('rangeKmAtEnd: $rangeKmAtEnd, ')
           ..write('confidence: $confidence, ')
           ..write('ahOut: $ahOut, ')
-          ..write('energySource: $energySource')
+          ..write('energySource: $energySource, ')
+          ..write('representative: $representative, ')
+          ..write('summarySeen: $summarySeen')
           ..write(')'))
         .toString();
   }
@@ -6412,6 +6542,8 @@ typedef $$TripsTableCreateCompanionBuilder =
       Value<String?> confidence,
       Value<double?> ahOut,
       Value<String?> energySource,
+      Value<bool?> representative,
+      Value<bool> summarySeen,
     });
 typedef $$TripsTableUpdateCompanionBuilder =
     TripsCompanion Function({
@@ -6443,6 +6575,8 @@ typedef $$TripsTableUpdateCompanionBuilder =
       Value<String?> confidence,
       Value<double?> ahOut,
       Value<String?> energySource,
+      Value<bool?> representative,
+      Value<bool> summarySeen,
     });
 
 final class $$TripsTableReferences
@@ -6613,6 +6747,16 @@ class $$TripsTableFilterComposer extends Composer<_$AppDatabase, $TripsTable> {
 
   ColumnFilters<String> get energySource => $composableBuilder(
     column: $table.energySource,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get representative => $composableBuilder(
+    column: $table.representative,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get summarySeen => $composableBuilder(
+    column: $table.summarySeen,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6790,6 +6934,16 @@ class $$TripsTableOrderingComposer
     column: $table.energySource,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get representative => $composableBuilder(
+    column: $table.representative,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get summarySeen => $composableBuilder(
+    column: $table.summarySeen,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$TripsTableAnnotationComposer
@@ -6917,6 +7071,16 @@ class $$TripsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get representative => $composableBuilder(
+    column: $table.representative,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get summarySeen => $composableBuilder(
+    column: $table.summarySeen,
+    builder: (column) => column,
+  );
+
   Expression<T> tripPointsRefs<T extends Object>(
     Expression<T> Function($$TripPointsTableAnnotationComposer a) f,
   ) {
@@ -6999,6 +7163,8 @@ class $$TripsTableTableManager
                 Value<String?> confidence = const Value.absent(),
                 Value<double?> ahOut = const Value.absent(),
                 Value<String?> energySource = const Value.absent(),
+                Value<bool?> representative = const Value.absent(),
+                Value<bool> summarySeen = const Value.absent(),
               }) => TripsCompanion(
                 id: id,
                 startedAt: startedAt,
@@ -7028,6 +7194,8 @@ class $$TripsTableTableManager
                 confidence: confidence,
                 ahOut: ahOut,
                 energySource: energySource,
+                representative: representative,
+                summarySeen: summarySeen,
               ),
           createCompanionCallback:
               ({
@@ -7059,6 +7227,8 @@ class $$TripsTableTableManager
                 Value<String?> confidence = const Value.absent(),
                 Value<double?> ahOut = const Value.absent(),
                 Value<String?> energySource = const Value.absent(),
+                Value<bool?> representative = const Value.absent(),
+                Value<bool> summarySeen = const Value.absent(),
               }) => TripsCompanion.insert(
                 id: id,
                 startedAt: startedAt,
@@ -7088,6 +7258,8 @@ class $$TripsTableTableManager
                 confidence: confidence,
                 ahOut: ahOut,
                 energySource: energySource,
+                representative: representative,
+                summarySeen: summarySeen,
               ),
           withReferenceMapper: (p0) => p0
               .map(
