@@ -67,6 +67,49 @@ class AppL10nEn extends AppL10n {
   String get connectByService => 'advertises the JK service';
 
   @override
+  String get tapBusy =>
+      'An attempt is already running. Let it finish: tapping again does not speed it up and can leave another connection stuck on the phone.';
+
+  @override
+  String tapCooling(String seconds) {
+    return 'Wait $seconds s before retrying this pack. The pause is not arbitrary: the BMS takes a few seconds to let go of the previous link, and every attempt inside that window leaves a connection the phone does not close.';
+  }
+
+  @override
+  String tapStackSaturated(String count) {
+    return 'That is $count failed attempts in a row. By now the problem is the phone\'s Bluetooth, not the pack, and another attempt only makes it worse. Switch Bluetooth off and on; if it persists, restart the phone. Then tap Disconnect or search again to retry.';
+  }
+
+  @override
+  String get tapHeldByPhone =>
+      'The phone already has a connection to this pack open that this app does not own. Either another app holds it, or it was stranded by an earlier attempt. No attempt from here will win it: close the other app, or restart the phone\'s Bluetooth.';
+
+  @override
+  String get tileConnected => 'Connected. Tap to go back to its screens.';
+
+  @override
+  String tileCooling(String seconds) {
+    return 'Paused for $seconds s after a failed attempt';
+  }
+
+  @override
+  String get tileStackSaturated =>
+      'On hold: the phone\'s Bluetooth needs restarting';
+
+  @override
+  String get tilePillOpen => 'open';
+
+  @override
+  String get connectedCardNote =>
+      'The link is still open. Leaving the pack screens no longer cuts it, so you can come and go without reconnecting.';
+
+  @override
+  String get connectedCardOpen => 'View the pack';
+
+  @override
+  String get connectedCardRelease => 'Disconnect';
+
+  @override
   String get connectNoBle => 'This phone has no Bluetooth LE.';
 
   @override
@@ -151,6 +194,30 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get waitingFirstReading => 'the first reading';
+
+  @override
+  String get waitingWhyLinkDown =>
+      'The Bluetooth link is not up right now. The app keeps retrying on its own; if it does not come back, the reason appears above.';
+
+  @override
+  String get waitingWhyNoFrames =>
+      'Connected, but not one frame has arrived from the BMS. Either the pack is silent towards the app, or something else holds its data session.';
+
+  @override
+  String get waitingWhyOnlyDeviceInfo =>
+      'Device information arrived, but no cell readings. The app asks the pack for them again every 3 seconds.';
+
+  @override
+  String get waitingWhyVariantUnknown =>
+      'Cell readings arrive, but the app could not work out which protocol variant this pack speaks, so it does not decode them. Pick the variant by hand in System.';
+
+  @override
+  String get waitingWhyDecodeFailing =>
+      'Cell readings arrive but fail to decode. The exact reason is in the notices below and in System.';
+
+  @override
+  String get waitingWhyUnexplained =>
+      'Readings arrive, decode and are emitted, yet none reached this screen. That is a fault in the app: screenshot this screen and send it.';
 
   @override
   String get waitingCellVoltages => 'cell voltages';

@@ -423,9 +423,17 @@ class Pill extends StatelessWidget {
 
 /// Shown while no reading has arrived yet.
 class WaitingForData extends StatelessWidget {
-  const WaitingForData({required this.message, super.key});
+  const WaitingForData({
+    required this.message,
+    this.children = const <Widget>[],
+    super.key,
+  });
 
   final String message;
+
+  /// What to say under the spinner about why the wait is happening. A spinner
+  /// alone is a promise; a spinner with a reason is information.
+  final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
@@ -449,6 +457,7 @@ class WaitingForData extends StatelessWidget {
               textAlign: TextAlign.center,
               style: const TextStyle(color: AppTheme.textSecondary),
             ),
+            ...children,
           ],
         ),
       ),
