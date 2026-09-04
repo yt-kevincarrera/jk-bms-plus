@@ -1171,6 +1171,17 @@ class BmsService {
     await relearnRangeFromTrips();
   }
 
+  /// Records whether a ride represents how this bike gets ridden, and relearns.
+  ///
+  /// Goes through the service rather than the repository for the same reason
+  /// deleting does: the estimate has to be rebuilt from what is left, or the
+  /// answer would be stored and change nothing. Rebuilding is also what makes
+  /// the answer reversible for free.
+  Future<void> setTripRepresentative(int tripId, bool? value) async {
+    await repository?.setTripRepresentative(tripId, value);
+    await relearnRangeFromTrips();
+  }
+
   // --- The live notification ---
   //
   // There is exactly one foreground service, and on Android it is the only

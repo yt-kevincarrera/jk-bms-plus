@@ -1,8 +1,12 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:jk_bms/src/bms_service.dart';
 import 'package:jk_bms/src/data/database.dart';
 import 'package:jk_bms/src/data/repository.dart';
 import 'package:jk_bms/src/metrics/trip_recorder.dart';
+
+import 'fixtures/captured_frames.dart';
+import 'support/fakes.dart';
 
 /// Opens a trip, closes it with a plausible summary, and returns its id.
 ///
@@ -77,6 +81,46 @@ void main() {
 
       await repo.setTripRepresentative(id, true);
       expect((await repo.tripsForLearning(device)).length, 1);
+    });
+  });
+
+  group('marking a ride through the service', () {
+    test('answering moves the learned figure, and unanswering puts it back',
+        () async {
+      // The whole promise of the question: an answer has a visible
+      // consequence immediately, and it is reversible. Both fall out of the
+      // rebuild the service already does on a delete, which is why the
+      // marking goes through the service rather than the repository.
+      final link = FakeLink();
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      final repo = BmsRepository(database: db);
+      final service = BmsService(
+        transport: link,
+        locationFactory: StubLocation.new,
+      )..repository = repo;
+      addTearDown(service.dispose);
+      // connect() only opens the link; the pack is promoted to an active
+      // device on its first decoded frame (mirroring
+      // foreground_service_test.dart's setUp), so there is no shortcut
+      // around delivering one before activeDeviceId is usable.
+      await service.connect('AA:BB', name: 'KevinJK');
+      await link.deliver(deviceInfoFrames[1]);
+      await link.deliver(cellInfo24s[0]);
+      final device = service.activeDeviceId!;
+
+      await _storeRide(repo, device, km: 40, whPerKm: 17.5);
+      final gentleId = await _storeRide(repo, device, km: 40, whPerKm: 10.0);
+      await service.relearnRangeFromTrips();
+
+      final withGentle = service.rangeEstimator.whPerKm;
+      expect(withGentle, lessThan(17.0));
+
+      await service.setTripRepresentative(gentleId, false);
+      expect(service.rangeEstimator.whPerKm, closeTo(17.5, 0.01));
+
+      await service.setTripRepresentative(gentleId, true);
+      expect(service.rangeEstimator.whPerKm, closeTo(withGentle, 0.01));
     });
   });
 }

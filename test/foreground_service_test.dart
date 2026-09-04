@@ -1,66 +1,12 @@
-import 'dart:async';
-import 'dart:typed_data';
-
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jk_bms/src/ble/ble_transport.dart';
-import 'package:jk_bms/src/ble/bms_link.dart';
 import 'package:jk_bms/src/bms_service.dart';
 import 'package:jk_bms/src/data/database.dart';
 import 'package:jk_bms/src/data/repository.dart';
-import 'package:jk_bms/src/gps/location_source.dart';
 
 import 'fixtures/captured_frames.dart';
-
-class FakeLink implements BmsLink {
-  final _bytes = StreamController<List<int>>.broadcast();
-  final _state = StreamController<BleLinkState>.broadcast();
-  final _errors = StreamController<BleLinkError>.broadcast();
-
-  @override
-  Stream<List<int>> get bytes => _bytes.stream;
-  @override
-  Stream<BleLinkState> get state => _state.stream;
-  @override
-  Stream<BleLinkError> get errors => _errors.stream;
-  @override
-  int? negotiatedMtu = 244;
-
-  @override
-  LinkHealth get health => LinkHealth.unknown;
-
-  @override
-  Stream<List<DiscoveredBms>> scan() => const Stream.empty();
-  @override
-  Future<void> connect(String deviceId) async {}
-  @override
-  Future<void> disconnect() async {}
-  @override
-  Future<void> dispose() async {
-    await _bytes.close();
-    await _state.close();
-    await _errors.close();
-  }
-
-  void announce(BleLinkState s) => _state.add(s);
-
-  Future<void> deliver(Uint8List frame, {int chunk = 20}) async {
-    for (var i = 0; i < frame.length; i += chunk) {
-      _bytes.add(frame.sublist(i, (i + chunk).clamp(0, frame.length)));
-    }
-    await pumpEventQueue();
-  }
-}
-
-class StubLocation implements LocationSource {
-  final _controller = StreamController<GeoFix>.broadcast();
-  @override
-  Stream<GeoFix> get fixes => _controller.stream;
-  @override
-  Future<LocationProblem?> start() async => null;
-  @override
-  Future<void> stop() async {}
-}
+import 'support/fakes.dart';
 
 void main() {
   late FakeLink link;
