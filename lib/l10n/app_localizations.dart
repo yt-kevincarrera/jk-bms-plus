@@ -199,6 +199,72 @@ abstract class AppL10n {
   /// **'anuncia el servicio JK'**
   String get connectByService;
 
+  /// No description provided for @tapBusy.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya hay un intento en marcha. Espera a que termine: tocar otra vez no lo acelera y sí puede dejar otra conexión colgada en el teléfono.'**
+  String get tapBusy;
+
+  /// No description provided for @tapCooling.
+  ///
+  /// In es, this message translates to:
+  /// **'Espera {seconds} s antes de reintentar con esta batería. La pausa no es un capricho: el BMS tarda unos segundos en soltar el enlace anterior, y cada intento dentro de esa ventana deja una conexión que el teléfono no cierra.'**
+  String tapCooling(String seconds);
+
+  /// No description provided for @tapStackSaturated.
+  ///
+  /// In es, this message translates to:
+  /// **'Van {count} intentos fallidos seguidos. A estas alturas el problema es el Bluetooth del teléfono, no la batería, y otro intento solo lo empeora. Apaga y enciende el Bluetooth; si sigue igual, reinicia el teléfono. Después toca Desconectar o vuelve a buscar para reintentar.'**
+  String tapStackSaturated(String count);
+
+  /// No description provided for @tapHeldByPhone.
+  ///
+  /// In es, this message translates to:
+  /// **'El teléfono ya tiene abierta una conexión con esta batería que esta app no controla. O la tiene otra app, o quedó colgada de un intento anterior. Ningún intento desde aquí va a ganarla: cierra la otra app, o reinicia el Bluetooth del teléfono.'**
+  String get tapHeldByPhone;
+
+  /// No description provided for @tileConnected.
+  ///
+  /// In es, this message translates to:
+  /// **'Conectada. Toca para volver a sus pantallas.'**
+  String get tileConnected;
+
+  /// No description provided for @tileCooling.
+  ///
+  /// In es, this message translates to:
+  /// **'En pausa {seconds} s tras un intento fallido'**
+  String tileCooling(String seconds);
+
+  /// No description provided for @tileStackSaturated.
+  ///
+  /// In es, this message translates to:
+  /// **'En espera: el Bluetooth del teléfono necesita reiniciarse'**
+  String get tileStackSaturated;
+
+  /// No description provided for @tilePillOpen.
+  ///
+  /// In es, this message translates to:
+  /// **'abierta'**
+  String get tilePillOpen;
+
+  /// No description provided for @connectedCardNote.
+  ///
+  /// In es, this message translates to:
+  /// **'El enlace sigue abierto. Salir de las pantallas de la batería ya no lo corta, así que puedes entrar y salir sin reconectar.'**
+  String get connectedCardNote;
+
+  /// No description provided for @connectedCardOpen.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver la batería'**
+  String get connectedCardOpen;
+
+  /// No description provided for @connectedCardRelease.
+  ///
+  /// In es, this message translates to:
+  /// **'Desconectar'**
+  String get connectedCardRelease;
+
   /// No description provided for @connectNoBle.
   ///
   /// In es, this message translates to:

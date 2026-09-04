@@ -227,8 +227,14 @@ void main() {
     await link.deliver(deviceInfoFrames[1]);
     await link.deliver(cellInfo24s[0].sublist(0, 120));
     await service.disconnect();
+    // The pack names its protocol again, because a disconnect now forgets the
+    // pack rather than only dropping the radio, and this is the order the real
+    // sequence has: the transport asks for device info first on every attach.
+    await link.deliver(deviceInfoFrames[1]);
     await link.deliver(cellInfo24s[1]);
 
+    // One reading, and it is the second frame rather than a splice of the
+    // truncated first one and the second.
     expect(snapshots, hasLength(1));
     expect(snapshots.single.frameCounter, 0x8D);
   });

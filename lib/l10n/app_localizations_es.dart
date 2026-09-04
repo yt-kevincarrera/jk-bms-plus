@@ -67,6 +67,49 @@ class AppL10nEs extends AppL10n {
   String get connectByService => 'anuncia el servicio JK';
 
   @override
+  String get tapBusy =>
+      'Ya hay un intento en marcha. Espera a que termine: tocar otra vez no lo acelera y sí puede dejar otra conexión colgada en el teléfono.';
+
+  @override
+  String tapCooling(String seconds) {
+    return 'Espera $seconds s antes de reintentar con esta batería. La pausa no es un capricho: el BMS tarda unos segundos en soltar el enlace anterior, y cada intento dentro de esa ventana deja una conexión que el teléfono no cierra.';
+  }
+
+  @override
+  String tapStackSaturated(String count) {
+    return 'Van $count intentos fallidos seguidos. A estas alturas el problema es el Bluetooth del teléfono, no la batería, y otro intento solo lo empeora. Apaga y enciende el Bluetooth; si sigue igual, reinicia el teléfono. Después toca Desconectar o vuelve a buscar para reintentar.';
+  }
+
+  @override
+  String get tapHeldByPhone =>
+      'El teléfono ya tiene abierta una conexión con esta batería que esta app no controla. O la tiene otra app, o quedó colgada de un intento anterior. Ningún intento desde aquí va a ganarla: cierra la otra app, o reinicia el Bluetooth del teléfono.';
+
+  @override
+  String get tileConnected => 'Conectada. Toca para volver a sus pantallas.';
+
+  @override
+  String tileCooling(String seconds) {
+    return 'En pausa $seconds s tras un intento fallido';
+  }
+
+  @override
+  String get tileStackSaturated =>
+      'En espera: el Bluetooth del teléfono necesita reiniciarse';
+
+  @override
+  String get tilePillOpen => 'abierta';
+
+  @override
+  String get connectedCardNote =>
+      'El enlace sigue abierto. Salir de las pantallas de la batería ya no lo corta, así que puedes entrar y salir sin reconectar.';
+
+  @override
+  String get connectedCardOpen => 'Ver la batería';
+
+  @override
+  String get connectedCardRelease => 'Desconectar';
+
+  @override
   String get connectNoBle => 'Este teléfono no tiene Bluetooth LE.';
 
   @override

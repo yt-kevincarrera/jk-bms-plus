@@ -351,11 +351,8 @@ class BmsService {
   Future<void> exitDemoMode() async {
     final link = _switchable;
     if (link == null) return;
-    _resetDecoding();
     await link.useRealBms();
-    activeDevice = null;
-    repository?.activeDeviceId = null;
-    _deviceController.add(null);
+    await _standDown();
   }
 
   /// Feeds the range estimator during a ride, so the number improves as you go
@@ -389,6 +386,20 @@ class BmsService {
     tripAutoStart.reset();
   }
 
+  /// Whether the phone already holds a connection to this device that this
+  /// app does not own.
+  ///
+  /// Asked before attempting, because it is the one failure no amount of
+  /// retrying fixes: the pack's single connection belongs to another app, or
+  /// to a link Android never closed and cannot be asked to. Answers false when
+  /// there is no radio behind the service, which is the honest answer for the
+  /// simulator and for a test.
+  Future<bool> heldByPhone(String deviceId) async {
+    final real = _switchable?.real;
+    if (real == null || isDemo) return false;
+    return real.heldBySystem(deviceId);
+  }
+
   /// True while the connected pack is somebody else's, being inspected.
   ///
   /// Nothing about it is filed: no Devices row, no readings, no raw frames,
@@ -405,6 +416,15 @@ class BmsService {
     String name = '',
     bool inspecting = false,
   }) async {
+    // One pack at a time, and the one before it is let go first. The BMS
+    // accepts a single connection, so asking for a second while the first is
+    // still open is a guaranteed failure; and everything decoded from the old
+    // pack has to go, or the new pack's screens open showing the old pack's
+    // reading and its protocol variant. That is what left the previous
+    // battery's notification standing after a switch.
+    if (activeDeviceId != null && activeDeviceId != deviceId) {
+      await disconnect();
+    }
     _assembler.reset();
     _inspecting = inspecting;
     // Held, not stored. A device only becomes a battery on record once it has
@@ -483,6 +503,14 @@ class BmsService {
     });
   }
 
+  /// Lets go of the pack and forgets it.
+  ///
+  /// Forgetting is the point, and it used to be missing: a disconnect dropped
+  /// the radio and left `activeDevice`, the last reading, the protocol variant
+  /// and the home-screen widget belonging to a pack the app was no longer
+  /// talking to. Switching batteries then showed the previous one's reading on
+  /// the new one's screens, kept the previous one's notification standing, and
+  /// could decode the new pack with the old one's variant.
   Future<void> disconnect() async {
     _pendingDeviceId = null;
     _inspecting = false;
@@ -490,7 +518,28 @@ class BmsService {
     _cellInfoTimer?.cancel();
     _cellInfoTimer = null;
     await _transport.disconnect();
-    _assembler.reset();
+    await _standDown();
+  }
+
+  /// Clears every trace of the pack that was connected: what was decoded from
+  /// it, the stored row it was pointing at, its notification and its widget.
+  Future<void> _standDown() async {
+    _resetDecoding();
+    activeDevice = null;
+    repository?.activeDeviceId = null;
+    _deviceController.add(null);
+    // The notification for merely being connected has no claim now, so this
+    // stands it down. A ride still open keeps its own, which is correct: the
+    // ride outlives the link on purpose.
+    await _updateForegroundService();
+    await _clearWidget();
+  }
+
+  /// Blanks the home-screen widget, so it stops reporting a charge level for
+  /// a pack nothing is reading.
+  Future<void> _clearWidget() async {
+    if (widgetPublisher.lastPublished == null) return;
+    await widgetPublisher.publishNow(PackWidgetContent.empty);
   }
 
   void _onBytes(List<int> chunk) {

@@ -567,11 +567,43 @@ class BleTransport implements BmsLink {
     return true;
   }
 
+  /// Gives the device back to the phone, jumping the operation queue.
+  ///
+  /// `queue: false` is the whole reason this is not just `device.disconnect()`.
+  /// By default the plugin queues a disconnect behind the other operations for
+  /// that device, and the operation it would be queued behind is exactly the
+  /// one that hung: a service discovery or a notify subscription on a link
+  /// that is half dead. The disconnect then never runs, the plugin never gets
+  /// its disconnect callback, and it never closes the GATT client -- which its
+  /// own source warns will "quickly run out of bluetooth resources, preventing
+  /// new connections", for every app on the phone. That is the state a reboot
+  /// was clearing. Skipping the queue is what the plugin documents this flag
+  /// for: cancelling an attempt in progress.
   Future<void> _letGo(BluetoothDevice device) async {
     try {
-      await device.disconnect();
+      await device.disconnect(queue: false);
     } on Exception catch (_) {
       // Already gone, which was the point.
+    }
+  }
+
+  /// Whether the phone itself already holds a connection to this device.
+  ///
+  /// Android lists connections that belong to no app this one can see: another
+  /// app's, or one stranded by an attempt that never got its disconnect
+  /// callback. Either way the pack's single connection is taken and nothing
+  /// attempted from here will get it, so it is worth saying rather than
+  /// letting the rider tap into an exhausted stack. Only meaningful before
+  /// connecting: once this app is connected it is in the list itself.
+  Future<bool> heldBySystem(String deviceId) async {
+    try {
+      final held = await FlutterBluePlus.systemDevices([
+        Guid(jkServiceUuid16.toRadixString(16).padLeft(4, '0')),
+      ]);
+      return held.any((d) => d.remoteId.str == deviceId);
+    } on Object catch (_) {
+      // Could not ask. Inventing a diagnosis would be worse than no answer.
+      return false;
     }
   }
 
@@ -733,11 +765,10 @@ class BleTransport implements BmsLink {
     _notifySub = null;
     _connectionSub = null;
     _characteristic = null;
-    try {
-      await _device?.disconnect();
-    } on Exception catch (_) {
-      // Already gone; nothing useful to do.
-    }
+    final device = _device;
+    // Same reasoning as _letGo: a teardown that queues behind a hung
+    // operation is a teardown that never happens, and a link nobody can close.
+    if (device != null) await _letGo(device);
     _setState(BleLinkState.idle);
   }
 
