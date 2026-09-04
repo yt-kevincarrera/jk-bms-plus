@@ -1,5 +1,6 @@
 import '../data/database.dart';
 import '../inspection/inspection_result.dart';
+import '../inspection/inspection_series.dart';
 import '../metrics/advice_engine.dart';
 import '../metrics/cell_drift.dart';
 import '../metrics/degradation.dart';
@@ -174,6 +175,8 @@ class InspectionReportData {
     this.note = '',
     this.appVersion = '',
     this.certificate,
+    this.comparison,
+    this.seriesAdvice = const [],
   });
 
   final DateTime generatedAt;
@@ -187,5 +190,15 @@ class InspectionReportData {
   /// Present when the sheet is a signed certificate.
   final Certificate? certificate;
 
+  /// This run set against the earlier runs on the same pack, when there are
+  /// any. A repeated test is the strongest thing a quick test can produce, so
+  /// it belongs on the paper rather than only on the screen.
+  final InspectionComparison? comparison;
+
+  /// What the repeat adds, in the same evidence-backed sentences.
+  final List<Advice> seriesAdvice;
+
   bool get isCertificate => certificate != null;
+
+  bool get hasSeries => (comparison?.earlier.isNotEmpty ?? false);
 }

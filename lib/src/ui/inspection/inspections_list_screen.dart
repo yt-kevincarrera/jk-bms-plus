@@ -35,6 +35,10 @@ class InspectionsListScreen extends StatelessWidget {
                 builder: (context, snapshot) {
                   final rows = snapshot.data ?? const <Inspection>[];
                   if (rows.isEmpty) return _empty(t);
+                  // Which run of that pack each row is. The list is newest
+                  // first and a pack can appear several times; the number is
+                  // what tells a second opinion from a first look.
+                  final runs = _runNumbers(rows);
                   return ListView(
                     padding: const EdgeInsets.only(top: 8, bottom: 28),
                     children: [
@@ -49,7 +53,8 @@ class InspectionsListScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-                      for (final row in rows) _tile(context, t, row),
+                      for (final row in rows)
+                        _tile(context, t, row, runs[row.id]),
                     ],
                   );
                 },
@@ -84,7 +89,12 @@ class InspectionsListScreen extends StatelessWidget {
     ),
   );
 
-  Widget _tile(BuildContext context, AppL10n t, Inspection row) {
+  Widget _tile(
+    BuildContext context,
+    AppL10n t,
+    Inspection row,
+    (int, int)? run,
+  ) {
     final tone = switch (row.light) {
       'problem' => AppTheme.bad,
       'watch' => AppTheme.watch,
@@ -147,9 +157,12 @@ class InspectionsListScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        row.note.isEmpty
-                            ? _date(row.at)
-                            : '${_date(row.at)}  ·  ${row.note}',
+                        [
+                          _date(row.at),
+                          if (run != null && run.$2 > 1)
+                            t.inspectionSeriesRun('${run.$1}', '${run.$2}'),
+                          if (row.note.isNotEmpty) row.note,
+                        ].join('  ·  '),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -171,6 +184,26 @@ class InspectionsListScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// For each row, which run of that pack it is and how many there are.
+  ///
+  /// Grouped by address rather than by serial: this is a label on a list, and
+  /// a wrong grouping here would quietly merge two packs in front of the
+  /// person trying to tell them apart.
+  static Map<int, (int, int)> _runNumbers(List<Inspection> rows) {
+    final byPack = <String, List<Inspection>>{};
+    for (final row in rows) {
+      byPack.putIfAbsent(row.bmsId, () => []).add(row);
+    }
+    final out = <int, (int, int)>{};
+    for (final group in byPack.values) {
+      final ordered = [...group]..sort((a, b) => a.at.compareTo(b.at));
+      for (var i = 0; i < ordered.length; i++) {
+        out[ordered[i].id] = (i + 1, ordered.length);
+      }
+    }
+    return out;
   }
 
   Future<void> _open(BuildContext context, Inspection row) async {

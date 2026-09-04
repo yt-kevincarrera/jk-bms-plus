@@ -2050,5 +2050,147 @@
       }
     }
   },
-  "certificateCreditsGone": "No certificate credits left. Get more under Licence."
+  "certificateCreditsGone": "No certificate credits left. Get more under Licence.",
+  "verdictInspRepeatSameCellTitle": "Cell {cell} fails again: {times} of {runs} runs",
+  "@verdictInspRepeatSameCellTitle": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      },
+      "times": {
+        "type": "String"
+      },
+      "runs": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspRepeatSameCellBody": "Not bad luck and not a loose lead: run the test again and the same cell drops before the others. This is no longer a suspicion, it is the cell.",
+  "verdictInspRepeatCellMovedTitle": "A different cell dropped this time",
+  "@verdictInspRepeatCellMovedTitle": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspRepeatCellMovedBody": "The previous run pointed at cell {before} and this one points at cell {cell}. When the finger moves between runs it almost always means the pack was not pulled the same way, not that two cells are bad. Run it again asking for the same throttle as last time.",
+  "@verdictInspRepeatCellMovedBody": {
+    "placeholders": {
+      "before": {
+        "type": "String"
+      },
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspRepeatWorseTitle": "Worse than the previous run",
+  "verdictInspRepeatWorseBody": "Compared at the same kind of pull, the pack measures worse than last time. With two runs separated in time that is a trend, not a snapshot.",
+  "verdictInspRepeatSteadyTitle": "Same as last time",
+  "verdictInspRepeatSteadyBody": "This run's figures land inside the noise of the previous one. The first test was not a fluke and this one found nothing new.",
+  "verdictInspRepeatCountersResetTitle": "Somebody touched the counters between visits",
+  "verdictInspRepeatCountersResetBody": "Cycles only go up and health only goes down. If between the two runs the cycles fell, the health rose or the configured capacity changed, the BMS was reset. The physical findings above cannot be reset with a button, which is why they are the ones to read.",
+  "verdictInspRepeatLoadDiffersTitle": "The two runs did not pull alike",
+  "verdictInspRepeatLoadDiffersBody": "Voltage sag depends on how much current is asked for. With very different pulls, comparing the sag says nothing. To compare properly, run it again with a similar pull.",
+  "evidenceRunCount": "Runs on this pack",
+  "evidenceTimesSameCell": "Times cell {cell} came out worst",
+  "@evidenceTimesSameCell": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
+  "evidencePreviousSag": "Sag on {date}",
+  "@evidencePreviousSag": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "evidencePreviousRestDelta": "Resting delta on {date}",
+  "@evidencePreviousRestDelta": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "evidencePreviousResistance": "Median resistance on {date}",
+  "@evidencePreviousResistance": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "evidencePreviousCycles": "Cycles per the BMS on {date}",
+  "@evidencePreviousCycles": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "evidencePreviousSoh": "Health per the BMS on {date}",
+  "@evidencePreviousSoh": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "evidencePreviousConfiguredCapacity": "Configured capacity on {date}",
+  "@evidencePreviousConfiguredCapacity": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "evidencePreviousPeakCurrent": "Current step on {date}",
+  "@evidencePreviousPeakCurrent": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "inspectionSeriesTitle": "Against the earlier runs",
+  "inspectionSeriesIntro": "This pack has been inspected before. Repeating the test is what separates an odd reading from a real fault.",
+  "inspectionSeriesRun": "Run {number} of {total} on this pack",
+  "@inspectionSeriesRun": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "inspectionSeriesPrevious": "Run of {date}",
+  "@inspectionSeriesPrevious": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "inspectionSeriesFirstRun": "First inspection of this pack. Run it again another day to confirm what you saw.",
+  "inspectionRepeatButton": "Run the test again",
+  "inspectionRepeatHint": "Repeat it as often as you like: every run is saved and the next one is compared against all of them.",
+  "inspectionAlreadySeen": "Inspected {count} time(s) already",
+  "@inspectionAlreadySeen": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "reportSectionSeries": "Earlier runs on this pack",
+  "reportSeriesNote": "Each row is an earlier inspection stored on the phone that signed this sheet. Repeating the test is what tells a bad cell from a bad reading.",
+  "reportSeriesWorstCell": "Worst cell"
 }

@@ -513,6 +513,37 @@ class AppDatabase extends _$AppDatabase {
   Future<void> deleteInspection(int id) =>
       (delete(inspections)..where((i) => i.id.equals(id))).go();
 
+  /// Every run on one pack, oldest first.
+  ///
+  /// Matched on the address, and on the serial number when the BMS reports
+  /// one, because the same pack can be met again on a different address. An
+  /// empty serial matches nothing: plenty of units report none, and treating
+  /// that as a match would merge every anonymous pack into one battery with a
+  /// very strange history.
+  Future<List<Inspection>> inspectionsForPack(
+    String bmsId, {
+    String serialNumber = '',
+  }) =>
+      (select(inspections)
+            ..where(
+              (i) => serialNumber.isEmpty
+                  ? i.bmsId.equals(bmsId)
+                  : i.bmsId.equals(bmsId) | i.serialNumber.equals(serialNumber),
+            )
+            ..orderBy([(i) => OrderingTerm(expression: i.at)]))
+          .get();
+
+  /// How many runs each inspected pack has, keyed by address. Used to mark
+  /// the packs already looked at while choosing one to inspect.
+  Future<Map<String, int>> inspectionCountsByPack() async {
+    final rows = await select(inspections).get();
+    final out = <String, int>{};
+    for (final row in rows) {
+      out[row.bmsId] = (out[row.bmsId] ?? 0) + 1;
+    }
+    return out;
+  }
+
   Future<List<Inspection>> allInspectionsForBackup() =>
       select(inspections).get();
 

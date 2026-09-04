@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:drift/drift.dart';
 
+import '../inspection/inspection_result.dart';
+import '../inspection/inspection_series.dart';
 import '../metrics/capacity_cycle_detector.dart';
 import '../metrics/trip_energy_repair.dart';
 import '../metrics/trip_recorder.dart';
@@ -312,9 +315,7 @@ class BmsRepository {
           // stayed stale forever, and every connection paid for it.
           await db.updateTrip(
             t.id,
-            TripsCompanion(
-              energySource: Value(EnergySource.unmeasurable.name),
-            ),
+            TripsCompanion(energySource: Value(EnergySource.unmeasurable.name)),
           );
           continue;
         }
@@ -565,6 +566,49 @@ class BmsRepository {
       db.insertInspection(row);
 
   Future<List<Inspection>> inspections() => db.allInspections();
+
+  /// The earlier runs on one pack, decoded and oldest first.
+  ///
+  /// [before] and [excludeId] are for rereading a saved run: the comparison
+  /// then shows what was known that day rather than what is known now, which
+  /// is the only reading of it that stays true.
+  Future<List<PastInspection>> pastInspections({
+    required String bmsId,
+    String serialNumber = '',
+    DateTime? before,
+    int? excludeId,
+  }) async {
+    final rows = await db.inspectionsForPack(bmsId, serialNumber: serialNumber);
+    final out = <PastInspection>[];
+    for (final row in rows) {
+      if (row.id == excludeId) continue;
+      if (before != null && !row.at.isBefore(before)) continue;
+      final InspectionResult result;
+      try {
+        result = InspectionResult.fromJson(
+          (jsonDecode(row.resultJson) as Map).cast<String, Object?>(),
+        );
+      } on Object {
+        // A row written by a newer version, or a corrupted one. A comparison
+        // is worth less than a crash costs.
+        continue;
+      }
+      out.add(
+        PastInspection(
+          at: row.at,
+          result: result,
+          id: row.id,
+          bmsId: row.bmsId,
+          note: row.note,
+        ),
+      );
+    }
+    out.sort((a, b) => a.at.compareTo(b.at));
+    return out;
+  }
+
+  Future<Map<String, int>> inspectionCountsByPack() =>
+      db.inspectionCountsByPack();
 
   Stream<List<Inspection>> watchInspections() => db.watchInspections();
 

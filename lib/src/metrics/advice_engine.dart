@@ -114,6 +114,29 @@ enum AdviceCode {
 
   /// No load big enough to measure sag was seen: reduced fidelity.
   inspectionNoHeavyLoad,
+
+  // --- Repeated inspections: what a second look adds ---
+
+  /// The same cell gave up again. A finding rather than a reading.
+  inspectionRepeatSameCell,
+
+  /// A different cell was worst this time, which usually means the two runs
+  /// were not pulled the same way.
+  inspectionRepeatCellMoved,
+
+  /// The pack measures worse than it did last time.
+  inspectionRepeatWorse,
+
+  /// Two runs agree within noise: the first was not a fluke.
+  inspectionRepeatSteady,
+
+  /// The BMS's own counters moved between visits in a direction they cannot
+  /// move by themselves.
+  inspectionRepeatCountersReset,
+
+  /// The two runs pulled very different currents, so their sag figures are
+  /// not comparable.
+  inspectionRepeatLoadDiffers,
 }
 
 /// One measured thing a verdict rests on.
@@ -159,6 +182,17 @@ enum EvidenceKind {
   medianRecoverySeconds,
   alarmCount,
   peakCurrent,
+  // Repeated inspections. Each is a figure from an earlier run, carrying the
+  // date it was measured on so the sentence can say when.
+  runCount,
+  timesSameCell,
+  previousSag,
+  previousRestDelta,
+  previousResistance,
+  previousCycles,
+  previousSoh,
+  previousConfiguredCapacity,
+  previousPeakCurrent,
 }
 
 class Evidence {

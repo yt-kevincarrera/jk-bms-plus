@@ -5,6 +5,7 @@ import 'package:pdf/widgets.dart' as pw;
 
 import '../../l10n/app_localizations.dart';
 import '../inspection/inspection_result.dart';
+import '../inspection/inspection_series.dart';
 import '../metrics/advice_engine.dart';
 import '../metrics/maintenance.dart';
 import '../ui/widgets/advice_list.dart';
@@ -184,6 +185,7 @@ class PdfReports {
             ),
           ]),
           if (d.advice.isNotEmpty) _verdicts(t, d.advice),
+          if (d.hasSeries) _series(t, d),
           if (r.caveats.isNotEmpty) _caveats(t, r),
           _cellTable(t, r),
           _reported(t, r),
@@ -403,8 +405,8 @@ class PdfReports {
   /// assertion. The whole point of the verdict layer is that every sentence
   /// can be checked, and paper is where that matters most: the person reading
   /// it cannot tap anything.
-  pw.Widget _verdicts(AppL10n t, List<Advice> advice) =>
-      _section(t.verdictTitle, [
+  pw.Widget _verdicts(AppL10n t, List<Advice> advice, {String? title}) =>
+      _section(title ?? t.verdictTitle, [
         for (final a in advice)
           pw.Padding(
             padding: const pw.EdgeInsets.only(bottom: 8),
@@ -478,6 +480,52 @@ class PdfReports {
       ],
     ),
   ], note: t.reportCellsNote);
+
+  /// The earlier runs on this pack, and what repeating the test showed.
+  ///
+  /// The most useful thing on a second-hand battery report: one run naming a
+  /// bad cell is a claim, and three runs a month apart naming the same cell
+  /// is a fact about the pack.
+  pw.Widget _series(AppL10n t, InspectionReportData d) {
+    final c = d.comparison!;
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        _section(t.reportSectionSeries, [
+          _table(
+            headers: [
+              t.reportDate,
+              t.reportSeriesWorstCell,
+              t.reportSag,
+              t.reportRestDelta,
+              t.reportPeakCurrent,
+            ],
+            rows: [
+              for (final p in [...c.earlier, _asPast(c)])
+                [
+                  _date(p.at),
+                  p.result.worstSag == null
+                      ? _dash
+                      : '${p.result.worstSag!.index}',
+                  p.result.worstSag?.heavySagVolts == null
+                      ? _dash
+                      : p.result.worstSag!.heavySagVolts!.toStringAsFixed(3),
+                  p.result.restDeltaVolts.toStringAsFixed(3),
+                  '${p.result.currentStepAmps.toStringAsFixed(1)} A',
+                ],
+            ],
+          ),
+        ], note: t.reportSeriesNote),
+        if (d.seriesAdvice.isNotEmpty)
+          _verdicts(t, d.seriesAdvice, title: t.inspectionSeriesTitle),
+      ],
+    );
+  }
+
+  /// This run, in the shape the table rows are built from, so the newest line
+  /// sits in the same columns as the ones before it.
+  static PastInspection _asPast(InspectionComparison c) =>
+      PastInspection(at: c.result.at, result: c.result);
 
   pw.Widget _cellTable(AppL10n t, InspectionResult r) =>
       _section(t.reportSectionCells, [

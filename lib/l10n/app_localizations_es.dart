@@ -3560,4 +3560,145 @@ class AppL10nEs extends AppL10n {
   @override
   String get certificateCreditsGone =>
       'No te quedan créditos de certificado. Consigue más en Licencia.';
+
+  @override
+  String verdictInspRepeatSameCellTitle(
+    String cell,
+    String times,
+    String runs,
+  ) {
+    return 'La celda $cell vuelve a fallar: $times de $runs pruebas';
+  }
+
+  @override
+  String get verdictInspRepeatSameCellBody =>
+      'No fue mala suerte ni un cable suelto: repetida la prueba, la misma celda vuelve a hundirse antes que las demás. Esto ya no es una sospecha, es la celda.';
+
+  @override
+  String verdictInspRepeatCellMovedTitle(String cell) {
+    return 'Esta vez se hundió otra celda';
+  }
+
+  @override
+  String verdictInspRepeatCellMovedBody(String before, String cell) {
+    return 'La prueba anterior señaló la celda $before y esta señala la $cell. Cuando el dedo cambia de sitio entre pruebas, casi siempre es que no se tiró igual de la batería, no que haya dos celdas malas. Repite el test pidiendo el mismo acelerón que la vez anterior.';
+  }
+
+  @override
+  String get verdictInspRepeatWorseTitle =>
+      'Va a peor desde la prueba anterior';
+
+  @override
+  String get verdictInspRepeatWorseBody =>
+      'Comparando con el mismo tipo de tirón, la batería mide peor que la última vez. Con dos pruebas separadas en el tiempo esto es una tendencia, no una foto.';
+
+  @override
+  String get verdictInspRepeatSteadyTitle =>
+      'Repite lo mismo que la vez anterior';
+
+  @override
+  String get verdictInspRepeatSteadyBody =>
+      'Las cifras de esta prueba caen dentro del ruido de la anterior. La primera prueba no fue una casualidad y esta no ha encontrado nada nuevo.';
+
+  @override
+  String get verdictInspRepeatCountersResetTitle =>
+      'Alguien tocó los contadores entre una visita y otra';
+
+  @override
+  String get verdictInspRepeatCountersResetBody =>
+      'Los ciclos solo suben y la salud solo baja. Si entre las dos pruebas los ciclos bajaron, la salud subió o cambió la capacidad configurada, es que se reseteó el BMS. Lo físico de arriba no se resetea con un botón; eso es lo que hay que mirar.';
+
+  @override
+  String get verdictInspRepeatLoadDiffersTitle =>
+      'Las dos pruebas no tiraron igual';
+
+  @override
+  String get verdictInspRepeatLoadDiffersBody =>
+      'La caída de voltaje depende de cuánta corriente se pida. Con acelerones muy distintos, comparar las caídas no dice nada. Para comparar de verdad, repite el test pidiendo un tirón parecido.';
+
+  @override
+  String get evidenceRunCount => 'Pruebas a este pack';
+
+  @override
+  String evidenceTimesSameCell(String cell) {
+    return 'Veces que salió la celda $cell';
+  }
+
+  @override
+  String evidencePreviousSag(String date) {
+    return 'Caída el $date';
+  }
+
+  @override
+  String evidencePreviousRestDelta(String date) {
+    return 'Delta en reposo el $date';
+  }
+
+  @override
+  String evidencePreviousResistance(String date) {
+    return 'Resistencia mediana el $date';
+  }
+
+  @override
+  String evidencePreviousCycles(String date) {
+    return 'Ciclos según el BMS el $date';
+  }
+
+  @override
+  String evidencePreviousSoh(String date) {
+    return 'SOH según el BMS el $date';
+  }
+
+  @override
+  String evidencePreviousConfiguredCapacity(String date) {
+    return 'Capacidad configurada el $date';
+  }
+
+  @override
+  String evidencePreviousPeakCurrent(String date) {
+    return 'Salto de corriente el $date';
+  }
+
+  @override
+  String get inspectionSeriesTitle => 'Comparado con las pruebas anteriores';
+
+  @override
+  String get inspectionSeriesIntro =>
+      'Este pack ya se había inspeccionado. Repetir el test es lo que separa una lectura rara de un fallo real.';
+
+  @override
+  String inspectionSeriesRun(String number, String total) {
+    return 'Prueba $number de $total a este pack';
+  }
+
+  @override
+  String inspectionSeriesPrevious(String date) {
+    return 'Prueba del $date';
+  }
+
+  @override
+  String get inspectionSeriesFirstRun =>
+      'Primera inspección de este pack. Repítela otro día para confirmar lo que has visto.';
+
+  @override
+  String get inspectionRepeatButton => 'Repetir la prueba';
+
+  @override
+  String get inspectionRepeatHint =>
+      'Puedes repetirla las veces que quieras: cada prueba se guarda y la siguiente se compara con todas las anteriores.';
+
+  @override
+  String inspectionAlreadySeen(String count) {
+    return 'Ya inspeccionada $count vez/veces';
+  }
+
+  @override
+  String get reportSectionSeries => 'Pruebas anteriores a este pack';
+
+  @override
+  String get reportSeriesNote =>
+      'Cada fila es una inspección anterior guardada en el teléfono que firmó esta hoja. Repetir el test es lo que distingue una celda mala de una lectura mala.';
+
+  @override
+  String get reportSeriesWorstCell => 'Peor celda';
 }
