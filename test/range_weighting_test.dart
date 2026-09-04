@@ -117,9 +117,24 @@ void main() {
 
     test('asking does not change what was learned', () {
       final e = RangeEstimator()..addSegment(wh: 17.5 * 100, km: 100);
-      final before = e.whPerKm;
+      final beforeWhPerKm = e.whPerKm;
+      final beforeHasLearned = e.hasLearned;
+      final beforeLearnedKm = e.learnedKm;
       e.projectedShiftFraction(wh: 26 * 40, km: 40);
-      expect(e.whPerKm, before);
+      expect(e.whPerKm, beforeWhPerKm);
+      expect(e.hasLearned, beforeHasLearned);
+      expect(e.learnedKm, beforeLearnedKm);
+    });
+
+    test('a fresh estimator has no learned figure for a ride to move', () {
+      // Before any segment is folded in, whPerKm answers with defaultWhPerKm,
+      // a number about a hypothetical motorcycle rather than anything learned.
+      // Asking whether a ride represents the rider against that invented
+      // baseline is the same mistake RangeOutlook.from refuses to make when it
+      // will not quote a range before hasLearned is true.
+      final e = RangeEstimator();
+      expect(e.hasLearned, isFalse);
+      expect(e.projectedShiftFraction(wh: 15.0 * 40, km: 40), 0);
     });
   });
 }
