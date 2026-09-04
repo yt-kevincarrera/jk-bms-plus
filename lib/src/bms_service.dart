@@ -8,6 +8,7 @@ import 'data/database.dart';
 import 'data/repository.dart';
 import 'gps/location_source.dart';
 import 'gps/simulated_location_source.dart';
+import 'platform/alert_notifications.dart';
 import 'platform/live_notification.dart';
 import 'platform/pack_widget.dart';
 import 'platform/widget_publisher.dart';
@@ -82,7 +83,14 @@ class BmsService {
     _assembler.onRejected = (_) => _statsController.add(_assembler.stats);
     _bytesSub = _transport.bytes.listen(_onBytes);
     _stateSub = _transport.state.listen((s) {
+      final was = lastLinkState;
       lastLinkState = s;
+      // A link that was up and is now down, with nobody having asked for it.
+      // Overnight, watching a charge, this is the difference between "the
+      // pack finished" and "the app stopped looking four hours ago".
+      if (was == BleLinkState.connected && s != BleLinkState.connected) {
+        _noteLinkLost();
+      }
       // Readings are what normally drive the service, and a dropped link stops
       // producing them, so the link state has to be able to stand it down
       // itself or the notification outlives the connection it describes.
@@ -467,6 +475,8 @@ class BmsService {
     if (activeDeviceId != null && activeDeviceId != deviceId) {
       await disconnect();
     }
+    // From here on, a link that goes down went down by itself.
+    _disconnectRequested = false;
     _assembler.reset();
     _inspecting = inspecting;
     // Held, not stored. A device only becomes a battery on record once it has
@@ -554,6 +564,8 @@ class BmsService {
   /// the new one's screens, kept the previous one's notification standing, and
   /// could decode the new pack with the old one's variant.
   Future<void> disconnect() async {
+    // Asked for, so the link going down in a moment is not news.
+    _disconnectRequested = true;
     _pendingDeviceId = null;
     _inspecting = false;
     _silenceTimer?.cancel();
@@ -1345,6 +1357,29 @@ class BmsService {
   final RideAlerts alerts = RideAlerts();
   final _alertController = StreamController<RideAlert>.broadcast();
 
+  /// Alerts that can reach a phone in another room.
+  ///
+  /// The foreground service notification is a quiet readout by design and is
+  /// the wrong thing to shout with, so anything worth waking somebody for
+  /// goes out on its own high-importance channel.
+  final AlertNotifications alertNotifications = AlertNotifications();
+
+  /// Wording for those notifications, supplied by the UI so the analysis
+  /// layer never holds a sentence. Returns a title and a body, or null when
+  /// this alert is not worth a notification.
+  (String, String)? Function(RideAlert alert, BmsSnapshot? snapshot)?
+  rideAlertText;
+  (String, String)? Function(ChargeAlert alert, BmsSnapshot? snapshot)?
+  chargeAlertText;
+
+  /// Wording for the link going down while the app was watching.
+  (String, String)? Function()? linkLostText;
+
+  /// Whether to post notifications at all. Off until the UI has set up the
+  /// channel, so a build that never calls [prepareAlertNotifications] behaves
+  /// exactly as it did before this existed.
+  bool notifyAlerts = false;
+
   /// Fires when something crosses a line worth interrupting a ride for.
   Stream<RideAlert> get rideAlerts => _alertController.stream;
 
@@ -1353,13 +1388,23 @@ class BmsService {
   bool hapticAlerts = true;
 
   void _checkAlerts(BmsSnapshot snapshot) {
+    final settings = _lastSettings;
     final firing = alerts.evaluate(
       snapshot,
       cutoffVoltagePerCell: cutoffVoltagePerCell,
+      // The pack's own configured limits, so "close to the limit" means this
+      // battery's limit rather than a number picked here.
+      dischargeLimitAmps: settings?.maxDischargeCurrent,
+      chargeLimitAmps: settings?.maxChargeCurrent,
     );
     for (final alert in firing) {
       if (mutedAlerts.contains(alert.name)) continue;
       _alertController.add(alert);
+      _notify(
+        key: alert.name,
+        words: rideAlertText?.call(alert, snapshot),
+        critical: alert.isCritical,
+      );
       if (hapticAlerts) {
         // Riding is exactly when nobody is looking at the screen, so the phone
         // has to be felt rather than read.
@@ -1371,6 +1416,58 @@ class BmsService {
       }
     }
   }
+
+  /// Posts one alert to the shade, if the UI gave it words and the rider has
+  /// not switched the whole thing off.
+  void _notify({
+    required String key,
+    required (String, String)? words,
+    required bool critical,
+  }) {
+    if (!notifyAlerts || words == null) return;
+    unawaited(
+      alertNotifications.show(
+        key: key,
+        title: words.$1,
+        body: words.$2,
+        critical: critical,
+      ),
+    );
+  }
+
+  /// Creates the alert channel and asks for permission. Called by the UI,
+  /// which owns the wording; until it is, nothing is posted.
+  Future<bool> prepareAlertNotifications({
+    required String channelName,
+    required String channelDescription,
+  }) async {
+    final ready = await alertNotifications.ensureReady(
+      channelName: channelName,
+      channelDescription: channelDescription,
+    );
+    notifyAlerts = ready;
+    return ready;
+  }
+
+  /// Set while a disconnect was asked for, so the link going down on purpose
+  /// is not reported as the link being lost.
+  bool _disconnectRequested = false;
+
+  /// Says the link went down when nobody asked it to.
+  ///
+  /// Only while a watch is running: with the app open and in hand, the
+  /// screens already say it in three places, and a notification would be
+  /// noise. Left overnight watching a charge, it is the whole point.
+  void _noteLinkLost() {
+    if (_disconnectRequested) return;
+    if (!(chargeWatchEnabled || linkWatchEnabled)) return;
+    if (mutedAlerts.contains(linkLostAlertKey)) return;
+    _notify(key: linkLostAlertKey, words: linkLostText?.call(), critical: true);
+  }
+
+  /// The name this alert is muted under. Not a [RideAlert]: it is not about a
+  /// reading, it is about there being no readings.
+  static const String linkLostAlertKey = 'linkLost';
 
   // --- Automatic trip recording ---
   //
@@ -1559,6 +1656,13 @@ class BmsService {
     for (final alert in chargeAlerts.evaluate(snapshot)) {
       if (mutedAlerts.contains(alert.name)) continue;
       _chargeAlertController.add(alert);
+      // This is the case the whole notification channel exists for: a charge
+      // finishing at three in the morning with the phone in another room.
+      _notify(
+        key: alert.name,
+        words: chargeAlertText?.call(alert, snapshot),
+        critical: alert.isProblem,
+      );
       // The notification the trip service already owns is the only way any of
       // this reaches a phone in another room. It is only running during a
       // ride, so on the bench this is a buzz and a banner; plugged in with the
@@ -1689,6 +1793,9 @@ class BmsService {
     bool autoTrip = true,
     bool watchLink = true,
     Set<String> muted = const {},
+    double? alertDeltaWarn,
+    double? alertTempWarn,
+    double? alertLowChargeWarn,
   }) {
     chargeWatchEnabled = watchCharge;
     linkWatchEnabled = watchLink;
@@ -1697,6 +1804,22 @@ class BmsService {
     chargeAlerts.targetSoc = chargeTargetSoc;
     hapticAlerts = haptics;
     repository?.recordRawFrames = rawFrames;
+
+    // Where the alerts start speaking. The clearing thresholds move with
+    // them, keeping the same gap, so an alert never becomes one that cannot
+    // clear itself and chatters on every reading.
+    if (alertDeltaWarn != null) {
+      alerts.deltaWarn = alertDeltaWarn;
+      alerts.deltaClear = alertDeltaWarn * 0.8;
+    }
+    if (alertTempWarn != null) {
+      alerts.tempWarn = alertTempWarn;
+      alerts.tempClear = alertTempWarn - 5;
+    }
+    if (alertLowChargeWarn != null) {
+      alerts.lowChargeWarn = alertLowChargeWarn;
+      alerts.lowChargeClear = alertLowChargeWarn + 5;
+    }
   }
 
   /// Picks up a capacity test that was interrupted by the app closing.

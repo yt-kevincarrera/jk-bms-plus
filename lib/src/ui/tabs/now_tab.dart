@@ -285,8 +285,8 @@ class _NowTabState extends State<NowTab> {
                   footnote: s.isCharging
                       ? t.charging
                       : s.isDischarging
-                          ? t.discharging
-                          : t.resting,
+                      ? t.discharging
+                      : t.resting,
                 ),
               ),
             ],
@@ -523,24 +523,24 @@ class _TripStripState extends State<_TripStrip> {
   }
 
   Widget _mini(String value, String label) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              fontFeatures: AppTheme.tabular,
-            ),
-          ),
-          const SizedBox(height: 1),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 10, color: AppTheme.textFaint),
-          ),
-        ],
-      );
+    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Text(
+        value,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          fontFeatures: AppTheme.tabular,
+        ),
+      ),
+      const SizedBox(height: 1),
+      Text(
+        label,
+        style: const TextStyle(fontSize: 10, color: AppTheme.textFaint),
+      ),
+    ],
+  );
 }
 
 /// What a full pack is worth, in kilometres.
@@ -591,10 +591,7 @@ class _FullPackRange extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
-            Text(
-              full.toStringAsFixed(0),
-              style: AppTheme.readout(22),
-            ),
+            Text(full.toStringAsFixed(0), style: AppTheme.readout(22)),
             const SizedBox(width: 3),
             const Text(
               'km',
@@ -628,72 +625,72 @@ class _FullPackRange extends StatelessWidget {
 }
 
 /// Time until the pack is full, from what is going in right now.
-  Widget _chargeEta(AppL10n t, BmsSnapshot s, BmsService service) {
-    // Remaining over charge, which reads back the capacity the BMS is
-    // configured with. That cancellation makes it useless as a measurement of
-    // the cells and exactly right here: the question is how many amp-hours are
-    // left to put in, and the charger is filling the battery the BMS thinks it
-    // has. Not to be "corrected" to a measured capacity later.
-    final capacity = s.remainingCapacityAh > 0 && s.soc > 1
-        ? s.remainingCapacityAh / (s.soc / 100)
-        : null;
-    if (capacity == null) return const SizedBox.shrink();
+Widget _chargeEta(AppL10n t, BmsSnapshot s, BmsService service) {
+  // Remaining over charge, which reads back the capacity the BMS is
+  // configured with. That cancellation makes it useless as a measurement of
+  // the cells and exactly right here: the question is how many amp-hours are
+  // left to put in, and the charger is filling the battery the BMS thinks it
+  // has. Not to be "corrected" to a measured capacity later.
+  final capacity = s.remainingCapacityAh > 0 && s.soc > 1
+      ? s.remainingCapacityAh / (s.soc / 100)
+      : null;
+  if (capacity == null) return const SizedBox.shrink();
 
-    final eta = const ChargeEtaEstimator().estimate(
-      current: s.current,
-      soc: s.soc,
-      capacityAh: capacity,
-    );
-    final left = eta.remaining;
-    if (left == null) return const SizedBox.shrink();
+  final eta = const ChargeEtaEstimator().estimate(
+    current: s.current,
+    soc: s.soc,
+    capacityAh: capacity,
+  );
+  final left = eta.remaining;
+  if (left == null) return const SizedBox.shrink();
 
-    final label = left == Duration.zero
-        ? t.etaDone
-        : left.inHours >= 1
-            ? '${left.inHours} h ${left.inMinutes % 60} min'
-            : '${left.inMinutes} min';
+  final label = left == Duration.zero
+      ? t.etaDone
+      : left.inHours >= 1
+      ? '${left.inHours} h ${left.inMinutes % 60} min'
+      : '${left.inMinutes} min';
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceRaised,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppTheme.hairline),
-        ),
-        padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-        child: Row(
-          children: [
-            const Icon(Icons.bolt, size: 18, color: AppTheme.cool),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+  return Padding(
+    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+    child: Container(
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceRaised,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.hairline),
+      ),
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+      child: Row(
+        children: [
+          const Icon(Icons.bolt, size: 18, color: AppTheme.cool),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  left == Duration.zero ? label : '${t.etaFull} $label',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.cool,
+                  ),
+                ),
+                if (eta.isTapering && left != Duration.zero)
                   Text(
-                    left == Duration.zero ? label : '${t.etaFull} $label',
+                    t.etaTapering,
                     style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.cool,
+                      fontSize: 11.5,
+                      color: AppTheme.textFaint,
                     ),
                   ),
-                  if (eta.isTapering && left != Duration.zero)
-                    Text(
-                      t.etaTapering,
-                      style: const TextStyle(
-                        fontSize: 11.5,
-                        color: AppTheme.textFaint,
-                      ),
-                    ),
-                ],
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
 /// Turns a verdict into a sentence that says why.
 String _statusMessage(AppL10n t, PackStatus status) {
@@ -702,12 +699,14 @@ String _statusMessage(AppL10n t, PackStatus status) {
     PackStatusReason.allClear => t.statusAllClear,
     PackStatusReason.bmsWarning =>
       status.warnings.map((w) => warningLabel(t, w)).join(' · '),
-    PackStatusReason.cellSpread => status.health == PackHealth.bad
-        ? t.statusSpreadBad(v.toStringAsFixed(3))
-        : t.statusSpreadWatch(v.toStringAsFixed(3)),
-    PackStatusReason.temperature => status.health == PackHealth.bad
-        ? t.statusTempBad(v.toStringAsFixed(1))
-        : t.statusTempWatch(v.toStringAsFixed(1)),
+    PackStatusReason.cellSpread =>
+      status.health == PackHealth.bad
+          ? t.statusSpreadBad(v.toStringAsFixed(3))
+          : t.statusSpreadWatch(v.toStringAsFixed(3)),
+    PackStatusReason.temperature =>
+      status.health == PackHealth.bad
+          ? t.statusTempBad(v.toStringAsFixed(1))
+          : t.statusTempWatch(v.toStringAsFixed(1)),
   };
 }
 
@@ -757,9 +756,9 @@ class _AlertBannerState extends State<_AlertBanner> {
     widget.service.mutedAlerts = widget.settings.mutedAlerts;
     if (!mounted) return;
     setState(() => _latest = null);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(t.alertSilenced)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(t.alertSilenced)));
   }
 
   @override
@@ -825,11 +824,12 @@ class _AlertBannerState extends State<_AlertBanner> {
   }
 
   String _label(AppL10n t, RideAlert alert) => switch (alert) {
-        RideAlert.bmsFault => t.alertBmsFault,
-        RideAlert.cellSpread => t.alertCellSpread,
-        RideAlert.temperature => t.alertTemperature,
-        RideAlert.lowCharge => t.alertLowCharge,
-        RideAlert.criticalCharge => t.alertCriticalCharge,
-        RideAlert.cellNearCutoff => t.alertCellNearCutoff,
-      };
+    RideAlert.bmsFault => t.alertBmsFault,
+    RideAlert.cellSpread => t.alertCellSpread,
+    RideAlert.temperature => t.alertTemperature,
+    RideAlert.lowCharge => t.alertLowCharge,
+    RideAlert.criticalCharge => t.alertCriticalCharge,
+    RideAlert.cellNearCutoff => t.alertCellNearCutoff,
+    RideAlert.nearCurrentLimit => t.alertNearCurrentLimit,
+  };
 }

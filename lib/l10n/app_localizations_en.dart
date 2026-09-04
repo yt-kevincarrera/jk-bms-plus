@@ -4051,4 +4051,103 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get configAuditNeedsProfile => 'Complete the profile';
+
+  @override
+  String get alertNearCurrentLimit => 'Current close to the BMS limit';
+
+  @override
+  String get alertLinkLost => 'Lost the connection to the battery';
+
+  @override
+  String get alertsNotifyTitle => 'Alerts that arrive with the app closed';
+
+  @override
+  String get alertsNotifyIntro =>
+      'Alerts land in the notification shade even when the app is in the background or closed. Without this, an alert at three in the morning with the phone in another room reaches nobody.';
+
+  @override
+  String get alertsNotifyEnable => 'Post alerts to the notification shade';
+
+  @override
+  String get alertsNotifyDenied =>
+      'Android has not granted permission to notify. Alerts will still appear on screen and buzz, but they will not arrive with the app closed.';
+
+  @override
+  String get alertsNotifyOneConnection =>
+      'Remember: the BMS accepts a single Bluetooth connection. While the phone is connected in the background the official JK app cannot connect, and the other way round.';
+
+  @override
+  String get alertsThresholdsTitle => 'When to speak up';
+
+  @override
+  String get alertsThresholdsIntro =>
+      'The defaults are conservative. Raise them if your pack lives outside the usual range and it is warning you too often.';
+
+  @override
+  String get alertsDeltaWarn => 'Spread between cells';
+
+  @override
+  String get alertsTempWarn => 'Temperature';
+
+  @override
+  String get alertsLowChargeWarn => 'Low charge';
+
+  @override
+  String get alertsResetDefaults => 'Back to the defaults';
+
+  @override
+  String alertNotificationBodyDelta(String value) {
+    return 'The cells have drifted $value V apart. The lowest one decides when the battery is finished.';
+  }
+
+  @override
+  String alertNotificationBodyTemp(String value) {
+    return '$value °C. Stop and let it cool before carrying on.';
+  }
+
+  @override
+  String alertNotificationBodyLow(String value) {
+    return '$value % charge left.';
+  }
+
+  @override
+  String alertNotificationBodyCritical(String value) {
+    return '$value % charge left. Find somewhere to stop.';
+  }
+
+  @override
+  String alertNotificationBodyCell(String value) {
+    return 'A cell is at $value V, close to the BMS cutoff. It can run out even while the percentage still looks reasonable.';
+  }
+
+  @override
+  String get alertNotificationBodyFault =>
+      'The BMS has raised a protection. Look at the screen before carrying on.';
+
+  @override
+  String alertNotificationBodyNearLimit(String value) {
+    return '$value A, close to what the BMS allows. If it reaches the limit it cuts without warning.';
+  }
+
+  @override
+  String get alertNotificationBodyLinkLost =>
+      'The app stopped receiving readings from the battery. If you were watching a charge, nothing is watching it now.';
+
+  @override
+  String alertNotificationBodyChargeTarget(String value) {
+    return 'The pack has reached the $value % you asked for.';
+  }
+
+  @override
+  String get alertNotificationBodyChargeComplete => 'Charging has finished.';
+
+  @override
+  String alertNotificationBodyChargeHot(String value) {
+    return '$value °C while charging. Unplug it and let it cool.';
+  }
+
+  @override
+  String alertNotificationBodyChargeSpread(String value) {
+    return 'The cells have drifted $value V apart at the top of the charge. That is where an imbalance shows up best.';
+  }
 }
