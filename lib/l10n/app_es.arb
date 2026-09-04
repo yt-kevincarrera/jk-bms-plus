@@ -2386,7 +2386,7 @@
   },
   "representativeYes": "Es normal",
   "representativeNo": "Fue una excepción",
-  "representativeDone": "Listo. Tu autonomía queda en {km} km.",
+  "representativeDone": "Listo. Tu autonomía sigue en {km} km.",
   "@representativeDone": {
     "placeholders": {
       "km": {
@@ -2394,7 +2394,7 @@
       }
     }
   },
-  "representativeDoneNoKm": "Listo. Tu consumo aprendido queda en {whPerKm} Wh/km.",
+  "representativeDoneNoKm": "Listo. Tu consumo aprendido sigue en {whPerKm} Wh/km.",
   "@representativeDoneNoKm": {
     "placeholders": {
       "whPerKm": {
@@ -2402,7 +2402,7 @@
       }
     }
   },
-  "representativeMarkedException": "Listo. Tu autonomía sigue en {km} km.",
+  "representativeMarkedException": "Listo. Ya no cuenta: tu autonomía queda en {km} km.",
   "@representativeMarkedException": {
     "placeholders": {
       "km": {
@@ -2410,7 +2410,7 @@
       }
     }
   },
-  "representativeMarkedExceptionNoKm": "Listo. Tu consumo aprendido sigue en {whPerKm} Wh/km.",
+  "representativeMarkedExceptionNoKm": "Listo. Ya no cuenta: tu consumo aprendido queda en {whPerKm} Wh/km.",
   "@representativeMarkedExceptionNoKm": {
     "placeholders": {
       "whPerKm": {

@@ -2267,7 +2267,7 @@
   },
   "representativeYes": "That's normal",
   "representativeNo": "That was an exception",
-  "representativeDone": "Done. Your range is now {km} km.",
+  "representativeDone": "Done. Your range stays at {km} km.",
   "@representativeDone": {
     "placeholders": {
       "km": {
@@ -2275,7 +2275,7 @@
       }
     }
   },
-  "representativeDoneNoKm": "Done. Your learned consumption is now {whPerKm} Wh/km.",
+  "representativeDoneNoKm": "Done. Your learned consumption stays at {whPerKm} Wh/km.",
   "@representativeDoneNoKm": {
     "placeholders": {
       "whPerKm": {
@@ -2283,7 +2283,7 @@
       }
     }
   },
-  "representativeMarkedException": "Done. Your range stays at {km} km.",
+  "representativeMarkedException": "Done. It no longer counts: your range is now {km} km.",
   "@representativeMarkedException": {
     "placeholders": {
       "km": {
@@ -2291,7 +2291,7 @@
       }
     }
   },
-  "representativeMarkedExceptionNoKm": "Done. Your learned consumption stays at {whPerKm} Wh/km.",
+  "representativeMarkedExceptionNoKm": "Done. It no longer counts: your learned consumption is now {whPerKm} Wh/km.",
   "@representativeMarkedExceptionNoKm": {
     "placeholders": {
       "whPerKm": {

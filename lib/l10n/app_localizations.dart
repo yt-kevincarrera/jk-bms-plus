@@ -6485,25 +6485,25 @@ abstract class AppL10n {
   /// No description provided for @representativeDone.
   ///
   /// In es, this message translates to:
-  /// **'Listo. Tu autonomía queda en {km} km.'**
+  /// **'Listo. Tu autonomía sigue en {km} km.'**
   String representativeDone(String km);
 
   /// No description provided for @representativeDoneNoKm.
   ///
   /// In es, this message translates to:
-  /// **'Listo. Tu consumo aprendido queda en {whPerKm} Wh/km.'**
+  /// **'Listo. Tu consumo aprendido sigue en {whPerKm} Wh/km.'**
   String representativeDoneNoKm(String whPerKm);
 
   /// No description provided for @representativeMarkedException.
   ///
   /// In es, this message translates to:
-  /// **'Listo. Tu autonomía sigue en {km} km.'**
+  /// **'Listo. Ya no cuenta: tu autonomía queda en {km} km.'**
   String representativeMarkedException(String km);
 
   /// No description provided for @representativeMarkedExceptionNoKm.
   ///
   /// In es, this message translates to:
-  /// **'Listo. Tu consumo aprendido sigue en {whPerKm} Wh/km.'**
+  /// **'Listo. Ya no cuenta: tu consumo aprendido queda en {whPerKm} Wh/km.'**
   String representativeMarkedExceptionNoKm(String whPerKm);
 
   /// No description provided for @representativeChange.

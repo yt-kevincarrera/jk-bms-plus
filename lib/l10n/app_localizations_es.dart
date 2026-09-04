@@ -3767,22 +3767,22 @@ class AppL10nEs extends AppL10n {
 
   @override
   String representativeDone(String km) {
-    return 'Listo. Tu autonomía queda en $km km.';
-  }
-
-  @override
-  String representativeDoneNoKm(String whPerKm) {
-    return 'Listo. Tu consumo aprendido queda en $whPerKm Wh/km.';
-  }
-
-  @override
-  String representativeMarkedException(String km) {
     return 'Listo. Tu autonomía sigue en $km km.';
   }
 
   @override
-  String representativeMarkedExceptionNoKm(String whPerKm) {
+  String representativeDoneNoKm(String whPerKm) {
     return 'Listo. Tu consumo aprendido sigue en $whPerKm Wh/km.';
+  }
+
+  @override
+  String representativeMarkedException(String km) {
+    return 'Listo. Ya no cuenta: tu autonomía queda en $km km.';
+  }
+
+  @override
+  String representativeMarkedExceptionNoKm(String whPerKm) {
+    return 'Listo. Ya no cuenta: tu consumo aprendido queda en $whPerKm Wh/km.';
   }
 
   @override
