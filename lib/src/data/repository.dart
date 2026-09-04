@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../inspection/inspection_result.dart';
+import '../pack/pack_baseline.dart';
 import '../inspection/inspection_series.dart';
 import '../metrics/capacity_cycle_detector.dart';
 import '../metrics/trip_energy_repair.dart';
@@ -609,6 +610,70 @@ class BmsRepository {
 
   Future<Map<String, int>> inspectionCountsByPack() =>
       db.inspectionCountsByPack();
+
+  // --- The day-one baseline ---
+  //
+  // Written once per pack and then left alone. Overwriting it is offered as
+  // a deliberate act elsewhere, never as a side effect of connecting: a
+  // baseline that quietly follows the pack around measures nothing.
+
+  Future<void> saveBaseline(
+    String deviceId,
+    PackBaseline baseline, {
+    String note = '',
+  }) => db.saveBaseline(
+    BaselinesCompanion.insert(
+      deviceId: deviceId,
+      capturedAt: baseline.capturedAt,
+      json: jsonEncode(baseline.toJson()),
+      note: Value(note),
+    ),
+  );
+
+  Future<PackBaseline?> baseline(String deviceId) async {
+    final row = await db.baselineRow(deviceId);
+    return _decodeBaseline(row);
+  }
+
+  Stream<PackBaseline?> watchBaseline(String deviceId) =>
+      db.watchBaselineRow(deviceId).map(_decodeBaseline);
+
+  Future<String> baselineNote(String deviceId) async =>
+      (await db.baselineRow(deviceId))?.note ?? '';
+
+  Future<void> setBaselineNote(String deviceId, String note) =>
+      db.setBaselineNote(deviceId, note);
+
+  Future<void> deleteBaseline(String deviceId) => db.deleteBaseline(deviceId);
+
+  /// A row written by a newer version, or a corrupted one, reads as no
+  /// baseline rather than as a crash on the screen that asked for it.
+  static PackBaseline? _decodeBaseline(Baseline? row) {
+    if (row == null) return null;
+    try {
+      return PackBaseline.fromJson(
+        (jsonDecode(row.json) as Map).cast<String, Object?>(),
+      );
+    } on Object {
+      return null;
+    }
+  }
+
+  /// What the rider said about the pack itself, rather than about a reading.
+  Future<void> setPackProfile(
+    String id, {
+    String? chemistry,
+    DateTime? acquiredAt,
+    bool clearAcquiredAt = false,
+  }) => db.updateDevice(
+    id,
+    DevicesCompanion(
+      chemistry: chemistry == null ? const Value.absent() : Value(chemistry),
+      acquiredAt: clearAcquiredAt
+          ? const Value(null)
+          : (acquiredAt == null ? const Value.absent() : Value(acquiredAt)),
+    ),
+  );
 
   Stream<List<Inspection>> watchInspections() => db.watchInspections();
 

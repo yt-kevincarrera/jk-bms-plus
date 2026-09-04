@@ -9,6 +9,8 @@ import '../app_settings.dart';
 import '../ble/proximity_watcher.dart';
 import '../bms_service.dart';
 import '../model/bms_snapshot.dart';
+import 'pack/pack_profile_sheet.dart';
+import '../pack/chemistry.dart';
 import 'locale_controller.dart';
 import 'tabs/cells_tab.dart';
 import 'tabs/health_tab.dart';
@@ -64,6 +66,14 @@ class _HomeShellState extends State<HomeShell> {
   /// Redraws the banner so the age keeps counting up on its own.
   Timer? _ageTick;
 
+  /// Whether the battery profile has already been offered this session.
+  ///
+  /// The offer is made once, on a pack the app has never met before, and
+  /// never again: the profile card in the System tab is where it lives
+  /// afterwards. An app that asks the same four questions on every connect
+  /// teaches the rider to dismiss it without reading.
+  bool _profileOffered = false;
+
   @override
   void initState() {
     super.initState();
@@ -79,6 +89,8 @@ class _HomeShellState extends State<HomeShell> {
             // link last complained about is over.
             _trouble = null;
           });
+          // Now that there is something to keep as day one, and not before.
+          unawaited(_offerProfileOnce());
         }
       }),
       widget.service.linkState.listen((s) {
@@ -97,6 +109,41 @@ class _HomeShellState extends State<HomeShell> {
     _ageTick = Timer.periodic(const Duration(seconds: 2), (_) {
       if (mounted && _link != BleLinkState.connected) setState(() {});
     });
+  }
+
+  /// Asks the four profile questions the first time a battery is taken on.
+  ///
+  /// A pack whose first sighting is also its most recent one has been
+  /// connected exactly once, ever, which is as close as the app gets to
+  /// "this is new". Demo packs are skipped: nobody wants a profile for a
+  /// simulation, and the answers would be fiction in the same tables the
+  /// real ones live in.
+  Future<void> _offerProfileOnce() async {
+    if (_profileOffered) return;
+    _profileOffered = true;
+
+    final service = widget.service;
+    final repo = service.repository;
+    final id = service.activeDeviceId;
+    if (repo == null || id == null || service.isDemo) return;
+
+    final device = await repo.device(id);
+    if (device == null || device.demo) return;
+    if (device.firstSeenAt != device.lastSeenAt) return;
+    // Somebody has already answered, on a phone this database came from.
+    if (device.chemistry.isNotEmpty) return;
+    if (await repo.baseline(id) != null) return;
+
+    if (!mounted) return;
+    await PackProfileSheet.show(
+      context: context,
+      service: service,
+      device: device,
+      suggestion: ChemistryHint.from(
+        cellOvp: service.lastSettings?.cellOvp,
+        highestCellVolts: service.lastSnapshot?.maxCellVoltage,
+      ),
+    );
   }
 
   @override
@@ -213,10 +260,7 @@ PreferredSizeWidget? _appBarBottomFor({
   required String demoText,
   required Widget? linkBanner,
 }) {
-  final bars = <Widget>[
-    if (demo) _DemoBanner(text: demoText),
-    ?linkBanner,
-  ];
+  final bars = <Widget>[if (demo) _DemoBanner(text: demoText), ?linkBanner];
   if (bars.isEmpty) return null;
   const demoHeight = 22.0;
   const linkHeight = 62.0;
@@ -256,12 +300,12 @@ class _LinkBanner extends StatelessWidget {
     final title = switch (state) {
       BleLinkState.reconnecting => t.linkReconnectingTitle,
       BleLinkState.connecting ||
-      BleLinkState.negotiating =>
-        t.linkConnectingTitle,
+      BleLinkState.negotiating => t.linkConnectingTitle,
       _ => t.linkLostTitle,
     };
-    final why =
-        trouble == null ? t.linkLostBody : linkTroubleWording(t, trouble!);
+    final why = trouble == null
+        ? t.linkLostBody
+        : linkTroubleWording(t, trouble!);
     final age = _age(t);
 
     return Container(

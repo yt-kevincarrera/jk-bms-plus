@@ -6,6 +6,7 @@ import 'package:jk_bms/src/protocol/protocol_variant.dart';
 BmsSnapshot buildSnapshot({
   DateTime? timestamp,
   List<double>? cells,
+  List<double>? cellResistances,
   double soc = 78,
   double remainingAh = 35.1,
   List<double> temperatures = const [25, 24],
@@ -21,7 +22,7 @@ BmsSnapshot buildSnapshot({
     variant: JkProtocolVariant.jk02_24s,
     frameCounter: 1,
     cellVoltages: v,
-    cellResistances: List.filled(20, 0.0025),
+    cellResistances: cellResistances ?? List.filled(v.length, 0.0025),
     enabledCellMask: 0xFFFFF,
     packVoltage: v.reduce((a, b) => a + b),
     current: current,

@@ -76,6 +76,7 @@ Device _device() => Device(
   lastSeenAt: DateTime.utc(2026, 5, 1),
   catalogueCapacityAh: 40,
   catalogueFromBms: false,
+  chemistry: 'lfp',
   demo: false,
 );
 

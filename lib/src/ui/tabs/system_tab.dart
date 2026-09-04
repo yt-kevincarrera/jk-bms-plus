@@ -21,6 +21,7 @@ import '../../model/jk_settings.dart';
 import '../../protocol/jk_frame.dart';
 import '../../protocol/protocol_variant.dart';
 import '../live_console_screen.dart';
+import '../pack/pack_profile_card.dart';
 import '../locale_controller.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
@@ -98,6 +99,7 @@ class _SystemTabState extends State<SystemTab> {
       padding: const EdgeInsets.only(top: 8, bottom: 28),
       children: [
         if (service.isDemo) _demoSection(t),
+        PackProfileCard(service: service),
         Section(
           title: t.systemDeviceTitle,
           children: info == null
