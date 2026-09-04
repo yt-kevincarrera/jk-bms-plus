@@ -593,10 +593,23 @@ group('when a ride is worth asking about', () {
   // asking about it would be noise with no consequence behind it.
 
   test('a long ride slightly off is worth asking about', () {
-    // 40 km at 11% below a learned 17.5 moves the figure about 5%.
+    // 40 km at 14% below a learned 17.5 moves the figure 6.3%, past the line.
+    // The break-even for a 40 km ride is 15.53 Wh/km, or 11.25% below, so this
+    // sits clear of it rather than on it: a test balanced on the threshold
+    // passes or fails on the last bit of a double.
+    final e = RangeEstimator()..addSegment(wh: 17.5 * 100, km: 100);
+    final shift = e.projectedShiftFraction(wh: 15.0 * 40, km: 40);
+    expect(shift, greaterThan(RangeEstimator.askThresholdFraction));
+  });
+
+  test('and a long ride just inside the line is not', () {
+    // 15.6 Wh/km is 10.9% below, which moves the figure 4.8%. Under the
+    // threshold, so it passes without a word. This is the case that decides
+    // whether the feature nags: an ordinary day is a few percent off, and a
+    // few percent must stay silent.
     final e = RangeEstimator()..addSegment(wh: 17.5 * 100, km: 100);
     final shift = e.projectedShiftFraction(wh: 15.6 * 40, km: 40);
-    expect(shift, greaterThan(RangeEstimator.askThresholdFraction));
+    expect(shift, lessThan(RangeEstimator.askThresholdFraction));
   });
 
   test('a short ride wildly off is not', () {
