@@ -356,11 +356,25 @@ class BmsRepository {
     final all = await db.recentTrips(deviceId, limit: 500);
     final usable =
         all
-            .where((t) => t.distanceKm >= 0.2 && t.energyOutWh > t.energyInWh)
+            .where(
+              (t) =>
+                  t.distanceKm >= 0.2 &&
+                  t.energyOutWh > t.energyInWh &&
+                  // Null is not false: a ride nobody was asked about counts,
+                  // which keeps the behaviour of every ride recorded before
+                  // the question existed. Only an explicit no takes one out.
+                  t.representative != false,
+            )
             .toList()
           ..sort((a, b) => a.startedAt.compareTo(b.startedAt));
     return usable;
   }
+
+  Future<void> setTripRepresentative(int tripId, bool? value) =>
+      db.setTripRepresentative(tripId, value);
+
+  Future<void> markTripSummarySeen(int tripId) =>
+      db.markTripSummarySeen(tripId);
 
   /// Trips for one pack, newest first.
   Stream<List<Trip>> watchTrips(String deviceId, {int limit = 100}) =>

@@ -755,6 +755,16 @@ class AppDatabase extends _$AppDatabase {
         TripsCompanion(note: Value(note)),
       );
 
+  Future<void> setTripRepresentative(int tripId, bool? value) =>
+      (update(trips)..where((t) => t.id.equals(tripId))).write(
+        TripsCompanion(representative: Value(value)),
+      );
+
+  Future<void> markTripSummarySeen(int tripId) =>
+      (update(trips)..where((t) => t.id.equals(tripId))).write(
+        const TripsCompanion(summarySeen: Value(true)),
+      );
+
   // --- Snapshots ---
 
   Future<void> insertSnapshots(List<SnapshotsCompanion> rows) =>
