@@ -21,6 +21,10 @@ class SwitchableLink implements BmsLink {
   final BleTransport _real;
   SimulatedLink? _simulator;
 
+  /// The radio, for the one caller that needs to write to the pack directly:
+  /// the service asking for cell info again when none has arrived.
+  BleTransport get real => _real;
+
   final _bytes = StreamController<List<int>>.broadcast();
   final _state = StreamController<BleLinkState>.broadcast();
   final _errors = StreamController<BleLinkError>.broadcast();

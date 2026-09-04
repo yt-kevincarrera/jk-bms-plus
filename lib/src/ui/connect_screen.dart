@@ -6,11 +6,13 @@ import 'package:geolocator/geolocator.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../ble/ble_transport.dart';
+import '../ble/connect_guard.dart';
 import '../ble/first_contact.dart';
 import '../app_settings.dart';
 import '../ble/proximity_watcher.dart';
 import '../ble/simulator/simulated_pack.dart';
 import '../bms_service.dart';
+import '../model/bms_snapshot.dart';
 import 'home_shell.dart';
 import 'locale_controller.dart';
 import 'theme.dart';
@@ -77,6 +79,28 @@ class _ConnectScreenState extends State<ConnectScreen> {
   /// complains on its way out, and that complaint is not news.
   bool _settling = false;
 
+  /// Decides whether a tap becomes an attempt at all. Every cancelled attempt
+  /// risks leaving a connection Android will not close, and those run out for
+  /// the whole phone, so tapping repeatedly is the one thing that must not be
+  /// free.
+  final ConnectGuard _guard = ConnectGuard();
+
+  /// Redraws the cooldown countdowns. Nothing else changes while a pack is
+  /// waiting out its pause, so nothing else would repaint it.
+  Timer? _cooldownTick;
+
+  /// The pack this app is connected to right now, or null. Kept in state so
+  /// the card at the top of the screen follows a disconnect that happened
+  /// anywhere else.
+  Device? _connected;
+
+  /// The last reading, for the connected card to show a charge level rather
+  /// than only a name.
+  BmsSnapshot? _liveSnapshot;
+
+  StreamSubscription<Device?>? _deviceSub;
+  StreamSubscription<BmsSnapshot>? _liveSub;
+
   /// The raw exception behind [_message], when there was one.
   ///
   /// Kept separate so the screen can lead with a sentence and still hand over
@@ -101,7 +125,12 @@ class _ConnectScreenState extends State<ConnectScreen> {
       // Not while inspecting: the watcher exists to find the rider's own
       // bike, and that is the one pack the quick test must never be run on
       // by accident.
-      if (!mounted || _connecting || _inspecting) return;
+      //
+      // And not while a pack is already connected. The link outlives this
+      // screen now, so the watcher spotting the bike again while the app is
+      // holding a working link would tear it down to rebuild it -- the one
+      // sequence this whole change exists to stop.
+      if (!mounted || _connecting || _inspecting || _connected != null) return;
       _connecting = true;
       _connect(device);
     });
@@ -123,21 +152,57 @@ class _ConnectScreenState extends State<ConnectScreen> {
       }
     });
 
+    _connected = widget.service.activeDevice;
+    _liveSnapshot = widget.service.lastSnapshot;
+    _deviceSub = widget.service.deviceStream.listen((d) {
+      if (mounted) setState(() => _connected = d);
+    });
+    _liveSub = widget.service.snapshots.listen((s) {
+      if (mounted) setState(() => _liveSnapshot = s);
+    });
+
+    // One second is enough for a countdown and cheap enough to leave running
+    // only while there is a countdown to draw.
+    _cooldownTick = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted && _anyCooling()) setState(() {});
+    });
+
     _loadStored();
     unawaited(_checkForUpdateQuietly());
 
     // Scanning is what anybody opens this screen to do, so it starts on its
     // own. The button below becomes a retry rather than the way in.
+    //
+    // Not while a pack is connected, though. Scanning competes with the link
+    // for the same radio, and Android throttles an app that scans repeatedly
+    // by silently returning nothing -- so a scan here would risk the
+    // connection and poison the next real search. Coming back from the pack
+    // screens lands on the connected card instead, which is the thing worth
+    // seeing.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _startScan();
+      if (mounted && widget.service.activeDevice == null) _startScan();
     });
+  }
+
+  /// Whether any pack is waiting out a cooldown, so the ticker knows whether
+  /// there is anything to redraw.
+  bool _anyCooling() {
+    if (_guard.saturated) return false;
+    final now = DateTime.now();
+    for (final d in _devices) {
+      if (_guard.cooldownLeft(deviceId: d.id, now: now) != null) return true;
+    }
+    return false;
   }
 
   @override
   void dispose() {
+    _cooldownTick?.cancel();
     _scanSub?.cancel();
     _errorSub?.cancel();
     _foundSub?.cancel();
+    _deviceSub?.cancel();
+    _liveSub?.cancel();
     super.dispose();
   }
 
@@ -451,6 +516,11 @@ class _ConnectScreenState extends State<ConnectScreen> {
 
   Future<void> _startScan() async {
     final t = AppL10n.of(context);
+    // Searching again is the deliberate, slow action that follows the advice
+    // to restart Bluetooth, so it is what lifts a saturation refusal. Without
+    // this the advice was a dead end for a rider with nothing connected: no
+    // Disconnect button to press, and every tap refused for the session.
+    if (_guard.saturated) _guard.forgive();
     setState(() {
       _scanning = true;
       _searched = false;
@@ -605,25 +675,156 @@ class _ConnectScreenState extends State<ConnectScreen> {
     );
   }
 
-  Widget _deviceTile(AppL10n t, DiscoveredBms d, {required bool likely}) =>
-      ListTile(
-        leading: Icon(
-          likely ? Icons.battery_charging_full : Icons.bluetooth,
-          color: likely ? AppTheme.good : AppTheme.textFaint,
+  Widget _deviceTile(AppL10n t, DiscoveredBms d, {required bool likely}) {
+    final isConnected = _connected?.id == d.id;
+    final cooling = _guard.cooldownLeft(deviceId: d.id, now: DateTime.now());
+    // Greyed out rather than gone: a tile that vanishes while it waits looks
+    // like the pack went away, which is the opposite of the message.
+    final blocked = (_connecting && !isConnected) ||
+        (!isConnected && (cooling != null || _guard.saturated));
+
+    final subtitle = switch (true) {
+      _ when isConnected => t.tileConnected,
+      _ when cooling != null => t.tileCooling('${cooling.inSeconds}'),
+      _ when _guard.saturated => t.tileStackSaturated,
+      _ when d.advertisesJkService =>
+        '${d.id}   ${d.rssi} dBm  ·  ${t.connectByService}',
+      _ => '${d.id}   ${d.rssi} dBm',
+    };
+
+    return ListTile(
+      enabled: !blocked,
+      leading: Icon(
+        isConnected
+            ? Icons.bluetooth_connected
+            : likely
+            ? Icons.battery_charging_full
+            : Icons.bluetooth,
+        color: isConnected
+            ? AppTheme.good
+            : likely
+            ? AppTheme.good
+            : AppTheme.textFaint,
+      ),
+      title: Text(
+        d.name.isEmpty ? d.id : d.name,
+        style: TextStyle(color: likely || isConnected ? null : AppTheme.textSecondary),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(
+          fontSize: 11.5,
+          color: isConnected
+              ? AppTheme.good
+              : cooling != null || _guard.saturated
+              ? AppTheme.watch
+              : null,
         ),
-        title: Text(
-          d.name.isEmpty ? d.id : d.name,
-          style: TextStyle(color: likely ? null : AppTheme.textSecondary),
-        ),
-        subtitle: Text(
-          d.advertisesJkService
-              ? '${d.id}   ${d.rssi} dBm  ·  ${t.connectByService}'
-              : '${d.id}   ${d.rssi} dBm',
-          style: const TextStyle(fontSize: 11.5),
-        ),
-        trailing: Pill('${d.rssi}', color: _rssiColour(d.rssi)),
-        onTap: () => _connect(d),
-      );
+      ),
+      trailing: isConnected
+          ? Pill(t.tilePillOpen, color: AppTheme.good)
+          : cooling != null
+          ? Pill('${cooling.inSeconds} s', color: AppTheme.watch)
+          : Pill('${d.rssi}', color: _rssiColour(d.rssi)),
+      // Still tappable while cooling or saturated: the tap is refused with a
+      // sentence saying why, which teaches more than a dead tile.
+      onTap: () => _onTap(d),
+    );
+  }
+
+  /// The pack this app is holding a link to, pinned above everything else.
+  ///
+  /// Its job is to answer the question the rider was left with: coming back
+  /// from the pack screens used to land on a search list with no sign that
+  /// anything was still connected, and the only apparent way back was to
+  /// connect all over again.
+  Widget _connectedCard(AppL10n t) {
+    final device = _connected;
+    if (device == null) return const SizedBox.shrink();
+    final name = device.name.isEmpty ? device.id : device.name;
+    final soc = _liveSnapshot?.soc;
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 14, 16, 2),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+      decoration: BoxDecoration(
+        color: AppTheme.good.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.good.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.bluetooth_connected,
+                size: 17,
+                color: AppTheme.good,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              if (soc != null)
+                Pill('${soc.toStringAsFixed(0)} %', color: AppTheme.good),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            t.connectedCardNote,
+            style: const TextStyle(
+              fontSize: 11.5,
+              height: 1.35,
+              color: AppTheme.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              TextButton.icon(
+                onPressed: () => _openHome(name),
+                icon: const Icon(Icons.arrow_forward, size: 17),
+                label: Text(t.connectedCardOpen),
+              ),
+              const SizedBox(width: 4),
+              TextButton.icon(
+                onPressed: _disconnectByHand,
+                icon: const Icon(Icons.link_off, size: 17),
+                label: Text(t.connectedCardRelease),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppTheme.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Letting go, because the rider asked. The one explicit disconnect.
+  ///
+  /// It also clears the guard's ledger: a clean release is the opposite of the
+  /// half-open links the failure count was counting, and the pack is free
+  /// again straight away.
+  Future<void> _disconnectByHand() async {
+    await widget.service.disconnect();
+    _guard.forgive();
+    if (!mounted) return;
+    setState(() {
+      _message = null;
+      _messageDetail = '';
+      _liveSnapshot = null;
+    });
+    await _startScan();
+  }
 
   /// Stops a scan the user started. Cancelling the subscription also stops the
   /// radio, so this genuinely ends the scan rather than just hiding it.
@@ -637,6 +838,68 @@ class _ConnectScreenState extends State<ConnectScreen> {
         if (message != null) _message = message;
       });
     }
+  }
+
+  /// The rider tapped a pack. Decides whether that becomes an attempt.
+  ///
+  /// The gate matters more than it looks. A tap that turns into a cancelled
+  /// attempt can leave a connection the phone never reclaims, and those are
+  /// shared across every app, so the way out of a bad patch is fewer attempts
+  /// rather than more. Each refusal says which it is and what to do instead.
+  Future<void> _onTap(DiscoveredBms device) async {
+    final t = t0(context);
+
+    // Already connected to this one: the tap means "take me back", not
+    // "connect again". Reconnecting would drop a working link to rebuild it.
+    if (_connected?.id == device.id && !_connecting) {
+      await _openHome(device.name.isEmpty ? device.id : device.name);
+      return;
+    }
+
+    final now = DateTime.now();
+    switch (_guard.judge(deviceId: device.id, now: now, busy: _connecting)) {
+      case TapVerdict.go:
+        break;
+      case TapVerdict.busy:
+        setState(() {
+          _message = t.tapBusy;
+          _messageDetail = '';
+          _busyMessage = true;
+        });
+        return;
+      case TapVerdict.cooling:
+        final left = _guard.cooldownLeft(deviceId: device.id, now: now);
+        setState(() {
+          _message = t.tapCooling('${left?.inSeconds ?? 0}');
+          _messageDetail = '';
+          _busyMessage = true;
+        });
+        return;
+      case TapVerdict.saturated:
+        setState(() {
+          _message = t.tapStackSaturated('${_guard.consecutiveFailures}');
+          _messageDetail = '';
+          _busyMessage = true;
+        });
+        return;
+    }
+
+    // The phone's own list of open connections, asked before attempting. If
+    // the pack is in it while this app holds nothing, its one connection
+    // belongs to another app or to a link nothing can close, and no attempt
+    // from here will win it.
+    if (widget.service.activeDevice == null &&
+        await widget.service.heldByPhone(device.id)) {
+      if (!mounted) return;
+      setState(() {
+        _message = t.tapHeldByPhone;
+        _messageDetail = '';
+        _busyMessage = true;
+      });
+      return;
+    }
+
+    await _connect(device);
   }
 
   Future<void> _connect(DiscoveredBms device) async {
@@ -692,6 +955,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
     }
 
     if (outcome != FirstContactOutcome.proven) {
+      _guard.recordFailure(deviceId: device.id, at: DateTime.now());
       _settling = true;
       await widget.service.disconnect();
       _settling = false;
@@ -751,14 +1015,22 @@ class _ConnectScreenState extends State<ConnectScreen> {
       return;
     }
 
+    // A reading arrived, so every failure the guard was holding against this
+    // pack, and against the phone, is disproved.
+    _guard.recordSuccess(deviceId: device.id);
+
     // Only now is it worth remembering: the proximity watcher exists to
     // reconnect to a BMS, and remembering whatever was tapped last would have
     // it chasing a speaker.
     await widget.proximity.remember(device.id, device.name);
 
-    await _openHome(device.name);
-    await widget.service.disconnect();
     _connecting = false;
+    // The link belongs to the session, not to this screen. Coming back from
+    // the pack screens used to tear it down, which meant the only way back in
+    // was the whole connect sequence again -- the expensive, fragile part, and
+    // the one that strands connections when it fails. Now going back lands on
+    // the connected card, and letting go is something the rider asks for.
+    await _openHome(device.name);
   }
 
   /// Asks the judge four times a second until it has a verdict.
@@ -870,6 +1142,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (_inspecting) _inspectionBanner(t) else _oneConnectionNote(t),
+            _connectedCard(t),
             if (_message != null)
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),

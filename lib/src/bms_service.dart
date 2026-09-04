@@ -183,6 +183,41 @@ class BmsService {
   /// Human-readable trouble: unknown variant, undecodable frame, and so on.
   Stream<String> get problems => _problemController.stream;
 
+  /// The last few problems, newest first, for a screen built after they were
+  /// said. The stream is broadcast, so a tab opened a second late used to miss
+  /// the one sentence that explained why it was waiting.
+  final List<String> recentProblems = [];
+
+  void _problem(String message) {
+    recentProblems.insert(0, message);
+    if (recentProblems.length > 10) recentProblems.removeLast();
+    _problemController.add(message);
+  }
+
+  /// What has arrived on this connection, by stage, so a screen stuck on
+  /// "waiting for the first reading" can say which stage it is stuck at
+  /// instead of spinning. Reset on every connect.
+  int deviceInfoFrames = 0;
+  int cellInfoFrames = 0;
+
+  /// Cell info frames refused because the protocol variant was not known.
+  int heldBackFrames = 0;
+
+  /// Cell info frames the parser could not decode with the variant it had.
+  int decodeFailures = 0;
+
+  /// Readings that reached the snapshot stream.
+  int snapshotsEmitted = 0;
+
+  void _resetCounters() {
+    deviceInfoFrames = 0;
+    cellInfoFrames = 0;
+    heldBackFrames = 0;
+    decodeFailures = 0;
+    snapshotsEmitted = 0;
+    recentProblems.clear();
+  }
+
   /// Last link state seen, so a screen built after the transition still shows
   /// the right thing instead of the value it was constructed with.
   BleLinkState lastLinkState = BleLinkState.idle;
@@ -261,6 +296,20 @@ class BmsService {
   static const String demoDeviceId = 'demo';
 
   /// Records which pack is connected and points storage at it.
+  ///
+  /// Deliberately short, and awaited by the reading that triggered it: a
+  /// reading cannot be filed before there is a battery to file it under, and
+  /// this is the whole of what that needs. One upsert.
+  ///
+  /// Everything derived from that pack's history used to be awaited here too,
+  /// and that is what left the rider's own pack hanging. The first decoded
+  /// frame of every connection paid for a trip repair, a range relearn, a
+  /// capacity scan and a capacity refresh over days of stored readings before
+  /// any reading was allowed to reach a screen. A pack with no history did all
+  /// of it instantly, which is why a battery that arrived that morning
+  /// connected and showed its data while his own sat on "waiting for the first
+  /// reading" -- and why, before the connect screen learned to accept device
+  /// info as proof, his own pack was declared not to be a JK BMS.
   Future<void> _activate({
     required String id,
     required String name,
@@ -272,18 +321,35 @@ class BmsService {
     repo.activeDeviceId = id;
     repo.activeIsDemo = demo;
     _deviceController.add(activeDevice);
+    unawaited(_rebuildFromHistory(id));
+  }
 
-    // Everything derived from history has to be rebuilt for *this* pack. None
-    // of it can happen at startup any more, because until a pack is connected
-    // there is no history to speak of -- only several histories, and no way to
-    // know which one applies.
-    // Before the relearn, so the estimator is rebuilt from mended figures
-    // rather than from the ones that made it refuse everything.
-    lastTripRepair = await repo.repairTripEnergy(id);
-    await relearnRangeFromTrips();
-    await resumeCapacityTest();
-    await scanForCapacityCycles();
-    await refreshMeasuredCapacity();
+  /// Rebuilds what this pack's stored history implies, after the readings have
+  /// started flowing.
+  ///
+  /// Not at startup, because until a pack is connected there is no history to
+  /// speak of, only several histories with no way to know which applies. Not
+  /// awaited by the reading path either, because none of it is needed to show
+  /// a reading: it fills in the learned range, the measured capacity and any
+  /// test left running, all of which appear a moment later on their own
+  /// streams. A rider watching the Now tab sees the pack immediately and the
+  /// learned figures fill in behind it.
+  Future<void> _rebuildFromHistory(String id) async {
+    final repo = repository;
+    if (repo == null) return;
+    try {
+      // Before the relearn, so the estimator is rebuilt from mended figures
+      // rather than from the ones that made it refuse everything.
+      lastTripRepair = await repo.repairTripEnergy(id);
+      await relearnRangeFromTrips();
+      await resumeCapacityTest();
+      await scanForCapacityCycles();
+      await refreshMeasuredCapacity();
+    } on Object catch (e) {
+      // Nothing here is load-bearing for showing a reading, so a failure is
+      // worth saying and not worth stopping for.
+      _problem('Could not rebuild what this pack has learned: $e');
+    }
   }
 
   /// Re-reads the stored row, after a rename or a catalogue change.
@@ -316,11 +382,8 @@ class BmsService {
   Future<void> exitDemoMode() async {
     final link = _switchable;
     if (link == null) return;
-    _resetDecoding();
     await link.useRealBms();
-    activeDevice = null;
-    repository?.activeDeviceId = null;
-    _deviceController.add(null);
+    await _standDown();
   }
 
   /// Feeds the range estimator during a ride, so the number improves as you go
@@ -354,6 +417,20 @@ class BmsService {
     tripAutoStart.reset();
   }
 
+  /// Whether the phone already holds a connection to this device that this
+  /// app does not own.
+  ///
+  /// Asked before attempting, because it is the one failure no amount of
+  /// retrying fixes: the pack's single connection belongs to another app, or
+  /// to a link Android never closed and cannot be asked to. Answers false when
+  /// there is no radio behind the service, which is the honest answer for the
+  /// simulator and for a test.
+  Future<bool> heldByPhone(String deviceId) async {
+    final real = _switchable?.real;
+    if (real == null || isDemo) return false;
+    return real.heldBySystem(deviceId);
+  }
+
   /// True while the connected pack is somebody else's, being inspected.
   ///
   /// Nothing about it is filed: no Devices row, no readings, no raw frames,
@@ -370,6 +447,15 @@ class BmsService {
     String name = '',
     bool inspecting = false,
   }) async {
+    // One pack at a time, and the one before it is let go first. The BMS
+    // accepts a single connection, so asking for a second while the first is
+    // still open is a guaranteed failure; and everything decoded from the old
+    // pack has to go, or the new pack's screens open showing the old pack's
+    // reading and its protocol variant. That is what left the previous
+    // battery's notification standing after a switch.
+    if (activeDeviceId != null && activeDeviceId != deviceId) {
+      await disconnect();
+    }
     _assembler.reset();
     _inspecting = inspecting;
     // Held, not stored. A device only becomes a battery on record once it has
@@ -378,8 +464,46 @@ class BmsService {
     // history folder and a place in the saved list.
     _pendingDeviceId = deviceId;
     _pendingDeviceName = name;
+    _resetCounters();
     _armSilenceWatchdog();
+    _armCellInfoRequests();
     await _transport.connect(deviceId);
+  }
+
+  /// Asks the pack for cell info again, every few seconds, until one arrives.
+  ///
+  /// The transport asks once on connect and then only nudges a pack that has
+  /// gone completely quiet. A pack that answers the device-info request and
+  /// then keeps talking, but never with cell info, is neither quiet nor
+  /// working: the transport hears bytes and stays its hand, and the screens
+  /// wait forever. This is the service's own view, by record type, so it can
+  /// tell that case from a healthy stream and ask again. It stops on the first
+  /// cell info frame, so a pack that streams normally is never written to.
+  Timer? _cellInfoTimer;
+  int _cellInfoAsks = 0;
+
+  void _armCellInfoRequests() {
+    _cellInfoTimer?.cancel();
+    _cellInfoAsks = 0;
+    _cellInfoTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (cellInfoFrames > 0) {
+        _cellInfoTimer?.cancel();
+        _cellInfoTimer = null;
+        return;
+      }
+      if (isDemo || lastLinkState != BleLinkState.connected) return;
+      final real = _switchable?.real;
+      if (real == null) return;
+      _cellInfoAsks++;
+      if (_cellInfoAsks == 1 || _cellInfoAsks % 10 == 0) {
+        _problem(
+          'Asked the pack for cell info again (attempt $_cellInfoAsks): the '
+          'link is up and $deviceInfoFrames device-info frame(s) arrived, but '
+          'no cell readings have.',
+        );
+      }
+      unawaited(real.requestCellInfo());
+    });
   }
 
   String? _pendingDeviceId;
@@ -401,7 +525,7 @@ class BmsService {
     _silenceTimer?.cancel();
     _silenceTimer = Timer(_silenceTimeout, () {
       if (_lastSnapshot != null) return;
-      _problemController.add(
+      _problem(
         'Connected, but no readings have arrived. Reading a JK BMS needs no '
         'password, so this is not an authentication problem. The usual causes '
         'are another client still holding the channel, or a firmware whose '
@@ -410,12 +534,43 @@ class BmsService {
     });
   }
 
+  /// Lets go of the pack and forgets it.
+  ///
+  /// Forgetting is the point, and it used to be missing: a disconnect dropped
+  /// the radio and left `activeDevice`, the last reading, the protocol variant
+  /// and the home-screen widget belonging to a pack the app was no longer
+  /// talking to. Switching batteries then showed the previous one's reading on
+  /// the new one's screens, kept the previous one's notification standing, and
+  /// could decode the new pack with the old one's variant.
   Future<void> disconnect() async {
     _pendingDeviceId = null;
     _inspecting = false;
     _silenceTimer?.cancel();
+    _cellInfoTimer?.cancel();
+    _cellInfoTimer = null;
     await _transport.disconnect();
-    _assembler.reset();
+    await _standDown();
+  }
+
+  /// Clears every trace of the pack that was connected: what was decoded from
+  /// it, the stored row it was pointing at, its notification and its widget.
+  Future<void> _standDown() async {
+    _resetDecoding();
+    activeDevice = null;
+    repository?.activeDeviceId = null;
+    _deviceController.add(null);
+    // The notification for merely being connected has no claim now, so this
+    // stands it down. A ride still open keeps its own, which is correct: the
+    // ride outlives the link on purpose.
+    await _updateForegroundService();
+    await _clearWidget();
+  }
+
+  /// Blanks the home-screen widget, so it stops reporting a charge level for
+  /// a pack nothing is reading.
+  Future<void> _clearWidget() async {
+    if (widgetPublisher.lastPublished == null) return;
+    await widgetPublisher.publishNow(PackWidgetContent.empty);
   }
 
   void _onBytes(List<int> chunk) {
@@ -432,7 +587,7 @@ class BmsService {
 
     final type = frame.type;
     if (type == null) {
-      _problemController.add(
+      _problem(
         'Ignored a frame with unsupported record type '
         '0x${frame.rawType.toRadixString(16).padLeft(2, '0')}.',
       );
@@ -442,8 +597,10 @@ class BmsService {
     try {
       switch (type) {
         case JkRecordType.deviceInfo:
+          deviceInfoFrames++;
           _handleDeviceInfo(_parser.parseDeviceInfo(frame));
         case JkRecordType.cellInfo:
+          cellInfoFrames++;
           unawaited(_handleCellInfo(frame));
         case JkRecordType.settings:
           _handleSettings(frame);
@@ -453,7 +610,7 @@ class BmsService {
           break;
       }
     } on JkParseException catch (e) {
-      _problemController.add(e.message);
+      _problem(e.message);
     }
   }
 
@@ -466,14 +623,14 @@ class BmsService {
     _deviceInfoController.add(info);
 
     if (info.variant == null) {
-      _problemController.add(
+      _problem(
         'Could not work out which JK protocol variant this BMS speaks. '
         'Pick one manually in the System tab; until '
         'then no readings will be decoded, because decoding with the wrong '
         'variant produces wrong numbers rather than an error.',
       );
     } else if (!info.detection.confident && _override == null) {
-      _problemController.add('Assuming ${info.variant!.name}.');
+      _problem('Assuming ${info.variant!.name}.');
     }
   }
 
@@ -482,13 +639,38 @@ class BmsService {
     if (variant == null) {
       // Refusing to decode is the correct behaviour here. Guessing the variant
       // would produce plausible but wrong voltages, which is worse than a gap.
-      _problemController.add(
-        'Held back a cell info frame: the protocol variant is not known yet.',
-      );
+      heldBackFrames++;
+      // Said once, then rarely: the pack sends these two or three times a
+      // second, and a notice per frame buries the one sentence that matters.
+      if (heldBackFrames == 1 || heldBackFrames % 100 == 0) {
+        _problem(
+          'Held back $heldBackFrames cell info frame(s): the protocol variant '
+          'is not known yet. Pick one in the System tab.',
+        );
+      }
       return;
     }
-    final snapshot = _parser.parseCellInfo(frame, variant);
+
+    // This method is not awaited by its caller, so anything thrown from here
+    // used to vanish: no notice, no reading, and a screen that said "waiting
+    // for the first reading" for as long as you cared to look at it. Every
+    // failure below is caught and said, and a reading that decoded reaches the
+    // screens whatever the bookkeeping after it does.
+    final BmsSnapshot snapshot;
+    try {
+      snapshot = _parser.parseCellInfo(frame, variant);
+    } on Object catch (e) {
+      decodeFailures++;
+      if (decodeFailures <= 3 || decodeFailures % 100 == 0) {
+        _problem(
+          'Could not decode cell info frame #$cellInfoFrames with '
+          '${variant.name}: $e',
+        );
+      }
+      return;
+    }
     _silenceTimer?.cancel();
+
     // A frame that decodes into cell voltages is the proof that this is a BMS,
     // and the first moment it is honest to file the device away as a battery.
     // Everything below writes to that battery's history, so it has to come
@@ -500,19 +682,27 @@ class BmsService {
       // Filing the battery away failed. The reading is still real, and losing
       // it to a storage fault would look, from the connect screen, exactly
       // like a pack that never spoke.
-      _problemController.add('Could not record this battery: $e');
+      _problem('Could not record this battery: $e');
     }
     _lastSnapshot = snapshot;
-    history.add(snapshot);
-    trip.addSnapshot(snapshot);
-    repository?.addSnapshot(snapshot);
-    _checkAlerts(snapshot);
-    _checkChargeAlerts(snapshot);
-    unawaited(_updateForegroundService());
-    unawaited(_updateAutoTrip(snapshot));
-    _updateCapacityTest(snapshot);
-    _watchCharging(snapshot);
-    _learnFromSnapshot(snapshot);
+    try {
+      history.add(snapshot);
+      trip.addSnapshot(snapshot);
+      repository?.addSnapshot(snapshot);
+      _checkAlerts(snapshot);
+      _checkChargeAlerts(snapshot);
+      unawaited(_updateForegroundService());
+      unawaited(_updateAutoTrip(snapshot));
+      _updateCapacityTest(snapshot);
+      _watchCharging(snapshot);
+      _learnFromSnapshot(snapshot);
+    } on Object catch (e, st) {
+      _problem(
+        'A reading decoded but its bookkeeping failed, so the app kept the '
+        'reading and dropped the bookkeeping: $e\n$st',
+      );
+    }
+    snapshotsEmitted++;
     _snapshotController.add(snapshot);
     unawaited(_publishWidget(snapshot));
   }
@@ -579,7 +769,7 @@ class BmsService {
     if (problem != null) {
       // Said out loud rather than swallowed. A ride that cannot see where it
       // is going must not look like a ride that can.
-      _problemController.add(
+      _problem(
         'Resumed without location, so no distance will be recorded from '
         'here. Stop the trip and start it again once location is back.',
       );
@@ -972,7 +1162,7 @@ class BmsService {
     if (!await notifications.requestPermission()) {
       _serviceOwner = null;
       if (wanted == ServiceClaim.trip) {
-        _problemController.add(
+        _problem(
           'Could not start the background service, so the trip will stop '
           'recording when the app leaves the screen.',
         );
@@ -992,7 +1182,7 @@ class BmsService {
     if (!started) {
       _serviceOwner = null;
       if (wanted == ServiceClaim.trip) {
-        _problemController.add(
+        _problem(
           'Could not start the background service, so the trip will stop '
           'recording when the app leaves the screen.',
         );
@@ -1476,6 +1666,7 @@ class BmsService {
 
   Future<void> dispose() async {
     _silenceTimer?.cancel();
+    _cellInfoTimer?.cancel();
     _notificationTimer?.cancel();
     _notificationTimer = null;
     _serviceOwner = null;

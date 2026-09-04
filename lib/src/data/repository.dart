@@ -258,6 +258,13 @@ class BmsRepository {
   /// Only touches rides that have no amp-hour figure, which is exactly the set
   /// recorded by a build that could not produce one. Runs once per pack in
   /// practice, then finds nothing.
+  /// How much time one reading query may cover while mending rides.
+  ///
+  /// An evening's worth, so rides taken together are still read together, and
+  /// no query can reach back across the weeks that a single old unmeasurable
+  /// ride used to drag in.
+  static const Duration repairWindow = Duration(hours: 8);
+
   Future<TripRepairReport> repairTripEnergy(
     String deviceId, {
     TripEnergyRepair repairer = const TripEnergyRepair(),
@@ -270,39 +277,58 @@ class BmsRepository {
     ];
     if (stale.isEmpty) return TripRepairReport.none;
 
-    // One window covering every ride that needs mending, read once. Rides are
-    // minutes long and there may be dozens; a query each would be slower than
-    // the whole repair.
-    var earliest = stale.first.startedAt;
-    var latest = stale.first.endedAt;
-    for (final t in stale) {
-      if (t.startedAt.isBefore(earliest)) earliest = t.startedAt;
-      if (t.endedAt.isAfter(latest)) latest = t.endedAt;
-    }
-    final readings = await db.snapshotsBetween(
-      deviceId,
-      earliest.subtract(const Duration(minutes: 1)),
-      latest.add(const Duration(minutes: 1)),
+    // One window per run of nearby rides, rather than one window over all of
+    // them. Reading them together is right for an evening's riding and ruinous
+    // across weeks: a single unmeasurable ride from last month used to force
+    // every reading since into memory, on the first decoded frame of every
+    // connection.
+    final groups = groupBySpan(
+      stale,
+      startOf: (t) => t.startedAt,
+      endOf: (t) => t.endedAt,
+      maxSpan: repairWindow,
     );
 
     var repaired = 0;
     var unrepairable = 0;
-    for (final t in stale) {
-      final fixed = repairer.recompute(t, readings);
-      if (fixed == null) {
-        unrepairable++;
-        continue;
+    for (final group in groups) {
+      var earliest = group.first.startedAt;
+      var latest = group.first.endedAt;
+      for (final t in group) {
+        if (t.startedAt.isBefore(earliest)) earliest = t.startedAt;
+        if (t.endedAt.isAfter(latest)) latest = t.endedAt;
       }
-      await db.updateTrip(
-        t.id,
-        TripsCompanion(
-          energyOutWh: Value(fixed.outWh),
-          energyInWh: Value(fixed.inWh),
-          ahOut: Value(fixed.ahOut),
-          energySource: Value(fixed.source.name),
-        ),
+      final readings = await db.snapshotsBetween(
+        deviceId,
+        earliest.subtract(const Duration(minutes: 1)),
+        latest.add(const Duration(minutes: 1)),
       );
-      repaired++;
+
+      for (final t in group) {
+        final fixed = repairer.recompute(t, readings);
+        if (fixed == null) {
+          unrepairable++;
+          // Recorded, so this ride is never examined again. Left blank it
+          // stayed stale forever, and every connection paid for it.
+          await db.updateTrip(
+            t.id,
+            TripsCompanion(
+              energySource: Value(EnergySource.unmeasurable.name),
+            ),
+          );
+          continue;
+        }
+        await db.updateTrip(
+          t.id,
+          TripsCompanion(
+            energyOutWh: Value(fixed.outWh),
+            energyInWh: Value(fixed.inWh),
+            ahOut: Value(fixed.ahOut),
+            energySource: Value(fixed.source.name),
+          ),
+        );
+        repaired++;
+      }
     }
 
     return TripRepairReport(

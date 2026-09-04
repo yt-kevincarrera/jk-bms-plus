@@ -5,6 +5,7 @@ import '../../platform/screen_awake.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../app_settings.dart';
+import '../../ble/waiting_diagnosis.dart';
 import '../../bms_service.dart';
 import '../../metrics/charge_eta.dart';
 import '../../metrics/range_estimator.dart';
@@ -37,10 +38,110 @@ class NowTab extends StatefulWidget {
 }
 
 class _NowTabState extends State<NowTab> {
+  /// Redraws the waiting screen while there is nothing else to redraw it.
+  /// Readings drive every rebuild once they arrive; until then the counters
+  /// this screen explains itself with change without anything repainting.
+  Timer? _waitingTick;
+
+  @override
+  void initState() {
+    super.initState();
+    _waitingTick = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted && widget.snapshot == null) setState(() {});
+    });
+  }
+
   @override
   void dispose() {
+    _waitingTick?.cancel();
     ScreenAwakeKeeper.release();
     super.dispose();
+  }
+
+  /// The reason there is no reading yet, in the rider's words, with the
+  /// evidence under it and the latest notices the service raised.
+  List<Widget> _waitingExplanation(AppL10n t) {
+    final service = widget.service;
+    final stats = service.stats;
+    final link = service.lastLinkState;
+    final reason = diagnoseWaiting(
+      link: link,
+      framesAccepted: stats.accepted,
+      cellInfoFrames: service.cellInfoFrames,
+      heldBackFrames: service.heldBackFrames,
+      decodeFailures: service.decodeFailures,
+      variantKnown: service.variant != null,
+    );
+    final why = switch (reason) {
+      WaitingReason.linkDown => t.waitingWhyLinkDown,
+      WaitingReason.noFrames => t.waitingWhyNoFrames,
+      WaitingReason.onlyDeviceInfo => t.waitingWhyOnlyDeviceInfo,
+      WaitingReason.variantUnknown => t.waitingWhyVariantUnknown,
+      WaitingReason.decodeFailing => t.waitingWhyDecodeFailing,
+      WaitingReason.unexplained => t.waitingWhyUnexplained,
+    };
+    // Terse and the same in every language, like the exception text it sits
+    // beside: what the app saw, so a screenshot settles which stage stalled.
+    final evidence =
+        'link ${link.name} · ${stats.bytesReceived} bytes · '
+        '${stats.accepted} frames ok · ${stats.badChecksum} bad checksum · '
+        '${service.deviceInfoFrames} device info · '
+        '${service.cellInfoFrames} cell info · '
+        '${service.heldBackFrames} held back · '
+        '${service.decodeFailures} undecodable · '
+        '${service.snapshotsEmitted} emitted · '
+        'variant ${service.variant?.name ?? '?'} · '
+        'MTU ${service.negotiatedMtu ?? '?'}';
+    final notices = service.recentProblems.take(3).toList();
+
+    return [
+      const SizedBox(height: 22),
+      Text(
+        why,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          fontSize: 12.5,
+          height: 1.4,
+          color: AppTheme.textSecondary,
+        ),
+      ),
+      const SizedBox(height: 12),
+      SelectableText(
+        evidence,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          fontSize: 10.5,
+          height: 1.35,
+          fontFamily: 'monospace',
+          color: AppTheme.textFaint,
+        ),
+      ),
+      if (notices.isNotEmpty) ...[
+        const SizedBox(height: 14),
+        Text(
+          t.systemNotices.toUpperCase(),
+          style: const TextStyle(
+            fontSize: 10.5,
+            letterSpacing: 0.8,
+            color: AppTheme.textFaint,
+          ),
+        ),
+        const SizedBox(height: 6),
+        for (final n in notices)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: SelectableText(
+              n,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 11,
+                height: 1.35,
+                color: AppTheme.textFaint,
+              ),
+            ),
+          ),
+      ],
+    ];
   }
 
   @override
@@ -55,7 +156,10 @@ class _NowTabState extends State<NowTab> {
     final t = AppL10n.of(context);
     final s = widget.snapshot;
     if (s == null) {
-      return WaitingForData(message: t.waitingFor(t.waitingFirstReading));
+      return WaitingForData(
+        message: t.waitingFor(t.waitingFirstReading),
+        children: _waitingExplanation(t),
+      );
     }
 
     final service = widget.service;
