@@ -943,6 +943,7 @@ class BmsService {
     await _stopLocation();
 
     final id = _currentTripId;
+    lastStoredTripId = id;
     _currentTripId = null;
 
     if (summary != null && id != null) {
@@ -1018,6 +1019,10 @@ class BmsService {
 
   /// Id of the trip being recorded, if any.
   int? get currentTripId => _currentTripId;
+
+  /// The row of the ride that just ended, for a screen that has to ask
+  /// something about it. `_currentTripId` is cleared by then.
+  int? lastStoredTripId;
 
   Future<LocationProblem?> _ensureLocation() async {
     await _fixSub?.cancel();
