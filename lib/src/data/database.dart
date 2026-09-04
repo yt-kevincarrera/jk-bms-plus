@@ -417,10 +417,16 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(inspections);
       }
       if (from < 12) {
-        // Both nullable-or-defaulted, so every existing ride lands in the
-        // right place with no backfill: unanswered, and unseen.
+        // representative is nullable and needs no backfill: every existing
+        // ride is honestly unanswered. summarySeen defaults to false, which
+        // would have the app open with the summary of a ride the rider saw
+        // weeks ago -- before the feature that tracks "seen" even existed.
+        // A ride from before this column is either already shown or too old
+        // to matter, so mark every existing one seen rather than leave it
+        // eligible to resurface.
         await m.addColumn(trips, trips.representative);
         await m.addColumn(trips, trips.summarySeen);
+        await customStatement('UPDATE trips SET summary_seen = 1');
       }
     },
   );

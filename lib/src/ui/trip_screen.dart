@@ -91,6 +91,13 @@ class _TripScreenState extends State<TripScreen> {
       service: widget.service,
       t: t,
     );
+    // The rider just read this summary by hand, right here. Without marking
+    // it seen, _offerPendingSummary would pop it again on the next launch,
+    // then walk backwards through every stale ride before it, one per
+    // launch. Marked after the sheet resolves, like _offerPendingSummary
+    // does, so a sheet that throws leaves it unseen rather than lost.
+    final id = widget.service.lastStoredTripId;
+    if (id != null) await widget.service.markTripSummarySeen(id);
     if (mounted) setState(() {});
   }
 

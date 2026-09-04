@@ -87,8 +87,19 @@ class RepresentativeQuestion extends StatelessWidget {
 
     // Reachable only when shift > 0, which the branch above rules out unless
     // before and after are both real numbers.
-    final beforeKm = _fullPackKm(before!);
-    final afterKm = _fullPackKm(after!);
+    final rawBeforeKm = _fullPackKm(before!);
+    final rawAfterKm = _fullPackKm(after!);
+    // Converting through today's fullKm is only honest for the ride that
+    // just ended. Open an older ride from history and its recorded "after"
+    // no longer matches what the estimator currently believes -- every ride
+    // since has moved it -- so the km figures below would be a projection
+    // from today's estimate dressed up as what that ride actually did. Only
+    // the most recent counted ride still has fullKm and whPerKmAfter talking
+    // about the same moment.
+    final isCurrentEstimate =
+        (after - service.rangeEstimator.whPerKm).abs() < 0.05;
+    final beforeKm = isCurrentEstimate ? rawBeforeKm : null;
+    final afterKm = isCurrentEstimate ? rawAfterKm : null;
     final percent = ((rideWhPerKm - before).abs() / before * 100).round();
     final higher = rideWhPerKm > before;
     final rideWh = rideWhPerKm.toStringAsFixed(0);
