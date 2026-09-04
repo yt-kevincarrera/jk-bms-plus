@@ -1452,19 +1452,44 @@ class BmsService {
       recording: trip.isRecording,
     );
 
+    await _runAutoTripAction(action);
+  }
+
+  /// Carries out what the detector decided, and tells [autoTripEvents].
+  ///
+  /// Pulled out of [_updateAutoTrip] so [forceAutoTripStartForTest] can run
+  /// this exact branch rather than a copy of it: a seam that duplicates the
+  /// logic can pass while the real path is broken.
+  Future<void> _runAutoTripAction(AutoTripAction action) async {
     switch (action) {
       case AutoTripAction.start:
         final problem = await startTrip();
         // No location, no ride: distance is the whole point, and a trip with
         // no track would poison the consumption figure with a divide by zero.
-        if (problem == null) _autoTripController.add(AutoTripAction.start);
+        // But saying nothing is worse than not recording: the rider goes on
+        // believing the app is learning while it rejects every ride.
+        _autoTripController.add(
+          problem == null ? AutoTripAction.start : AutoTripAction.blocked,
+        );
       case AutoTripAction.stop:
         await stopTrip();
         _autoTripController.add(AutoTripAction.stop);
       case AutoTripAction.none:
         break;
+      case AutoTripAction.blocked:
+        break;
     }
   }
+
+  /// Runs the detector's start branch directly.
+  ///
+  /// The branch itself needs sustained current and speed over twenty seconds
+  /// to fire, which a unit test cannot wait for. What is worth testing is not
+  /// the timing, which [TripAutoStart] already covers, but that a start which
+  /// failed says so.
+  @visibleForTesting
+  Future<void> forceAutoTripStartForTest() =>
+      _runAutoTripAction(AutoTripAction.start);
 
   /// Turns the GPS on once the pack is drawing, and off again when it stops.
   ///
