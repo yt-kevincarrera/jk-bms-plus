@@ -188,8 +188,16 @@ class _ConnectScreenState extends State<ConnectScreen> {
 
     // One second is enough for a countdown and cheap enough to leave running
     // only while there is a countdown to draw.
+    //
+    // The tick after the last one ends has to redraw as well. Repainting only
+    // while something was still counting down meant the frame showing "1 s"
+    // was the last one ever painted: the countdown reached zero and the tile
+    // kept the greyed-out look it had a second earlier.
     _cooldownTick = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted && _anyCooling()) setState(() {});
+      if (!mounted) return;
+      final cooling = _anyCooling();
+      if (cooling || _wasCooling) setState(() {});
+      _wasCooling = cooling;
     });
 
     _loadStored();
@@ -217,6 +225,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
       }
     });
   }
+
+  /// Whether a countdown was running at the previous tick, so the tick that
+  /// ends the last one still gets a repaint.
+  bool _wasCooling = false;
 
   /// Whether any pack is waiting out a cooldown, so the ticker knows whether
   /// there is anything to redraw.
@@ -747,11 +759,6 @@ class _ConnectScreenState extends State<ConnectScreen> {
   Widget _deviceTile(AppL10n t, DiscoveredBms d, {required bool likely}) {
     final isConnected = _connected?.id == d.id;
     final cooling = _guard.cooldownLeft(deviceId: d.id, now: DateTime.now());
-    // Greyed out rather than gone: a tile that vanishes while it waits looks
-    // like the pack went away, which is the opposite of the message.
-    final blocked =
-        (_connecting && !isConnected) ||
-        (!isConnected && (cooling != null || _guard.saturated));
 
     // While inspecting, a pack already on record is the interesting one: the
     // second run on the same battery is what turns a reading into a finding,
@@ -769,8 +776,13 @@ class _ConnectScreenState extends State<ConnectScreen> {
       _ => '${d.id}   ${d.rssi} dBm',
     };
 
+    // Never disabled, whatever it is waiting for. It used to be, and that put
+    // the rider's only way forward behind a repaint: miss the frame where the
+    // countdown ends and the tile stays dead with no way to revive it. The
+    // countdown is decoration now; [_onTap] is the gate, and it re-reads the
+    // clock every time, so a stale drawing costs a sentence rather than a
+    // stranded screen.
     return ListTile(
-      enabled: !blocked,
       leading: Icon(
         isConnected
             ? Icons.bluetooth_connected
