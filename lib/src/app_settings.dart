@@ -19,9 +19,9 @@ enum ScreenAwake {
   always;
 
   static ScreenAwake parse(String? name) => ScreenAwake.values.firstWhere(
-        (v) => v.name == name,
-        orElse: () => ScreenAwake.whileRiding,
-      );
+    (v) => v.name == name,
+    orElse: () => ScreenAwake.whileRiding,
+  );
 }
 
 class AppSettings extends ChangeNotifier {
@@ -39,8 +39,10 @@ class AppSettings extends ChangeNotifier {
   static const _autoTripKey = 'auto_trip_enabled';
   static const _screenAwakeKey = 'keep_screen_awake';
   static const _linkWatchKey = 'link_watch_enabled';
-
-
+  static const _notifyAlertsKey = 'notify_alerts';
+  static const _deltaWarnKey = 'alert_delta_warn';
+  static const _tempWarnKey = 'alert_temp_warn';
+  static const _lowChargeWarnKey = 'alert_low_charge_warn';
 
   /// A GitHub token, only for checking and fetching updates.
   ///
@@ -76,6 +78,27 @@ class AppSettings extends ChangeNotifier {
   /// the app open, this is only for reaching you with it closed.
   bool chargeWatchEnabled = false;
 
+  /// Whether alerts are posted to the notification shade.
+  ///
+  /// On by default, because an alert nobody sees is not an alert. It still
+  /// needs Android's permission, and a refusal leaves this on with nothing
+  /// arriving, which the settings screen says out loud rather than hiding.
+  bool notifyAlerts = true;
+
+  /// Where the ride alerts start speaking, so a pack that lives outside the
+  /// usual range can be quietened without switching its alerts off entirely.
+  ///
+  /// Defaults match [RideAlerts]: a tenth of a volt of spread, 55 degrees,
+  /// and fifteen per cent charge.
+  double alertDeltaWarn = 0.100;
+  double alertTempWarn = 55;
+  double alertLowChargeWarn = 15;
+
+  /// What the three above go back to.
+  static const double defaultDeltaWarn = 0.100;
+  static const double defaultTempWarn = 55;
+  static const double defaultLowChargeWarn = 15;
+
   /// Whether rides open and close themselves.
   ///
   /// On by default, unlike the charge watch. The whole reason it exists is not
@@ -93,7 +116,6 @@ class AppSettings extends ChangeNotifier {
   bool isMuted(String alert) => mutedAlerts.contains(alert);
 
   /// Whether the phone buzzes when something crosses a line.
-
 
   bool hapticAlerts = true;
 
@@ -126,8 +148,9 @@ class AppSettings extends ChangeNotifier {
       recordRawFrames = prefs.getBool(_rawFramesKey) ?? true;
       updateToken = prefs.getString(_updateTokenKey) ?? '';
       final at = prefs.getInt(_lastCheckKey);
-      lastUpdateCheck =
-          at == null ? null : DateTime.fromMillisecondsSinceEpoch(at, isUtc: true);
+      lastUpdateCheck = at == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(at, isUtc: true);
       dismissedUpdateVersion = prefs.getString(_dismissedKey) ?? '';
       // A stored -1 means the rider turned it off, which is different from
       // never having chosen.
@@ -138,12 +161,16 @@ class AppSettings extends ChangeNotifier {
       autoTripEnabled = prefs.getBool(_autoTripKey) ?? true;
       screenAwake = ScreenAwake.parse(prefs.getString(_screenAwakeKey));
       linkWatchEnabled = prefs.getBool(_linkWatchKey) ?? true;
+      notifyAlerts = prefs.getBool(_notifyAlertsKey) ?? true;
+      alertDeltaWarn = prefs.getDouble(_deltaWarnKey) ?? defaultDeltaWarn;
+      alertTempWarn = prefs.getDouble(_tempWarnKey) ?? defaultTempWarn;
+      alertLowChargeWarn =
+          prefs.getDouble(_lowChargeWarnKey) ?? defaultLowChargeWarn;
       notifyListeners();
     } on Exception catch (_) {
       // Defaults are usable; a broken preference store is not worth failing on.
     }
   }
-
 
   Future<void> setUpdateToken(String value) async {
     updateToken = value.trim();
@@ -233,9 +260,6 @@ class AppSettings extends ChangeNotifier {
   }
 
   Future<void> setHapticAlerts(bool value) async {
-
-
-
     hapticAlerts = value;
     notifyListeners();
     await _writeBool(_hapticKey, value);
@@ -245,6 +269,42 @@ class AppSettings extends ChangeNotifier {
     recordRawFrames = value;
     notifyListeners();
     await _writeBool(_rawFramesKey, value);
+  }
+
+  Future<void> setNotifyAlerts(bool value) async {
+    notifyAlerts = value;
+    notifyListeners();
+    await _writeBool(_notifyAlertsKey, value);
+  }
+
+  /// Moves where an alert starts speaking. Nulls leave a threshold alone.
+  Future<void> setAlertThresholds({
+    double? delta,
+    double? temperature,
+    double? lowCharge,
+  }) async {
+    if (delta != null) alertDeltaWarn = delta;
+    if (temperature != null) alertTempWarn = temperature;
+    if (lowCharge != null) alertLowChargeWarn = lowCharge;
+    notifyListeners();
+    if (delta != null) await _writeDouble(_deltaWarnKey, delta);
+    if (temperature != null) await _writeDouble(_tempWarnKey, temperature);
+    if (lowCharge != null) await _writeDouble(_lowChargeWarnKey, lowCharge);
+  }
+
+  Future<void> resetAlertThresholds() => setAlertThresholds(
+    delta: defaultDeltaWarn,
+    temperature: defaultTempWarn,
+    lowCharge: defaultLowChargeWarn,
+  );
+
+  Future<void> _writeDouble(String key, double value) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble(key, value);
+    } on Exception catch (_) {
+      // Same.
+    }
   }
 
   Future<void> _writeBool(String key, bool value) async {

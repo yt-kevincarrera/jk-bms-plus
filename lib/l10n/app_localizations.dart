@@ -7013,6 +7013,156 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Completar el perfil'**
   String get configAuditNeedsProfile;
+
+  /// No description provided for @alertNearCurrentLimit.
+  ///
+  /// In es, this message translates to:
+  /// **'Corriente cerca del límite del BMS'**
+  String get alertNearCurrentLimit;
+
+  /// No description provided for @alertLinkLost.
+  ///
+  /// In es, this message translates to:
+  /// **'Se perdió la conexión con la batería'**
+  String get alertLinkLost;
+
+  /// No description provided for @alertsNotifyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Avisos que llegan con la app cerrada'**
+  String get alertsNotifyTitle;
+
+  /// No description provided for @alertsNotifyIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Los avisos suenan en la barra de notificaciones aunque la app esté en segundo plano o cerrada. Sin esto, un aviso a las tres de la mañana con el móvil en otra habitación no lo ve nadie.'**
+  String get alertsNotifyIntro;
+
+  /// No description provided for @alertsNotifyEnable.
+  ///
+  /// In es, this message translates to:
+  /// **'Avisar en la barra de notificaciones'**
+  String get alertsNotifyEnable;
+
+  /// No description provided for @alertsNotifyDenied.
+  ///
+  /// In es, this message translates to:
+  /// **'Android no ha dado permiso para notificar. Los avisos seguirán saliendo en pantalla y con vibración, pero no llegarán con la app cerrada.'**
+  String get alertsNotifyDenied;
+
+  /// No description provided for @alertsNotifyOneConnection.
+  ///
+  /// In es, this message translates to:
+  /// **'Recuerda: el BMS acepta una sola conexión Bluetooth. Mientras el móvil esté conectado en segundo plano, la app oficial de JK no podrá conectarse, y al revés.'**
+  String get alertsNotifyOneConnection;
+
+  /// No description provided for @alertsThresholdsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'A partir de cuándo avisar'**
+  String get alertsThresholdsTitle;
+
+  /// No description provided for @alertsThresholdsIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Los valores por defecto son conservadores. Súbelos si tu batería vive en un rango distinto al típico y te avisa de más.'**
+  String get alertsThresholdsIntro;
+
+  /// No description provided for @alertsDeltaWarn.
+  ///
+  /// In es, this message translates to:
+  /// **'Diferencia entre celdas'**
+  String get alertsDeltaWarn;
+
+  /// No description provided for @alertsTempWarn.
+  ///
+  /// In es, this message translates to:
+  /// **'Temperatura'**
+  String get alertsTempWarn;
+
+  /// No description provided for @alertsLowChargeWarn.
+  ///
+  /// In es, this message translates to:
+  /// **'Carga baja'**
+  String get alertsLowChargeWarn;
+
+  /// No description provided for @alertsResetDefaults.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver a los valores por defecto'**
+  String get alertsResetDefaults;
+
+  /// No description provided for @alertNotificationBodyDelta.
+  ///
+  /// In es, this message translates to:
+  /// **'Las celdas se han separado {value} V. La más baja marca cuándo se acaba la batería.'**
+  String alertNotificationBodyDelta(String value);
+
+  /// No description provided for @alertNotificationBodyTemp.
+  ///
+  /// In es, this message translates to:
+  /// **'{value} °C. Para y déjala enfriar antes de seguir.'**
+  String alertNotificationBodyTemp(String value);
+
+  /// No description provided for @alertNotificationBodyLow.
+  ///
+  /// In es, this message translates to:
+  /// **'Queda {value} % de carga.'**
+  String alertNotificationBodyLow(String value);
+
+  /// No description provided for @alertNotificationBodyCritical.
+  ///
+  /// In es, this message translates to:
+  /// **'Queda {value} % de carga. Busca dónde parar.'**
+  String alertNotificationBodyCritical(String value);
+
+  /// No description provided for @alertNotificationBodyCell.
+  ///
+  /// In es, this message translates to:
+  /// **'Una celda está a {value} V, cerca del corte del BMS. Se puede quedar sin batería aunque el porcentaje aún parezca razonable.'**
+  String alertNotificationBodyCell(String value);
+
+  /// No description provided for @alertNotificationBodyFault.
+  ///
+  /// In es, this message translates to:
+  /// **'El BMS ha levantado una protección. Mira la pantalla antes de seguir.'**
+  String get alertNotificationBodyFault;
+
+  /// No description provided for @alertNotificationBodyNearLimit.
+  ///
+  /// In es, this message translates to:
+  /// **'{value} A, cerca de lo que el BMS permite. Si llega al límite, corta sin avisar.'**
+  String alertNotificationBodyNearLimit(String value);
+
+  /// No description provided for @alertNotificationBodyLinkLost.
+  ///
+  /// In es, this message translates to:
+  /// **'La app dejó de recibir lecturas de la batería. Si estabas vigilando una carga, ya no se está vigilando.'**
+  String get alertNotificationBodyLinkLost;
+
+  /// No description provided for @alertNotificationBodyChargeTarget.
+  ///
+  /// In es, this message translates to:
+  /// **'La batería ha llegado al {value} % que pediste.'**
+  String alertNotificationBodyChargeTarget(String value);
+
+  /// No description provided for @alertNotificationBodyChargeComplete.
+  ///
+  /// In es, this message translates to:
+  /// **'La carga ha terminado.'**
+  String get alertNotificationBodyChargeComplete;
+
+  /// No description provided for @alertNotificationBodyChargeHot.
+  ///
+  /// In es, this message translates to:
+  /// **'{value} °C mientras carga. Desenchufa y déjala enfriar.'**
+  String alertNotificationBodyChargeHot(String value);
+
+  /// No description provided for @alertNotificationBodyChargeSpread.
+  ///
+  /// In es, this message translates to:
+  /// **'Las celdas se han separado {value} V al final de la carga. Es donde mejor se ve un desbalance.'**
+  String alertNotificationBodyChargeSpread(String value);
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {
