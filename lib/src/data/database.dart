@@ -176,6 +176,26 @@ class Trips extends Table {
   /// real ride. A stored figure with no provenance cannot be re-examined, and
   /// every ride recorded before this fix has one that is far too low.
   TextColumn get energySource => text().nullable()();
+
+  /// Whether this ride represents how the rider normally rides.
+  ///
+  /// Null means nobody was asked, which is different from "yes". A ride
+  /// recorded before the question existed, or one whose question was never
+  /// answered, counts towards the learning exactly as it did before, and still
+  /// reads as unanswered on screen. Only an explicit false takes a ride out.
+  ///
+  /// The point of it: the estimator has no notion of context, so one
+  /// deliberately gentle ride to nurse a low charge moves the learned figure a
+  /// third of the way towards a number that is not how this bike gets ridden.
+  BoolColumn get representative => boolean().nullable()();
+
+  /// Whether the rider has seen this ride's summary.
+  ///
+  /// Rides end in a pocket. The summary sheet used to be shown by the stop
+  /// button and by nothing else, so a ride that closed itself was stored with
+  /// its conclusions and never shown to anybody.
+  BoolColumn get summarySeen =>
+      boolean().withDefault(const Constant(false))();
 }
 
 /// The track of a ride, one row per fix, with what the pack was doing at that
@@ -362,7 +382,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -455,6 +475,23 @@ class AppDatabase extends _$AppDatabase {
       if (from >= 5 && from < 12) {
         await m.addColumn(devices, devices.chemistry);
         await m.addColumn(devices, devices.acquiredAt);
+      }
+      if (from < 13) {
+        // representative is nullable and needs no backfill: every existing
+        // ride is honestly unanswered. summarySeen defaults to false, which
+        // would have the app open with the summary of a ride the rider saw
+        // weeks ago, before the feature that tracks "seen" even existed.
+        // A ride from before this column is either already shown or too old
+        // to matter, so mark every existing one seen rather than leave it
+        // eligible to resurface.
+        //
+        // Safe from every older version, unlike the devices columns above:
+        // the from < 5 recreation rebuilds devices and capacity_tests, and
+        // never trips, so these two are added exactly once whatever the
+        // starting point.
+        await m.addColumn(trips, trips.representative);
+        await m.addColumn(trips, trips.summarySeen);
+        await customStatement('UPDATE trips SET summary_seen = 1');
       }
     },
   );
@@ -812,6 +849,16 @@ class AppDatabase extends _$AppDatabase {
   Future<void> setTripNote(int tripId, String note) =>
       (update(trips)..where((t) => t.id.equals(tripId))).write(
         TripsCompanion(note: Value(note)),
+      );
+
+  Future<void> setTripRepresentative(int tripId, bool? value) =>
+      (update(trips)..where((t) => t.id.equals(tripId))).write(
+        TripsCompanion(representative: Value(value)),
+      );
+
+  Future<void> markTripSummarySeen(int tripId) =>
+      (update(trips)..where((t) => t.id.equals(tripId))).write(
+        const TripsCompanion(summarySeen: Value(true)),
       );
 
   // --- Snapshots ---

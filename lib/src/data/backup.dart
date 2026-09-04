@@ -296,6 +296,11 @@ class BackupCodec {
     'confidence': t.confidence,
     'ahOut': t.ahOut,
     'energySource': t.energySource,
+    // Nullable, and written as null rather than false. A restored ride from
+    // before this question existed must stay unanswered, not become an
+    // exception nobody actually called out.
+    'representative': t.representative,
+    'summarySeen': t.summarySeen,
   };
 
   static Map<String, Object?> _point(TripPoint p) => {
@@ -427,6 +432,13 @@ class BackupCodec {
         confidence: Value(t['confidence'] as String?),
         ahOut: Value(_dn(t['ahOut'])),
         energySource: Value(t['energySource'] as String?),
+        // A missing key and an explicit null read the same way here (both
+        // are just absent from the map), which is exactly right: an older
+        // backup with no such key must land as unanswered, not as false, or
+        // a ride nobody was ever asked about would be dropped out of the
+        // learning as if the rider had called it an exception.
+        representative: Value(t['representative'] as bool?),
+        summarySeen: Value(t['summarySeen'] as bool? ?? false),
       );
 
   static TripPointsCompanion _pointCompanion(

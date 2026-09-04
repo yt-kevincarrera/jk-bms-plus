@@ -307,4 +307,106 @@ void main() {
       expect(events.single.note, 'celda 7');
     });
   });
+
+  group("the rider's answer about a ride", () {
+    // representative is nullable on purpose: null means nobody was asked,
+    // false means the rider called the ride an exception and it must stay
+    // out of the learned range. A backup that lost this would silently let
+    // an excluded ride back into the training set after a restore, which is
+    // exactly the wrongness the whole feature exists to prevent.
+    Future<int> insertTrip({
+      required String note,
+      required Value<bool?> representative,
+      required Value<bool> summarySeen,
+    }) {
+      final now = DateTime.utc(2026, 8, 1);
+      return source.insertTrip(
+        TripsCompanion.insert(
+          startedAt: now,
+          endedAt: now.add(const Duration(minutes: 10)),
+          distanceKm: 3,
+          movingSeconds: 200,
+          totalSeconds: 250,
+          maxSpeedKmh: 30,
+          energyOutWh: 50,
+          energyInWh: 0,
+          startSoc: 90,
+          endSoc: 80,
+          minPackVoltage: 70,
+          maxPackVoltage: 80,
+          maxDischargeCurrent: 10,
+          maxTemperature: 25,
+          maxDeltaVolts: 0.01,
+          climbM: 5,
+          descentM: 5,
+          note: Value(note),
+          representative: representative,
+          summarySeen: summarySeen,
+        ),
+      );
+    }
+
+    test('marked as an exception, true, or left unanswered all survive a round trip', () async {
+      await insertTrip(
+        note: 'exception',
+        representative: const Value(false),
+        summarySeen: const Value(true),
+      );
+      await insertTrip(
+        note: 'normal',
+        representative: const Value(true),
+        summarySeen: const Value(false),
+      );
+      await insertTrip(
+        note: 'unanswered',
+        representative: const Value(null),
+        summarySeen: const Value(true),
+      );
+
+      final target = await restoreInto(await BackupCodec(source).export(into: tmp));
+      addTearDown(target.close);
+
+      final trips = await target.allTripsForBackup();
+      final exception = trips.firstWhere((t) => t.note == 'exception');
+      final normal = trips.firstWhere((t) => t.note == 'normal');
+      final unanswered = trips.firstWhere((t) => t.note == 'unanswered');
+
+      expect(exception.representative, isFalse);
+      expect(exception.summarySeen, isTrue);
+      expect(normal.representative, isTrue);
+      expect(normal.summarySeen, isFalse);
+      expect(unanswered.representative, isNull);
+      expect(unanswered.summarySeen, isTrue);
+    });
+
+    test('a backup written before this existed leaves a restored ride unanswered and unseen', () async {
+      // Older backups have neither key at all. A missing key must not become
+      // false for representative, false there means "the rider called this
+      // an exception", which nobody said about a ride from before the
+      // question existed.
+      final now = DateTime.utc(2026, 8, 1);
+      final file = File('${tmp.path}/old.json')
+        ..writeAsStringSync(
+          jsonEncode({
+            'format': 1,
+            'trips': [
+              {
+                'startedAt': now.toIso8601String(),
+                'endedAt': now
+                    .add(const Duration(minutes: 10))
+                    .toIso8601String(),
+              },
+            ],
+          }),
+        );
+
+      final target = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(target.close);
+      await BackupCodec(target).import(file);
+
+      final trip = (await target.allTripsForBackup()).single;
+      expect(trip.representative, isNull);
+      expect(trip.summarySeen, isFalse);
+    });
+  });
 }

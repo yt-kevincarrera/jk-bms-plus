@@ -70,6 +70,16 @@ class RangeEstimator {
   bool _hasLearned;
   double _learnedKm;
 
+  /// Below this a segment is GPS noise while stopped at a light, not riding,
+  /// and would poison the average with an enormous Wh/km.
+  static const double _minSegmentKm = 0.2;
+
+  /// A 20S 45 Ah pack cannot sustain outside this band; a reading past either
+  /// edge is a GPS glitch or a regen segment, not a sample of how the bike
+  /// rides.
+  static const double _maxSampleWhPerKm = 400;
+  static const double _minSampleWhPerKm = 2;
+
   /// Watt-hours per kilometre the estimator currently believes.
   double get whPerKm => _weight <= 0 ? defaultWhPerKm : _weighted / _weight;
 
@@ -99,12 +109,14 @@ class RangeEstimator {
   /// ignored. Very short segments are ignored too: GPS noise while stopped at a
   /// light would otherwise poison the average with an enormous Wh/km.
   void addSegment({required double wh, required double km}) {
-    if (km < 0.2 || wh <= 0) return;
+    if (km < _minSegmentKm || wh <= 0) return;
 
     final sampleWhPerKm = wh / km;
     // Reject the physically absurd. A 20S 45 Ah pack cannot sustain 400 Wh/km
     // over a segment; a reading like that is a GPS glitch, not a hill.
-    if (sampleWhPerKm > 400 || sampleWhPerKm < 2) return;
+    if (sampleWhPerKm > _maxSampleWhPerKm || sampleWhPerKm < _minSampleWhPerKm) {
+      return;
+    }
 
     // Distance-weighted, and normalised by the weight actually accumulated:
     // a segment's influence grows with how far it went and decays with how far
@@ -116,6 +128,15 @@ class RangeEstimator {
     _hasLearned = true;
     _learnedKm += km;
   }
+
+  /// How much a ride has to move the figure before the rider is asked whether
+  /// it represents them.
+  ///
+  /// Not a law of anything. With a real pack at 17.5 Wh/km and 100 km of
+  /// weight behind the estimate, 5% means a 40 km ride asks at 11% off, a
+  /// 20 km ride at 23% off, and a 10 km ride at 47% off. Quiet on an ordinary
+  /// fast day, which is the point. Named so recalibrating it is one line.
+  static const double askThresholdFraction = 0.05;
 
   /// Best estimate of how far the bike can still go, in kilometres.
   double rangeKm(double usableWh) =>

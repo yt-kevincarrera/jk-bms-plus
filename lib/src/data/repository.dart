@@ -357,10 +357,43 @@ class BmsRepository {
     final all = await db.recentTrips(deviceId, limit: 500);
     final usable =
         all
-            .where((t) => t.distanceKm >= 0.2 && t.energyOutWh > t.energyInWh)
+            .where(
+              (t) =>
+                  t.distanceKm >= 0.2 &&
+                  t.energyOutWh > t.energyInWh &&
+                  // Null is not false: a ride nobody was asked about counts,
+                  // which keeps the behaviour of every ride recorded before
+                  // the question existed. Only an explicit no takes one out.
+                  t.representative != false,
+            )
             .toList()
           ..sort((a, b) => a.startedAt.compareTo(b.startedAt));
     return usable;
+  }
+
+  Future<void> setTripRepresentative(int tripId, bool? value) =>
+      db.setTripRepresentative(tripId, value);
+
+  Future<void> markTripSummarySeen(int tripId) =>
+      db.markTripSummarySeen(tripId);
+
+  /// The most recent finished ride on this pack whose summary was never
+  /// shown, or null.
+  ///
+  /// Only the latest one: a week of unseen rides queuing up on opening the
+  /// app would be a punishment for having gone riding, not a feature. Demo
+  /// rides are excluded for the same reason they are excluded from learning
+  /// -- a made-up ride announcing itself would be the app talking about
+  /// nothing. An open ride (no distance yet, [Trip.endedAt] still equal to
+  /// its start) is skipped rather than offered half-finished.
+  Future<Trip?> pendingSummaryTrip(String deviceId) async {
+    final recent = await db.recentTrips(deviceId, limit: 20);
+    for (final t in recent) {
+      if (t.demo || t.summarySeen) continue;
+      if (t.distanceKm <= 0) continue;
+      return t;
+    }
+    return null;
   }
 
   /// Trips for one pack, newest first.

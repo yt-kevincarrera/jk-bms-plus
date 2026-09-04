@@ -16,6 +16,13 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
+    <!-- The auto-start detector needs a fix before a trip exists, and asks for
+         it with the screen off. A location-typed foreground service covers that
+         on most devices; this is the permission Android falls back to asking
+         for when it does not, and it is requested only if the device test in
+         the plan shows the service type is not enough. -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
     <!-- A trip keeps recording with the screen off, which on Android means a
          foreground service. Without it the OS throttles a backgrounded app to a
          few location fixes an hour and the ride becomes a straight line. -->

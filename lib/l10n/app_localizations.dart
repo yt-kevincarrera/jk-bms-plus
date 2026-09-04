@@ -7163,6 +7163,116 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Las celdas se han separado {value} V al final de la carga. Es donde mejor se ve un desbalance.'**
   String alertNotificationBodyChargeSpread(String value);
+
+  /// No description provided for @autoTripBlocked.
+  ///
+  /// In es, this message translates to:
+  /// **'No pude grabar el viaje: falta el permiso de ubicación. Sin él la app no aprende tu autonomía.'**
+  String get autoTripBlocked;
+
+  /// No description provided for @rideSavedNotif.
+  ///
+  /// In es, this message translates to:
+  /// **'Viaje guardado: {km} km, {whPerKm} Wh/km'**
+  String rideSavedNotif(String km, String whPerKm);
+
+  /// No description provided for @rideSavedNotifNoConsumption.
+  ///
+  /// In es, this message translates to:
+  /// **'Viaje guardado: {km} km'**
+  String rideSavedNotifNoConsumption(String km);
+
+  /// No description provided for @representativeAsk.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Este viaje te representa?'**
+  String get representativeAsk;
+
+  /// No description provided for @representativeAskBodyUp.
+  ///
+  /// In es, this message translates to:
+  /// **'Salió en {whPerKm} Wh/km, un {percent}% por encima de lo tuyo. Ya lo conté: tu autonomía pasó de {before} a {after} km.'**
+  String representativeAskBodyUp(
+    String whPerKm,
+    String percent,
+    String before,
+    String after,
+  );
+
+  /// No description provided for @representativeAskBodyDown.
+  ///
+  /// In es, this message translates to:
+  /// **'Salió en {whPerKm} Wh/km, un {percent}% por debajo de lo tuyo. Ya lo conté: tu autonomía pasó de {before} a {after} km.'**
+  String representativeAskBodyDown(
+    String whPerKm,
+    String percent,
+    String before,
+    String after,
+  );
+
+  /// No description provided for @representativeAskBodyUpNoKm.
+  ///
+  /// In es, this message translates to:
+  /// **'Salió en {whPerKm} Wh/km, un {percent}% por encima de lo tuyo. Ya lo conté: tu consumo aprendido pasó de {before} a {after} Wh/km.'**
+  String representativeAskBodyUpNoKm(
+    String whPerKm,
+    String percent,
+    String before,
+    String after,
+  );
+
+  /// No description provided for @representativeAskBodyDownNoKm.
+  ///
+  /// In es, this message translates to:
+  /// **'Salió en {whPerKm} Wh/km, un {percent}% por debajo de lo tuyo. Ya lo conté: tu consumo aprendido pasó de {before} a {after} Wh/km.'**
+  String representativeAskBodyDownNoKm(
+    String whPerKm,
+    String percent,
+    String before,
+    String after,
+  );
+
+  /// No description provided for @representativeYes.
+  ///
+  /// In es, this message translates to:
+  /// **'Es normal'**
+  String get representativeYes;
+
+  /// No description provided for @representativeNo.
+  ///
+  /// In es, this message translates to:
+  /// **'Fue una excepción'**
+  String get representativeNo;
+
+  /// No description provided for @representativeDone.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo. Tu autonomía sigue en {km} km.'**
+  String representativeDone(String km);
+
+  /// No description provided for @representativeDoneNoKm.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo. Tu consumo aprendido sigue en {whPerKm} Wh/km.'**
+  String representativeDoneNoKm(String whPerKm);
+
+  /// No description provided for @representativeMarkedException.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo. Ya no cuenta: tu autonomía queda en {km} km.'**
+  String representativeMarkedException(String km);
+
+  /// No description provided for @representativeMarkedExceptionNoKm.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo. Ya no cuenta: tu consumo aprendido queda en {whPerKm} Wh/km.'**
+  String representativeMarkedExceptionNoKm(String whPerKm);
+
+  /// No description provided for @representativeChange.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar'**
+  String get representativeChange;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

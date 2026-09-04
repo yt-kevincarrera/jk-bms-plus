@@ -434,6 +434,11 @@ class BmsService {
     _lastSettings = null;
     chargeAlerts.reset();
     tripAutoStart.reset();
+    // Without this, a ride's saved-summary text outlives the pack it was
+    // measured on: it survived a switch to another pack, and it survived
+    // leaving demo mode, showing one source's distance and consumption as if
+    // they had just happened on a different one.
+    _rideSavedUntil = null;
   }
 
   /// Whether the phone already holds a connection to this device that this
@@ -948,13 +953,24 @@ class BmsService {
     final summary = trip.stop();
     _segments.reset();
     await _stopLocation();
+
+    final id = _currentTripId;
+    lastStoredTripId = id;
+    _currentTripId = null;
+
+    if (summary != null && id != null) {
+      // Set before the one write below, not after the relearn further down:
+      // a second write once the DB work finished used to leave a moment where
+      // the connected readout flashed back before the news replaced it.
+      _rideSavedKm = summary.distanceKm;
+      _rideSavedWhPerKm = summary.whPerKm;
+      _rideSavedUntil = DateTime.now().toUtc().add(rideSavedFor);
+    }
     // Not stopped outright: the pack may still be connected, or charging, and
     // either of those has its own claim on the service. Ending a ride is not a
     // reason to stop reading.
     await _updateForegroundService();
 
-    final id = _currentTripId;
-    _currentTripId = null;
     if (summary == null) return null;
 
     if (id != null) {
@@ -1015,6 +1031,10 @@ class BmsService {
 
   /// Id of the trip being recorded, if any.
   int? get currentTripId => _currentTripId;
+
+  /// The row of the ride that just ended, for a screen that has to ask
+  /// something about it. `_currentTripId` is cleared by then.
+  int? lastStoredTripId;
 
   Future<LocationProblem?> _ensureLocation() async {
     await _fixSub?.cancel();
@@ -1168,6 +1188,25 @@ class BmsService {
     await relearnRangeFromTrips();
   }
 
+  /// Records whether a ride represents how this bike gets ridden, and relearns.
+  ///
+  /// Goes through the service rather than the repository for the same reason
+  /// deleting does: the estimate has to be rebuilt from what is left, or the
+  /// answer would be stored and change nothing. Rebuilding is also what makes
+  /// the answer reversible for free.
+  Future<void> setTripRepresentative(int tripId, bool? value) async {
+    await repository?.setTripRepresentative(tripId, value);
+    await relearnRangeFromTrips();
+  }
+
+  /// Records that the rider has seen this ride's summary.
+  ///
+  /// Nothing here needs relearning: seen is a fact about the rider, not about
+  /// the ride's numbers, so unlike [setTripRepresentative] there is no
+  /// estimator to rebuild.
+  Future<void> markTripSummarySeen(int tripId) =>
+      repository?.markTripSummarySeen(tripId) ?? Future<void>.value();
+
   // --- The live notification ---
   //
   // There is exactly one foreground service, and on Android it is the only
@@ -1201,6 +1240,27 @@ class BmsService {
   /// Wording for the connected notification, supplied by the UI.
   String linkWatchTitle = 'Reading the pack';
   String Function(BmsSnapshot?)? linkWatchText;
+
+  /// What the notification says just after a ride is stored.
+  ///
+  /// Rides end in a pocket more often than on screen, and the summary sheet
+  /// needs the app to be open. The one notification slot is free at that exact
+  /// moment, because the trip claim has just been released and the link claim
+  /// has taken over, so it carries the news for a few minutes rather than a
+  /// second notification being invented for it.
+  String Function(double km, double? whPerKm)? rideSavedText;
+
+  /// How long that text stands before the normal connected readout returns.
+  Duration rideSavedFor = const Duration(minutes: 5);
+
+  DateTime? _rideSavedUntil;
+  double _rideSavedKm = 0;
+  double? _rideSavedWhPerKm;
+
+  bool get _rideSavedStanding {
+    final until = _rideSavedUntil;
+    return until != null && DateTime.now().toUtc().isBefore(until);
+  }
 
   /// Wording for a download in progress, supplied by the UI.
   String downloadTitle = 'Downloading update';
@@ -1254,6 +1314,50 @@ class BmsService {
   @visibleForTesting
   ServiceClaim? get claimForTest => _claim;
 
+  /// Whether the service has to be location-typed for this claim.
+  ///
+  /// True for a ride, obviously. Also true for a bare connection while the
+  /// auto-start detector is armed, and that second half is the whole point:
+  /// the GPS arming that precedes a ride used to run under a dataSync-typed
+  /// service, and Android sustains background location only for a
+  /// location-typed one. With the screen off the fixes stopped arriving, the
+  /// detector read no speed, and a ride that needs speed to begin could never
+  /// begin.
+  ///
+  /// Decided by the claim rather than by whether a location stream happens to
+  /// be open, because the service is stopped and restarted when its type
+  /// changes, and starting a location-typed service *from the background* is
+  /// what Android 12 refuses. So it has to be born with the type it will need,
+  /// while the app is still on screen, rather than acquire it later in a
+  /// pocket.
+  bool _serviceNeedsLocation(ServiceClaim claim) {
+    if (isDemo) return false;
+    if (claim == ServiceClaim.trip) return true;
+    return claim == ServiceClaim.link && autoTripEnabled;
+  }
+
+  @visibleForTesting
+  bool get serviceUsesLocationForTest {
+    final claim = _claim;
+    return claim != null && _serviceNeedsLocation(claim);
+  }
+
+  @visibleForTesting
+  String get serviceTextForTest {
+    final claim = _claim;
+    return claim == null ? '' : _serviceText(claim);
+  }
+
+  @visibleForTesting
+  void noteRideSavedForTest({required double km, double? whPerKm}) {
+    _rideSavedKm = km;
+    _rideSavedWhPerKm = whPerKm;
+    _rideSavedUntil = DateTime.now().toUtc().add(rideSavedFor);
+  }
+
+  @visibleForTesting
+  void expireRideSavedForTest() => _rideSavedUntil = null;
+
   ServiceClaim? _serviceOwner;
 
   /// True while the app is holding the link open for a charge.
@@ -1273,7 +1377,10 @@ class BmsService {
     ServiceClaim.trip => notificationText?.call(trip, _lastSnapshot) ?? '',
     ServiceClaim.charge => chargeWatchText?.call(_lastSnapshot) ?? '',
     ServiceClaim.update => downloadText?.call(_download ?? 0) ?? '',
-    ServiceClaim.link => linkWatchText?.call(_lastSnapshot) ?? '',
+    ServiceClaim.link =>
+      _rideSavedStanding
+          ? rideSavedText?.call(_rideSavedKm, _rideSavedWhPerKm) ?? ''
+          : linkWatchText?.call(_lastSnapshot) ?? '',
   };
 
   /// Brings the one service into line with whoever has the strongest claim.
@@ -1323,7 +1430,7 @@ class BmsService {
       // location-typed service from an app with no location permission, and
       // neither a charge nor a bare connection has anything to do with where
       // the bike is.
-      usesRealLocation: wanted == ServiceClaim.trip && !isDemo,
+      usesRealLocation: _serviceNeedsLocation(wanted),
     );
     if (!started) {
       _serviceOwner = null;
@@ -1479,7 +1586,19 @@ class BmsService {
   final TripAutoStart tripAutoStart = TripAutoStart();
 
   /// Whether to open and close trips without being asked.
-  bool autoTripEnabled = true;
+  bool get autoTripEnabled => _autoTripEnabled;
+  bool _autoTripEnabled = true;
+
+  /// Setting this can change the service's *type*, not just whether the
+  /// detector runs, so the service has to be brought into line. Assigning the
+  /// field directly left a connected app holding a dataSync-typed service
+  /// after the rider switched auto-start on, which is the very failure this
+  /// type exists to prevent.
+  set autoTripEnabled(bool value) {
+    if (_autoTripEnabled == value) return;
+    _autoTripEnabled = value;
+    unawaited(_updateForegroundService());
+  }
 
   /// Fires when a trip was started or stopped without anybody pressing
   /// anything, so a screen can say so rather than leaving the rider to work
@@ -1509,19 +1628,44 @@ class BmsService {
       recording: trip.isRecording,
     );
 
+    await _runAutoTripAction(action);
+  }
+
+  /// Carries out what the detector decided, and tells [autoTripEvents].
+  ///
+  /// Pulled out of [_updateAutoTrip] so [forceAutoTripStartForTest] can run
+  /// this exact branch rather than a copy of it: a seam that duplicates the
+  /// logic can pass while the real path is broken.
+  Future<void> _runAutoTripAction(AutoTripAction action) async {
     switch (action) {
       case AutoTripAction.start:
         final problem = await startTrip();
         // No location, no ride: distance is the whole point, and a trip with
         // no track would poison the consumption figure with a divide by zero.
-        if (problem == null) _autoTripController.add(AutoTripAction.start);
+        // But saying nothing is worse than not recording: the rider goes on
+        // believing the app is learning while it rejects every ride.
+        _autoTripController.add(
+          problem == null ? AutoTripAction.start : AutoTripAction.blocked,
+        );
       case AutoTripAction.stop:
         await stopTrip();
         _autoTripController.add(AutoTripAction.stop);
       case AutoTripAction.none:
         break;
+      case AutoTripAction.blocked:
+        break;
     }
   }
+
+  /// Runs the detector's start branch directly.
+  ///
+  /// The branch itself needs sustained current and speed over twenty seconds
+  /// to fire, which a unit test cannot wait for. What is worth testing is not
+  /// the timing, which [TripAutoStart] already covers, but that a start which
+  /// failed says so.
+  @visibleForTesting
+  Future<void> forceAutoTripStartForTest() =>
+      _runAutoTripAction(AutoTripAction.start);
 
   /// Turns the GPS on once the pack is drawing, and off again when it stops.
   ///

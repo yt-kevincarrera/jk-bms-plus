@@ -1,5 +1,10 @@
 /// What the detector thinks should happen.
-enum AutoTripAction { none, start, stop }
+///
+/// [blocked] is never returned by [TripAutoStart.evaluate]. It travels on the
+/// same event channel because it answers the same question the rider is
+/// asking: is a ride being recorded right now. A start that failed for want of
+/// location used to answer it with silence.
+enum AutoTripAction { none, start, stop, blocked }
 
 /// Decides when a ride has begun and when it has ended, from the pack and the
 /// GPS.

@@ -10,7 +10,8 @@ import '../metrics/trip_recorder.dart';
 import '../platform/screen_awake.dart';
 import 'theme.dart';
 import 'widgets/common.dart';
-import 'widgets/trip_learned_section.dart';
+import 'widgets/trip_summary_sheet.dart';
+import 'widgets/trip_summary_view.dart';
 
 /// Trip mode: the speedometer half of the app.
 ///
@@ -57,19 +58,6 @@ class _TripScreenState extends State<TripScreen> {
   Future<void> _start() async {
     final t = AppL10n.of(context);
 
-    // The wording lives here, where the translations are. The service only
-    // knows how to keep the notification alive and when to refresh it.
-    widget.service.notificationTitle = t.tripNotificationTitle;
-    widget.service.notificationText = (trip, snapshot) {
-      final consumption = trip.whPerKm;
-      return [
-        '${trip.speedKmh.toStringAsFixed(0)} km/h',
-        '${trip.distanceKm.toStringAsFixed(2)} km',
-        if (snapshot != null) '${snapshot.soc.toStringAsFixed(0)} %',
-        if (consumption != null) '${consumption.toStringAsFixed(0)} Wh/km',
-      ].join('  ·  ');
-    };
-
     final problem = await widget.service.startTrip();
     if (!mounted) return;
     setState(() {
@@ -94,13 +82,22 @@ class _TripScreenState extends State<TripScreen> {
     final t = AppL10n.of(context);
     final outcome = await widget.service.stopTrip();
     if (!mounted || outcome == null) return;
-    await showModalBottomSheet<void>(
+    await showTripSummarySheet(
       context: context,
-      backgroundColor: AppTheme.surface,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (_) => _TripSummarySheet(outcome: outcome, t: t),
+      view: TripSummaryView.fromOutcome(
+        outcome,
+        tripId: widget.service.lastStoredTripId,
+      ),
+      service: widget.service,
+      t: t,
     );
+    // The rider just read this summary by hand, right here. Without marking
+    // it seen, _offerPendingSummary would pop it again on the next launch,
+    // then walk backwards through every stale ride before it, one per
+    // launch. Marked after the sheet resolves, like _offerPendingSummary
+    // does, so a sheet that throws leaves it unseen rather than lost.
+    final id = widget.service.lastStoredTripId;
+    if (id != null) await widget.service.markTripSummarySeen(id);
     if (mounted) setState(() {});
   }
 
@@ -341,162 +338,5 @@ class _TripScreenState extends State<TripScreen> {
     final s = d.inSeconds % 60;
     if (h > 0) return '$h:${m.toString().padLeft(2, '0')}';
     return '$m:${s.toString().padLeft(2, '0')}';
-  }
-}
-
-class _TripSummarySheet extends StatelessWidget {
-  const _TripSummarySheet({required this.outcome, required this.t});
-
-  final TripOutcome outcome;
-  final AppL10n t;
-
-  TripSummary get summary => outcome.summary;
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: ListView(
-        shrinkWrap: true,
-        padding: const EdgeInsets.only(bottom: 16),
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-            child: Text(
-              t.tripSummaryTitle,
-              style: const TextStyle(
-                fontSize: 19,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: MetricTile(
-                    label: t.tripDistance,
-                    value: summary.distanceKm.toStringAsFixed(2),
-                    unit: 'km',
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: MetricTile(
-                    label: t.tripConsumption,
-                    value: summary.whPerKm?.toStringAsFixed(0) ?? '--',
-                    unit: 'Wh/km',
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Section(
-            title: t.tripTitle,
-            children: [
-              InfoRow(t.tripMoving, _long(summary.movingDuration)),
-              InfoRow(t.tripElapsed, _long(summary.totalDuration)),
-              InfoRow(
-                t.tripStopped,
-                _long(summary.totalDuration - summary.movingDuration),
-              ),
-              InfoRow(
-                t.tripMaxSpeed,
-                '${summary.maxSpeedKmh.toStringAsFixed(0)} km/h',
-              ),
-              InfoRow(
-                t.tripAvgSpeed,
-                '${summary.averageSpeedKmh.toStringAsFixed(0)} km/h',
-              ),
-              InfoRow(t.tripClimb, '${summary.climbM.toStringAsFixed(0)} m'),
-              InfoRow(
-                t.tripDescent,
-                '${summary.descentM.toStringAsFixed(0)} m',
-                last: true,
-              ),
-            ],
-          ),
-          Section(
-            title: t.tripPackDuring,
-            children: [
-              InfoRow(
-                t.tripEnergyOut,
-                '${summary.energyOutWh.toStringAsFixed(1)} Wh',
-              ),
-              InfoRow(
-                t.tripEnergyIn,
-                '${summary.energyInWh.toStringAsFixed(1)} Wh',
-              ),
-              InfoRow(
-                t.tripSocUsed,
-                '${summary.socUsed.toStringAsFixed(0)} %',
-              ),
-              InfoRow(
-                t.tripSocPerKm,
-                summary.socPerKm == null
-                    ? '--'
-                    : '${summary.socPerKm!.toStringAsFixed(2)} %/km',
-                dim: summary.socPerKm == null,
-              ),
-              InfoRow(
-                t.tripSag,
-                '${summary.sagVolts.toStringAsFixed(2)} V',
-              ),
-              InfoRow(
-                t.tripMaxCurrent,
-                '${summary.maxDischargeCurrent.toStringAsFixed(1)} A',
-              ),
-              InfoRow(
-                t.tripMaxTemp,
-                '${summary.maxTemperature.toStringAsFixed(1)} °C',
-              ),
-              InfoRow(
-                t.tripMaxDelta,
-                summary.maxDeltaVolts.toStringAsFixed(3),
-                last: true,
-              ),
-            ],
-          ),
-          TripLearnedSection(
-            conclusions: outcome.conclusions,
-            whPerKm: summary.whPerKm,
-            socUsed: summary.socUsed,
-            distanceKm: summary.distanceKm,
-            maxTemperature: summary.maxTemperature,
-            maxDeltaVolts: summary.maxDeltaVolts,
-            t: t,
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-            child: Text(
-              t.tripNotSaved,
-              style: const TextStyle(
-                fontSize: 11.5,
-                height: 1.45,
-                color: AppTheme.textFaint,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: FilledButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(t.tripClose),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  static String _long(Duration d) {
-    final h = d.inHours;
-    final m = d.inMinutes % 60;
-    final s = d.inSeconds % 60;
-    if (h > 0) return '$h h $m min';
-    // Minutes alone would round a 52 s leg and a 55 s wait both to "1 min",
-    // which makes the two lines look like they disagree with each other.
-    if (d.inMinutes < 10) return '$m:${s.toString().padLeft(2, '0')}';
-    return '$m min';
   }
 }
