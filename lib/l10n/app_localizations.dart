@@ -6401,6 +6401,336 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Peor celda'**
   String get reportSeriesWorstCell;
+
+  /// No description provided for @profileTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Perfil de la batería'**
+  String get profileTitle;
+
+  /// No description provided for @profileIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuatro cosas que el BMS no puede saber y que cambian lo que la app puede decirte. Todas se pueden dejar en blanco.'**
+  String get profileIntro;
+
+  /// No description provided for @profileName.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre'**
+  String get profileName;
+
+  /// No description provided for @profileSoldAs.
+  ///
+  /// In es, this message translates to:
+  /// **'Vendida como'**
+  String get profileSoldAs;
+
+  /// No description provided for @profileSoldAsHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Capacidad que te dijeron'**
+  String get profileSoldAsHint;
+
+  /// No description provided for @profileChemistry.
+  ///
+  /// In es, this message translates to:
+  /// **'Química de las celdas'**
+  String get profileChemistry;
+
+  /// No description provided for @profileChemistryWhy.
+  ///
+  /// In es, this message translates to:
+  /// **'De esto dependen los rangos seguros. LFP a 4,2 V por celda es un incendio; NMC a 3,6 V es una batería a medio cargar. Si no lo sabes, déjalo en \"No lo sé\" y la app no auditará voltajes.'**
+  String get profileChemistryWhy;
+
+  /// No description provided for @profileChemistryFromOvp.
+  ///
+  /// In es, this message translates to:
+  /// **'El BMS está configurado a {value} V por celda, lo que sugiere {chemistry}.'**
+  String profileChemistryFromOvp(String chemistry, String value);
+
+  /// No description provided for @profileChemistryFromCell.
+  ///
+  /// In es, this message translates to:
+  /// **'Se ha visto una celda a {value} V, así que no es LFP: sugiere {chemistry}.'**
+  String profileChemistryFromCell(String chemistry, String value);
+
+  /// No description provided for @profileAcquired.
+  ///
+  /// In es, this message translates to:
+  /// **'La tengo desde'**
+  String get profileAcquired;
+
+  /// No description provided for @profileAcquiredUnknown.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin fecha'**
+  String get profileAcquiredUnknown;
+
+  /// No description provided for @profileAcquiredClear.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar la fecha'**
+  String get profileAcquiredClear;
+
+  /// No description provided for @profileAgeYears.
+  ///
+  /// In es, this message translates to:
+  /// **'{years} años contigo'**
+  String profileAgeYears(String years);
+
+  /// No description provided for @profileCaptureBaseline.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar el estado de hoy como día uno'**
+  String get profileCaptureBaseline;
+
+  /// No description provided for @profileCaptureBaselineHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Celdas, resistencias y configuración del BMS tal como están ahora. Todo lo que la app diga después sobre derivas se compara contra esto. Mejor con la batería en reposo.'**
+  String get profileCaptureBaselineHint;
+
+  /// No description provided for @profileSave.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar'**
+  String get profileSave;
+
+  /// No description provided for @profileLater.
+  ///
+  /// In es, this message translates to:
+  /// **'Ahora no'**
+  String get profileLater;
+
+  /// No description provided for @profileEdit.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar el perfil'**
+  String get profileEdit;
+
+  /// No description provided for @profileComplete.
+  ///
+  /// In es, this message translates to:
+  /// **'Completar el perfil'**
+  String get profileComplete;
+
+  /// No description provided for @profileBaseline.
+  ///
+  /// In es, this message translates to:
+  /// **'Día uno'**
+  String get profileBaseline;
+
+  /// No description provided for @profileBaselineMissing.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin guardar'**
+  String get profileBaselineMissing;
+
+  /// No description provided for @profileNoBaselineIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin un día uno, \"el delta se ha abierto\" solo significa \"desde que la app empezó a mirar\". Guardar el estado de hoy le da a todo lo demás un punto de partida.'**
+  String get profileNoBaselineIntro;
+
+  /// No description provided for @profileSinceDayOne.
+  ///
+  /// In es, this message translates to:
+  /// **'Desde el día uno ({date})'**
+  String profileSinceDayOne(String date);
+
+  /// No description provided for @profileNotComparable.
+  ///
+  /// In es, this message translates to:
+  /// **'Una de las dos lecturas se tomó con la batería tirando corriente, así que las celdas no son comparables. Mira esto con la moto parada.'**
+  String get profileNotComparable;
+
+  /// No description provided for @profileDeltaThenNow.
+  ///
+  /// In es, this message translates to:
+  /// **'Diferencia entre celdas'**
+  String get profileDeltaThenNow;
+
+  /// No description provided for @profileWorstDrift.
+  ///
+  /// In es, this message translates to:
+  /// **'La que más se ha ido'**
+  String get profileWorstDrift;
+
+  /// No description provided for @profileWorstDriftValue.
+  ///
+  /// In es, this message translates to:
+  /// **'Celda {cell}, {mv} mV'**
+  String profileWorstDriftValue(String cell, String mv);
+
+  /// No description provided for @profileCyclesSince.
+  ///
+  /// In es, this message translates to:
+  /// **'Ciclos desde entonces'**
+  String get profileCyclesSince;
+
+  /// No description provided for @profileConfigChanged.
+  ///
+  /// In es, this message translates to:
+  /// **'Configuración del BMS'**
+  String get profileConfigChanged;
+
+  /// No description provided for @profileConfigUnchanged.
+  ///
+  /// In es, this message translates to:
+  /// **'Igual que el día uno'**
+  String get profileConfigUnchanged;
+
+  /// No description provided for @profileConfigChangedCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} ajuste(s) cambiado(s)'**
+  String profileConfigChangedCount(String count);
+
+  /// No description provided for @chemistryLfp.
+  ///
+  /// In es, this message translates to:
+  /// **'LFP'**
+  String get chemistryLfp;
+
+  /// No description provided for @chemistryNmc.
+  ///
+  /// In es, this message translates to:
+  /// **'NMC / Li-ion'**
+  String get chemistryNmc;
+
+  /// No description provided for @chemistryUnknown.
+  ///
+  /// In es, this message translates to:
+  /// **'No lo sé'**
+  String get chemistryUnknown;
+
+  /// No description provided for @configCellOvp.
+  ///
+  /// In es, this message translates to:
+  /// **'Corte por celda alta'**
+  String get configCellOvp;
+
+  /// No description provided for @configCellUvp.
+  ///
+  /// In es, this message translates to:
+  /// **'Corte por celda baja'**
+  String get configCellUvp;
+
+  /// No description provided for @configBalanceStart.
+  ///
+  /// In es, this message translates to:
+  /// **'Empieza a balancear'**
+  String get configBalanceStart;
+
+  /// No description provided for @configSoc100.
+  ///
+  /// In es, this message translates to:
+  /// **'Voltaje del 100 %'**
+  String get configSoc100;
+
+  /// No description provided for @configSoc0.
+  ///
+  /// In es, this message translates to:
+  /// **'Voltaje del 0 %'**
+  String get configSoc0;
+
+  /// No description provided for @configMaxCharge.
+  ///
+  /// In es, this message translates to:
+  /// **'Corriente máxima de carga'**
+  String get configMaxCharge;
+
+  /// No description provided for @configMaxDischarge.
+  ///
+  /// In es, this message translates to:
+  /// **'Corriente máxima de descarga'**
+  String get configMaxDischarge;
+
+  /// No description provided for @configMaxBalance.
+  ///
+  /// In es, this message translates to:
+  /// **'Corriente de balanceo'**
+  String get configMaxBalance;
+
+  /// No description provided for @configChargeOtp.
+  ///
+  /// In es, this message translates to:
+  /// **'Corte por calor cargando'**
+  String get configChargeOtp;
+
+  /// No description provided for @configDischargeOtp.
+  ///
+  /// In es, this message translates to:
+  /// **'Corte por calor descargando'**
+  String get configDischargeOtp;
+
+  /// No description provided for @configChargeUtp.
+  ///
+  /// In es, this message translates to:
+  /// **'Corte por frío cargando'**
+  String get configChargeUtp;
+
+  /// No description provided for @configMosfetOtp.
+  ///
+  /// In es, this message translates to:
+  /// **'Corte por calor del MOSFET'**
+  String get configMosfetOtp;
+
+  /// No description provided for @configNominalCapacity.
+  ///
+  /// In es, this message translates to:
+  /// **'Capacidad configurada'**
+  String get configNominalCapacity;
+
+  /// No description provided for @configCellCount.
+  ///
+  /// In es, this message translates to:
+  /// **'Número de celdas'**
+  String get configCellCount;
+
+  /// No description provided for @configChargeSwitch.
+  ///
+  /// In es, this message translates to:
+  /// **'Carga habilitada'**
+  String get configChargeSwitch;
+
+  /// No description provided for @configDischargeSwitch.
+  ///
+  /// In es, this message translates to:
+  /// **'Descarga habilitada'**
+  String get configDischargeSwitch;
+
+  /// No description provided for @configBalancerSwitch.
+  ///
+  /// In es, this message translates to:
+  /// **'Balanceador'**
+  String get configBalancerSwitch;
+
+  /// No description provided for @configOn.
+  ///
+  /// In es, this message translates to:
+  /// **'Sí'**
+  String get configOn;
+
+  /// No description provided for @configOff.
+  ///
+  /// In es, this message translates to:
+  /// **'No'**
+  String get configOff;
+
+  /// No description provided for @reportSectionDayOne.
+  ///
+  /// In es, this message translates to:
+  /// **'El día uno de esta batería'**
+  String get reportSectionDayOne;
+
+  /// No description provided for @reportDayOneNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Comparación contra el estado guardado el día que se dio de alta la batería. No es una medida de capacidad: una foto de los voltajes no puede medir lo que aguanta un pack, y aquí no se presenta como tal.'**
+  String get reportDayOneNote;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

@@ -48,6 +48,7 @@ class BackupCodec {
     final tests = await db.allCapacityTestsForBackup();
     final maintenance = await db.allMaintenanceForBackup();
     final inspections = await db.allInspectionsForBackup();
+    final baselines = await db.allBaselines();
     final frames = includeRawFrames
         ? await db.allRawFramesForBackup()
         : const <RawFrame>[];
@@ -65,6 +66,7 @@ class BackupCodec {
       'capacityTests': tests.map(_test).toList(),
       'maintenance': maintenance.map(_maintenance).toList(),
       'inspections': inspections.map(_inspection).toList(),
+      'baselines': baselines.map(_baseline).toList(),
       'rawFrames': frames.map(_frame).toList(),
     };
 
@@ -125,6 +127,8 @@ class BackupCodec {
     final maintenance = _list(decoded['maintenance']);
     // Absent from every backup made before inspections existed.
     final inspections = _list(decoded['inspections']);
+    // Same for baselines.
+    final baselines = _list(decoded['baselines']);
 
     for (final d in devices) {
       await db.upsertDevice(
@@ -135,9 +139,26 @@ class BackupCodec {
           model: Value(d['model'] as String? ?? ''),
           catalogueCapacityAh: Value(_double(d['catalogueCapacityAh'])),
           catalogueFromBms: Value(d['catalogueFromBms'] as bool? ?? false),
+          chemistry: Value(d['chemistry'] as String? ?? ''),
+          acquiredAt: Value(_time(d['acquiredAt'])),
           firstSeenAt: _time(d['firstSeenAt'])!,
           lastSeenAt: _time(d['lastSeenAt'])!,
           demo: Value(d['demo'] as bool? ?? false),
+        ),
+      );
+    }
+
+    for (final b in baselines) {
+      final deviceId = b['deviceId'] as String?;
+      final capturedAt = _time(b['capturedAt']);
+      final json = b['json'] as String?;
+      if (deviceId == null || capturedAt == null || json == null) continue;
+      await db.saveBaseline(
+        BaselinesCompanion.insert(
+          deviceId: deviceId,
+          capturedAt: capturedAt,
+          json: json,
+          note: Value(b['note'] as String? ?? ''),
         ),
       );
     }
@@ -214,6 +235,7 @@ class BackupCodec {
       rawFrames: frameRows.length,
       maintenance: maintenance.length,
       inspections: inspections.length,
+      baselines: baselines.length,
       exportedAt: _time(decoded['exportedAt']),
     );
   }
@@ -227,9 +249,20 @@ class BackupCodec {
     'model': d.model,
     'catalogueCapacityAh': d.catalogueCapacityAh,
     'catalogueFromBms': d.catalogueFromBms,
+    'chemistry': d.chemistry,
+    'acquiredAt': d.acquiredAt?.toIso8601String(),
     'firstSeenAt': d.firstSeenAt.toIso8601String(),
     'lastSeenAt': d.lastSeenAt.toIso8601String(),
     'demo': d.demo,
+  };
+
+  /// A pack's day one. Carried because a history without the point it is
+  /// measured from is a list of numbers.
+  static Map<String, Object?> _baseline(Baseline b) => {
+    'deviceId': b.deviceId,
+    'capturedAt': b.capturedAt.toIso8601String(),
+    'json': b.json,
+    'note': b.note,
   };
 
   static Map<String, Object?> _trip(Trip t) => {
@@ -479,6 +512,7 @@ class BackupImportResult {
     required this.rawFrames,
     this.maintenance = 0,
     this.inspections = 0,
+    this.baselines = 0,
     this.exportedAt,
   });
 
@@ -490,6 +524,7 @@ class BackupImportResult {
   final int rawFrames;
   final int maintenance;
   final int inspections;
+  final int baselines;
   final DateTime? exportedAt;
 }
 

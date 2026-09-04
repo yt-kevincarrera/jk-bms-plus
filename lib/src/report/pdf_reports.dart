@@ -6,6 +6,7 @@ import 'package:pdf/widgets.dart' as pw;
 import '../../l10n/app_localizations.dart';
 import '../inspection/inspection_result.dart';
 import '../inspection/inspection_series.dart';
+import '../pack/chemistry.dart';
 import '../metrics/advice_engine.dart';
 import '../metrics/maintenance.dart';
 import '../ui/widgets/advice_list.dart';
@@ -112,6 +113,7 @@ class PdfReports {
           ]),
           if (d.advice.isNotEmpty) _verdicts(t, d.advice),
           if (d.drift.isNotEmpty) _driftTable(t, d),
+          if (d.baseline != null) _dayOne(t, d),
           _section(t.reportSectionHistory, [
             _row(t.offlineHistorySince, _date(d.historySince)),
             _row(t.reportReadings, '${d.readingCount}'),
@@ -126,6 +128,52 @@ class PdfReports {
 
     return doc.save();
   }
+
+  /// What the pack is, and what it looked like on day one.
+  ///
+  /// The chemistry and the date come from the rider; everything else was
+  /// captured once and left alone. Nothing here is a capacity figure: a
+  /// snapshot cannot measure what a battery holds, and a sheet that implied
+  /// otherwise would be the most convincing wrong number in the document.
+  pw.Widget _dayOne(AppL10n t, PackReportData d) {
+    final baseline = d.baseline!;
+    final since = d.sinceDayOne;
+    return _section(t.reportSectionDayOne, [
+      _row(t.profileChemistry, _chemistryName(t, d.chemistry)),
+      if (d.acquiredAt != null) _row(t.profileAcquired, _date(d.acquiredAt)),
+      _row(t.profileBaseline, _date(baseline.capturedAt)),
+      _row(
+        t.profileDeltaThenNow,
+        since == null
+            ? '${baseline.deltaVolts.toStringAsFixed(3)} V'
+            : '${since.thenDeltaVolts.toStringAsFixed(3)} V  ->  '
+                  '${since.nowDeltaVolts.toStringAsFixed(3)} V',
+      ),
+      if (since?.worstDrift != null)
+        _row(
+          t.profileWorstDrift,
+          t.profileWorstDriftValue(
+            '${since!.worstDrift!.index}',
+            (since.worstDrift!.driftVolts * 1000).toStringAsFixed(0),
+          ),
+        ),
+      if (since?.cyclesSince != null)
+        _row(t.profileCyclesSince, '${since!.cyclesSince}'),
+      if (since != null)
+        _row(
+          t.profileConfigChanged,
+          since.configChanged.isEmpty
+              ? t.profileConfigUnchanged
+              : t.profileConfigChangedCount('${since.configChanged.length}'),
+        ),
+    ], note: t.reportDayOneNote);
+  }
+
+  static String _chemistryName(AppL10n t, CellChemistry c) => switch (c) {
+    CellChemistry.lfp => t.chemistryLfp,
+    CellChemistry.nmc => t.chemistryNmc,
+    CellChemistry.unknown => t.chemistryUnknown,
+  };
 
   /// The inspection sheet, signed or not.
   Future<Uint8List> inspectionReport(AppL10n t, InspectionReportData d) async {

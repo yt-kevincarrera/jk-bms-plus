@@ -29,8 +29,20 @@ void main() {
         id: 'AA:BB',
         name: const Value('Moto'),
         catalogueCapacityAh: const Value(45),
+        chemistry: const Value('lfp'),
+        acquiredAt: Value(DateTime.utc(2024, 3, 2)),
         firstSeenAt: now,
         lastSeenAt: now,
+      ),
+    );
+    await db.saveBaseline(
+      BaselinesCompanion.insert(
+        deviceId: 'AA:BB',
+        capturedAt: DateTime.utc(2026, 8, 1),
+        json:
+            '{"at":"2026-08-01T00:00:00.000Z","cells":[3.31,3.32],'
+            '"packV":6.63,"current":0.1}',
+        note: const Value('comprada a un vecino'),
       ),
     );
     final tripId = await db.insertTrip(
@@ -146,7 +158,9 @@ void main() {
 
     test('the values come back intact, not just the row counts', () async {
       await seed(source);
-      final target = await restoreInto(await BackupCodec(source).export(into: tmp));
+      final target = await restoreInto(
+        await BackupCodec(source).export(into: tmp),
+      );
       addTearDown(target.close);
 
       final trip = (await target.recentTrips('AA:BB')).single;
@@ -159,12 +173,32 @@ void main() {
       expect(device.catalogueCapacityAh, 45);
     });
 
+    test('the profile and the day one come back with the pack', () async {
+      await seed(source);
+      final file = await BackupCodec(source).export(into: tmp);
+      final restored = await restoreInto(file);
+      addTearDown(restored.close);
+
+      final device = (await restored.allDevices()).single;
+      // Neither of these can be read off the wire, so losing them in a
+      // backup would lose them for good.
+      expect(device.chemistry, 'lfp');
+      expect(device.acquiredAt?.toUtc(), DateTime.utc(2024, 3, 2));
+
+      final baseline = await restored.baselineRow('AA:BB');
+      expect(baseline, isNotNull);
+      expect(baseline!.note, 'comprada a un vecino');
+      expect(baseline.json, contains('3.31'));
+    });
+
     test('a track still points at its own ride after renumbering', () async {
       // Row ids are local to a database, so they are reassigned on import.
       // Getting this wrong would leave every track attached to nothing, or
       // worse, to somebody elses ride.
       await seed(source);
-      final target = await restoreInto(await BackupCodec(source).export(into: tmp));
+      final target = await restoreInto(
+        await BackupCodec(source).export(into: tmp),
+      );
       addTearDown(target.close);
 
       final trip = (await target.recentTrips('AA:BB')).single;
@@ -178,7 +212,9 @@ void main() {
       // backup that mangled them would quietly destroy the one thing that
       // makes a decoding mistake survivable.
       await seed(source);
-      final target = await restoreInto(await BackupCodec(source).export(into: tmp));
+      final target = await restoreInto(
+        await BackupCodec(source).export(into: tmp),
+      );
       addTearDown(target.close);
 
       final frame = (await target.allRawFramesForBackup()).single;
@@ -187,7 +223,9 @@ void main() {
 
     test('they can be left out for a smaller file', () async {
       await seed(source);
-      final file = await BackupCodec(source).export(includeRawFrames: false, into: tmp);
+      final file = await BackupCodec(
+        source,
+      ).export(includeRawFrames: false, into: tmp);
 
       final target = await restoreInto(file);
       addTearDown(target.close);
@@ -258,7 +296,9 @@ void main() {
       // It is the one part of the history the app cannot reconstruct from
       // anything: nothing in the BMS records what the rider did to the pack.
       await seed(source);
-      final target = await restoreInto(await BackupCodec(source).export(into: tmp));
+      final target = await restoreInto(
+        await BackupCodec(source).export(into: tmp),
+      );
       addTearDown(target.close);
 
       final events = await target.maintenanceFor('AA:BB');

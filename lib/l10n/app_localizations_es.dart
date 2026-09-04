@@ -3701,4 +3701,187 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get reportSeriesWorstCell => 'Peor celda';
+
+  @override
+  String get profileTitle => 'Perfil de la batería';
+
+  @override
+  String get profileIntro =>
+      'Cuatro cosas que el BMS no puede saber y que cambian lo que la app puede decirte. Todas se pueden dejar en blanco.';
+
+  @override
+  String get profileName => 'Nombre';
+
+  @override
+  String get profileSoldAs => 'Vendida como';
+
+  @override
+  String get profileSoldAsHint => 'Capacidad que te dijeron';
+
+  @override
+  String get profileChemistry => 'Química de las celdas';
+
+  @override
+  String get profileChemistryWhy =>
+      'De esto dependen los rangos seguros. LFP a 4,2 V por celda es un incendio; NMC a 3,6 V es una batería a medio cargar. Si no lo sabes, déjalo en \"No lo sé\" y la app no auditará voltajes.';
+
+  @override
+  String profileChemistryFromOvp(String chemistry, String value) {
+    return 'El BMS está configurado a $value V por celda, lo que sugiere $chemistry.';
+  }
+
+  @override
+  String profileChemistryFromCell(String chemistry, String value) {
+    return 'Se ha visto una celda a $value V, así que no es LFP: sugiere $chemistry.';
+  }
+
+  @override
+  String get profileAcquired => 'La tengo desde';
+
+  @override
+  String get profileAcquiredUnknown => 'Sin fecha';
+
+  @override
+  String get profileAcquiredClear => 'Quitar la fecha';
+
+  @override
+  String profileAgeYears(String years) {
+    return '$years años contigo';
+  }
+
+  @override
+  String get profileCaptureBaseline => 'Guardar el estado de hoy como día uno';
+
+  @override
+  String get profileCaptureBaselineHint =>
+      'Celdas, resistencias y configuración del BMS tal como están ahora. Todo lo que la app diga después sobre derivas se compara contra esto. Mejor con la batería en reposo.';
+
+  @override
+  String get profileSave => 'Guardar';
+
+  @override
+  String get profileLater => 'Ahora no';
+
+  @override
+  String get profileEdit => 'Editar el perfil';
+
+  @override
+  String get profileComplete => 'Completar el perfil';
+
+  @override
+  String get profileBaseline => 'Día uno';
+
+  @override
+  String get profileBaselineMissing => 'Sin guardar';
+
+  @override
+  String get profileNoBaselineIntro =>
+      'Sin un día uno, \"el delta se ha abierto\" solo significa \"desde que la app empezó a mirar\". Guardar el estado de hoy le da a todo lo demás un punto de partida.';
+
+  @override
+  String profileSinceDayOne(String date) {
+    return 'Desde el día uno ($date)';
+  }
+
+  @override
+  String get profileNotComparable =>
+      'Una de las dos lecturas se tomó con la batería tirando corriente, así que las celdas no son comparables. Mira esto con la moto parada.';
+
+  @override
+  String get profileDeltaThenNow => 'Diferencia entre celdas';
+
+  @override
+  String get profileWorstDrift => 'La que más se ha ido';
+
+  @override
+  String profileWorstDriftValue(String cell, String mv) {
+    return 'Celda $cell, $mv mV';
+  }
+
+  @override
+  String get profileCyclesSince => 'Ciclos desde entonces';
+
+  @override
+  String get profileConfigChanged => 'Configuración del BMS';
+
+  @override
+  String get profileConfigUnchanged => 'Igual que el día uno';
+
+  @override
+  String profileConfigChangedCount(String count) {
+    return '$count ajuste(s) cambiado(s)';
+  }
+
+  @override
+  String get chemistryLfp => 'LFP';
+
+  @override
+  String get chemistryNmc => 'NMC / Li-ion';
+
+  @override
+  String get chemistryUnknown => 'No lo sé';
+
+  @override
+  String get configCellOvp => 'Corte por celda alta';
+
+  @override
+  String get configCellUvp => 'Corte por celda baja';
+
+  @override
+  String get configBalanceStart => 'Empieza a balancear';
+
+  @override
+  String get configSoc100 => 'Voltaje del 100 %';
+
+  @override
+  String get configSoc0 => 'Voltaje del 0 %';
+
+  @override
+  String get configMaxCharge => 'Corriente máxima de carga';
+
+  @override
+  String get configMaxDischarge => 'Corriente máxima de descarga';
+
+  @override
+  String get configMaxBalance => 'Corriente de balanceo';
+
+  @override
+  String get configChargeOtp => 'Corte por calor cargando';
+
+  @override
+  String get configDischargeOtp => 'Corte por calor descargando';
+
+  @override
+  String get configChargeUtp => 'Corte por frío cargando';
+
+  @override
+  String get configMosfetOtp => 'Corte por calor del MOSFET';
+
+  @override
+  String get configNominalCapacity => 'Capacidad configurada';
+
+  @override
+  String get configCellCount => 'Número de celdas';
+
+  @override
+  String get configChargeSwitch => 'Carga habilitada';
+
+  @override
+  String get configDischargeSwitch => 'Descarga habilitada';
+
+  @override
+  String get configBalancerSwitch => 'Balanceador';
+
+  @override
+  String get configOn => 'Sí';
+
+  @override
+  String get configOff => 'No';
+
+  @override
+  String get reportSectionDayOne => 'El día uno de esta batería';
+
+  @override
+  String get reportDayOneNote =>
+      'Comparación contra el estado guardado el día que se dio de alta la batería. No es una medida de capacidad: una foto de los voltajes no puede medir lo que aguanta un pack, y aquí no se presenta como tal.';
 }
