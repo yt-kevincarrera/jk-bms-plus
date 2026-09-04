@@ -327,6 +327,36 @@ class _EvidenceRow extends StatelessWidget {
       t.evidencePeakCurrent,
       '${v.toStringAsFixed(1)} A',
     ),
+    EvidenceKind.runCount => (t.evidenceRunCount, whole(v)),
+    EvidenceKind.timesSameCell => (
+      t.evidenceTimesSameCell('${e.cell ?? 0}'),
+      whole(v),
+    ),
+    EvidenceKind.previousSag => (t.evidencePreviousSag(_date(e.at)), volts(v)),
+    EvidenceKind.previousRestDelta => (
+      t.evidencePreviousRestDelta(_date(e.at)),
+      volts(v),
+    ),
+    EvidenceKind.previousResistance => (
+      t.evidencePreviousResistance(_date(e.at)),
+      '${(v * 1000).toStringAsFixed(1)} m\u03a9',
+    ),
+    EvidenceKind.previousCycles => (
+      t.evidencePreviousCycles(_date(e.at)),
+      whole(v),
+    ),
+    EvidenceKind.previousSoh => (
+      t.evidencePreviousSoh(_date(e.at)),
+      '${whole(v)} %',
+    ),
+    EvidenceKind.previousConfiguredCapacity => (
+      t.evidencePreviousConfiguredCapacity(_date(e.at)),
+      ah(v),
+    ),
+    EvidenceKind.previousPeakCurrent => (
+      t.evidencePreviousPeakCurrent(_date(e.at)),
+      '${v.toStringAsFixed(1)} A',
+    ),
   };
 }
 
@@ -367,8 +397,27 @@ String adviceTitle(AppL10n t, Advice advice) {
     AdviceCode.inspectionAlarmsSeen => t.verdictInspAlarmsTitle,
     AdviceCode.inspectionCountersEditable => t.verdictInspCountersTitle,
     AdviceCode.inspectionNoHeavyLoad => t.verdictInspNoHeavyLoadTitle,
+    AdviceCode.inspectionRepeatSameCell => t.verdictInspRepeatSameCellTitle(
+      '$cell',
+      _fact(advice, EvidenceKind.timesSameCell, 0),
+      _fact(advice, EvidenceKind.runCount, 0),
+    ),
+    AdviceCode.inspectionRepeatCellMoved => t.verdictInspRepeatCellMovedTitle(
+      '$cell',
+    ),
+    AdviceCode.inspectionRepeatWorse => t.verdictInspRepeatWorseTitle,
+    AdviceCode.inspectionRepeatSteady => t.verdictInspRepeatSteadyTitle,
+    AdviceCode.inspectionRepeatCountersReset =>
+      t.verdictInspRepeatCountersResetTitle,
+    AdviceCode.inspectionRepeatLoadDiffers =>
+      t.verdictInspRepeatLoadDiffersTitle,
   };
 }
+
+/// One evidence figure of an advice, formatted, or zero when it carries none.
+String _fact(Advice advice, EvidenceKind kind, int digits) =>
+    (advice.evidence.where((e) => e.kind == kind).firstOrNull?.value ?? 0)
+        .toStringAsFixed(digits);
 
 String adviceBody(AppL10n t, Advice advice) {
   final v = advice.value ?? 0;
@@ -470,6 +519,17 @@ String adviceBody(AppL10n t, Advice advice) {
     AdviceCode.inspectionNoHeavyLoad => t.verdictInspNoHeavyLoadBody(
       v.toStringAsFixed(1),
     ),
+    AdviceCode.inspectionRepeatSameCell => t.verdictInspRepeatSameCellBody,
+    AdviceCode.inspectionRepeatCellMoved => t.verdictInspRepeatCellMovedBody(
+      '${advice.evidence.where((e) => e.kind == EvidenceKind.previousSag).firstOrNull?.cell ?? 0}',
+      '$cell',
+    ),
+    AdviceCode.inspectionRepeatWorse => t.verdictInspRepeatWorseBody,
+    AdviceCode.inspectionRepeatSteady => t.verdictInspRepeatSteadyBody,
+    AdviceCode.inspectionRepeatCountersReset =>
+      t.verdictInspRepeatCountersResetBody,
+    AdviceCode.inspectionRepeatLoadDiffers =>
+      t.verdictInspRepeatLoadDiffersBody,
   };
 }
 

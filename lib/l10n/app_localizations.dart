@@ -6209,6 +6209,198 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'No te quedan créditos de certificado. Consigue más en Licencia.'**
   String get certificateCreditsGone;
+
+  /// No description provided for @verdictInspRepeatSameCellTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'La celda {cell} vuelve a fallar: {times} de {runs} pruebas'**
+  String verdictInspRepeatSameCellTitle(String cell, String times, String runs);
+
+  /// No description provided for @verdictInspRepeatSameCellBody.
+  ///
+  /// In es, this message translates to:
+  /// **'No fue mala suerte ni un cable suelto: repetida la prueba, la misma celda vuelve a hundirse antes que las demás. Esto ya no es una sospecha, es la celda.'**
+  String get verdictInspRepeatSameCellBody;
+
+  /// No description provided for @verdictInspRepeatCellMovedTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta vez se hundió otra celda'**
+  String verdictInspRepeatCellMovedTitle(String cell);
+
+  /// No description provided for @verdictInspRepeatCellMovedBody.
+  ///
+  /// In es, this message translates to:
+  /// **'La prueba anterior señaló la celda {before} y esta señala la {cell}. Cuando el dedo cambia de sitio entre pruebas, casi siempre es que no se tiró igual de la batería, no que haya dos celdas malas. Repite el test pidiendo el mismo acelerón que la vez anterior.'**
+  String verdictInspRepeatCellMovedBody(String before, String cell);
+
+  /// No description provided for @verdictInspRepeatWorseTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Va a peor desde la prueba anterior'**
+  String get verdictInspRepeatWorseTitle;
+
+  /// No description provided for @verdictInspRepeatWorseBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Comparando con el mismo tipo de tirón, la batería mide peor que la última vez. Con dos pruebas separadas en el tiempo esto es una tendencia, no una foto.'**
+  String get verdictInspRepeatWorseBody;
+
+  /// No description provided for @verdictInspRepeatSteadyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Repite lo mismo que la vez anterior'**
+  String get verdictInspRepeatSteadyTitle;
+
+  /// No description provided for @verdictInspRepeatSteadyBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Las cifras de esta prueba caen dentro del ruido de la anterior. La primera prueba no fue una casualidad y esta no ha encontrado nada nuevo.'**
+  String get verdictInspRepeatSteadyBody;
+
+  /// No description provided for @verdictInspRepeatCountersResetTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Alguien tocó los contadores entre una visita y otra'**
+  String get verdictInspRepeatCountersResetTitle;
+
+  /// No description provided for @verdictInspRepeatCountersResetBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Los ciclos solo suben y la salud solo baja. Si entre las dos pruebas los ciclos bajaron, la salud subió o cambió la capacidad configurada, es que se reseteó el BMS. Lo físico de arriba no se resetea con un botón; eso es lo que hay que mirar.'**
+  String get verdictInspRepeatCountersResetBody;
+
+  /// No description provided for @verdictInspRepeatLoadDiffersTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Las dos pruebas no tiraron igual'**
+  String get verdictInspRepeatLoadDiffersTitle;
+
+  /// No description provided for @verdictInspRepeatLoadDiffersBody.
+  ///
+  /// In es, this message translates to:
+  /// **'La caída de voltaje depende de cuánta corriente se pida. Con acelerones muy distintos, comparar las caídas no dice nada. Para comparar de verdad, repite el test pidiendo un tirón parecido.'**
+  String get verdictInspRepeatLoadDiffersBody;
+
+  /// No description provided for @evidenceRunCount.
+  ///
+  /// In es, this message translates to:
+  /// **'Pruebas a este pack'**
+  String get evidenceRunCount;
+
+  /// No description provided for @evidenceTimesSameCell.
+  ///
+  /// In es, this message translates to:
+  /// **'Veces que salió la celda {cell}'**
+  String evidenceTimesSameCell(String cell);
+
+  /// No description provided for @evidencePreviousSag.
+  ///
+  /// In es, this message translates to:
+  /// **'Caída el {date}'**
+  String evidencePreviousSag(String date);
+
+  /// No description provided for @evidencePreviousRestDelta.
+  ///
+  /// In es, this message translates to:
+  /// **'Delta en reposo el {date}'**
+  String evidencePreviousRestDelta(String date);
+
+  /// No description provided for @evidencePreviousResistance.
+  ///
+  /// In es, this message translates to:
+  /// **'Resistencia mediana el {date}'**
+  String evidencePreviousResistance(String date);
+
+  /// No description provided for @evidencePreviousCycles.
+  ///
+  /// In es, this message translates to:
+  /// **'Ciclos según el BMS el {date}'**
+  String evidencePreviousCycles(String date);
+
+  /// No description provided for @evidencePreviousSoh.
+  ///
+  /// In es, this message translates to:
+  /// **'SOH según el BMS el {date}'**
+  String evidencePreviousSoh(String date);
+
+  /// No description provided for @evidencePreviousConfiguredCapacity.
+  ///
+  /// In es, this message translates to:
+  /// **'Capacidad configurada el {date}'**
+  String evidencePreviousConfiguredCapacity(String date);
+
+  /// No description provided for @evidencePreviousPeakCurrent.
+  ///
+  /// In es, this message translates to:
+  /// **'Salto de corriente el {date}'**
+  String evidencePreviousPeakCurrent(String date);
+
+  /// No description provided for @inspectionSeriesTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Comparado con las pruebas anteriores'**
+  String get inspectionSeriesTitle;
+
+  /// No description provided for @inspectionSeriesIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Este pack ya se había inspeccionado. Repetir el test es lo que separa una lectura rara de un fallo real.'**
+  String get inspectionSeriesIntro;
+
+  /// No description provided for @inspectionSeriesRun.
+  ///
+  /// In es, this message translates to:
+  /// **'Prueba {number} de {total} a este pack'**
+  String inspectionSeriesRun(String number, String total);
+
+  /// No description provided for @inspectionSeriesPrevious.
+  ///
+  /// In es, this message translates to:
+  /// **'Prueba del {date}'**
+  String inspectionSeriesPrevious(String date);
+
+  /// No description provided for @inspectionSeriesFirstRun.
+  ///
+  /// In es, this message translates to:
+  /// **'Primera inspección de este pack. Repítela otro día para confirmar lo que has visto.'**
+  String get inspectionSeriesFirstRun;
+
+  /// No description provided for @inspectionRepeatButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Repetir la prueba'**
+  String get inspectionRepeatButton;
+
+  /// No description provided for @inspectionRepeatHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Puedes repetirla las veces que quieras: cada prueba se guarda y la siguiente se compara con todas las anteriores.'**
+  String get inspectionRepeatHint;
+
+  /// No description provided for @inspectionAlreadySeen.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya inspeccionada {count} vez/veces'**
+  String inspectionAlreadySeen(String count);
+
+  /// No description provided for @reportSectionSeries.
+  ///
+  /// In es, this message translates to:
+  /// **'Pruebas anteriores a este pack'**
+  String get reportSectionSeries;
+
+  /// No description provided for @reportSeriesNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada fila es una inspección anterior guardada en el teléfono que firmó esta hoja. Repetir el test es lo que distingue una celda mala de una lectura mala.'**
+  String get reportSeriesNote;
+
+  /// No description provided for @reportSeriesWorstCell.
+  ///
+  /// In es, this message translates to:
+  /// **'Peor celda'**
+  String get reportSeriesWorstCell;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

@@ -2152,5 +2152,147 @@
       }
     }
   },
-  "certificateCreditsGone": "No te quedan créditos de certificado. Consigue más en Licencia."
+  "certificateCreditsGone": "No te quedan créditos de certificado. Consigue más en Licencia.",
+  "verdictInspRepeatSameCellTitle": "La celda {cell} vuelve a fallar: {times} de {runs} pruebas",
+  "@verdictInspRepeatSameCellTitle": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      },
+      "times": {
+        "type": "String"
+      },
+      "runs": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspRepeatSameCellBody": "No fue mala suerte ni un cable suelto: repetida la prueba, la misma celda vuelve a hundirse antes que las demás. Esto ya no es una sospecha, es la celda.",
+  "verdictInspRepeatCellMovedTitle": "Esta vez se hundió otra celda",
+  "@verdictInspRepeatCellMovedTitle": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspRepeatCellMovedBody": "La prueba anterior señaló la celda {before} y esta señala la {cell}. Cuando el dedo cambia de sitio entre pruebas, casi siempre es que no se tiró igual de la batería, no que haya dos celdas malas. Repite el test pidiendo el mismo acelerón que la vez anterior.",
+  "@verdictInspRepeatCellMovedBody": {
+    "placeholders": {
+      "before": {
+        "type": "String"
+      },
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictInspRepeatWorseTitle": "Va a peor desde la prueba anterior",
+  "verdictInspRepeatWorseBody": "Comparando con el mismo tipo de tirón, la batería mide peor que la última vez. Con dos pruebas separadas en el tiempo esto es una tendencia, no una foto.",
+  "verdictInspRepeatSteadyTitle": "Repite lo mismo que la vez anterior",
+  "verdictInspRepeatSteadyBody": "Las cifras de esta prueba caen dentro del ruido de la anterior. La primera prueba no fue una casualidad y esta no ha encontrado nada nuevo.",
+  "verdictInspRepeatCountersResetTitle": "Alguien tocó los contadores entre una visita y otra",
+  "verdictInspRepeatCountersResetBody": "Los ciclos solo suben y la salud solo baja. Si entre las dos pruebas los ciclos bajaron, la salud subió o cambió la capacidad configurada, es que se reseteó el BMS. Lo físico de arriba no se resetea con un botón; eso es lo que hay que mirar.",
+  "verdictInspRepeatLoadDiffersTitle": "Las dos pruebas no tiraron igual",
+  "verdictInspRepeatLoadDiffersBody": "La caída de voltaje depende de cuánta corriente se pida. Con acelerones muy distintos, comparar las caídas no dice nada. Para comparar de verdad, repite el test pidiendo un tirón parecido.",
+  "evidenceRunCount": "Pruebas a este pack",
+  "evidenceTimesSameCell": "Veces que salió la celda {cell}",
+  "@evidenceTimesSameCell": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
+  "evidencePreviousSag": "Caída el {date}",
+  "@evidencePreviousSag": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "evidencePreviousRestDelta": "Delta en reposo el {date}",
+  "@evidencePreviousRestDelta": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "evidencePreviousResistance": "Resistencia mediana el {date}",
+  "@evidencePreviousResistance": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "evidencePreviousCycles": "Ciclos según el BMS el {date}",
+  "@evidencePreviousCycles": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "evidencePreviousSoh": "SOH según el BMS el {date}",
+  "@evidencePreviousSoh": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "evidencePreviousConfiguredCapacity": "Capacidad configurada el {date}",
+  "@evidencePreviousConfiguredCapacity": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "evidencePreviousPeakCurrent": "Salto de corriente el {date}",
+  "@evidencePreviousPeakCurrent": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "inspectionSeriesTitle": "Comparado con las pruebas anteriores",
+  "inspectionSeriesIntro": "Este pack ya se había inspeccionado. Repetir el test es lo que separa una lectura rara de un fallo real.",
+  "inspectionSeriesRun": "Prueba {number} de {total} a este pack",
+  "@inspectionSeriesRun": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "inspectionSeriesPrevious": "Prueba del {date}",
+  "@inspectionSeriesPrevious": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "inspectionSeriesFirstRun": "Primera inspección de este pack. Repítela otro día para confirmar lo que has visto.",
+  "inspectionRepeatButton": "Repetir la prueba",
+  "inspectionRepeatHint": "Puedes repetirla las veces que quieras: cada prueba se guarda y la siguiente se compara con todas las anteriores.",
+  "inspectionAlreadySeen": "Ya inspeccionada {count} vez/veces",
+  "@inspectionAlreadySeen": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "reportSectionSeries": "Pruebas anteriores a este pack",
+  "reportSeriesNote": "Cada fila es una inspección anterior guardada en el teléfono que firmó esta hoja. Repetir el test es lo que distingue una celda mala de una lectura mala.",
+  "reportSeriesWorstCell": "Peor celda"
 }
