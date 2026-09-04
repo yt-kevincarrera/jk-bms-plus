@@ -1242,6 +1242,34 @@ class BmsService {
   @visibleForTesting
   ServiceClaim? get claimForTest => _claim;
 
+  /// Whether the service has to be location-typed for this claim.
+  ///
+  /// True for a ride, obviously. Also true for a bare connection while the
+  /// auto-start detector is armed, and that second half is the whole point:
+  /// the GPS arming that precedes a ride used to run under a dataSync-typed
+  /// service, and Android sustains background location only for a
+  /// location-typed one. With the screen off the fixes stopped arriving, the
+  /// detector read no speed, and a ride that needs speed to begin could never
+  /// begin.
+  ///
+  /// Decided by the claim rather than by whether a location stream happens to
+  /// be open, because the service is stopped and restarted when its type
+  /// changes, and starting a location-typed service *from the background* is
+  /// what Android 12 refuses. So it has to be born with the type it will need,
+  /// while the app is still on screen, rather than acquire it later in a
+  /// pocket.
+  bool _serviceNeedsLocation(ServiceClaim claim) {
+    if (isDemo) return false;
+    if (claim == ServiceClaim.trip) return true;
+    return claim == ServiceClaim.link && autoTripEnabled;
+  }
+
+  @visibleForTesting
+  bool get serviceUsesLocationForTest {
+    final claim = _claim;
+    return claim != null && _serviceNeedsLocation(claim);
+  }
+
   ServiceClaim? _serviceOwner;
 
   /// True while the app is holding the link open for a charge.
@@ -1311,7 +1339,7 @@ class BmsService {
       // location-typed service from an app with no location permission, and
       // neither a charge nor a bare connection has anything to do with where
       // the bike is.
-      usesRealLocation: wanted == ServiceClaim.trip && !isDemo,
+      usesRealLocation: _serviceNeedsLocation(wanted),
     );
     if (!started) {
       _serviceOwner = null;

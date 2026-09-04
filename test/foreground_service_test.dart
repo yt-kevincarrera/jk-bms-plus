@@ -177,5 +177,29 @@ void main() {
       await service.stopTrip();
       expect(service.claimForTest, ServiceClaim.link);
     });
+
+    test('the service is location-typed while auto-start needs a fix', () async {
+      // The pre-trip GPS arming used to run under a dataSync-typed service, and
+      // Android only sustains background location for a location-typed one. With
+      // the screen off the fixes stopped, the detector saw no speed, and a ride
+      // that needs speed to start never started.
+      service.applySettings(haptics: false, rawFrames: false, autoTrip: true);
+      link.announce(BleLinkState.connected);
+      await pumpEventQueue();
+
+      expect(service.claimForTest, ServiceClaim.link);
+      expect(service.serviceUsesLocationForTest, isTrue);
+    });
+
+    test('and not location-typed when auto-start is off', () async {
+      // Nothing is watching for a ride, so nothing needs the GPS. Claiming the
+      // location type without using it is what Android 14 refuses.
+      service.applySettings(haptics: false, rawFrames: false, autoTrip: false);
+      link.announce(BleLinkState.connected);
+      await pumpEventQueue();
+
+      expect(service.claimForTest, ServiceClaim.link);
+      expect(service.serviceUsesLocationForTest, isFalse);
+    });
   });
 }
