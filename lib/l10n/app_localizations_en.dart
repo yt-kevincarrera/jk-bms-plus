@@ -3541,4 +3541,143 @@ class AppL10nEn extends AppL10n {
   @override
   String get certificateCreditsGone =>
       'No certificate credits left. Get more under Licence.';
+
+  @override
+  String verdictInspRepeatSameCellTitle(
+    String cell,
+    String times,
+    String runs,
+  ) {
+    return 'Cell $cell fails again: $times of $runs runs';
+  }
+
+  @override
+  String get verdictInspRepeatSameCellBody =>
+      'Not bad luck and not a loose lead: run the test again and the same cell drops before the others. This is no longer a suspicion, it is the cell.';
+
+  @override
+  String verdictInspRepeatCellMovedTitle(String cell) {
+    return 'A different cell dropped this time';
+  }
+
+  @override
+  String verdictInspRepeatCellMovedBody(String before, String cell) {
+    return 'The previous run pointed at cell $before and this one points at cell $cell. When the finger moves between runs it almost always means the pack was not pulled the same way, not that two cells are bad. Run it again asking for the same throttle as last time.';
+  }
+
+  @override
+  String get verdictInspRepeatWorseTitle => 'Worse than the previous run';
+
+  @override
+  String get verdictInspRepeatWorseBody =>
+      'Compared at the same kind of pull, the pack measures worse than last time. With two runs separated in time that is a trend, not a snapshot.';
+
+  @override
+  String get verdictInspRepeatSteadyTitle => 'Same as last time';
+
+  @override
+  String get verdictInspRepeatSteadyBody =>
+      'This run\'s figures land inside the noise of the previous one. The first test was not a fluke and this one found nothing new.';
+
+  @override
+  String get verdictInspRepeatCountersResetTitle =>
+      'Somebody touched the counters between visits';
+
+  @override
+  String get verdictInspRepeatCountersResetBody =>
+      'Cycles only go up and health only goes down. If between the two runs the cycles fell, the health rose or the configured capacity changed, the BMS was reset. The physical findings above cannot be reset with a button, which is why they are the ones to read.';
+
+  @override
+  String get verdictInspRepeatLoadDiffersTitle =>
+      'The two runs did not pull alike';
+
+  @override
+  String get verdictInspRepeatLoadDiffersBody =>
+      'Voltage sag depends on how much current is asked for. With very different pulls, comparing the sag says nothing. To compare properly, run it again with a similar pull.';
+
+  @override
+  String get evidenceRunCount => 'Runs on this pack';
+
+  @override
+  String evidenceTimesSameCell(String cell) {
+    return 'Times cell $cell came out worst';
+  }
+
+  @override
+  String evidencePreviousSag(String date) {
+    return 'Sag on $date';
+  }
+
+  @override
+  String evidencePreviousRestDelta(String date) {
+    return 'Resting delta on $date';
+  }
+
+  @override
+  String evidencePreviousResistance(String date) {
+    return 'Median resistance on $date';
+  }
+
+  @override
+  String evidencePreviousCycles(String date) {
+    return 'Cycles per the BMS on $date';
+  }
+
+  @override
+  String evidencePreviousSoh(String date) {
+    return 'Health per the BMS on $date';
+  }
+
+  @override
+  String evidencePreviousConfiguredCapacity(String date) {
+    return 'Configured capacity on $date';
+  }
+
+  @override
+  String evidencePreviousPeakCurrent(String date) {
+    return 'Current step on $date';
+  }
+
+  @override
+  String get inspectionSeriesTitle => 'Against the earlier runs';
+
+  @override
+  String get inspectionSeriesIntro =>
+      'This pack has been inspected before. Repeating the test is what separates an odd reading from a real fault.';
+
+  @override
+  String inspectionSeriesRun(String number, String total) {
+    return 'Run $number of $total on this pack';
+  }
+
+  @override
+  String inspectionSeriesPrevious(String date) {
+    return 'Run of $date';
+  }
+
+  @override
+  String get inspectionSeriesFirstRun =>
+      'First inspection of this pack. Run it again another day to confirm what you saw.';
+
+  @override
+  String get inspectionRepeatButton => 'Run the test again';
+
+  @override
+  String get inspectionRepeatHint =>
+      'Repeat it as often as you like: every run is saved and the next one is compared against all of them.';
+
+  @override
+  String inspectionAlreadySeen(String count) {
+    return 'Inspected $count time(s) already';
+  }
+
+  @override
+  String get reportSectionSeries => 'Earlier runs on this pack';
+
+  @override
+  String get reportSeriesNote =>
+      'Each row is an earlier inspection stored on the phone that signed this sheet. Repeating the test is what tells a bad cell from a bad reading.';
+
+  @override
+  String get reportSeriesWorstCell => 'Worst cell';
 }

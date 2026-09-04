@@ -207,6 +207,26 @@ class _CertificateVerifyScreenState extends State<CertificateVerifyScreen> {
           ),
         ],
       ),
+      // The runs signed alongside this one. A buyer looking at a certificate
+      // that names the same cell three times is looking at a fact, not at a
+      // seller's good day.
+      if (cert.content.history.isNotEmpty)
+        Section(
+          title: t.reportSectionSeries,
+          intro: t.inspectionSeriesIntro,
+          children: [
+            for (final run in cert.content.history)
+              InfoRow(
+                t.inspectionSeriesPrevious(_date(run.at)),
+                run.worstCell == null
+                    ? t.inspectionCaveatNoHeavyLoad
+                    : '${t.reportCell} ${run.worstCell}'
+                          '  ${(run.worstSagVolts ?? 0).toStringAsFixed(3)} V',
+                dim: true,
+              ),
+            const SizedBox(height: 4),
+          ],
+        ),
       Padding(
         padding: const EdgeInsets.only(top: 8),
         child: Text(

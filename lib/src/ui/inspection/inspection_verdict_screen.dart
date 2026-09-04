@@ -8,6 +8,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../bms_service.dart';
 import '../../data/database.dart';
 import '../../inspection/inspection_result.dart';
+import '../../inspection/inspection_series.dart';
 import '../../inspection/inspection_session.dart';
 import '../../inspection/inspection_verdicts.dart';
 import '../../license/entitlements.dart';
@@ -72,15 +73,46 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
 
   final CertificateIdentity _identity = CertificateIdentity();
 
+  /// What this pack did the last times it was tested, and how this run sits
+  /// against it. Null until the lookup finishes; a first run leaves it with
+  /// an empty [InspectionComparison.earlier].
+  InspectionComparison? _series;
+
   @override
   void initState() {
     super.initState();
     _savedId = widget.savedId;
+    _loadSeries();
     PackageInfo.fromPlatform()
         .then((info) {
           if (mounted) setState(() => _appVersion = info.version);
         })
         .catchError((Object _) {});
+  }
+
+  /// Reads the earlier runs on this pack and works out what repeating the
+  /// test has added.
+  ///
+  /// When a saved run is being reread, only the runs before it count: a sheet
+  /// printed in May should say what was known in May, not borrow a conclusion
+  /// from a test done in July.
+  Future<void> _loadSeries() async {
+    final repo = widget.service.repository;
+    final r = widget.result;
+    if (repo == null) {
+      if (mounted) {
+        setState(() => _series = const InspectionSeries().compare(r, const []));
+      }
+      return;
+    }
+    final earlier = await repo.pastInspections(
+      bmsId: widget.bmsId,
+      serialNumber: r.reported.serialNumber,
+      before: widget.savedId == null ? null : r.at,
+      excludeId: widget.savedId,
+    );
+    if (!mounted) return;
+    setState(() => _series = const InspectionSeries().compare(r, earlier));
   }
 
   @override
@@ -197,6 +229,7 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
                 ),
               ),
             ),
+            _seriesSection(t),
             _cellsSection(t, r),
             _reportedSection(t, r),
             _sheetSection(t),
@@ -236,6 +269,27 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
                       color: AppTheme.good,
                     ),
                   ),
+                if (widget.savedId == null) ...[
+                  const SizedBox(height: 14),
+                  // Repeating is what saving is for: the next run is compared
+                  // against this one, and the one after that against both.
+                  // Popping with true tells the connect screen to stay in
+                  // inspection mode and start looking again.
+                  OutlinedButton.icon(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    icon: const Icon(Icons.replay, size: 18),
+                    label: Text(t.inspectionRepeatButton),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    t.inspectionRepeatHint,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      height: 1.45,
+                      color: AppTheme.textFaint,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 6),
               ],
             ),
@@ -259,6 +313,75 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
   /// it, and a buyer who cannot show anybody what they found has bought
   /// nothing. The signed certificate is the seller's product, so it is the one
   /// that costs a credit.
+  /// What the earlier runs on this pack add.
+  ///
+  /// A single quick test can be wrong in ways nobody notices: a clip that was
+  /// not on properly, a throttle nobody held down, a pack straight off the
+  /// charger. Running it again is what turns a reading into evidence, so when
+  /// there is a run to compare against, the comparison gets its own block
+  /// rather than being mixed into this run's own findings.
+  Widget _seriesSection(AppL10n t) {
+    final series = _series;
+    if (series == null) return const SizedBox.shrink();
+
+    if (series.isFirstRun) {
+      return Section(
+        title: t.inspectionSeriesTitle,
+        children: [
+          Text(
+            t.inspectionSeriesFirstRun,
+            style: const TextStyle(
+              fontSize: 12.5,
+              height: 1.45,
+              color: AppTheme.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 6),
+        ],
+      );
+    }
+
+    final advice = const InspectionSeries().evaluate(series);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Section(
+          title: t.reportSectionSeries,
+          intro: t.inspectionSeriesIntro,
+          children: [
+            InfoRow(
+              t.inspectionSeriesRun(
+                '${series.runNumber}',
+                '${series.runNumber}',
+              ),
+              _date(series.result.at),
+            ),
+            for (final p in series.earlier.reversed)
+              InfoRow(
+                t.inspectionSeriesPrevious(_date(p.at)),
+                _pastSummary(t, p),
+                dim: true,
+              ),
+            const SizedBox(height: 4),
+          ],
+        ),
+        if (advice.isNotEmpty)
+          AdviceList(
+            advice: advice,
+            title: t.inspectionSeriesTitle,
+            showHonestyNote: false,
+          ),
+      ],
+    );
+  }
+
+  /// One line about an earlier run: which cell gave up and how far it fell.
+  String _pastSummary(AppL10n t, PastInspection p) {
+    final worst = p.result.worstSag;
+    if (worst == null) return t.inspectionCaveatNoHeavyLoad;
+    return '${t.reportCell} ${worst.index}  ${worst.heavySagVolts!.toStringAsFixed(3)} V';
+  }
+
   Widget _sheetSection(AppL10n t) {
     final e = LicenseScope.entitlements(context);
     final canSign = e.allows(Feature.sellerCertificate);
@@ -326,11 +449,19 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
             packName: _packLabel(),
             result: r,
             note: _note.text.trim(),
+            // The earlier runs are signed with this one. A single test
+            // showing a bad cell is a claim a seller can argue with; three
+            // runs a month apart all naming the same cell is not.
+            history: [
+              for (final past in _series?.earlier ?? const <PastInspection>[])
+                CertifiedRun.from(past),
+            ],
           ),
           await _identity.keyPair(),
         );
       }
 
+      final series = _series;
       final bytes = await const PdfReports().inspectionReport(
         t,
         InspectionReportData(
@@ -342,6 +473,10 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
           note: _note.text.trim(),
           appVersion: _appVersion,
           certificate: certificate,
+          comparison: series,
+          seriesAdvice: series == null
+              ? const []
+              : const InspectionSeries().evaluate(series),
         ),
       );
       await const ReportSharing().share(

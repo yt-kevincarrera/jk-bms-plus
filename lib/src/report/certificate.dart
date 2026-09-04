@@ -7,6 +7,7 @@ import 'package:cryptography/cryptography.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../inspection/inspection_result.dart';
+import '../inspection/inspection_series.dart';
 
 /// A seller's certificate: an inspection, signed by the phone that ran it.
 ///
@@ -91,6 +92,7 @@ class CertificateContent {
     required this.packName,
     required this.result,
     this.note = '',
+    this.history = const [],
   });
 
   final DateTime issuedAt;
@@ -104,6 +106,16 @@ class CertificateContent {
   /// The inspector's own words, when they wrote any.
   final String note;
 
+  /// The earlier runs on this pack, oldest first, in summary.
+  ///
+  /// Signed along with everything else, and the reason is the whole point of
+  /// repeating a test: one run showing a bad cell is a claim a seller can
+  /// argue with, and three runs a month apart all naming the same cell is
+  /// not. Only the few figures a reader can check are carried, because the
+  /// whole thing has to fit in a QR code somebody can scan off a printed
+  /// sheet.
+  final List<CertifiedRun> history;
+
   /// Compact and ordered, because these exact bytes are what gets signed:
   /// re-encoding must produce the same thing on any phone or the signature
   /// stops matching for no good reason.
@@ -114,6 +126,7 @@ class CertificateContent {
       'n': packName,
       'r': result.toJson(),
       if (note.isNotEmpty) 'note': note,
+      if (history.isNotEmpty) 'h': [for (final run in history) run.toJson()],
     };
     return Uint8List.fromList(gzip.encode(utf8.encode(jsonEncode(map))));
   }
@@ -141,8 +154,66 @@ class CertificateContent {
         (m['r'] as Map).cast<String, Object?>(),
       ),
       note: m['note'] as String? ?? '',
+      history: [
+        for (final e in (m['h'] as List<dynamic>? ?? const []))
+          CertifiedRun.fromJson((e as Map).cast<String, Object?>()),
+      ],
     );
   }
+}
+
+/// One earlier run, as much of it as fits on a certificate.
+class CertifiedRun {
+  const CertifiedRun({
+    required this.at,
+    this.worstCell,
+    this.worstSagVolts,
+    this.restDeltaVolts,
+    this.currentStepAmps,
+  });
+
+  final DateTime at;
+
+  /// Which cell gave up first that day, 1-based, when a load was pulled.
+  final int? worstCell;
+  final double? worstSagVolts;
+  final double? restDeltaVolts;
+
+  /// What the pull was, so a reader can see whether two runs are comparable.
+  final double? currentStepAmps;
+
+  static CertifiedRun from(PastInspection past) {
+    final worst = past.result.worstSag;
+    return CertifiedRun(
+      at: past.at,
+      worstCell: worst?.index,
+      worstSagVolts: worst?.heavySagVolts,
+      restDeltaVolts: past.result.restDeltaVolts,
+      currentStepAmps: past.result.currentStepAmps,
+    );
+  }
+
+  Map<String, Object?> toJson() => {
+    't': at.toUtc().toIso8601String(),
+    if (worstCell != null) 'c': worstCell,
+    if (worstSagVolts != null) 's': _round(worstSagVolts!),
+    if (restDeltaVolts != null) 'd': _round(restDeltaVolts!),
+    if (currentStepAmps != null) 'i': _round(currentStepAmps!),
+  };
+
+  static CertifiedRun fromJson(Map<String, Object?> m) => CertifiedRun(
+    at:
+        DateTime.tryParse(m['t'] as String? ?? '')?.toUtc() ??
+        DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+    worstCell: (m['c'] as num?)?.toInt(),
+    worstSagVolts: (m['s'] as num?)?.toDouble(),
+    restDeltaVolts: (m['d'] as num?)?.toDouble(),
+    currentStepAmps: (m['i'] as num?)?.toDouble(),
+  );
+
+  /// Three decimals is more than the measurement is worth and far less than
+  /// a double prints, which matters when the result has to fit in a QR code.
+  static double _round(double v) => (v * 1000).roundToDouble() / 1000;
 }
 
 class CertificateFormatException implements Exception {

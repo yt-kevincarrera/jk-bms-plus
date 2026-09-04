@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:jk_bms/l10n/app_localizations.dart';
 import 'package:jk_bms/src/data/database.dart';
 import 'package:jk_bms/src/inspection/inspection_result.dart';
+import 'package:jk_bms/src/inspection/inspection_series.dart';
 import 'package:jk_bms/src/inspection/inspection_verdicts.dart';
 import 'package:jk_bms/src/metrics/advice_engine.dart';
 import 'package:jk_bms/src/metrics/cell_drift.dart';
@@ -178,6 +179,132 @@ void main() {
     });
   });
 
+  group('a certificate that carries earlier runs', () {
+    test('signs them along with this one and reads them back', () async {
+      final pair = await CertificateIdentity(
+        seed: List<int>.filled(32, 11),
+      ).keyPair();
+      final earlier = [
+        PastInspection(at: DateTime.utc(2026, 3, 1), result: _result()),
+        PastInspection(at: DateTime.utc(2026, 4, 1), result: _result()),
+      ];
+      final cert = await const Certificates().issue(
+        CertificateContent(
+          issuedAt: DateTime.utc(2026, 5, 4, 12),
+          packName: 'Pack del vendedor',
+          result: _result(),
+          history: [for (final p in earlier) CertifiedRun.from(p)],
+        ),
+        pair,
+      );
+
+      final check = await const Certificates().check(cert.token);
+      expect(check.ok, isTrue);
+      final history = check.certificate!.content.history;
+      expect(history, hasLength(2));
+      expect(history.first.at, DateTime.utc(2026, 3, 1));
+      // The cell that failed, on every run, is the point of carrying them.
+      expect(history.every((r) => r.worstCell == 7), isTrue);
+      expect(history.first.worstSagVolts, closeTo(0.30, 1e-9));
+    });
+
+    test('editing an earlier run breaks the signature too', () async {
+      final pair = await CertificateIdentity(
+        seed: List<int>.filled(32, 11),
+      ).keyPair();
+      final cert = await const Certificates().issue(
+        CertificateContent(
+          issuedAt: DateTime.utc(2026, 5, 4, 12),
+          packName: 'Pack del vendedor',
+          result: _result(),
+          history: [
+            CertifiedRun.from(
+              PastInspection(at: DateTime.utc(2026, 3, 1), result: _result()),
+            ),
+          ],
+        ),
+        pair,
+      );
+
+      // The same certificate with the bad run quietly dropped from history.
+      final tampered = CertificateContent(
+        issuedAt: DateTime.utc(2026, 5, 4, 12),
+        packName: 'Pack del vendedor',
+        result: _result(),
+      ).encode();
+      final parts = cert.token.split('.');
+      final forged = [
+        parts[0],
+        base64Url.encode(tampered).replaceAll('=', ''),
+        parts[2],
+        parts[3],
+      ].join('.');
+
+      final check = await const Certificates().check(forged);
+      expect(check.ok, isFalse);
+      expect(check.rejection, CertificateRejection.badSignature);
+    });
+
+    test(
+      'a certificate for a 24-cell pack with three runs still fits a QR',
+      () async {
+        final cells = [
+          for (var i = 1; i <= 24; i++)
+            CellInspection(
+              index: i,
+              restVolts: 3.9 - i * 0.001,
+              lightSagVolts: 0.01,
+              heavySagVolts: 0.08,
+              resistanceOhms: 0.0021,
+              recoverySeconds: 4,
+              recovered: true,
+            ),
+        ];
+        final big = InspectionResult(
+          at: DateTime.utc(2026, 5, 4),
+          cells: cells,
+          restDeltaVolts: 0.015,
+          restCurrentAmps: 0.2,
+          peakDischargeAmps: 38,
+          currentStepAmps: 37.4,
+          medianHeavySagVolts: 0.08,
+          medianResistanceOhms: 0.0021,
+          faultsSeen: const ['over temperature'],
+          caveats: const [],
+          reported: const ReportedFigures(
+            model: 'JK-BD6A20S10P',
+            serialNumber: 'SN-90210',
+            softwareVersion: '11.26',
+          ),
+          durationSeconds: 96,
+          readings: 180,
+        );
+        final pair = await CertificateIdentity(
+          seed: List<int>.filled(32, 13),
+        ).keyPair();
+        final cert = await const Certificates().issue(
+          CertificateContent(
+            issuedAt: DateTime.utc(2026, 5, 4),
+            packName: 'Pack del vendedor  JK-BD6A20S10P',
+            result: big,
+            note: 'Pedia 400 euros, bateria de 2023',
+            history: [
+              for (var i = 1; i <= 3; i++)
+                CertifiedRun.from(
+                  PastInspection(at: DateTime.utc(2026, i + 1, 1), result: big),
+                ),
+            ],
+          ),
+          pair,
+        );
+
+        // A QR at the size the sheet prints it stops being scannable well
+        // before this; the short code is the fallback, not the plan.
+        expect(cert.token.length, lessThan(1200));
+      },
+    );
+  });
+
   group('the inspection sheet', () {
     test('renders a PDF with the verdicts on it', () async {
       final r = _result();
@@ -277,6 +404,58 @@ void main() {
         expect(_textOf(plain).contains(cert.code), isFalse);
       },
     );
+  });
+
+  group('the inspection sheet with earlier runs', () {
+    test('prints the earlier runs and what repeating them showed', () async {
+      final r = _result();
+      final earlier = [
+        PastInspection(
+          at: DateTime.utc(2026, 3, 2),
+          result: _result(sagOnCell7: 0.28),
+        ),
+        PastInspection(
+          at: DateTime.utc(2026, 4, 6),
+          result: _result(sagOnCell7: 0.29),
+        ),
+      ];
+      final comparison = const InspectionSeries().compare(r, earlier);
+      final bytes = await const PdfReports().inspectionReport(
+        t,
+        InspectionReportData(
+          generatedAt: DateTime.utc(2026, 5, 4, 12),
+          result: r,
+          light: const InspectionVerdicts().light(r),
+          advice: const InspectionVerdicts().evaluate(r),
+          packName: 'Pack del vendedor',
+          comparison: comparison,
+          seriesAdvice: const InspectionSeries().evaluate(comparison),
+        ),
+      );
+
+      final text = _textOf(bytes);
+      // Every run is on the page, with its date, so a reader can count them.
+      expect(text, contains('02/03/2026'));
+      expect(text, contains('06/04/2026'));
+      // And the sentence a repeat earns.
+      expect(text, contains(t.verdictInspRepeatSameCellBody.split(':').first));
+    });
+
+    test('a first run prints no comparison at all', () async {
+      final r = _result();
+      final comparison = const InspectionSeries().compare(r, const []);
+      final bytes = await const PdfReports().inspectionReport(
+        t,
+        InspectionReportData(
+          generatedAt: DateTime.utc(2026, 5, 4, 12),
+          result: r,
+          light: const InspectionVerdicts().light(r),
+          advice: const InspectionVerdicts().evaluate(r),
+          comparison: comparison,
+        ),
+      );
+      expect(_textOf(bytes).contains(t.reportSectionSeries), isFalse);
+    });
   });
 
   group('the battery sheet', () {

@@ -107,6 +107,14 @@ class _ConnectScreenState extends State<ConnectScreen> {
   /// the original text on request. It used to be the message.
   String _messageDetail = '';
 
+  /// How many times each pack in the list has been inspected before.
+  ///
+  /// Loaded when inspection mode is entered. A pack already on record is
+  /// worth marking: the second run on the same battery is what turns a
+  /// reading into a finding, and the rider has to be able to find it again in
+  /// a list of addresses that all look alike.
+  Map<String, int> _inspectedBefore = const {};
+
   /// Whether the next connection is a look at somebody else's pack.
   ///
   /// In this mode the pack tapped is never adopted: nothing about it reaches
@@ -680,13 +688,21 @@ class _ConnectScreenState extends State<ConnectScreen> {
     final cooling = _guard.cooldownLeft(deviceId: d.id, now: DateTime.now());
     // Greyed out rather than gone: a tile that vanishes while it waits looks
     // like the pack went away, which is the opposite of the message.
-    final blocked = (_connecting && !isConnected) ||
+    final blocked =
+        (_connecting && !isConnected) ||
         (!isConnected && (cooling != null || _guard.saturated));
+
+    // While inspecting, a pack already on record is the interesting one: the
+    // second run on the same battery is what turns a reading into a finding,
+    // and one address looks much like another in a list.
+    final seenBefore = _inspecting ? (_inspectedBefore[d.id] ?? 0) : 0;
 
     final subtitle = switch (true) {
       _ when isConnected => t.tileConnected,
       _ when cooling != null => t.tileCooling('${cooling.inSeconds}'),
       _ when _guard.saturated => t.tileStackSaturated,
+      _ when seenBefore > 0 =>
+        '${d.id}   ${t.inspectionAlreadySeen('$seenBefore')}',
       _ when d.advertisesJkService =>
         '${d.id}   ${d.rssi} dBm  ·  ${t.connectByService}',
       _ => '${d.id}   ${d.rssi} dBm',
@@ -708,7 +724,9 @@ class _ConnectScreenState extends State<ConnectScreen> {
       ),
       title: Text(
         d.name.isEmpty ? d.id : d.name,
-        style: TextStyle(color: likely || isConnected ? null : AppTheme.textSecondary),
+        style: TextStyle(
+          color: likely || isConnected ? null : AppTheme.textSecondary,
+        ),
       ),
       subtitle: Text(
         subtitle,
@@ -1008,10 +1026,16 @@ class _ConnectScreenState extends State<ConnectScreen> {
     if (_inspecting) {
       // Somebody else's pack: nothing to remember, nothing to adopt. The
       // guided test runs, the verdict is shown, and the link is dropped.
-      await _openInspection(device.id, device.name);
+      final again = await _openInspection(device.id, device.name);
       await widget.service.disconnect();
       _connecting = false;
-      if (mounted) setState(() => _inspecting = false);
+      // Staying in the mode is the difference between one look and a second
+      // opinion. The pack has to be tapped again because the link was just
+      // dropped, and a fresh scan is what puts it back in the list.
+      if (mounted) {
+        setState(() => _inspecting = again);
+        if (again) unawaited(_startScan());
+      }
       return;
     }
 
@@ -1053,9 +1077,12 @@ class _ConnectScreenState extends State<ConnectScreen> {
       // weak cell, so the rider can see the whole test once before doing it
       // in front of somebody.
       await widget.service.enterDemoMode(scenario: DemoScenario.inspection);
-      await _openInspection(BmsService.demoDeviceId, t.demoPackName);
+      final again = await _openInspection(
+        BmsService.demoDeviceId,
+        t.demoPackName,
+      );
       await widget.service.exitDemoMode();
-      if (mounted) setState(() => _inspecting = false);
+      if (mounted) setState(() => _inspecting = again);
       return;
     }
     await widget.service.enterDemoMode(scenario: DemoScenario.riding);
@@ -1094,16 +1121,29 @@ class _ConnectScreenState extends State<ConnectScreen> {
       _message = null;
       _messageDetail = '';
     });
+    unawaited(_loadInspectedBefore());
   }
 
-  Future<void> _openInspection(String id, String name) async {
-    if (!mounted) return;
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
+  Future<void> _loadInspectedBefore() async {
+    final repo = widget.service.repository;
+    if (repo == null) return;
+    final counts = await repo.inspectionCountsByPack();
+    if (mounted) setState(() => _inspectedBefore = counts);
+  }
+
+  /// Runs one guided test. True when the rider asked to run it again.
+  Future<bool> _openInspection(String id, String name) async {
+    if (!mounted) return false;
+    final again = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
         builder: (_) =>
             InspectionScreen(service: widget.service, bmsId: id, bmsName: name),
       ),
     );
+    // What has been inspected has just changed, if the run was saved.
+    // Reloading keeps the marks in the device list honest.
+    unawaited(_loadInspectedBefore());
+    return again ?? false;
   }
 
   Future<void> _openHome(String name) async {
