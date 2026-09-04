@@ -26,6 +26,8 @@ import '../license/entitlements.dart';
 import 'inspection/inspection_screen.dart';
 import 'license_scope.dart';
 import 'widgets/pro_gate.dart';
+import 'widgets/trip_summary_sheet.dart';
+import 'widgets/trip_summary_view.dart';
 
 /// Scan, pick a BMS, or open demo mode.
 class ConnectScreen extends StatefulWidget {
@@ -67,6 +69,13 @@ class _ConnectScreenState extends State<ConnectScreen> {
 
   /// Whether the update dialog has already been offered this launch.
   bool _offeredUpdate = false;
+
+  /// Whether the pocket-ride summary has already been offered this launch.
+  ///
+  /// A rebuild must not be able to reopen it: `build()` can run any number of
+  /// times while the screen sits there, and only the callback that first
+  /// learns the active pack should ever get to ask.
+  bool _offeredPendingSummary = false;
   String? _message;
   bool _busyMessage = false;
 
@@ -163,7 +172,15 @@ class _ConnectScreenState extends State<ConnectScreen> {
     _connected = widget.service.activeDevice;
     _liveSnapshot = widget.service.lastSnapshot;
     _deviceSub = widget.service.deviceStream.listen((d) {
-      if (mounted) setState(() => _connected = d);
+      if (!mounted) return;
+      setState(() => _connected = d);
+      // This stream only fires from `_activate`, after a decoded frame has
+      // promoted the pack from pending to active -- connect() alone never
+      // reaches it. Offering earlier, on the connect attempt itself, would
+      // read a null device and silently never offer anything, which is the
+      // exact bug an earlier task in this plan had to fix for this same
+      // screen.
+      if (d != null) unawaited(_offerPendingSummary());
     });
     _liveSub = widget.service.snapshots.listen((s) {
       if (mounted) setState(() => _liveSnapshot = s);
@@ -188,7 +205,16 @@ class _ConnectScreenState extends State<ConnectScreen> {
     // screens lands on the connected card instead, which is the thing worth
     // seeing.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && widget.service.activeDevice == null) _startScan();
+      if (!mounted) return;
+      if (widget.service.activeDevice == null) {
+        _startScan();
+      } else {
+        // The pack was already active before this screen existed -- this
+        // instance's own deviceStream subscription started too late to see
+        // that promotion go by, so it would otherwise never get a chance to
+        // ask.
+        unawaited(_offerPendingSummary());
+      }
     });
   }
 
@@ -295,6 +321,41 @@ class _ConnectScreenState extends State<ConnectScreen> {
       onChecked: widget.settings.markUpdateChecked,
     );
     if (found && mounted) await _offerUpdate(AppL10n.of(context));
+  }
+
+  /// Offers the summary of a ride that ended with nobody watching.
+  ///
+  /// Once per launch, and only the latest unseen ride. The repository's
+  /// `pendingSummaryTrip` and the [_offeredPendingSummary] guard split the
+  /// work: the guard stops a second ask from this screen's own rebuilds, the
+  /// query stops a queue of them from a week of unwatched rides.
+  Future<void> _offerPendingSummary() async {
+    if (_offeredPendingSummary) return;
+    _offeredPendingSummary = true;
+
+    final device = widget.service.activeDeviceId;
+    final repo = widget.service.repository;
+    if (device == null || repo == null) return;
+
+    final trip = await repo.pendingSummaryTrip(device);
+    if (trip == null || !mounted) return;
+
+    final t = AppL10n.of(context);
+    // Marked seen only after the sheet has actually run its course, not
+    // before: showModalBottomSheet's future completes on every dismissal
+    // path -- the button, the drag handle, tapping the scrim -- so this
+    // still fires "whether or not the rider interacts with the sheet". The
+    // other order, marking first, would lose the summary for good if the
+    // sheet itself threw before ever reaching the screen; this order instead
+    // leaves it unseen and offered again next launch, which is a rare extra
+    // showing rather than a silent loss.
+    await showTripSummarySheet(
+      context: context,
+      view: TripSummaryView.fromStored(trip),
+      service: widget.service,
+      t: t,
+    );
+    await widget.service.markTripSummarySeen(trip.id);
   }
 
   Future<void> _openSettings() async {

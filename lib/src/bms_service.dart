@@ -1187,6 +1187,14 @@ class BmsService {
     await relearnRangeFromTrips();
   }
 
+  /// Records that the rider has seen this ride's summary.
+  ///
+  /// Nothing here needs relearning: seen is a fact about the rider, not about
+  /// the ride's numbers, so unlike [setTripRepresentative] there is no
+  /// estimator to rebuild.
+  Future<void> markTripSummarySeen(int tripId) =>
+      repository?.markTripSummarySeen(tripId) ?? Future<void>.value();
+
   // --- The live notification ---
   //
   // There is exactly one foreground service, and on Android it is the only

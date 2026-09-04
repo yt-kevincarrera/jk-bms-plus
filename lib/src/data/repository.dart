@@ -376,6 +376,25 @@ class BmsRepository {
   Future<void> markTripSummarySeen(int tripId) =>
       db.markTripSummarySeen(tripId);
 
+  /// The most recent finished ride on this pack whose summary was never
+  /// shown, or null.
+  ///
+  /// Only the latest one: a week of unseen rides queuing up on opening the
+  /// app would be a punishment for having gone riding, not a feature. Demo
+  /// rides are excluded for the same reason they are excluded from learning
+  /// -- a made-up ride announcing itself would be the app talking about
+  /// nothing. An open ride (no distance yet, [Trip.endedAt] still equal to
+  /// its start) is skipped rather than offered half-finished.
+  Future<Trip?> pendingSummaryTrip(String deviceId) async {
+    final recent = await db.recentTrips(deviceId, limit: 20);
+    for (final t in recent) {
+      if (t.demo || t.summarySeen) continue;
+      if (t.distanceKm <= 0) continue;
+      return t;
+    }
+    return null;
+  }
+
   /// Trips for one pack, newest first.
   Stream<List<Trip>> watchTrips(String deviceId, {int limit = 100}) =>
       db.watchTrips(deviceId, limit: limit);
