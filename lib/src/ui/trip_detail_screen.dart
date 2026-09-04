@@ -2,12 +2,15 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../bms_service.dart';
 import '../data/database.dart';
 import '../data/repository.dart';
 import '../metrics/trip_recorder.dart';
 import 'theme.dart';
 import 'widgets/common.dart';
+import 'widgets/representative_question.dart';
 import 'widgets/trip_learned_section.dart';
+import 'widgets/trip_summary_view.dart';
 
 /// One stored ride, in full.
 ///
@@ -18,11 +21,16 @@ class TripDetailScreen extends StatelessWidget {
   const TripDetailScreen({
     required this.trip,
     required this.repository,
+    required this.service,
     super.key,
   });
 
   final Trip trip;
   final BmsRepository repository;
+
+  /// Handed to [RepresentativeQuestion], which needs it to record and to
+  /// re-learn from an answer given here, same as from the sheet.
+  final BmsService service;
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +38,7 @@ class TripDetailScreen extends StatelessWidget {
     final net = trip.energyOutWh - trip.energyInWh;
     final whPerKm = trip.distanceKm < 0.2 ? null : net / trip.distanceKm;
     final socUsed = trip.startSoc - trip.endSoc;
+    final view = TripSummaryView.fromStored(trip);
 
     return Scaffold(
       appBar: AppBar(title: Text(t.historyDetail)),
@@ -48,6 +57,7 @@ class TripDetailScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 14),
+            RepresentativeQuestion(view: view, service: service, t: t),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(

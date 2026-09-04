@@ -4,6 +4,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../bms_service.dart';
 import '../theme.dart';
 import 'common.dart';
+import 'representative_question.dart';
 import 'trip_learned_section.dart';
 import 'trip_summary_view.dart';
 
@@ -41,8 +42,8 @@ class TripSummarySheet extends StatelessWidget {
 
   final TripSummaryView view;
 
-  /// Threaded through rather than used here: a screen further along this plan
-  /// hands it to the widget that records whether this ride was representative.
+  /// Handed to [RepresentativeQuestion], the only thing on this sheet that
+  /// asks the rider for something.
   final BmsService service;
 
   final AppL10n t;
@@ -64,6 +65,7 @@ class TripSummarySheet extends StatelessWidget {
               ),
             ),
           ),
+          RepresentativeQuestion(view: view, service: service, t: t),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
