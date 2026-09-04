@@ -2568,5 +2568,93 @@
   "configAuditSettings": "Todo lo que se ha mirado",
   "configAuditNoSettings": "El BMS todavía no ha mandado su configuración. Espera unos segundos con la batería conectada.",
   "configAuditChemistryRow": "Química declarada",
-  "configAuditNeedsProfile": "Completar el perfil"
+  "configAuditNeedsProfile": "Completar el perfil",
+  "alertNearCurrentLimit": "Corriente cerca del límite del BMS",
+  "alertLinkLost": "Se perdió la conexión con la batería",
+  "alertsNotifyTitle": "Avisos que llegan con la app cerrada",
+  "alertsNotifyIntro": "Los avisos suenan en la barra de notificaciones aunque la app esté en segundo plano o cerrada. Sin esto, un aviso a las tres de la mañana con el móvil en otra habitación no lo ve nadie.",
+  "alertsNotifyEnable": "Avisar en la barra de notificaciones",
+  "alertsNotifyDenied": "Android no ha dado permiso para notificar. Los avisos seguirán saliendo en pantalla y con vibración, pero no llegarán con la app cerrada.",
+  "alertsNotifyOneConnection": "Recuerda: el BMS acepta una sola conexión Bluetooth. Mientras el móvil esté conectado en segundo plano, la app oficial de JK no podrá conectarse, y al revés.",
+  "alertsThresholdsTitle": "A partir de cuándo avisar",
+  "alertsThresholdsIntro": "Los valores por defecto son conservadores. Súbelos si tu batería vive en un rango distinto al típico y te avisa de más.",
+  "alertsDeltaWarn": "Diferencia entre celdas",
+  "alertsTempWarn": "Temperatura",
+  "alertsLowChargeWarn": "Carga baja",
+  "alertsResetDefaults": "Volver a los valores por defecto",
+  "alertNotificationBodyDelta": "Las celdas se han separado {value} V. La más baja marca cuándo se acaba la batería.",
+  "@alertNotificationBodyDelta": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyTemp": "{value} °C. Para y déjala enfriar antes de seguir.",
+  "@alertNotificationBodyTemp": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyLow": "Queda {value} % de carga.",
+  "@alertNotificationBodyLow": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyCritical": "Queda {value} % de carga. Busca dónde parar.",
+  "@alertNotificationBodyCritical": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyCell": "Una celda está a {value} V, cerca del corte del BMS. Se puede quedar sin batería aunque el porcentaje aún parezca razonable.",
+  "@alertNotificationBodyCell": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyFault": "El BMS ha levantado una protección. Mira la pantalla antes de seguir.",
+  "alertNotificationBodyNearLimit": "{value} A, cerca de lo que el BMS permite. Si llega al límite, corta sin avisar.",
+  "@alertNotificationBodyNearLimit": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyLinkLost": "La app dejó de recibir lecturas de la batería. Si estabas vigilando una carga, ya no se está vigilando.",
+  "alertNotificationBodyChargeTarget": "La batería ha llegado al {value} % que pediste.",
+  "@alertNotificationBodyChargeTarget": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyChargeComplete": "La carga ha terminado.",
+  "alertNotificationBodyChargeHot": "{value} °C mientras carga. Desenchufa y déjala enfriar.",
+  "@alertNotificationBodyChargeHot": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyChargeSpread": "Las celdas se han separado {value} V al final de la carga. Es donde mejor se ve un desbalance.",
+  "@alertNotificationBodyChargeSpread": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  }
 }

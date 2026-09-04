@@ -10,6 +10,7 @@ BmsSnapshot snap(
   double delta = 0.010,
   double temp = 25,
   double minCell = 3.9,
+  double current = -20,
   BmsWarnings warnings = BmsWarnings.none,
 }) {
   final cells = List.filled(20, minCell + delta);
@@ -22,7 +23,7 @@ BmsSnapshot snap(
     cellResistances: List.filled(20, 0.0025),
     enabledCellMask: 0xFFFFF,
     packVoltage: cells.reduce((a, b) => a + b),
-    current: -20,
+    current: current,
     temperatures: [temp, temp - 1],
     temperatureSensorMask: 7,
     mosfetTemp: temp,
@@ -52,6 +53,101 @@ void main() {
   List<RideAlert> feed(RideAlerts a, BmsSnapshot s) =>
       a.evaluate(s, cutoffVoltagePerCell: cutoff);
 
+  List<RideAlert> feedWithLimits(
+    RideAlerts a,
+    BmsSnapshot s, {
+    double? discharge,
+    double? charge,
+  }) => a.evaluate(
+    s,
+    cutoffVoltagePerCell: cutoff,
+    dischargeLimitAmps: discharge,
+    chargeLimitAmps: charge,
+  );
+
+  group('close to the current the BMS allows', () {
+    test('a pull near the configured discharge limit is called out', () {
+      final a = RideAlerts();
+      final firing = feedWithLimits(a, snap(t0, current: -97), discharge: 100);
+      expect(firing, contains(RideAlert.nearCurrentLimit));
+    });
+
+    test('a comfortable pull says nothing', () {
+      final a = RideAlerts();
+      expect(
+        feedWithLimits(a, snap(t0, current: -40), discharge: 100),
+        isEmpty,
+      );
+    });
+
+    test('it clears once the current comes properly back down', () {
+      final a = RideAlerts();
+      feedWithLimits(a, snap(t0, current: -97), discharge: 100);
+      expect(a.active, contains(RideAlert.nearCurrentLimit));
+
+      // Still high enough to be inside the clearing band: no chatter.
+      feedWithLimits(
+        a,
+        snap(t0.add(const Duration(seconds: 5)), current: -90),
+        discharge: 100,
+      );
+      expect(a.active, contains(RideAlert.nearCurrentLimit));
+
+      feedWithLimits(
+        a,
+        snap(t0.add(const Duration(seconds: 10)), current: -50),
+        discharge: 100,
+      );
+      expect(a.active, isNot(contains(RideAlert.nearCurrentLimit)));
+    });
+
+    test(
+      'charging is judged against the charge limit, not the discharge one',
+      () {
+        final a = RideAlerts();
+        // Twenty amps in is nowhere near a hundred-amp discharge limit, and
+        // everything near a twenty-amp charge limit.
+        expect(
+          feedWithLimits(
+            a,
+            snap(t0, current: 19.5),
+            discharge: 100,
+            charge: 20,
+          ),
+          contains(RideAlert.nearCurrentLimit),
+        );
+      },
+    );
+
+    test('with no configured limit it stays quiet', () {
+      final a = RideAlerts();
+      expect(feedWithLimits(a, snap(t0, current: -200)), isEmpty);
+    });
+  });
+
+  group('thresholds the rider moved', () {
+    test('a raised spread threshold stops the alert firing', () {
+      final a = RideAlerts()
+        ..deltaWarn = 0.200
+        ..deltaClear = 0.160;
+      expect(feed(a, snap(t0, delta: 0.150)), isEmpty);
+    });
+
+    test('a lowered one makes it fire where it would not have', () {
+      final a = RideAlerts()
+        ..deltaWarn = 0.040
+        ..deltaClear = 0.030;
+      expect(feed(a, snap(t0, delta: 0.050)), contains(RideAlert.cellSpread));
+    });
+
+    test('a raised temperature threshold is respected', () {
+      final a = RideAlerts()
+        ..tempWarn = 70
+        ..tempClear = 65;
+      expect(feed(a, snap(t0, temp: 60)), isEmpty);
+    });
+  });
+
   group('RideAlerts', () {
     test('a healthy pack says nothing', () {
       final a = RideAlerts();
@@ -61,10 +157,7 @@ void main() {
 
     test('fires once on a wide spread, not on every reading', () {
       final a = RideAlerts();
-      expect(
-        feed(a, snap(t0, delta: 0.130)),
-        contains(RideAlert.cellSpread),
-      );
+      expect(feed(a, snap(t0, delta: 0.130)), contains(RideAlert.cellSpread));
       // Same condition a second later: already said.
       expect(
         feed(a, snap(t0.add(const Duration(seconds: 1)), delta: 0.135)),
