@@ -163,7 +163,7 @@ void main() {
       () async {
         // Any query forces drift to open the database and run the upgrade.
         await db.allDevices();
-        expect(raw.userVersion, 12);
+        expect(raw.userVersion, 13);
       },
     );
 
@@ -195,6 +195,26 @@ void main() {
         expect(await db.recentTrips('AA:BB'), isEmpty);
       },
     );
+
+    test('an upgrade leaves old rides unanswered but seen', () async {
+      // Null is not false here. A ride recorded before the question existed
+      // was never asked about, and saying "the rider called it normal" would
+      // be putting words in their mouth. It counts as normal for the
+      // learning, which is the old behaviour, while still reading as
+      // unanswered on screen.
+      //
+      // Seen is backfilled to true, not left at the false default: a ride
+      // from before this column existed was either already shown to the
+      // rider or is old news by now, and either way the app must not open
+      // with it.
+      final trips = await db.select(db.trips).get();
+      expect(trips, isNotEmpty);
+
+      for (final trip in trips) {
+        expect(trip.representative, isNull);
+        expect(trip.summarySeen, isTrue);
+      }
+    });
 
     test('a pack can be created afterwards and adopt them', () async {
       final now = DateTime.utc(2026, 8, 26);

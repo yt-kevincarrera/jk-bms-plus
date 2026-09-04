@@ -1,5 +1,57 @@
+import 'dart:async';
+
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:jk_bms/src/ble/ble_transport.dart';
+import 'package:jk_bms/src/ble/bms_link.dart';
+import 'package:jk_bms/src/bms_service.dart';
+import 'package:jk_bms/src/data/database.dart';
+import 'package:jk_bms/src/data/repository.dart';
+import 'package:jk_bms/src/gps/location_source.dart';
 import 'package:jk_bms/src/metrics/trip_autostart.dart';
+
+class FakeLink implements BmsLink {
+  final _bytes = StreamController<List<int>>.broadcast();
+  final _state = StreamController<BleLinkState>.broadcast();
+  final _errors = StreamController<BleLinkError>.broadcast();
+
+  @override
+  Stream<List<int>> get bytes => _bytes.stream;
+  @override
+  Stream<BleLinkState> get state => _state.stream;
+  @override
+  Stream<BleLinkError> get errors => _errors.stream;
+  @override
+  int? negotiatedMtu = 244;
+
+  @override
+  LinkHealth get health => LinkHealth.unknown;
+
+  @override
+  Stream<List<DiscoveredBms>> scan() => const Stream.empty();
+  @override
+  Future<void> connect(String deviceId) async {}
+  @override
+  Future<void> disconnect() async {}
+  @override
+  Future<void> dispose() async {
+    await _bytes.close();
+    await _state.close();
+    await _errors.close();
+  }
+
+  void announce(BleLinkState s) => _state.add(s);
+}
+
+/// A location source that refuses, so the blocked path can be exercised.
+class RefusingLocation implements LocationSource {
+  @override
+  Stream<GeoFix> get fixes => const Stream<GeoFix>.empty();
+  @override
+  Future<LocationProblem?> start() async => LocationProblem.permissionDenied;
+  @override
+  Future<void> stop() async {}
+}
 
 void main() {
   final t0 = DateTime.utc(2026, 8, 31, 9);
@@ -242,6 +294,38 @@ void main() {
       final actions =
           feed(d, seconds: 10, current: -20, speedKmh: 30, recording: false);
       expect(actions, everyElement(AutoTripAction.none));
+    });
+  });
+
+  group('the blocked event', () {
+    test('a ride that could not open says so instead of going quiet',
+        () async {
+      // The silent version of this is the worst bug in the feature: the rider
+      // believes the app is learning, the app records nothing, and the range
+      // figure never appears. The problem used to be stored in
+      // lastLocationProblem and read by nobody.
+      //
+      // The refusal comes from the injected location source rather than from
+      // a test-only setter on the service: locationFactory is the seam that
+      // already exists, and one seam is enough.
+      final link = FakeLink();
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      final service = BmsService(
+        transport: link,
+        locationFactory: RefusingLocation.new,
+      )..repository = BmsRepository(database: db);
+      addTearDown(service.dispose);
+      await service.connect('AA:BB', name: 'KevinJK');
+      service.applySettings(haptics: false, rawFrames: false, autoTrip: true);
+
+      final events = <AutoTripAction>[];
+      service.autoTripEvents.listen(events.add);
+
+      await service.forceAutoTripStartForTest();
+      await pumpEventQueue();
+
+      expect(events, [AutoTripAction.blocked]);
     });
   });
 }

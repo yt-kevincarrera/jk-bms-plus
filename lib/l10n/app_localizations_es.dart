@@ -4172,4 +4172,90 @@ class AppL10nEs extends AppL10n {
   String alertNotificationBodyChargeSpread(String value) {
     return 'Las celdas se han separado $value V al final de la carga. Es donde mejor se ve un desbalance.';
   }
+
+  @override
+  String get autoTripBlocked =>
+      'No pude grabar el viaje: falta el permiso de ubicación. Sin él la app no aprende tu autonomía.';
+
+  @override
+  String rideSavedNotif(String km, String whPerKm) {
+    return 'Viaje guardado: $km km, $whPerKm Wh/km';
+  }
+
+  @override
+  String rideSavedNotifNoConsumption(String km) {
+    return 'Viaje guardado: $km km';
+  }
+
+  @override
+  String get representativeAsk => '¿Este viaje te representa?';
+
+  @override
+  String representativeAskBodyUp(
+    String whPerKm,
+    String percent,
+    String before,
+    String after,
+  ) {
+    return 'Salió en $whPerKm Wh/km, un $percent% por encima de lo tuyo. Ya lo conté: tu autonomía pasó de $before a $after km.';
+  }
+
+  @override
+  String representativeAskBodyDown(
+    String whPerKm,
+    String percent,
+    String before,
+    String after,
+  ) {
+    return 'Salió en $whPerKm Wh/km, un $percent% por debajo de lo tuyo. Ya lo conté: tu autonomía pasó de $before a $after km.';
+  }
+
+  @override
+  String representativeAskBodyUpNoKm(
+    String whPerKm,
+    String percent,
+    String before,
+    String after,
+  ) {
+    return 'Salió en $whPerKm Wh/km, un $percent% por encima de lo tuyo. Ya lo conté: tu consumo aprendido pasó de $before a $after Wh/km.';
+  }
+
+  @override
+  String representativeAskBodyDownNoKm(
+    String whPerKm,
+    String percent,
+    String before,
+    String after,
+  ) {
+    return 'Salió en $whPerKm Wh/km, un $percent% por debajo de lo tuyo. Ya lo conté: tu consumo aprendido pasó de $before a $after Wh/km.';
+  }
+
+  @override
+  String get representativeYes => 'Es normal';
+
+  @override
+  String get representativeNo => 'Fue una excepción';
+
+  @override
+  String representativeDone(String km) {
+    return 'Listo. Tu autonomía sigue en $km km.';
+  }
+
+  @override
+  String representativeDoneNoKm(String whPerKm) {
+    return 'Listo. Tu consumo aprendido sigue en $whPerKm Wh/km.';
+  }
+
+  @override
+  String representativeMarkedException(String km) {
+    return 'Listo. Ya no cuenta: tu autonomía queda en $km km.';
+  }
+
+  @override
+  String representativeMarkedExceptionNoKm(String whPerKm) {
+    return 'Listo. Ya no cuenta: tu consumo aprendido queda en $whPerKm Wh/km.';
+  }
+
+  @override
+  String get representativeChange => 'Cambiar';
 }

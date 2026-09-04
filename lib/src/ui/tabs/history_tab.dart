@@ -315,8 +315,11 @@ class _TripCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute<void>(
-              builder: (_) =>
-                  TripDetailScreen(trip: trip, repository: repository),
+              builder: (_) => TripDetailScreen(
+                trip: trip,
+                repository: repository,
+                service: service,
+              ),
             ),
           ),
           child: Container(

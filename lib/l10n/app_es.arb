@@ -26,13 +26,31 @@
   "connectByService": "anuncia el servicio JK",
   "tapBusy": "Ya hay un intento en marcha. Espera a que termine: tocar otra vez no lo acelera y sí puede dejar otra conexión colgada en el teléfono.",
   "tapCooling": "Espera {seconds} s antes de reintentar con esta batería. La pausa no es un capricho: el BMS tarda unos segundos en soltar el enlace anterior, y cada intento dentro de esa ventana deja una conexión que el teléfono no cierra.",
-  "@tapCooling": {"placeholders": {"seconds": {"type": "String"}}},
+  "@tapCooling": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
   "tapStackSaturated": "Van {count} intentos fallidos seguidos. A estas alturas el problema es el Bluetooth del teléfono, no la batería, y otro intento solo lo empeora. Apaga y enciende el Bluetooth; si sigue igual, reinicia el teléfono. Después toca Desconectar o vuelve a buscar para reintentar.",
-  "@tapStackSaturated": {"placeholders": {"count": {"type": "String"}}},
+  "@tapStackSaturated": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "tapHeldByPhone": "El teléfono ya tiene abierta una conexión con esta batería que esta app no controla. O la tiene otra app, o quedó colgada de un intento anterior. Ningún intento desde aquí va a ganarla: cierra la otra app, o reinicia el Bluetooth del teléfono.",
   "tileConnected": "Conectada. Toca para volver a sus pantallas.",
   "tileCooling": "En pausa {seconds} s tras un intento fallido",
-  "@tileCooling": {"placeholders": {"seconds": {"type": "String"}}},
+  "@tileCooling": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
   "tileStackSaturated": "En espera: el Bluetooth del teléfono necesita reiniciarse",
   "tilePillOpen": "abierta",
   "connectedCardNote": "El enlace sigue abierto. Salir de las pantallas de la batería ya no lo corta, así que puedes entrar y salir sin reconectar.",
@@ -2399,8 +2417,8 @@
   "configBalancerSwitch": "Balanceador",
   "configOn": "Sí",
   "configOff": "No",
-  "reportSectionDayOne": "El d\u00eda uno de esta bater\u00eda",
-  "reportDayOneNote": "Comparaci\u00f3n contra el estado guardado el d\u00eda que se dio de alta la bater\u00eda. No es una medida de capacidad: una foto de los voltajes no puede medir lo que aguanta un pack, y aqu\u00ed no se presenta como tal.",
+  "reportSectionDayOne": "El día uno de esta batería",
+  "reportDayOneNote": "Comparación contra el estado guardado el día que se dio de alta la batería. No es una medida de capacidad: una foto de los voltajes no puede medir lo que aguanta un pack, y aquí no se presenta como tal.",
   "verdictConfigOvpDangerousTitle": "El corte de carga está por encima de lo que aguantan las celdas",
   "verdictConfigOvpDangerousBody": "El BMS corta la carga a {value} V por celda y el máximo seguro para esta química es {limit} V. Cada carga completa está haciendo daño. Se cambia desde la app oficial del BMS, bajo tu responsabilidad; esta app nunca escribe nada en la batería.",
   "@verdictConfigOvpDangerousBody": {
@@ -2656,5 +2674,129 @@
         "type": "String"
       }
     }
-  }
+  },
+  "autoTripBlocked": "No pude grabar el viaje: falta el permiso de ubicación. Sin él la app no aprende tu autonomía.",
+  "rideSavedNotif": "Viaje guardado: {km} km, {whPerKm} Wh/km",
+  "@rideSavedNotif": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      },
+      "whPerKm": {
+        "type": "String"
+      }
+    }
+  },
+  "rideSavedNotifNoConsumption": "Viaje guardado: {km} km",
+  "@rideSavedNotifNoConsumption": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "representativeAsk": "¿Este viaje te representa?",
+  "representativeAskBodyUp": "Salió en {whPerKm} Wh/km, un {percent}% por encima de lo tuyo. Ya lo conté: tu autonomía pasó de {before} a {after} km.",
+  "@representativeAskBodyUp": {
+    "placeholders": {
+      "whPerKm": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      },
+      "before": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      }
+    }
+  },
+  "representativeAskBodyDown": "Salió en {whPerKm} Wh/km, un {percent}% por debajo de lo tuyo. Ya lo conté: tu autonomía pasó de {before} a {after} km.",
+  "@representativeAskBodyDown": {
+    "placeholders": {
+      "whPerKm": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      },
+      "before": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      }
+    }
+  },
+  "representativeAskBodyUpNoKm": "Salió en {whPerKm} Wh/km, un {percent}% por encima de lo tuyo. Ya lo conté: tu consumo aprendido pasó de {before} a {after} Wh/km.",
+  "@representativeAskBodyUpNoKm": {
+    "placeholders": {
+      "whPerKm": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      },
+      "before": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      }
+    }
+  },
+  "representativeAskBodyDownNoKm": "Salió en {whPerKm} Wh/km, un {percent}% por debajo de lo tuyo. Ya lo conté: tu consumo aprendido pasó de {before} a {after} Wh/km.",
+  "@representativeAskBodyDownNoKm": {
+    "placeholders": {
+      "whPerKm": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      },
+      "before": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      }
+    }
+  },
+  "representativeYes": "Es normal",
+  "representativeNo": "Fue una excepción",
+  "representativeDone": "Listo. Tu autonomía sigue en {km} km.",
+  "@representativeDone": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "representativeDoneNoKm": "Listo. Tu consumo aprendido sigue en {whPerKm} Wh/km.",
+  "@representativeDoneNoKm": {
+    "placeholders": {
+      "whPerKm": {
+        "type": "String"
+      }
+    }
+  },
+  "representativeMarkedException": "Listo. Ya no cuenta: tu autonomía queda en {km} km.",
+  "@representativeMarkedException": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "representativeMarkedExceptionNoKm": "Listo. Ya no cuenta: tu consumo aprendido queda en {whPerKm} Wh/km.",
+  "@representativeMarkedExceptionNoKm": {
+    "placeholders": {
+      "whPerKm": {
+        "type": "String"
+      }
+    }
+  },
+  "representativeChange": "Cambiar"
 }
