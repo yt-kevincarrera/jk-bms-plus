@@ -207,10 +207,16 @@ La pregunta dice qué midió, cuánto se aparta, y qué le hace al número. Tres
 datos, una frase de consecuencia:
 
 > **¿Este viaje te representa?**
-> Salió en 24 Wh/km, un 32% por encima de lo tuyo. Si lo tomo como normal, tu
-> autonomía baja de 48 a 43 km.
+> Salió en 24 Wh/km, un 32% por encima de lo tuyo. Ya lo conté: tu autonomía
+> pasó de 48 a 43 km. Si fue una excepción, vuelve a 48.
 >
 > [ Es normal ]  [ Fue una excepción ]
+
+Corregido respecto a la primera versión, que decía "si lo tomo como normal, tu
+autonomía baja de 48 a 43". Eso era falso: `stopTrip` reconstruye la estimación
+antes de que la hoja aparezca, así que el viaje ya está contado cuando se
+pregunta. Presentar como hipótesis algo que ya pasó es justo el tipo de frase
+que esta app no dice.
 
 Al responder, confirmación inmediata de la consecuencia, no un "guardado":
 

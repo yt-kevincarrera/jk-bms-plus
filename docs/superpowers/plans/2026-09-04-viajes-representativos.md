@@ -20,6 +20,7 @@
 - **Los comentarios explican el por qué, no el qué.** Es el estilo de todo el repo: cada decisión no obvia dice contra qué falló antes.
 - **Tests:** `flutter test`. Regenerar drift: `dart run build_runner build --delete-conflicting-outputs`. Regenerar traducciones: `flutter gen-l10n`.
 - **Base:** rama `feat/viajes-representativos`, sobre `main` en 9ed439b.
+- **Fixtures de test, nombres reales.** Verificados en el repo, no supuestos: la base es `AppDatabase.forTesting(NativeDatabase.memory())`, el repositorio es `BmsRepository(database: db)` (parámetro `database`, no `db`), y un servicio conectado se arma como en el `setUp` de `test/foreground_service_test.dart`: `BmsService(transport: FakeLink(), locationFactory: StubLocation.new)`, después `await service.connect('AA:BB', name: 'KevinJK')`, después alimentar una lectura. `applySettings` exige `haptics` y `rawFrames`. No inventar ayudantes nuevos donde ya hay uno.
 
 ## Corrección respecto a la spec
 
@@ -54,6 +55,7 @@ Los otros tres defectos siguen tal cual, verificados sobre 9ed439b:
 | `lib/src/data/repository.dart` | Modificar: el filtro de aprendizaje, el setter, el viaje con resumen pendiente |
 | `lib/src/bms_service.dart` | Modificar: `setTripRepresentative` que reconstruye |
 | `lib/src/ui/widgets/trip_summary_view.dart` | **Crear:** el modelo que alimenta la hoja desde un `TripOutcome` o desde una fila guardada |
+| `lib/src/ui/widgets/trip_summary_sheet.dart` | **Crear:** la hoja de resumen, sacada de `trip_screen.dart` para que se pueda abrir desde dos lugares |
 | `lib/src/ui/widgets/representative_question.dart` | **Crear:** la pregunta y su confirmación, un solo widget reutilizado en la hoja y en el detalle |
 | `lib/src/ui/trip_screen.dart` | Modificar: la hoja consume `TripSummaryView` y muestra la pregunta |
 | `lib/src/ui/trip_detail_screen.dart` | Modificar: la pregunta, respondible después |
@@ -90,9 +92,9 @@ test('the service is location-typed while auto-start needs a fix', () async {
   // Android only sustains background location for a location-typed one. With
   // the screen off the fixes stopped, the detector saw no speed, and a ride
   // that needs speed to start never started.
-  final service = BmsService();
-  service.applySettings(autoTrip: true, watchLink: true);
-  service.pretendConnectedForTest();
+  service.applySettings(haptics: false, rawFrames: false, autoTrip: true);
+  link.announce(BleLinkState.connected);
+  await pumpEventQueue();
 
   expect(service.claimForTest, ServiceClaim.link);
   expect(service.serviceUsesLocationForTest, isTrue);
@@ -101,19 +103,21 @@ test('the service is location-typed while auto-start needs a fix', () async {
 test('and not location-typed when auto-start is off', () async {
   // Nothing is watching for a ride, so nothing needs the GPS. Claiming the
   // location type without using it is what Android 14 refuses.
-  final service = BmsService();
-  service.applySettings(autoTrip: false, watchLink: true);
-  service.pretendConnectedForTest();
+  service.applySettings(haptics: false, rawFrames: false, autoTrip: false);
+  link.announce(BleLinkState.connected);
+  await pumpEventQueue();
 
   expect(service.claimForTest, ServiceClaim.link);
   expect(service.serviceUsesLocationForTest, isFalse);
 });
 ```
 
+Van dentro del grupo `'who gets the one foreground service'`, que ya tiene el `setUp` con `link`, `db` y `service` armados y conectados. No crear un servicio nuevo a mano.
+
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `flutter test test/foreground_service_test.dart`
-Expected: FAIL con "The getter 'serviceUsesLocationForTest' isn't defined" (y `pretendConnectedForTest` si tampoco existe: revisar el archivo de test, que ya tiene ayudantes para simular conexión, y reutilizar el que haya en lugar de agregar uno).
+Expected: FAIL con "The getter 'serviceUsesLocationForTest' isn't defined".
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -203,9 +207,20 @@ test('a ride that could not open says so instead of going quiet', () async {
   // believes the app is learning, the app records nothing, and the range
   // figure never appears. The problem used to be stored in
   // lastLocationProblem and read by nobody.
-  final service = BmsService();
-  service.applySettings(autoTrip: true);
-  service.refuseLocationForTest(LocationProblem.permissionDenied);
+  //
+  // The refusal comes from the injected location source rather than from a
+  // test-only setter on the service: locationFactory is the seam that already
+  // exists, and one seam is enough.
+  final link = FakeLink();
+  final db = AppDatabase.forTesting(NativeDatabase.memory());
+  addTearDown(db.close);
+  final service = BmsService(
+    transport: link,
+    locationFactory: RefusingLocation.new,
+  )..repository = BmsRepository(database: db);
+  addTearDown(service.dispose);
+  await service.connect('AA:BB', name: 'KevinJK');
+  service.applySettings(haptics: false, rawFrames: false, autoTrip: true);
 
   final events = <AutoTripAction>[];
   service.autoTripEvents.listen(events.add);
@@ -215,6 +230,20 @@ test('a ride that could not open says so instead of going quiet', () async {
 
   expect(events, [AutoTripAction.blocked]);
 });
+```
+
+Con la fuente que se niega, declarada en el mismo archivo de test:
+
+```dart
+/// A location source that refuses, so the blocked path can be exercised.
+class RefusingLocation implements LocationSource {
+  @override
+  Stream<GeoFix> get fixes => const Stream<GeoFix>.empty();
+  @override
+  Future<LocationProblem?> start() async => LocationProblem.permissionDenied;
+  @override
+  Future<void> stop() async {}
+}
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -250,25 +279,21 @@ En `lib/src/bms_service.dart`, reemplazar el caso `start`:
         );
 ```
 
-Y los dos ayudantes de test, junto a `claimForTest`:
+Y una sola costura de test, junto a `claimForTest`. Corre la rama real, no una copia de ella, para que el test no pueda pasar mientras la de producción está mal:
 
 ```dart
-  /// Makes location refuse, so the blocked path can be exercised.
+  /// Runs the detector's start branch directly.
+  ///
+  /// The branch itself needs sustained current and speed over twenty seconds
+  /// to fire, which a unit test cannot wait for. What is worth testing is not
+  /// the timing, which [TripAutoStart] already covers, but that a start which
+  /// failed says so.
   @visibleForTesting
-  void refuseLocationForTest(LocationProblem problem) =>
-      _forcedLocationProblem = problem;
-
-  LocationProblem? _forcedLocationProblem;
-
-  /// Runs the start branch of the detector directly.
-  @visibleForTesting
-  Future<void> forceAutoTripStartForTest() async {
-    final problem = _forcedLocationProblem ?? await startTrip();
-    _autoTripController.add(
-      problem == null ? AutoTripAction.start : AutoTripAction.blocked,
-    );
-  }
+  Future<void> forceAutoTripStartForTest() =>
+      _runAutoTripAction(AutoTripAction.start);
 ```
+
+Para eso, el `switch` de `_updateAutoTrip` se extrae a un método propio, `Future<void> _runAutoTripAction(AutoTripAction action)`, y `_updateAutoTrip` pasa a llamarlo. Así la costura ejecuta exactamente el mismo código que la ruta real.
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -295,7 +320,7 @@ git commit -m "Say it when a ride could not open for want of location"
 
 **Interfaces:**
 - Consumes: `AutoTripAction.blocked` de la Tarea 2.
-- Produces: `_JkBmsAppState._messenger`, un `GlobalKey<ScaffoldMessengerState>` pasado a `MaterialApp.scaffoldMessengerKey`, que la Tarea 12 reutiliza.
+- Produces: `_JkBmsAppState._messenger`, un `GlobalKey<ScaffoldMessengerState>` pasado a `MaterialApp.scaffoldMessengerKey`. Solo lo usa el oyente de esta tarea; las pantallas usan `ScaffoldMessenger.of(context)` como siempre.
 
 - [ ] **Step 1: Add the strings**
 
@@ -405,14 +430,16 @@ Al cerrarse el viaje, el reclamo del servicio pasa de `trip` a `link`, porque se
 - [ ] **Step 1: Write the failing test**
 
 ```dart
-test('the notification says a ride was saved, then goes back to normal', () {
+test('the notification says a ride was saved, then goes back to normal',
+    () async {
   // Arriving home with the phone in a pocket used to give nothing at all: the
   // summary was discarded and the notification went straight back to the
   // connected readout. The one notification slot is free at that moment, so
   // it carries the news instead of a second notification being invented.
-  final service = BmsService();
-  service.applySettings(autoTrip: true, watchLink: true);
-  service.pretendConnectedForTest();
+  link.announce(BleLinkState.connected);
+  await pumpEventQueue();
+  expect(service.claimForTest, ServiceClaim.link);
+
   service.rideSavedText = (km, whPerKm) =>
       'Guardado ${km.toStringAsFixed(1)} km';
   service.linkWatchText = (_) => 'conectado';
@@ -424,6 +451,8 @@ test('the notification says a ride was saved, then goes back to normal', () {
   expect(service.serviceTextForTest, 'conectado');
 });
 ```
+
+Va en el mismo grupo que la Tarea 1, con el `setUp` que ya existe.
 
 - [ ] **Step 2: Run test to verify it fails**
 
@@ -676,31 +705,25 @@ git commit -m "Ask about a ride for its consequence, not for its oddity"
 
 En `test/migration_test.dart`:
 
+Dentro del grupo `'upgrading a database that already has history'`, que ya tiene un `setUp` con `raw = _populatedV3()` y `db = AppDatabase.forTesting(NativeDatabase.opened(raw))`. Ese fixture trae un viaje ya insertado y dispara la migración completa al abrir, así que ejercita el salto a 12 sin escribir un esquema a mano:
+
+Los viajes se leen con `db.select(db.trips).get()` y no con `recentTrips`, porque `recentTrips` filtra por pack y el fixture v3 inserta viajes sin `device_id`.
+
 ```dart
-test('an upgrade to 12 leaves old rides unanswered and unseen', () async {
+test('an upgrade leaves old rides unanswered and unseen', () async {
   // Null is not false here. A ride recorded before the question existed was
   // never asked about, and saying "the rider called it normal" would be
   // putting words in their mouth. It counts as normal for the learning, which
   // is the old behaviour, while still reading as unanswered on screen.
-  final db = await _openAtVersion(11);
-  await db.customStatement(
-    'INSERT INTO trips (started_at, ended_at, distance_km, moving_seconds, '
-    'total_seconds, max_speed_kmh, energy_out_wh, energy_in_wh, start_soc, '
-    'end_soc, min_pack_voltage, max_pack_voltage, max_discharge_current, '
-    'max_temperature, max_delta_volts, climb_m, descent_m) '
-    'VALUES (0, 0, 10.0, 600, 700, 40.0, 175.0, 0.0, 90.0, 70.0, 70.0, 84.0, '
-    '45.0, 30.0, 0.02, 10.0, 10.0)',
-  );
+  final trips = await db.select(db.trips).get();
+  expect(trips, isNotEmpty);
 
-  final upgraded = await _reopenAtCurrentVersion(db);
-  final trip = (await upgraded.recentTrips(null, limit: 1)).single;
-
-  expect(trip.representative, isNull);
-  expect(trip.summarySeen, isFalse);
+  for (final trip in trips) {
+    expect(trip.representative, isNull);
+    expect(trip.summarySeen, isFalse);
+  }
 });
 ```
-
-Nota: `_openAtVersion` y `_reopenAtCurrentVersion` son los ayudantes que ese archivo ya usa para las migraciones anteriores. Leer el archivo y reutilizar los que haya con el nombre que tengan, en lugar de crear otros.
 
 - [ ] **Step 2: Run test to verify it fails**
 
@@ -769,6 +792,7 @@ git commit -m "Remember whether a ride represents the rider, and whether they sa
 ## Task 7: Una excepción queda fuera del aprendizaje
 
 **Files:**
+- Modify: `lib/src/data/database.dart` (los dos setters nuevos, junto a `setTripNote`)
 - Modify: `lib/src/data/repository.dart:354`
 - Test: `test/range_learning_exclusion_test.dart` (crear)
 
@@ -791,7 +815,9 @@ void main() {
       // Deleting the ride was the only way to say this before, and deleting
       // throws away the track and the pack readings with it. A ride can be
       // unrepresentative and still be worth keeping.
-      final repo = BmsRepository(db: BmsDatabase.forTesting());
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      final repo = BmsRepository(database: db);
       const device = 'pack-1';
 
       await _storeRide(repo, device, km: 20, whPerKm: 17.5);
@@ -808,7 +834,9 @@ void main() {
     });
 
     test('comes back the moment the rider changes their mind', () async {
-      final repo = BmsRepository(db: BmsDatabase.forTesting());
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      final repo = BmsRepository(database: db);
       const device = 'pack-1';
       final id = await _storeRide(repo, device, km: 40, whPerKm: 10.0);
 
@@ -822,7 +850,7 @@ void main() {
 }
 ```
 
-Nota: `_storeRide` es un ayudante local que abre un viaje con `beginTrip` y lo cierra con `finishTrip`, con una `TripSummary` armada a mano. `BmsRepository(db: ...)` y `BmsDatabase.forTesting()` son los constructores que los tests del repo ya usan; leer `test/multi_pack_test.dart` y copiar exactamente su forma de montar un repositorio en memoria en lugar de inventar otra.
+Nota: `_storeRide` es un ayudante local que abre un viaje con `beginTrip`, lo cierra con `finishTrip` y devuelve el id, con una `TripSummary` armada a mano. Los constructores estan verificados contra el repo: ver `test/multi_pack_test.dart`.
 
 - [ ] **Step 2: Run test to verify it fails**
 
@@ -908,13 +936,22 @@ test('answering moves the learned figure, and unanswering puts it back',
   // immediately, and it is reversible. Both fall out of the rebuild the
   // service already does on a delete, which is why the marking goes through
   // the service rather than the repository.
-  final service = BmsService();
-  service.repository = BmsRepository(db: BmsDatabase.forTesting());
-  await service.useDeviceForTest('pack-1');
+  final link = FakeLink();
+  final db = AppDatabase.forTesting(NativeDatabase.memory());
+  addTearDown(db.close);
+  final repo = BmsRepository(database: db);
+  final service = BmsService(
+    transport: link,
+    locationFactory: StubLocation.new,
+  )..repository = repo;
+  addTearDown(service.dispose);
+  // connect() is what sets the active device, and the estimate is rebuilt per
+  // pack, so there is no shortcut around it.
+  await service.connect('AA:BB', name: 'KevinJK');
+  final device = service.activeDeviceId!;
 
-  await _storeRide(service.repository!, 'pack-1', km: 40, whPerKm: 17.5);
-  final gentleId =
-      await _storeRide(service.repository!, 'pack-1', km: 40, whPerKm: 10.0);
+  await _storeRide(repo, device, km: 40, whPerKm: 17.5);
+  final gentleId = await _storeRide(repo, device, km: 40, whPerKm: 10.0);
   await service.relearnRangeFromTrips();
 
   final withGentle = service.rangeEstimator.whPerKm;
@@ -928,7 +965,7 @@ test('answering moves the learned figure, and unanswering puts it back',
 });
 ```
 
-Nota: `useDeviceForTest` es el ayudante que los tests del servicio ya usan para fijar `activeDeviceId`; leer `test/bms_service_test.dart` y usar el que exista con su nombre real.
+Nota: `FakeLink` y `StubLocation` son las clases falsas que `test/foreground_service_test.dart` ya declara. Copiarlas al archivo nuevo o extraerlas a un `test/support/` compartido; extraerlas es mejor y esta tarea es un buen momento.
 
 - [ ] **Step 2: Run test to verify it fails**
 
@@ -972,7 +1009,9 @@ La hoja se construye hoy desde un `TripOutcome`, que solo existe si apretaste pa
 
 **Files:**
 - Create: `lib/src/ui/widgets/trip_summary_view.dart`
+- Create: `lib/src/ui/widgets/trip_summary_sheet.dart`
 - Modify: `lib/src/ui/trip_screen.dart`
+- Modify: `lib/src/bms_service.dart` (`lastStoredTripId`)
 - Test: `test/trip_summary_view_test.dart` (crear)
 
 **Interfaces:**
@@ -1131,11 +1170,51 @@ class TripSummaryView {
 }
 ```
 
-- [ ] **Step 4: Point the sheet at it**
+- [ ] **Step 4: Move the sheet out and point it at the view**
 
-En `lib/src/ui/trip_screen.dart`, cambiar `_TripSummarySheet` para que tome un `TripSummaryView` en lugar de un `TripOutcome`, y reemplazar cada `summary.x` por `view.x`. `_stop()` pasa `TripSummaryView.fromOutcome(outcome, tripId: ...)`. El id del viaje que acaba de cerrarse hay que exponerlo: `stopTrip` lo pone en null antes de devolver, así que agregar en `BmsService` un `int? lastStoredTripId` que `stopTrip` fija antes de limpiar `_currentTripId`.
+Sacar `_TripSummarySheet` de `trip_screen.dart` a un archivo propio, `lib/src/ui/widgets/trip_summary_sheet.dart`, público, con una función que la abre:
+
+```dart
+/// Opens the end-of-ride summary.
+///
+/// A function rather than a call site per screen: the sheet is opened from the
+/// stop button, and also on opening the app for a ride that ended in a pocket,
+/// and those two had no business drifting apart.
+Future<void> showTripSummarySheet({
+  required BuildContext context,
+  required TripSummaryView view,
+  required BmsService service,
+  required AppL10n t,
+}) => showModalBottomSheet<void>(
+  context: context,
+  backgroundColor: AppTheme.surface,
+  isScrollControlled: true,
+  showDragHandle: true,
+  builder: (_) => TripSummarySheet(view: view, service: service, t: t),
+);
+```
+
+La hoja toma un `TripSummaryView` en lugar de un `TripOutcome`: reemplazar cada `summary.x` por `view.x`. `trip_screen.dart` la usa desde ahí, y su `_stop()` pasa `TripSummaryView.fromOutcome(outcome, tripId: service.lastStoredTripId)`.
+
+El id del viaje recién cerrado hay que exponerlo, porque `stopTrip` pone `_currentTripId` en null antes de devolver. En `BmsService`:
+
+```dart
+  /// The row of the ride that just ended, for a screen that has to ask
+  /// something about it. `_currentTripId` is cleared by then.
+  int? lastStoredTripId;
+```
+
+Fijado en `stopTrip` en la línea donde hoy se limpia:
+
+```dart
+    final id = _currentTripId;
+    lastStoredTripId = id;
+    _currentTripId = null;
+```
 
 Nota: los campos que la hoja muestra y que `TripSummaryView` no tiene (SOC de inicio y fin, voltajes, temperatura, delta) están en la sección "el pack durante el viaje". Agregarlos al modelo con el mismo patrón en este mismo paso, tomándolos de `summary` y de `trip` respectivamente. No dejar la sección a medias ni borrarla.
+
+Se mueve acá y no en la Tarea 12 a propósito: la hoja ya se está reescribiendo en esta tarea, y moverla después obligaría a la Tarea 11 a editar un archivo que la 12 cambia de lugar.
 
 - [ ] **Step 5: Run tests and commit**
 
@@ -1169,9 +1248,9 @@ Un widget, tres lugares. Dice qué midió, cuánto se aparta, y qué le hace al 
 ```json
   "representativeAsk": "¿Este viaje te representa?",
   "@representativeAsk": {},
-  "representativeAskBodyUp": "Salió en {whPerKm} Wh/km, un {percent}% por encima de lo tuyo. Si lo tomo como normal, tu autonomía baja de {before} a {after} km.",
+  "representativeAskBodyUp": "Salió en {whPerKm} Wh/km, un {percent}% por encima de lo tuyo. Ya lo conté: tu autonomía pasó de {before} a {after} km. Si fue una excepción, vuelve a {before}.",
   "@representativeAskBodyUp": { "placeholders": { "whPerKm": {}, "percent": {}, "before": {}, "after": {} } },
-  "representativeAskBodyDown": "Salió en {whPerKm} Wh/km, un {percent}% por debajo de lo tuyo. Si lo tomo como normal, tu autonomía sube de {before} a {after} km.",
+  "representativeAskBodyDown": "Salió en {whPerKm} Wh/km, un {percent}% por debajo de lo tuyo. Ya lo conté: tu autonomía pasó de {before} a {after} km. Si fue una excepción, vuelve a {before}.",
   "@representativeAskBodyDown": { "placeholders": { "whPerKm": {}, "percent": {}, "before": {}, "after": {} } },
   "representativeYes": "Es normal",
   "@representativeYes": {},
@@ -1498,7 +1577,9 @@ void main() {
       // The pocket case, which is the normal case. The summary used to be
       // built by the stop button and by nothing else, so a ride that closed
       // itself was stored complete and shown to nobody.
-      final repo = BmsRepository(db: BmsDatabase.forTesting());
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      final repo = BmsRepository(database: db);
       final id = await _storeRide(repo, 'pack-1', km: 20, whPerKm: 17.5);
 
       final pending = await repo.pendingSummaryTrip('pack-1');
@@ -1506,7 +1587,9 @@ void main() {
     });
 
     test('is not offered twice', () async {
-      final repo = BmsRepository(db: BmsDatabase.forTesting());
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      final repo = BmsRepository(database: db);
       final id = await _storeRide(repo, 'pack-1', km: 20, whPerKm: 17.5);
 
       await repo.markTripSummarySeen(id);
@@ -1516,7 +1599,9 @@ void main() {
     test('a demo ride is never offered', () async {
       // A made-up ride announcing itself would be the app talking about
       // nothing, which is the one thing it is built not to do.
-      final repo = BmsRepository(db: BmsDatabase.forTesting());
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      final repo = BmsRepository(database: db);
       await _storeRide(repo, 'pack-1', km: 20, whPerKm: 17.5, demo: true);
       expect(await repo.pendingSummaryTrip('pack-1'), isNull);
     });
@@ -1589,7 +1674,7 @@ En `lib/src/ui/connect_screen.dart`, después de que el pack activo esté resuel
   }
 ```
 
-Esto necesita que `_TripSummarySheet` deje de ser privado de `trip_screen.dart`. Sacar la hoja y una función `showTripSummarySheet` a `lib/src/ui/widgets/trip_summary_sheet.dart` en este paso, y que `trip_screen.dart` la use desde ahí. Es el mismo movimiento que ya hicieron `advice_list.dart` y los demás widgets compartidos.
+`showTripSummarySheet` ya existe desde la Tarea 9; acá solo se llama.
 
 - [ ] **Step 5: Verify by hand**
 
