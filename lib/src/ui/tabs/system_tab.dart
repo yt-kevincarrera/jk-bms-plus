@@ -21,7 +21,10 @@ import '../../model/jk_settings.dart';
 import '../../protocol/jk_frame.dart';
 import '../../protocol/protocol_variant.dart';
 import '../live_console_screen.dart';
+import '../../license/entitlements.dart';
+import '../pack/config_audit_screen.dart';
 import '../pack/pack_profile_card.dart';
+import '../widgets/pro_gate.dart';
 import '../locale_controller.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
@@ -668,6 +671,25 @@ class _SystemTabState extends State<SystemTab> {
     return Section(
       title: t.systemSettingsTitle,
       children: [
+        // The settings themselves are below; this reads them against what
+        // the declared chemistry can take. Read only, like everything else
+        // this app does with a BMS.
+        ProGate(
+          feature: Feature.configAudit,
+          compact: true,
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: OutlinedButton.icon(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => ConfigAuditScreen(service: widget.service),
+                ),
+              ),
+              icon: const Icon(Icons.rule, size: 18),
+              label: Text(t.configAuditOpen),
+            ),
+          ),
+        ),
         InfoRow(t.settingCellCount, '${s.cellCount}'),
         InfoRow(
           t.settingNominalCapacity,

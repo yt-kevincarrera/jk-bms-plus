@@ -3863,4 +3863,192 @@ class AppL10nEn extends AppL10n {
   @override
   String get reportDayOneNote =>
       'Compared against the state kept on the day the battery was taken on. Not a capacity measurement: a snapshot of the voltages cannot measure what a pack holds, and nothing here is presented as if it could.';
+
+  @override
+  String get verdictConfigOvpDangerousTitle =>
+      'The charge cutoff is above what the cells can take';
+
+  @override
+  String verdictConfigOvpDangerousBody(String value, String limit) {
+    return 'The BMS stops charging at $value V a cell and the safe maximum for this chemistry is $limit V. Every full charge is doing damage. Change it in the official BMS app, on your own responsibility; this app never writes anything to a battery.';
+  }
+
+  @override
+  String get verdictConfigOvpHighTitle => 'The charge cutoff is high';
+
+  @override
+  String verdictConfigOvpHighBody(String value, String limit) {
+    return 'You are cutting at $value V a cell when the pack is practically full at $limit V. What you gain in range is almost nothing and what you lose in cycle life is not.';
+  }
+
+  @override
+  String get verdictConfigUvpDangerousTitle =>
+      'The discharge cutoff goes below where cells recover';
+
+  @override
+  String verdictConfigUvpDangerousBody(String value, String limit) {
+    return 'The BMS lets cells fall to $value V and the safe minimum is $limit V. A cell taken below that may not come back, and the ones that do come back smaller.';
+  }
+
+  @override
+  String get verdictConfigUvpLowTitle => 'The discharge cutoff is low';
+
+  @override
+  String verdictConfigUvpLowBody(String value, String limit) {
+    return 'You are cutting at $value V a cell. Below $limit V the cells are being squeezed for a few kilometres that cost more in life than they are worth.';
+  }
+
+  @override
+  String get verdictConfigChargesWhenFrozenTitle =>
+      'The BMS will charge the pack below freezing';
+
+  @override
+  String verdictConfigChargesWhenFrozenBody(String value) {
+    return 'The cold cutoff is at $value °C. Charging lithium below zero plates metal inside the cell: it is permanent, it shows up on no figure the BMS reports, and it is the most common way a winter rider ruins a pack. Raise it to 2 °C or more in the official app.';
+  }
+
+  @override
+  String get verdictConfigColdCutoffOkTitle =>
+      'It will not charge a frozen pack';
+
+  @override
+  String verdictConfigColdCutoffOkBody(String value) {
+    return 'The cold cutoff is at $value °C, so the BMS refuses to charge before the damage starts. It is one of the settings that saves the most life, and this one is set right.';
+  }
+
+  @override
+  String get verdictConfigChargeHotLimitTitle =>
+      'The heat cutoff while charging is high';
+
+  @override
+  String verdictConfigChargeHotLimitBody(String value, String limit) {
+    return 'It allows charging up to $value °C, and above $limit °C charging ages cells faster than it should.';
+  }
+
+  @override
+  String get verdictConfigDischargeHotLimitTitle =>
+      'The heat cutoff while discharging is high';
+
+  @override
+  String verdictConfigDischargeHotLimitBody(String value, String limit) {
+    return 'It allows pulling up to $value °C. Above $limit °C even discharging is not free.';
+  }
+
+  @override
+  String get verdictConfigCapacityDisagreesTitle =>
+      'The configured capacity is not what it was sold as';
+
+  @override
+  String verdictConfigCapacityDisagreesBody(String value, String sold) {
+    return 'The BMS is configured for $value Ah and you recorded that it was sold as $sold Ah. The BMS figure was typed in by whoever assembled the pack: it measures nothing, but the charge percentage and the remaining amp-hours on every screen are derived from it.';
+  }
+
+  @override
+  String get verdictConfigCellCountDisagreesTitle =>
+      'The BMS is configured for a different number of cells';
+
+  @override
+  String verdictConfigCellCountDisagreesBody(String value, String seen) {
+    return 'Configured for $value cells and $seen are being read. With this wrong, the pack voltage, the percentage and the protection cutoffs are all computed for a battery this is not.';
+  }
+
+  @override
+  String get verdictConfigChargeCurrentHighTitle =>
+      'The charge current is high for the size of the pack';
+
+  @override
+  String verdictConfigChargeCurrentHighBody(String value, String capacity) {
+    return 'Up to $value A into a pack configured as $capacity Ah. It is allowed, but charging above 1C heats and ages; if you are not in a hurry, lowering it buys life.';
+  }
+
+  @override
+  String get verdictConfigBalancerOffTitle => 'The balancer is switched off';
+
+  @override
+  String get verdictConfigBalancerOffBody =>
+      'Without balancing the cells drift apart on their own, and the weakest one decides the end of every charge and every discharge. It is the first cause of packs that lose range with no cell actually being bad.';
+
+  @override
+  String get verdictConfigChargeOffTitle => 'Charging is disabled at the BMS';
+
+  @override
+  String get verdictConfigChargeOffBody =>
+      'If the pack takes no charge, this explains it. It may be deliberate, or it may have been left this way after a protection tripped.';
+
+  @override
+  String get verdictConfigDischargeOffTitle =>
+      'Discharging is disabled at the BMS';
+
+  @override
+  String get verdictConfigDischargeOffBody =>
+      'If the bike will not move, this explains it. It may be deliberate, or it may have been left this way after a protection tripped.';
+
+  @override
+  String get verdictConfigBalanceStartLowTitle =>
+      'Balancing starts where voltage says nothing';
+
+  @override
+  String verdictConfigBalanceStartLowBody(String value, String limit) {
+    return 'It starts at $value V a cell, and for this chemistry it usually sits near $limit V. On the flat part of the curve a millivolt is not a measure of charge, so the balancer can move energy the wrong way.';
+  }
+
+  @override
+  String get verdictConfigChangedSinceDayOneTitle =>
+      'The configuration is not the one from day one';
+
+  @override
+  String verdictConfigChangedSinceDayOneBody(String count) {
+    return '$count setting(s) have changed since the initial state was kept. If it was not you, somebody has been in the BMS.';
+  }
+
+  @override
+  String get verdictConfigChemistryUnknownTitle =>
+      'No declared chemistry, so no voltage audit';
+
+  @override
+  String get verdictConfigChemistryUnknownBody =>
+      'LFP and NMC are almost a volt a cell apart: with the wrong one this screen would bless a dangerous setting or condemn a normal one. Say which it is in the battery profile and come back.';
+
+  @override
+  String get verdictConfigLooksSaneTitle => 'The configuration is reasonable';
+
+  @override
+  String get verdictConfigLooksSaneBody =>
+      'The voltage cutoffs, the temperature cutoffs and the switches are where they should be for this chemistry. This says nothing about the state of the cells: it is a review of the settings, not of the battery.';
+
+  @override
+  String get evidenceConfiguredSetting => 'Configured';
+
+  @override
+  String get evidenceSafeLimit => 'Safe limit';
+
+  @override
+  String get evidenceCellsSeen => 'Cells being read';
+
+  @override
+  String get configAuditTitle => 'Configuration audit';
+
+  @override
+  String get configAuditIntro =>
+      'What the BMS is set up to do, against what the cells you said it holds can take.';
+
+  @override
+  String get configAuditOpen => 'Audit the configuration';
+
+  @override
+  String get configAuditReadOnly =>
+      'Read only. This app never writes to a BMS: a wrong value written to a battery is a fire, and the protocol\'s write path is reverse-engineered. Anything that needs changing is changed in the official BMS app, and that decision is yours.';
+
+  @override
+  String get configAuditSettings => 'Everything that was looked at';
+
+  @override
+  String get configAuditNoSettings =>
+      'The BMS has not sent its configuration yet. Wait a few seconds with the battery connected.';
+
+  @override
+  String get configAuditChemistryRow => 'Declared chemistry';
+
+  @override
+  String get configAuditNeedsProfile => 'Complete the profile';
 }
