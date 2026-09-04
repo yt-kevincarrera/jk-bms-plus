@@ -2387,6 +2387,16 @@ class AppL10nEs extends AppL10n {
   }
 
   @override
+  String rideSavedNotif(String km, String whPerKm) {
+    return 'Viaje guardado: $km km, $whPerKm Wh/km';
+  }
+
+  @override
+  String rideSavedNotifNoConsumption(String km) {
+    return 'Viaje guardado: $km km';
+  }
+
+  @override
   String get linkWatchTitle => 'Seguir leyendo con la pantalla apagada';
 
   @override

@@ -966,6 +966,13 @@ class BmsService {
       // of what the in-ride segments already taught, keeps one source of truth
       // and avoids counting this ride twice.
       await relearnRangeFromTrips();
+      // Before the service is brought into line below, so the first
+      // notification the rider sees after arriving is the news and not the
+      // connected readout.
+      _rideSavedKm = summary.distanceKm;
+      _rideSavedWhPerKm = summary.whPerKm;
+      _rideSavedUntil = DateTime.now().toUtc().add(rideSavedFor);
+      await _updateForegroundService();
     }
 
     final snapshot = _lastSnapshot;
@@ -1190,6 +1197,27 @@ class BmsService {
   String linkWatchTitle = 'Reading the pack';
   String Function(BmsSnapshot?)? linkWatchText;
 
+  /// What the notification says just after a ride is stored.
+  ///
+  /// Rides end in a pocket more often than on screen, and the summary sheet
+  /// needs the app to be open. The one notification slot is free at that exact
+  /// moment, because the trip claim has just been released and the link claim
+  /// has taken over, so it carries the news for a few minutes rather than a
+  /// second notification being invented for it.
+  String Function(double km, double? whPerKm)? rideSavedText;
+
+  /// How long that text stands before the normal connected readout returns.
+  Duration rideSavedFor = const Duration(minutes: 5);
+
+  DateTime? _rideSavedUntil;
+  double _rideSavedKm = 0;
+  double? _rideSavedWhPerKm;
+
+  bool get _rideSavedStanding {
+    final until = _rideSavedUntil;
+    return until != null && DateTime.now().toUtc().isBefore(until);
+  }
+
   /// Wording for a download in progress, supplied by the UI.
   String downloadTitle = 'Downloading update';
   String Function(int percent)? downloadText;
@@ -1270,6 +1298,22 @@ class BmsService {
     return claim != null && _serviceNeedsLocation(claim);
   }
 
+  @visibleForTesting
+  String get serviceTextForTest {
+    final claim = _claim;
+    return claim == null ? '' : _serviceText(claim);
+  }
+
+  @visibleForTesting
+  void noteRideSavedForTest({required double km, double? whPerKm}) {
+    _rideSavedKm = km;
+    _rideSavedWhPerKm = whPerKm;
+    _rideSavedUntil = DateTime.now().toUtc().add(rideSavedFor);
+  }
+
+  @visibleForTesting
+  void expireRideSavedForTest() => _rideSavedUntil = null;
+
   ServiceClaim? _serviceOwner;
 
   /// True while the app is holding the link open for a charge.
@@ -1289,7 +1333,10 @@ class BmsService {
     ServiceClaim.trip => notificationText?.call(trip, _lastSnapshot) ?? '',
     ServiceClaim.charge => chargeWatchText?.call(_lastSnapshot) ?? '',
     ServiceClaim.update => downloadText?.call(_download ?? 0) ?? '',
-    ServiceClaim.link => linkWatchText?.call(_lastSnapshot) ?? '',
+    ServiceClaim.link =>
+      _rideSavedStanding
+          ? rideSavedText?.call(_rideSavedKm, _rideSavedWhPerKm) ?? ''
+          : linkWatchText?.call(_lastSnapshot) ?? '',
   };
 
   /// Brings the one service into line with whoever has the strongest claim.

@@ -1291,6 +1291,8 @@
   "linkWatchNotifTitle": "Reading the pack",
   "linkWatchNotifWaiting": "Waiting for the first reading",
   "linkWatchNotifText": "{soc} %  ·  {volts} V  ·  {amps} A",
+  "rideSavedNotif": "Ride saved: {km} km, {whPerKm} Wh/km",
+  "rideSavedNotifNoConsumption": "Ride saved: {km} km",
   "linkWatchTitle": "Keep reading with the screen off",
   "linkWatchHint": "Android stops handing an app Bluetooth readings shortly after the screen goes dark, unless the app holds a foreground service. This holds one while the pack is connected, so the app behaves the same with the screen on or off. That is what the notification is for; it is not the app announcing itself.",
   "screenAwakeReason": "With the setting above on, the screen can sleep without the readings stopping.",

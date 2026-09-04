@@ -220,5 +220,27 @@ void main() {
 
       expect(service.serviceUsesLocationForTest, isTrue);
     });
+
+    test('the notification says a ride was saved, then goes back to normal',
+        () async {
+      // Arriving home with the phone in a pocket used to give nothing at all:
+      // the summary was discarded and the notification went straight back to
+      // the connected readout. The one notification slot is free at that
+      // moment, so it carries the news instead of a second notification being
+      // invented.
+      link.announce(BleLinkState.connected);
+      await pumpEventQueue();
+      expect(service.claimForTest, ServiceClaim.link);
+
+      service.rideSavedText = (km, whPerKm) =>
+          'Guardado ${km.toStringAsFixed(1)} km';
+      service.linkWatchText = (_) => 'conectado';
+
+      service.noteRideSavedForTest(km: 23.4, whPerKm: 18);
+      expect(service.serviceTextForTest, 'Guardado 23.4 km');
+
+      service.expireRideSavedForTest();
+      expect(service.serviceTextForTest, 'conectado');
+    });
   });
 }

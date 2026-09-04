@@ -2377,6 +2377,16 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
+  String rideSavedNotif(String km, String whPerKm) {
+    return 'Ride saved: $km km, $whPerKm Wh/km';
+  }
+
+  @override
+  String rideSavedNotifNoConsumption(String km) {
+    return 'Ride saved: $km km';
+  }
+
+  @override
   String get linkWatchTitle => 'Keep reading with the screen off';
 
   @override

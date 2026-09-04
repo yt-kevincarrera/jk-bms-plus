@@ -4267,6 +4267,18 @@ abstract class AppL10n {
   /// **'{soc} %  ·  {volts} V  ·  {amps} A'**
   String linkWatchNotifText(String soc, String volts, String amps);
 
+  /// No description provided for @rideSavedNotif.
+  ///
+  /// In es, this message translates to:
+  /// **'Viaje guardado: {km} km, {whPerKm} Wh/km'**
+  String rideSavedNotif(String km, String whPerKm);
+
+  /// No description provided for @rideSavedNotifNoConsumption.
+  ///
+  /// In es, this message translates to:
+  /// **'Viaje guardado: {km} km'**
+  String rideSavedNotifNoConsumption(String km);
+
   /// No description provided for @linkWatchTitle.
   ///
   /// In es, this message translates to:

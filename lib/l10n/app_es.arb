@@ -1311,6 +1311,25 @@
       }
     }
   },
+  "rideSavedNotif": "Viaje guardado: {km} km, {whPerKm} Wh/km",
+  "@rideSavedNotif": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      },
+      "whPerKm": {
+        "type": "String"
+      }
+    }
+  },
+  "rideSavedNotifNoConsumption": "Viaje guardado: {km} km",
+  "@rideSavedNotifNoConsumption": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
   "linkWatchTitle": "Seguir leyendo con la pantalla apagada",
   "linkWatchHint": "Android deja de entregarle lecturas Bluetooth a una app poco después de que la pantalla se apaga, a menos que la app mantenga un servicio en primer plano. Esto lo mantiene mientras la batería está conectada, para que la app funcione igual con la pantalla encendida o apagada. Para eso es la notificación; no es la app anunciándose.",
   "screenAwakeReason": "Con el ajuste de arriba encendido, la pantalla puede apagarse sin que las lecturas se detengan.",

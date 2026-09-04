@@ -235,6 +235,12 @@ class _JkBmsAppState extends State<JkBmsApp> {
                       s.packVoltage.toStringAsFixed(1),
                       s.current.toStringAsFixed(1),
                     );
+              _service.rideSavedText = (km, whPerKm) => whPerKm == null
+                  ? t.rideSavedNotifNoConsumption(km.toStringAsFixed(1))
+                  : t.rideSavedNotif(
+                      km.toStringAsFixed(1),
+                      whPerKm.toStringAsFixed(0),
+                    );
               return ConnectScreen(
                 service: _service,
                 localeController: _locale,
