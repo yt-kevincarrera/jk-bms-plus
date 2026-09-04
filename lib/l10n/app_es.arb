@@ -2294,5 +2294,111 @@
   },
   "reportSectionSeries": "Pruebas anteriores a este pack",
   "reportSeriesNote": "Cada fila es una inspección anterior guardada en el teléfono que firmó esta hoja. Repetir el test es lo que distingue una celda mala de una lectura mala.",
-  "reportSeriesWorstCell": "Peor celda"
+  "reportSeriesWorstCell": "Peor celda",
+  "profileTitle": "Perfil de la batería",
+  "profileIntro": "Cuatro cosas que el BMS no puede saber y que cambian lo que la app puede decirte. Todas se pueden dejar en blanco.",
+  "profileName": "Nombre",
+  "profileSoldAs": "Vendida como",
+  "profileSoldAsHint": "Capacidad que te dijeron",
+  "profileChemistry": "Química de las celdas",
+  "profileChemistryWhy": "De esto dependen los rangos seguros. LFP a 4,2 V por celda es un incendio; NMC a 3,6 V es una batería a medio cargar. Si no lo sabes, déjalo en \"No lo sé\" y la app no auditará voltajes.",
+  "profileChemistryFromOvp": "El BMS está configurado a {value} V por celda, lo que sugiere {chemistry}.",
+  "@profileChemistryFromOvp": {
+    "placeholders": {
+      "chemistry": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "profileChemistryFromCell": "Se ha visto una celda a {value} V, así que no es LFP: sugiere {chemistry}.",
+  "@profileChemistryFromCell": {
+    "placeholders": {
+      "chemistry": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "profileAcquired": "La tengo desde",
+  "profileAcquiredUnknown": "Sin fecha",
+  "profileAcquiredClear": "Quitar la fecha",
+  "profileAgeYears": "{years} años contigo",
+  "@profileAgeYears": {
+    "placeholders": {
+      "years": {
+        "type": "String"
+      }
+    }
+  },
+  "profileCaptureBaseline": "Guardar el estado de hoy como día uno",
+  "profileCaptureBaselineHint": "Celdas, resistencias y configuración del BMS tal como están ahora. Todo lo que la app diga después sobre derivas se compara contra esto. Mejor con la batería en reposo.",
+  "profileSave": "Guardar",
+  "profileLater": "Ahora no",
+  "profileEdit": "Editar el perfil",
+  "profileComplete": "Completar el perfil",
+  "profileBaseline": "Día uno",
+  "profileBaselineMissing": "Sin guardar",
+  "profileNoBaselineIntro": "Sin un día uno, \"el delta se ha abierto\" solo significa \"desde que la app empezó a mirar\". Guardar el estado de hoy le da a todo lo demás un punto de partida.",
+  "profileSinceDayOne": "Desde el día uno ({date})",
+  "@profileSinceDayOne": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "profileNotComparable": "Una de las dos lecturas se tomó con la batería tirando corriente, así que las celdas no son comparables. Mira esto con la moto parada.",
+  "profileDeltaThenNow": "Diferencia entre celdas",
+  "profileWorstDrift": "La que más se ha ido",
+  "profileWorstDriftValue": "Celda {cell}, {mv} mV",
+  "@profileWorstDriftValue": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      },
+      "mv": {
+        "type": "String"
+      }
+    }
+  },
+  "profileCyclesSince": "Ciclos desde entonces",
+  "profileConfigChanged": "Configuración del BMS",
+  "profileConfigUnchanged": "Igual que el día uno",
+  "profileConfigChangedCount": "{count} ajuste(s) cambiado(s)",
+  "@profileConfigChangedCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "chemistryLfp": "LFP",
+  "chemistryNmc": "NMC / Li-ion",
+  "chemistryUnknown": "No lo sé",
+  "configCellOvp": "Corte por celda alta",
+  "configCellUvp": "Corte por celda baja",
+  "configBalanceStart": "Empieza a balancear",
+  "configSoc100": "Voltaje del 100 %",
+  "configSoc0": "Voltaje del 0 %",
+  "configMaxCharge": "Corriente máxima de carga",
+  "configMaxDischarge": "Corriente máxima de descarga",
+  "configMaxBalance": "Corriente de balanceo",
+  "configChargeOtp": "Corte por calor cargando",
+  "configDischargeOtp": "Corte por calor descargando",
+  "configChargeUtp": "Corte por frío cargando",
+  "configMosfetOtp": "Corte por calor del MOSFET",
+  "configNominalCapacity": "Capacidad configurada",
+  "configCellCount": "Número de celdas",
+  "configChargeSwitch": "Carga habilitada",
+  "configDischargeSwitch": "Descarga habilitada",
+  "configBalancerSwitch": "Balanceador",
+  "configOn": "Sí",
+  "configOff": "No",
+  "reportSectionDayOne": "El d\u00eda uno de esta bater\u00eda",
+  "reportDayOneNote": "Comparaci\u00f3n contra el estado guardado el d\u00eda que se dio de alta la bater\u00eda. No es una medida de capacidad: una foto de los voltajes no puede medir lo que aguanta un pack, y aqu\u00ed no se presenta como tal."
 }

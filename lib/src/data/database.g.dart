@@ -75,6 +75,29 @@ class $DevicesTable extends Devices with TableInfo<$DevicesTable, Device> {
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _chemistryMeta = const VerificationMeta(
+    'chemistry',
+  );
+  @override
+  late final GeneratedColumn<String> chemistry = GeneratedColumn<String>(
+    'chemistry',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _acquiredAtMeta = const VerificationMeta(
+    'acquiredAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> acquiredAt = GeneratedColumn<DateTime>(
+    'acquired_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _firstSeenAtMeta = const VerificationMeta(
     'firstSeenAt',
   );
@@ -118,6 +141,8 @@ class $DevicesTable extends Devices with TableInfo<$DevicesTable, Device> {
     model,
     catalogueCapacityAh,
     catalogueFromBms,
+    chemistry,
+    acquiredAt,
     firstSeenAt,
     lastSeenAt,
     demo,
@@ -176,6 +201,18 @@ class $DevicesTable extends Devices with TableInfo<$DevicesTable, Device> {
           data['catalogue_from_bms']!,
           _catalogueFromBmsMeta,
         ),
+      );
+    }
+    if (data.containsKey('chemistry')) {
+      context.handle(
+        _chemistryMeta,
+        chemistry.isAcceptableOrUnknown(data['chemistry']!, _chemistryMeta),
+      );
+    }
+    if (data.containsKey('acquired_at')) {
+      context.handle(
+        _acquiredAtMeta,
+        acquiredAt.isAcceptableOrUnknown(data['acquired_at']!, _acquiredAtMeta),
       );
     }
     if (data.containsKey('first_seen_at')) {
@@ -239,6 +276,14 @@ class $DevicesTable extends Devices with TableInfo<$DevicesTable, Device> {
         DriftSqlType.bool,
         data['${effectivePrefix}catalogue_from_bms'],
       )!,
+      chemistry: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}chemistry'],
+      )!,
+      acquiredAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}acquired_at'],
+      ),
       firstSeenAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}first_seen_at'],
@@ -290,6 +335,20 @@ class Device extends DataClass implements Insertable<Device> {
   /// section is built on, and the one place a borrowed figure would quietly
   /// erase a real finding.
   final bool catalogueFromBms;
+
+  /// What the cells are made of, by [CellChemistry] name, or empty when
+  /// nobody has said.
+  ///
+  /// Empty is a real answer and the default: every safe range in the
+  /// configuration audit hangs off this, the two chemistries disagree by a
+  /// volt a cell, and an audit run against a guess would be worse than no
+  /// audit at all.
+  final String chemistry;
+
+  /// When the rider got the pack, if they said. Not when the app first saw
+  /// it: a battery bought used in 2021 and met by this app last week is four
+  /// years old, and the difference is the whole point of asking.
+  final DateTime? acquiredAt;
   final DateTime firstSeenAt;
   final DateTime lastSeenAt;
 
@@ -302,6 +361,8 @@ class Device extends DataClass implements Insertable<Device> {
     required this.model,
     this.catalogueCapacityAh,
     required this.catalogueFromBms,
+    required this.chemistry,
+    this.acquiredAt,
     required this.firstSeenAt,
     required this.lastSeenAt,
     required this.demo,
@@ -317,6 +378,10 @@ class Device extends DataClass implements Insertable<Device> {
       map['catalogue_capacity_ah'] = Variable<double>(catalogueCapacityAh);
     }
     map['catalogue_from_bms'] = Variable<bool>(catalogueFromBms);
+    map['chemistry'] = Variable<String>(chemistry);
+    if (!nullToAbsent || acquiredAt != null) {
+      map['acquired_at'] = Variable<DateTime>(acquiredAt);
+    }
     map['first_seen_at'] = Variable<DateTime>(firstSeenAt);
     map['last_seen_at'] = Variable<DateTime>(lastSeenAt);
     map['demo'] = Variable<bool>(demo);
@@ -333,6 +398,10 @@ class Device extends DataClass implements Insertable<Device> {
           ? const Value.absent()
           : Value(catalogueCapacityAh),
       catalogueFromBms: Value(catalogueFromBms),
+      chemistry: Value(chemistry),
+      acquiredAt: acquiredAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(acquiredAt),
       firstSeenAt: Value(firstSeenAt),
       lastSeenAt: Value(lastSeenAt),
       demo: Value(demo),
@@ -353,6 +422,8 @@ class Device extends DataClass implements Insertable<Device> {
         json['catalogueCapacityAh'],
       ),
       catalogueFromBms: serializer.fromJson<bool>(json['catalogueFromBms']),
+      chemistry: serializer.fromJson<String>(json['chemistry']),
+      acquiredAt: serializer.fromJson<DateTime?>(json['acquiredAt']),
       firstSeenAt: serializer.fromJson<DateTime>(json['firstSeenAt']),
       lastSeenAt: serializer.fromJson<DateTime>(json['lastSeenAt']),
       demo: serializer.fromJson<bool>(json['demo']),
@@ -368,6 +439,8 @@ class Device extends DataClass implements Insertable<Device> {
       'model': serializer.toJson<String>(model),
       'catalogueCapacityAh': serializer.toJson<double?>(catalogueCapacityAh),
       'catalogueFromBms': serializer.toJson<bool>(catalogueFromBms),
+      'chemistry': serializer.toJson<String>(chemistry),
+      'acquiredAt': serializer.toJson<DateTime?>(acquiredAt),
       'firstSeenAt': serializer.toJson<DateTime>(firstSeenAt),
       'lastSeenAt': serializer.toJson<DateTime>(lastSeenAt),
       'demo': serializer.toJson<bool>(demo),
@@ -381,6 +454,8 @@ class Device extends DataClass implements Insertable<Device> {
     String? model,
     Value<double?> catalogueCapacityAh = const Value.absent(),
     bool? catalogueFromBms,
+    String? chemistry,
+    Value<DateTime?> acquiredAt = const Value.absent(),
     DateTime? firstSeenAt,
     DateTime? lastSeenAt,
     bool? demo,
@@ -393,6 +468,8 @@ class Device extends DataClass implements Insertable<Device> {
         ? catalogueCapacityAh.value
         : this.catalogueCapacityAh,
     catalogueFromBms: catalogueFromBms ?? this.catalogueFromBms,
+    chemistry: chemistry ?? this.chemistry,
+    acquiredAt: acquiredAt.present ? acquiredAt.value : this.acquiredAt,
     firstSeenAt: firstSeenAt ?? this.firstSeenAt,
     lastSeenAt: lastSeenAt ?? this.lastSeenAt,
     demo: demo ?? this.demo,
@@ -411,6 +488,10 @@ class Device extends DataClass implements Insertable<Device> {
       catalogueFromBms: data.catalogueFromBms.present
           ? data.catalogueFromBms.value
           : this.catalogueFromBms,
+      chemistry: data.chemistry.present ? data.chemistry.value : this.chemistry,
+      acquiredAt: data.acquiredAt.present
+          ? data.acquiredAt.value
+          : this.acquiredAt,
       firstSeenAt: data.firstSeenAt.present
           ? data.firstSeenAt.value
           : this.firstSeenAt,
@@ -430,6 +511,8 @@ class Device extends DataClass implements Insertable<Device> {
           ..write('model: $model, ')
           ..write('catalogueCapacityAh: $catalogueCapacityAh, ')
           ..write('catalogueFromBms: $catalogueFromBms, ')
+          ..write('chemistry: $chemistry, ')
+          ..write('acquiredAt: $acquiredAt, ')
           ..write('firstSeenAt: $firstSeenAt, ')
           ..write('lastSeenAt: $lastSeenAt, ')
           ..write('demo: $demo')
@@ -445,6 +528,8 @@ class Device extends DataClass implements Insertable<Device> {
     model,
     catalogueCapacityAh,
     catalogueFromBms,
+    chemistry,
+    acquiredAt,
     firstSeenAt,
     lastSeenAt,
     demo,
@@ -459,6 +544,8 @@ class Device extends DataClass implements Insertable<Device> {
           other.model == this.model &&
           other.catalogueCapacityAh == this.catalogueCapacityAh &&
           other.catalogueFromBms == this.catalogueFromBms &&
+          other.chemistry == this.chemistry &&
+          other.acquiredAt == this.acquiredAt &&
           other.firstSeenAt == this.firstSeenAt &&
           other.lastSeenAt == this.lastSeenAt &&
           other.demo == this.demo);
@@ -471,6 +558,8 @@ class DevicesCompanion extends UpdateCompanion<Device> {
   final Value<String> model;
   final Value<double?> catalogueCapacityAh;
   final Value<bool> catalogueFromBms;
+  final Value<String> chemistry;
+  final Value<DateTime?> acquiredAt;
   final Value<DateTime> firstSeenAt;
   final Value<DateTime> lastSeenAt;
   final Value<bool> demo;
@@ -482,6 +571,8 @@ class DevicesCompanion extends UpdateCompanion<Device> {
     this.model = const Value.absent(),
     this.catalogueCapacityAh = const Value.absent(),
     this.catalogueFromBms = const Value.absent(),
+    this.chemistry = const Value.absent(),
+    this.acquiredAt = const Value.absent(),
     this.firstSeenAt = const Value.absent(),
     this.lastSeenAt = const Value.absent(),
     this.demo = const Value.absent(),
@@ -494,6 +585,8 @@ class DevicesCompanion extends UpdateCompanion<Device> {
     this.model = const Value.absent(),
     this.catalogueCapacityAh = const Value.absent(),
     this.catalogueFromBms = const Value.absent(),
+    this.chemistry = const Value.absent(),
+    this.acquiredAt = const Value.absent(),
     required DateTime firstSeenAt,
     required DateTime lastSeenAt,
     this.demo = const Value.absent(),
@@ -508,6 +601,8 @@ class DevicesCompanion extends UpdateCompanion<Device> {
     Expression<String>? model,
     Expression<double>? catalogueCapacityAh,
     Expression<bool>? catalogueFromBms,
+    Expression<String>? chemistry,
+    Expression<DateTime>? acquiredAt,
     Expression<DateTime>? firstSeenAt,
     Expression<DateTime>? lastSeenAt,
     Expression<bool>? demo,
@@ -521,6 +616,8 @@ class DevicesCompanion extends UpdateCompanion<Device> {
       if (catalogueCapacityAh != null)
         'catalogue_capacity_ah': catalogueCapacityAh,
       if (catalogueFromBms != null) 'catalogue_from_bms': catalogueFromBms,
+      if (chemistry != null) 'chemistry': chemistry,
+      if (acquiredAt != null) 'acquired_at': acquiredAt,
       if (firstSeenAt != null) 'first_seen_at': firstSeenAt,
       if (lastSeenAt != null) 'last_seen_at': lastSeenAt,
       if (demo != null) 'demo': demo,
@@ -535,6 +632,8 @@ class DevicesCompanion extends UpdateCompanion<Device> {
     Value<String>? model,
     Value<double?>? catalogueCapacityAh,
     Value<bool>? catalogueFromBms,
+    Value<String>? chemistry,
+    Value<DateTime?>? acquiredAt,
     Value<DateTime>? firstSeenAt,
     Value<DateTime>? lastSeenAt,
     Value<bool>? demo,
@@ -547,6 +646,8 @@ class DevicesCompanion extends UpdateCompanion<Device> {
       model: model ?? this.model,
       catalogueCapacityAh: catalogueCapacityAh ?? this.catalogueCapacityAh,
       catalogueFromBms: catalogueFromBms ?? this.catalogueFromBms,
+      chemistry: chemistry ?? this.chemistry,
+      acquiredAt: acquiredAt ?? this.acquiredAt,
       firstSeenAt: firstSeenAt ?? this.firstSeenAt,
       lastSeenAt: lastSeenAt ?? this.lastSeenAt,
       demo: demo ?? this.demo,
@@ -577,6 +678,12 @@ class DevicesCompanion extends UpdateCompanion<Device> {
     if (catalogueFromBms.present) {
       map['catalogue_from_bms'] = Variable<bool>(catalogueFromBms.value);
     }
+    if (chemistry.present) {
+      map['chemistry'] = Variable<String>(chemistry.value);
+    }
+    if (acquiredAt.present) {
+      map['acquired_at'] = Variable<DateTime>(acquiredAt.value);
+    }
     if (firstSeenAt.present) {
       map['first_seen_at'] = Variable<DateTime>(firstSeenAt.value);
     }
@@ -601,6 +708,8 @@ class DevicesCompanion extends UpdateCompanion<Device> {
           ..write('model: $model, ')
           ..write('catalogueCapacityAh: $catalogueCapacityAh, ')
           ..write('catalogueFromBms: $catalogueFromBms, ')
+          ..write('chemistry: $chemistry, ')
+          ..write('acquiredAt: $acquiredAt, ')
           ..write('firstSeenAt: $firstSeenAt, ')
           ..write('lastSeenAt: $lastSeenAt, ')
           ..write('demo: $demo, ')
@@ -6064,6 +6173,323 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
   }
 }
 
+class $BaselinesTable extends Baselines
+    with TableInfo<$BaselinesTable, Baseline> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BaselinesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _capturedAtMeta = const VerificationMeta(
+    'capturedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> capturedAt = GeneratedColumn<DateTime>(
+    'captured_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _jsonMeta = const VerificationMeta('json');
+  @override
+  late final GeneratedColumn<String> json = GeneratedColumn<String>(
+    'json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [deviceId, capturedAt, json, note];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'baselines';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Baseline> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('device_id')) {
+      context.handle(
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_deviceIdMeta);
+    }
+    if (data.containsKey('captured_at')) {
+      context.handle(
+        _capturedAtMeta,
+        capturedAt.isAcceptableOrUnknown(data['captured_at']!, _capturedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_capturedAtMeta);
+    }
+    if (data.containsKey('json')) {
+      context.handle(
+        _jsonMeta,
+        json.isAcceptableOrUnknown(data['json']!, _jsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_jsonMeta);
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {deviceId};
+  @override
+  Baseline map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Baseline(
+      deviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_id'],
+      )!,
+      capturedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}captured_at'],
+      )!,
+      json: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}json'],
+      )!,
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      )!,
+    );
+  }
+
+  @override
+  $BaselinesTable createAlias(String alias) {
+    return $BaselinesTable(attachedDatabase, alias);
+  }
+}
+
+class Baseline extends DataClass implements Insertable<Baseline> {
+  /// The pack it belongs to. One baseline per battery, so this is the key.
+  final String deviceId;
+  final DateTime capturedAt;
+
+  /// A [PackBaseline] as JSON.
+  final String json;
+
+  /// The rider's own words about the day, if any: where it came from, what
+  /// the seller said, what it cost.
+  final String note;
+  const Baseline({
+    required this.deviceId,
+    required this.capturedAt,
+    required this.json,
+    required this.note,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['device_id'] = Variable<String>(deviceId);
+    map['captured_at'] = Variable<DateTime>(capturedAt);
+    map['json'] = Variable<String>(json);
+    map['note'] = Variable<String>(note);
+    return map;
+  }
+
+  BaselinesCompanion toCompanion(bool nullToAbsent) {
+    return BaselinesCompanion(
+      deviceId: Value(deviceId),
+      capturedAt: Value(capturedAt),
+      json: Value(json),
+      note: Value(note),
+    );
+  }
+
+  factory Baseline.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Baseline(
+      deviceId: serializer.fromJson<String>(json['deviceId']),
+      capturedAt: serializer.fromJson<DateTime>(json['capturedAt']),
+      json: serializer.fromJson<String>(json['json']),
+      note: serializer.fromJson<String>(json['note']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'deviceId': serializer.toJson<String>(deviceId),
+      'capturedAt': serializer.toJson<DateTime>(capturedAt),
+      'json': serializer.toJson<String>(json),
+      'note': serializer.toJson<String>(note),
+    };
+  }
+
+  Baseline copyWith({
+    String? deviceId,
+    DateTime? capturedAt,
+    String? json,
+    String? note,
+  }) => Baseline(
+    deviceId: deviceId ?? this.deviceId,
+    capturedAt: capturedAt ?? this.capturedAt,
+    json: json ?? this.json,
+    note: note ?? this.note,
+  );
+  Baseline copyWithCompanion(BaselinesCompanion data) {
+    return Baseline(
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      capturedAt: data.capturedAt.present
+          ? data.capturedAt.value
+          : this.capturedAt,
+      json: data.json.present ? data.json.value : this.json,
+      note: data.note.present ? data.note.value : this.note,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Baseline(')
+          ..write('deviceId: $deviceId, ')
+          ..write('capturedAt: $capturedAt, ')
+          ..write('json: $json, ')
+          ..write('note: $note')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(deviceId, capturedAt, json, note);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Baseline &&
+          other.deviceId == this.deviceId &&
+          other.capturedAt == this.capturedAt &&
+          other.json == this.json &&
+          other.note == this.note);
+}
+
+class BaselinesCompanion extends UpdateCompanion<Baseline> {
+  final Value<String> deviceId;
+  final Value<DateTime> capturedAt;
+  final Value<String> json;
+  final Value<String> note;
+  final Value<int> rowid;
+  const BaselinesCompanion({
+    this.deviceId = const Value.absent(),
+    this.capturedAt = const Value.absent(),
+    this.json = const Value.absent(),
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  BaselinesCompanion.insert({
+    required String deviceId,
+    required DateTime capturedAt,
+    required String json,
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : deviceId = Value(deviceId),
+       capturedAt = Value(capturedAt),
+       json = Value(json);
+  static Insertable<Baseline> custom({
+    Expression<String>? deviceId,
+    Expression<DateTime>? capturedAt,
+    Expression<String>? json,
+    Expression<String>? note,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (deviceId != null) 'device_id': deviceId,
+      if (capturedAt != null) 'captured_at': capturedAt,
+      if (json != null) 'json': json,
+      if (note != null) 'note': note,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  BaselinesCompanion copyWith({
+    Value<String>? deviceId,
+    Value<DateTime>? capturedAt,
+    Value<String>? json,
+    Value<String>? note,
+    Value<int>? rowid,
+  }) {
+    return BaselinesCompanion(
+      deviceId: deviceId ?? this.deviceId,
+      capturedAt: capturedAt ?? this.capturedAt,
+      json: json ?? this.json,
+      note: note ?? this.note,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (capturedAt.present) {
+      map['captured_at'] = Variable<DateTime>(capturedAt.value);
+    }
+    if (json.present) {
+      map['json'] = Variable<String>(json.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BaselinesCompanion(')
+          ..write('deviceId: $deviceId, ')
+          ..write('capturedAt: $capturedAt, ')
+          ..write('json: $json, ')
+          ..write('note: $note, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -6076,6 +6502,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $MaintenanceEventsTable maintenanceEvents =
       $MaintenanceEventsTable(this);
   late final $InspectionsTable inspections = $InspectionsTable(this);
+  late final $BaselinesTable baselines = $BaselinesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -6089,6 +6516,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     capacityTests,
     maintenanceEvents,
     inspections,
+    baselines,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -6110,6 +6538,8 @@ typedef $$DevicesTableCreateCompanionBuilder =
       Value<String> model,
       Value<double?> catalogueCapacityAh,
       Value<bool> catalogueFromBms,
+      Value<String> chemistry,
+      Value<DateTime?> acquiredAt,
       required DateTime firstSeenAt,
       required DateTime lastSeenAt,
       Value<bool> demo,
@@ -6123,6 +6553,8 @@ typedef $$DevicesTableUpdateCompanionBuilder =
       Value<String> model,
       Value<double?> catalogueCapacityAh,
       Value<bool> catalogueFromBms,
+      Value<String> chemistry,
+      Value<DateTime?> acquiredAt,
       Value<DateTime> firstSeenAt,
       Value<DateTime> lastSeenAt,
       Value<bool> demo,
@@ -6165,6 +6597,16 @@ class $$DevicesTableFilterComposer
 
   ColumnFilters<bool> get catalogueFromBms => $composableBuilder(
     column: $table.catalogueFromBms,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get chemistry => $composableBuilder(
+    column: $table.chemistry,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get acquiredAt => $composableBuilder(
+    column: $table.acquiredAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6223,6 +6665,16 @@ class $$DevicesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get chemistry => $composableBuilder(
+    column: $table.chemistry,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get acquiredAt => $composableBuilder(
+    column: $table.acquiredAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get firstSeenAt => $composableBuilder(
     column: $table.firstSeenAt,
     builder: (column) => ColumnOrderings(column),
@@ -6269,6 +6721,14 @@ class $$DevicesTableAnnotationComposer
 
   GeneratedColumn<bool> get catalogueFromBms => $composableBuilder(
     column: $table.catalogueFromBms,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get chemistry =>
+      $composableBuilder(column: $table.chemistry, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get acquiredAt => $composableBuilder(
+    column: $table.acquiredAt,
     builder: (column) => column,
   );
 
@@ -6320,6 +6780,8 @@ class $$DevicesTableTableManager
                 Value<String> model = const Value.absent(),
                 Value<double?> catalogueCapacityAh = const Value.absent(),
                 Value<bool> catalogueFromBms = const Value.absent(),
+                Value<String> chemistry = const Value.absent(),
+                Value<DateTime?> acquiredAt = const Value.absent(),
                 Value<DateTime> firstSeenAt = const Value.absent(),
                 Value<DateTime> lastSeenAt = const Value.absent(),
                 Value<bool> demo = const Value.absent(),
@@ -6331,6 +6793,8 @@ class $$DevicesTableTableManager
                 model: model,
                 catalogueCapacityAh: catalogueCapacityAh,
                 catalogueFromBms: catalogueFromBms,
+                chemistry: chemistry,
+                acquiredAt: acquiredAt,
                 firstSeenAt: firstSeenAt,
                 lastSeenAt: lastSeenAt,
                 demo: demo,
@@ -6344,6 +6808,8 @@ class $$DevicesTableTableManager
                 Value<String> model = const Value.absent(),
                 Value<double?> catalogueCapacityAh = const Value.absent(),
                 Value<bool> catalogueFromBms = const Value.absent(),
+                Value<String> chemistry = const Value.absent(),
+                Value<DateTime?> acquiredAt = const Value.absent(),
                 required DateTime firstSeenAt,
                 required DateTime lastSeenAt,
                 Value<bool> demo = const Value.absent(),
@@ -6355,6 +6821,8 @@ class $$DevicesTableTableManager
                 model: model,
                 catalogueCapacityAh: catalogueCapacityAh,
                 catalogueFromBms: catalogueFromBms,
+                chemistry: chemistry,
+                acquiredAt: acquiredAt,
                 firstSeenAt: firstSeenAt,
                 lastSeenAt: lastSeenAt,
                 demo: demo,
@@ -9109,6 +9577,183 @@ typedef $$InspectionsTableProcessedTableManager =
       Inspection,
       PrefetchHooks Function()
     >;
+typedef $$BaselinesTableCreateCompanionBuilder =
+    BaselinesCompanion Function({
+      required String deviceId,
+      required DateTime capturedAt,
+      required String json,
+      Value<String> note,
+      Value<int> rowid,
+    });
+typedef $$BaselinesTableUpdateCompanionBuilder =
+    BaselinesCompanion Function({
+      Value<String> deviceId,
+      Value<DateTime> capturedAt,
+      Value<String> json,
+      Value<String> note,
+      Value<int> rowid,
+    });
+
+class $$BaselinesTableFilterComposer
+    extends Composer<_$AppDatabase, $BaselinesTable> {
+  $$BaselinesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get capturedAt => $composableBuilder(
+    column: $table.capturedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get json => $composableBuilder(
+    column: $table.json,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$BaselinesTableOrderingComposer
+    extends Composer<_$AppDatabase, $BaselinesTable> {
+  $$BaselinesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get capturedAt => $composableBuilder(
+    column: $table.capturedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get json => $composableBuilder(
+    column: $table.json,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$BaselinesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BaselinesTable> {
+  $$BaselinesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get capturedAt => $composableBuilder(
+    column: $table.capturedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get json =>
+      $composableBuilder(column: $table.json, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+}
+
+class $$BaselinesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BaselinesTable,
+          Baseline,
+          $$BaselinesTableFilterComposer,
+          $$BaselinesTableOrderingComposer,
+          $$BaselinesTableAnnotationComposer,
+          $$BaselinesTableCreateCompanionBuilder,
+          $$BaselinesTableUpdateCompanionBuilder,
+          (Baseline, BaseReferences<_$AppDatabase, $BaselinesTable, Baseline>),
+          Baseline,
+          PrefetchHooks Function()
+        > {
+  $$BaselinesTableTableManager(_$AppDatabase db, $BaselinesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BaselinesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BaselinesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BaselinesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> deviceId = const Value.absent(),
+                Value<DateTime> capturedAt = const Value.absent(),
+                Value<String> json = const Value.absent(),
+                Value<String> note = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BaselinesCompanion(
+                deviceId: deviceId,
+                capturedAt: capturedAt,
+                json: json,
+                note: note,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String deviceId,
+                required DateTime capturedAt,
+                required String json,
+                Value<String> note = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BaselinesCompanion.insert(
+                deviceId: deviceId,
+                capturedAt: capturedAt,
+                json: json,
+                note: note,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$BaselinesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BaselinesTable,
+      Baseline,
+      $$BaselinesTableFilterComposer,
+      $$BaselinesTableOrderingComposer,
+      $$BaselinesTableAnnotationComposer,
+      $$BaselinesTableCreateCompanionBuilder,
+      $$BaselinesTableUpdateCompanionBuilder,
+      (Baseline, BaseReferences<_$AppDatabase, $BaselinesTable, Baseline>),
+      Baseline,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -9129,4 +9774,6 @@ class $AppDatabaseManager {
       $$MaintenanceEventsTableTableManager(_db, _db.maintenanceEvents);
   $$InspectionsTableTableManager get inspections =>
       $$InspectionsTableTableManager(_db, _db.inspections);
+  $$BaselinesTableTableManager get baselines =>
+      $$BaselinesTableTableManager(_db, _db.baselines);
 }

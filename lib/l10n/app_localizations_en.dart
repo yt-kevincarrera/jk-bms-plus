@@ -3680,4 +3680,187 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get reportSeriesWorstCell => 'Worst cell';
+
+  @override
+  String get profileTitle => 'Battery profile';
+
+  @override
+  String get profileIntro =>
+      'Four things the BMS cannot know that change what the app can tell you. All of them can be left blank.';
+
+  @override
+  String get profileName => 'Name';
+
+  @override
+  String get profileSoldAs => 'Sold as';
+
+  @override
+  String get profileSoldAsHint => 'The capacity you were told';
+
+  @override
+  String get profileChemistry => 'Cell chemistry';
+
+  @override
+  String get profileChemistryWhy =>
+      'Every safe range hangs off this. LFP at 4.2 V a cell is a fire; NMC at 3.6 V is a half-charged battery. If you do not know, leave it at \"Not sure\" and the app will not audit voltages.';
+
+  @override
+  String profileChemistryFromOvp(String chemistry, String value) {
+    return 'The BMS is set to $value V a cell, which suggests $chemistry.';
+  }
+
+  @override
+  String profileChemistryFromCell(String chemistry, String value) {
+    return 'A cell has been seen at $value V, so it is not LFP: suggests $chemistry.';
+  }
+
+  @override
+  String get profileAcquired => 'I have had it since';
+
+  @override
+  String get profileAcquiredUnknown => 'No date';
+
+  @override
+  String get profileAcquiredClear => 'Clear the date';
+
+  @override
+  String profileAgeYears(String years) {
+    return '$years years with you';
+  }
+
+  @override
+  String get profileCaptureBaseline => 'Keep today\'s state as day one';
+
+  @override
+  String get profileCaptureBaselineHint =>
+      'Cells, resistances and the BMS configuration exactly as they are now. Everything the app later says about drift is measured against this. Best done with the pack at rest.';
+
+  @override
+  String get profileSave => 'Save';
+
+  @override
+  String get profileLater => 'Not now';
+
+  @override
+  String get profileEdit => 'Edit the profile';
+
+  @override
+  String get profileComplete => 'Complete the profile';
+
+  @override
+  String get profileBaseline => 'Day one';
+
+  @override
+  String get profileBaselineMissing => 'Not kept';
+
+  @override
+  String get profileNoBaselineIntro =>
+      'Without a day one, \"the delta has opened up\" only means \"since the app started looking\". Keeping today\'s state gives everything else a starting point.';
+
+  @override
+  String profileSinceDayOne(String date) {
+    return 'Since day one ($date)';
+  }
+
+  @override
+  String get profileNotComparable =>
+      'One of the two readings was taken with the pack pulling current, so the cells are not comparable. Look at this with the bike standing still.';
+
+  @override
+  String get profileDeltaThenNow => 'Spread between cells';
+
+  @override
+  String get profileWorstDrift => 'The one that moved most';
+
+  @override
+  String profileWorstDriftValue(String cell, String mv) {
+    return 'Cell $cell, $mv mV';
+  }
+
+  @override
+  String get profileCyclesSince => 'Cycles since then';
+
+  @override
+  String get profileConfigChanged => 'BMS configuration';
+
+  @override
+  String get profileConfigUnchanged => 'Same as day one';
+
+  @override
+  String profileConfigChangedCount(String count) {
+    return '$count setting(s) changed';
+  }
+
+  @override
+  String get chemistryLfp => 'LFP';
+
+  @override
+  String get chemistryNmc => 'NMC / Li-ion';
+
+  @override
+  String get chemistryUnknown => 'Not sure';
+
+  @override
+  String get configCellOvp => 'High-cell cutoff';
+
+  @override
+  String get configCellUvp => 'Low-cell cutoff';
+
+  @override
+  String get configBalanceStart => 'Balancing starts at';
+
+  @override
+  String get configSoc100 => 'Voltage called 100 %';
+
+  @override
+  String get configSoc0 => 'Voltage called 0 %';
+
+  @override
+  String get configMaxCharge => 'Maximum charge current';
+
+  @override
+  String get configMaxDischarge => 'Maximum discharge current';
+
+  @override
+  String get configMaxBalance => 'Balance current';
+
+  @override
+  String get configChargeOtp => 'Heat cutoff while charging';
+
+  @override
+  String get configDischargeOtp => 'Heat cutoff while discharging';
+
+  @override
+  String get configChargeUtp => 'Cold cutoff while charging';
+
+  @override
+  String get configMosfetOtp => 'MOSFET heat cutoff';
+
+  @override
+  String get configNominalCapacity => 'Configured capacity';
+
+  @override
+  String get configCellCount => 'Number of cells';
+
+  @override
+  String get configChargeSwitch => 'Charging enabled';
+
+  @override
+  String get configDischargeSwitch => 'Discharging enabled';
+
+  @override
+  String get configBalancerSwitch => 'Balancer';
+
+  @override
+  String get configOn => 'Yes';
+
+  @override
+  String get configOff => 'No';
+
+  @override
+  String get reportSectionDayOne => 'This battery\'s day one';
+
+  @override
+  String get reportDayOneNote =>
+      'Compared against the state kept on the day the battery was taken on. Not a capacity measurement: a snapshot of the voltages cannot measure what a pack holds, and nothing here is presented as if it could.';
 }

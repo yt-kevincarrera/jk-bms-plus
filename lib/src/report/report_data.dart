@@ -5,6 +5,8 @@ import '../metrics/advice_engine.dart';
 import '../metrics/cell_drift.dart';
 import '../metrics/degradation.dart';
 import '../metrics/range_outlook.dart';
+import '../pack/chemistry.dart';
+import '../pack/pack_baseline.dart';
 import 'certificate.dart';
 
 /// Everything the "my battery" sheet prints, gathered in one place.
@@ -47,6 +49,10 @@ class PackReportData {
     this.tripCount = 0,
     this.totalKm = 0,
     this.maintenance = const [],
+    this.chemistry = CellChemistry.unknown,
+    this.acquiredAt,
+    this.baseline,
+    this.sinceDayOne,
   });
 
   final DateTime generatedAt;
@@ -98,6 +104,18 @@ class PackReportData {
 
   final List<MaintenanceEvent> maintenance;
 
+  /// What the rider said the pack is, and since when. Neither can be read
+  /// off the wire, and both change what the sheet is allowed to claim.
+  final CellChemistry chemistry;
+  final DateTime? acquiredAt;
+
+  /// The day-one copy, when one was kept.
+  final PackBaseline? baseline;
+
+  /// Today against that day. Absent when there is no baseline, or when the
+  /// two readings cannot be lined up.
+  final BaselineComparison? sinceDayOne;
+
   /// Assembles the sheet from what a screen already holds.
   ///
   /// Takes the analyses rather than the raw rows, so the numbers on paper are
@@ -120,6 +138,8 @@ class PackReportData {
     double? whPerKm,
     int capacityTests = 0,
     String appVersion = '',
+    PackBaseline? baseline,
+    BaselineComparison? sinceDayOne,
   }) {
     final cells = last == null
         ? const <double>[]
@@ -156,6 +176,10 @@ class PackReportData {
       tripCount: trips.length,
       totalKm: trips.fold<double>(0, (a, t) => a + t.distanceKm),
       maintenance: maintenance,
+      chemistry: CellChemistry.byName(device.chemistry),
+      acquiredAt: device.acquiredAt,
+      baseline: baseline,
+      sinceDayOne: sinceDayOne,
     );
   }
 }

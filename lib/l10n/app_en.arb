@@ -2192,5 +2192,111 @@
   },
   "reportSectionSeries": "Earlier runs on this pack",
   "reportSeriesNote": "Each row is an earlier inspection stored on the phone that signed this sheet. Repeating the test is what tells a bad cell from a bad reading.",
-  "reportSeriesWorstCell": "Worst cell"
+  "reportSeriesWorstCell": "Worst cell",
+  "profileTitle": "Battery profile",
+  "profileIntro": "Four things the BMS cannot know that change what the app can tell you. All of them can be left blank.",
+  "profileName": "Name",
+  "profileSoldAs": "Sold as",
+  "profileSoldAsHint": "The capacity you were told",
+  "profileChemistry": "Cell chemistry",
+  "profileChemistryWhy": "Every safe range hangs off this. LFP at 4.2 V a cell is a fire; NMC at 3.6 V is a half-charged battery. If you do not know, leave it at \"Not sure\" and the app will not audit voltages.",
+  "profileChemistryFromOvp": "The BMS is set to {value} V a cell, which suggests {chemistry}.",
+  "@profileChemistryFromOvp": {
+    "placeholders": {
+      "chemistry": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "profileChemistryFromCell": "A cell has been seen at {value} V, so it is not LFP: suggests {chemistry}.",
+  "@profileChemistryFromCell": {
+    "placeholders": {
+      "chemistry": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "profileAcquired": "I have had it since",
+  "profileAcquiredUnknown": "No date",
+  "profileAcquiredClear": "Clear the date",
+  "profileAgeYears": "{years} years with you",
+  "@profileAgeYears": {
+    "placeholders": {
+      "years": {
+        "type": "String"
+      }
+    }
+  },
+  "profileCaptureBaseline": "Keep today's state as day one",
+  "profileCaptureBaselineHint": "Cells, resistances and the BMS configuration exactly as they are now. Everything the app later says about drift is measured against this. Best done with the pack at rest.",
+  "profileSave": "Save",
+  "profileLater": "Not now",
+  "profileEdit": "Edit the profile",
+  "profileComplete": "Complete the profile",
+  "profileBaseline": "Day one",
+  "profileBaselineMissing": "Not kept",
+  "profileNoBaselineIntro": "Without a day one, \"the delta has opened up\" only means \"since the app started looking\". Keeping today's state gives everything else a starting point.",
+  "profileSinceDayOne": "Since day one ({date})",
+  "@profileSinceDayOne": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "profileNotComparable": "One of the two readings was taken with the pack pulling current, so the cells are not comparable. Look at this with the bike standing still.",
+  "profileDeltaThenNow": "Spread between cells",
+  "profileWorstDrift": "The one that moved most",
+  "profileWorstDriftValue": "Cell {cell}, {mv} mV",
+  "@profileWorstDriftValue": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      },
+      "mv": {
+        "type": "String"
+      }
+    }
+  },
+  "profileCyclesSince": "Cycles since then",
+  "profileConfigChanged": "BMS configuration",
+  "profileConfigUnchanged": "Same as day one",
+  "profileConfigChangedCount": "{count} setting(s) changed",
+  "@profileConfigChangedCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "chemistryLfp": "LFP",
+  "chemistryNmc": "NMC / Li-ion",
+  "chemistryUnknown": "Not sure",
+  "configCellOvp": "High-cell cutoff",
+  "configCellUvp": "Low-cell cutoff",
+  "configBalanceStart": "Balancing starts at",
+  "configSoc100": "Voltage called 100 %",
+  "configSoc0": "Voltage called 0 %",
+  "configMaxCharge": "Maximum charge current",
+  "configMaxDischarge": "Maximum discharge current",
+  "configMaxBalance": "Balance current",
+  "configChargeOtp": "Heat cutoff while charging",
+  "configDischargeOtp": "Heat cutoff while discharging",
+  "configChargeUtp": "Cold cutoff while charging",
+  "configMosfetOtp": "MOSFET heat cutoff",
+  "configNominalCapacity": "Configured capacity",
+  "configCellCount": "Number of cells",
+  "configChargeSwitch": "Charging enabled",
+  "configDischargeSwitch": "Discharging enabled",
+  "configBalancerSwitch": "Balancer",
+  "configOn": "Yes",
+  "configOff": "No",
+  "reportSectionDayOne": "This battery's day one",
+  "reportDayOneNote": "Compared against the state kept on the day the battery was taken on. Not a capacity measurement: a snapshot of the voltages cannot measure what a pack holds, and nothing here is presented as if it could."
 }
