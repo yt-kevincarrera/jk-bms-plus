@@ -3715,4 +3715,46 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get reportSeriesWorstCell => 'Peor celda';
+
+  @override
+  String get representativeAsk => '¿Este viaje te representa?';
+
+  @override
+  String representativeAskBodyUp(
+    String whPerKm,
+    String percent,
+    String before,
+    String after,
+  ) {
+    return 'Salió en $whPerKm Wh/km, un $percent% por encima de lo tuyo. Ya lo conté: tu autonomía pasó de $before a $after km.';
+  }
+
+  @override
+  String representativeAskBodyDown(
+    String whPerKm,
+    String percent,
+    String before,
+    String after,
+  ) {
+    return 'Salió en $whPerKm Wh/km, un $percent% por debajo de lo tuyo. Ya lo conté: tu autonomía pasó de $before a $after km.';
+  }
+
+  @override
+  String get representativeYes => 'Es normal';
+
+  @override
+  String get representativeNo => 'Fue una excepción';
+
+  @override
+  String representativeDone(String km) {
+    return 'Listo. Tu autonomía queda en $km km.';
+  }
+
+  @override
+  String representativeMarkedException(String km) {
+    return 'Marcado como excepción. Tu autonomía queda en $km km.';
+  }
+
+  @override
+  String get representativeChange => 'Cambiar';
 }

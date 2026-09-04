@@ -3694,4 +3694,46 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get reportSeriesWorstCell => 'Worst cell';
+
+  @override
+  String get representativeAsk => 'Is this a typical ride for you?';
+
+  @override
+  String representativeAskBodyUp(
+    String whPerKm,
+    String percent,
+    String before,
+    String after,
+  ) {
+    return 'It came in at $whPerKm Wh/km, $percent% above your usual. Already counted: your range went from $before to $after km.';
+  }
+
+  @override
+  String representativeAskBodyDown(
+    String whPerKm,
+    String percent,
+    String before,
+    String after,
+  ) {
+    return 'It came in at $whPerKm Wh/km, $percent% below your usual. Already counted: your range went from $before to $after km.';
+  }
+
+  @override
+  String get representativeYes => 'That\'s normal';
+
+  @override
+  String get representativeNo => 'That was an exception';
+
+  @override
+  String representativeDone(String km) {
+    return 'Done. Your range is now $km km.';
+  }
+
+  @override
+  String representativeMarkedException(String km) {
+    return 'Marked as an exception. Your range is now $km km.';
+  }
+
+  @override
+  String get representativeChange => 'Change';
 }

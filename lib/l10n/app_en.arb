@@ -2195,5 +2195,59 @@
   },
   "reportSectionSeries": "Earlier runs on this pack",
   "reportSeriesNote": "Each row is an earlier inspection stored on the phone that signed this sheet. Repeating the test is what tells a bad cell from a bad reading.",
-  "reportSeriesWorstCell": "Worst cell"
+  "reportSeriesWorstCell": "Worst cell",
+  "representativeAsk": "Is this a typical ride for you?",
+  "representativeAskBodyUp": "It came in at {whPerKm} Wh/km, {percent}% above your usual. Already counted: your range went from {before} to {after} km.",
+  "@representativeAskBodyUp": {
+    "placeholders": {
+      "whPerKm": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      },
+      "before": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      }
+    }
+  },
+  "representativeAskBodyDown": "It came in at {whPerKm} Wh/km, {percent}% below your usual. Already counted: your range went from {before} to {after} km.",
+  "@representativeAskBodyDown": {
+    "placeholders": {
+      "whPerKm": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      },
+      "before": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      }
+    }
+  },
+  "representativeYes": "That's normal",
+  "representativeNo": "That was an exception",
+  "representativeDone": "Done. Your range is now {km} km.",
+  "@representativeDone": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "representativeMarkedException": "Marked as an exception. Your range is now {km} km.",
+  "@representativeMarkedException": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "representativeChange": "Change"
 }

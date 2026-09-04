@@ -76,8 +76,7 @@ class RangeEstimator {
 
   /// A 20S 45 Ah pack cannot sustain outside this band; a reading past either
   /// edge is a GPS glitch or a regen segment, not a sample of how the bike
-  /// rides. Shared between [addSegment] and [projectedShiftFraction] so the
-  /// two can never disagree about which rides count.
+  /// rides.
   static const double _maxSampleWhPerKm = 400;
   static const double _minSampleWhPerKm = 2;
 
@@ -128,51 +127,6 @@ class RangeEstimator {
     _weighted = _weighted * decay + km * sampleWhPerKm;
     _hasLearned = true;
     _learnedKm += km;
-  }
-
-  /// Fraction of the current figure that one more sample would move it by.
-  ///
-  /// The question a rider is asked has to be worth the interruption, and what
-  /// makes it worth it is consequence, not oddity. A 2 km errand at triple the
-  /// usual consumption cannot budge a 40 km half-life average, so asking about
-  /// it would be a notification about nothing.
-  ///
-  /// Returns 0 for a sample [addSegment] would reject, so a rejected ride is
-  /// never the subject of a question about a change that will not happen.
-  /// Returns 0 before anything is learned too: there is no learned figure yet
-  /// for a ride to move.
-  ///
-  /// Pure: it computes what the fold would do without folding anything in.
-  double projectedShiftFraction({required double wh, required double km}) {
-    if (km < _minSegmentKm || wh <= 0) return 0;
-    final sampleWhPerKm = wh / km;
-    if (sampleWhPerKm > _maxSampleWhPerKm || sampleWhPerKm < _minSampleWhPerKm) {
-      return 0;
-    }
-
-    // Nothing learned yet means whPerKm is answering with defaultWhPerKm, a
-    // number about a hypothetical motorcycle, the same reasoning
-    // RangeOutlook.from uses to refuse a range rather than quote one built on
-    // it. There is no learned figure here for a ride to move, so there is
-    // nothing to ask about.
-    if (!hasLearned) return 0;
-
-    final current = whPerKm;
-    // Cannot actually fire once hasLearned is true above: _weight is then
-    // positive and _weighted is a sum of positive km times positive Wh/km
-    // terms, so current is always positive too. Kept as a guard on the
-    // division below rather than removed, in case that invariant ever slips.
-    if (current <= 0) return 0;
-
-    final decay = math.pow(0.5, km / halfLifeKm).toDouble();
-    final weight = _weight * decay + km;
-    // Cannot fire either: km was already checked >= _minSegmentKm above, and
-    // decay is always positive, so weight is at least that much even when
-    // nothing has been folded in yet. Kept as a guard on the division below.
-    if (weight <= 0) return 0;
-    final weighted = _weighted * decay + km * sampleWhPerKm;
-
-    return ((weighted / weight) - current).abs() / current;
   }
 
   /// How much a ride has to move the figure before the rider is asked whether

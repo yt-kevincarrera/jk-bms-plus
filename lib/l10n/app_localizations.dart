@@ -6419,6 +6419,64 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Peor celda'**
   String get reportSeriesWorstCell;
+
+  /// No description provided for @representativeAsk.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Este viaje te representa?'**
+  String get representativeAsk;
+
+  /// No description provided for @representativeAskBodyUp.
+  ///
+  /// In es, this message translates to:
+  /// **'Salió en {whPerKm} Wh/km, un {percent}% por encima de lo tuyo. Ya lo conté: tu autonomía pasó de {before} a {after} km.'**
+  String representativeAskBodyUp(
+    String whPerKm,
+    String percent,
+    String before,
+    String after,
+  );
+
+  /// No description provided for @representativeAskBodyDown.
+  ///
+  /// In es, this message translates to:
+  /// **'Salió en {whPerKm} Wh/km, un {percent}% por debajo de lo tuyo. Ya lo conté: tu autonomía pasó de {before} a {after} km.'**
+  String representativeAskBodyDown(
+    String whPerKm,
+    String percent,
+    String before,
+    String after,
+  );
+
+  /// No description provided for @representativeYes.
+  ///
+  /// In es, this message translates to:
+  /// **'Es normal'**
+  String get representativeYes;
+
+  /// No description provided for @representativeNo.
+  ///
+  /// In es, this message translates to:
+  /// **'Fue una excepción'**
+  String get representativeNo;
+
+  /// No description provided for @representativeDone.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo. Tu autonomía queda en {km} km.'**
+  String representativeDone(String km);
+
+  /// No description provided for @representativeMarkedException.
+  ///
+  /// In es, this message translates to:
+  /// **'Marcado como excepción. Tu autonomía queda en {km} km.'**
+  String representativeMarkedException(String km);
+
+  /// No description provided for @representativeChange.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar'**
+  String get representativeChange;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

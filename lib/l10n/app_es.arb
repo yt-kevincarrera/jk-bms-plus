@@ -2314,5 +2314,59 @@
   },
   "reportSectionSeries": "Pruebas anteriores a este pack",
   "reportSeriesNote": "Cada fila es una inspección anterior guardada en el teléfono que firmó esta hoja. Repetir el test es lo que distingue una celda mala de una lectura mala.",
-  "reportSeriesWorstCell": "Peor celda"
+  "reportSeriesWorstCell": "Peor celda",
+  "representativeAsk": "¿Este viaje te representa?",
+  "representativeAskBodyUp": "Salió en {whPerKm} Wh/km, un {percent}% por encima de lo tuyo. Ya lo conté: tu autonomía pasó de {before} a {after} km.",
+  "@representativeAskBodyUp": {
+    "placeholders": {
+      "whPerKm": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      },
+      "before": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      }
+    }
+  },
+  "representativeAskBodyDown": "Salió en {whPerKm} Wh/km, un {percent}% por debajo de lo tuyo. Ya lo conté: tu autonomía pasó de {before} a {after} km.",
+  "@representativeAskBodyDown": {
+    "placeholders": {
+      "whPerKm": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      },
+      "before": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      }
+    }
+  },
+  "representativeYes": "Es normal",
+  "representativeNo": "Fue una excepción",
+  "representativeDone": "Listo. Tu autonomía queda en {km} km.",
+  "@representativeDone": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "representativeMarkedException": "Marcado como excepción. Tu autonomía queda en {km} km.",
+  "@representativeMarkedException": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "representativeChange": "Cambiar"
 }
