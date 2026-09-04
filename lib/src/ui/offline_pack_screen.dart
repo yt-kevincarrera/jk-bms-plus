@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../bms_service.dart';
@@ -8,6 +9,13 @@ import '../metrics/cell_drift.dart';
 import '../metrics/degradation.dart';
 import '../metrics/range_estimator.dart';
 import '../metrics/range_outlook.dart';
+import '../metrics/maintenance.dart';
+import '../license/entitlements.dart';
+import '../report/pdf_reports.dart';
+import '../report/report_data.dart';
+import '../report/report_sharing.dart';
+import 'license_scope.dart';
+import 'widgets/pro_gate.dart';
 import 'theme.dart';
 import 'trends_screen.dart';
 import 'widgets/advice_list.dart';
@@ -52,10 +60,25 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
   /// can cite it.
   RangeEstimator? _estimator;
 
+  /// What has been recorded as done to this pack. Printed on the sheet: a
+  /// replaced cell explains a history that would otherwise look impossible.
+  List<MaintenanceEvent> _maintenance = const [];
+
+  /// Which build produced a sheet, when one is asked for.
+  String _appVersion = '';
+
+  /// Set while a sheet is being built, so two taps make one file.
+  bool _sharing = false;
+
   @override
   void initState() {
     super.initState();
     _load();
+    PackageInfo.fromPlatform()
+        .then((info) {
+          if (mounted) setState(() => _appVersion = info.version);
+        })
+        .catchError((Object _) {});
   }
 
   Future<void> _load() async {
@@ -83,6 +106,7 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
     final newest = await repo.db.lastSnapshotFor(id);
     final trips = await repo.db.recentTrips(id, limit: 500);
     final tests = await repo.capacityTests(id);
+    final maintenance = await MaintenanceLog(repo.db).forPack(id);
 
     // The range is rebuilt from this pack's own rides rather than read off the
     // live service, which knows only about whatever is connected.
@@ -148,6 +172,7 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
       _firstAt = oldest;
       _readingCount = totalReadings;
       _driftRanking = const CellDriftAnalysis().analyse(readings);
+      _maintenance = maintenance;
       _outlook = outlook;
       _estimator = estimator;
     });
@@ -185,7 +210,19 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
     final name = d.name.isEmpty ? d.id : d.name;
 
     return Scaffold(
-      appBar: AppBar(title: Text(name)),
+      appBar: AppBar(
+        title: Text(name),
+        actions: [
+          // The sheet a rider takes to a workshop or attaches to an advert.
+          // Everything on it is already on this screen; the button only lays
+          // it out and hands it over.
+          IconButton(
+            tooltip: t.reportPackButton,
+            icon: const Icon(Icons.picture_as_pdf_outlined),
+            onPressed: _loading || _sharing ? null : () => _sharePdf(t),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -472,6 +509,62 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
 
   /// How long ago, in words, because "hace 3 días" answers the question that
   /// a timestamp only implies.
+  /// Builds the "my battery" sheet from exactly what this screen is showing.
+  ///
+  /// The analyses are recomputed here rather than cached from [_body] because
+  /// they are cheap and pure; what matters is that they are the same calls
+  /// with the same inputs, so paper and screen cannot drift apart.
+  Future<void> _sharePdf(AppL10n t) async {
+    if (!LicenseScope.allows(context, Feature.batteryReport)) {
+      openLicenseScreen(context);
+      return;
+    }
+    setState(() => _sharing = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final wear = Degradation.from(
+        tests: _tests,
+        readings: const [],
+        advertisedAh: widget.device.catalogueCapacityAh,
+      );
+      final data = PackReportData.build(
+        generatedAt: DateTime.now().toUtc(),
+        device: widget.device,
+        last: _last,
+        degradation: wear,
+        outlook: _readingIsStale ? null : _outlook,
+        drift: _driftRanking,
+        advice: const AdviceEngine().headlines(
+          degradation: wear,
+          drift: _driftRanking,
+          outlook: _readingIsStale ? null : _outlook,
+          estimator: _estimator,
+        ),
+        trips: _trips,
+        maintenance: _maintenance,
+        readingCount: _readingCount,
+        historySince: _firstAt,
+        whPerKm: _estimator?.hasLearned ?? false ? _estimator!.whPerKm : null,
+        capacityTests: _tests.where((t) => t.completed).length,
+        appVersion: _appVersion,
+      );
+      final bytes = await const PdfReports().packReport(t, data);
+      await const ReportSharing().share(
+        bytes,
+        fileName: ReportSharing.fileName(
+          'bateria',
+          data.packName,
+          data.generatedAt,
+        ),
+        text: t.reportShareText,
+      );
+    } on Object {
+      messenger.showSnackBar(SnackBar(content: Text(t.reportFailed)));
+    } finally {
+      if (mounted) setState(() => _sharing = false);
+    }
+  }
+
   String _ago(AppL10n t, DateTime utc) {
     final gap = DateTime.now().toUtc().difference(utc);
     if (gap.inMinutes < 60) {

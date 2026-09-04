@@ -1914,5 +1914,141 @@
   },
   "evidenceMedianRecoverySeconds": "Median recovery",
   "evidenceAlarmCount": "Alarms seen",
-  "evidencePeakCurrent": "Highest current seen"
+  "evidencePeakCurrent": "Highest current seen",
+  "reportPackTitle": "Battery report",
+  "reportInspectionTitle": "Inspection report",
+  "reportCertificateTitle": "Inspection certificate",
+  "reportGeneratedAt": "Generated {date}",
+  "@reportGeneratedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "reportAppVersion": "Version {version}",
+  "@reportAppVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "reportPageOf": "Page {page} of {total}",
+  "@reportPageOf": {
+    "placeholders": {
+      "page": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "reportUnknownPack": "Unnamed battery",
+  "reportSectionNow": "How it stands now",
+  "reportLastReading": "Last reading",
+  "reportPackVoltage": "Pack voltage",
+  "reportCellCount": "Cells",
+  "reportDelta": "Spread between cells",
+  "reportCellRange": "Lowest and highest cell",
+  "reportMaxTemperature": "Highest temperature",
+  "reportSectionCapacity": "Capacity",
+  "reportConfiguredCapacity": "Configured in the BMS",
+  "reportAdvertisedCapacity": "Advertised when bought",
+  "reportCapacityTests": "Completed capacity tests",
+  "reportCapacityNote": "Only the best real measurement comes from a full discharge counted by the app. The configured capacity is a BMS setting, not a measurement, and can be changed in a minute.",
+  "reportSectionRange": "Range",
+  "reportConsumption": "Learned consumption",
+  "reportRangeBasis": "Worked out from",
+  "reportRangeFromMeasured": "measured capacity",
+  "reportRangeFromCatalogue": "advertised capacity",
+  "reportSectionCells": "Cells",
+  "reportCell": "Cell",
+  "reportDeviation": "Below average",
+  "reportTrend": "Trend",
+  "reportSpan": "Measured over",
+  "reportDays": "{count} days",
+  "@reportDays": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "reportCellsNote": "A cell that was always low is a pack built that way. One that drifts apart month by month is a cell on its way out.",
+  "reportSectionHistory": "History",
+  "reportReadings": "Stored readings",
+  "reportSectionMaintenance": "Recorded maintenance",
+  "reportDate": "Date",
+  "reportEvent": "Event",
+  "reportNote": "Note",
+  "reportHonestyPack": "The figures come from what the BMS reports and from what this app counted during use. Range is an estimate learned from real rides, not a promise. Measured capacity needs a full discharge recorded by the app; without one there is no measurement, only what the BMS claims.",
+  "reportSectionTest": "The test",
+  "reportTestedAt": "Run on",
+  "reportPeakCurrent": "Peak current reached",
+  "reportRestDelta": "Spread at rest",
+  "reportMedianSag": "Median sag under load",
+  "reportMedianResistance": "Median resistance",
+  "reportMedianRecovery": "Median recovery",
+  "reportDuration": "Duration",
+  "reportReadingsInline": "({count} readings)",
+  "@reportReadingsInline": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "reportRestVolts": "Rest (V)",
+  "reportSag": "Sag (V)",
+  "reportResistance": "Resistance (mOhm)",
+  "reportRecovery": "Recovery (s)",
+  "reportNotRecovered": "did not return",
+  "reportCellTableNote": "Sag is how far each cell dropped under the heavy load. Resistance is estimated from the current step, not measured with an instrument.",
+  "reportSectionReported": "What the BMS says about itself",
+  "reportModel": "Model",
+  "reportSerial": "Serial number",
+  "reportSoftware": "Firmware version",
+  "reportCycles": "Counted cycles",
+  "reportReportedSoh": "Reported health",
+  "reportReportedNote": "These values can be edited from the official BMS app in under a minute. They are printed separately on purpose: they are a claim, not a measurement.",
+  "reportSectionCaveats": "What this test could not see",
+  "reportSectionNote": "Inspector's note",
+  "reportSectionCertificate": "Certificate",
+  "reportCertificateCode": "Certificate code",
+  "reportCertificateIssuer": "Issuer (installation)",
+  "reportCertificateIssuedAt": "Signed on",
+  "reportCertificateExplain": "The signature proves these figures came out of the app that day and have not been changed since. It does not prove the battery is good or the seller honest. Scan the QR or paste the code into the app to check it.",
+  "reportHonestyInspection": "Checked with a quick test on {date}. Capacity is estimated, not measured: measuring it needs a full discharge. This test catches the bad cell and the obvious scam, and does not replace a workshop inspection.",
+  "@reportHonestyInspection": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "reportPackButton": "PDF report",
+  "reportInspectionPdfButton": "PDF report",
+  "reportCertificateButton": "Signed certificate",
+  "reportBuilding": "Building the PDF...",
+  "reportFailed": "The PDF could not be created.",
+  "reportShareText": "Report generated with JK BMS +",
+  "certificateVerifyTitle": "Verify a certificate",
+  "certificateVerifyIntro": "Paste the code that came with a certificate, or the text from its QR. The app checks the signature and shows exactly the figures that were signed.",
+  "certificateVerifyHint": "JKC1....",
+  "certificateVerifyButton": "Check",
+  "certificateVerifyOpen": "Verify a certificate",
+  "certificateValid": "Signature is good. These are the signed figures.",
+  "certificateBadSignature": "The signature does not match: the contents were changed after signing.",
+  "certificateMalformed": "That is not a valid certificate.",
+  "certificateCreditsLeft": "Signing a certificate uses one credit. You have {count} left.",
+  "@certificateCreditsLeft": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "certificateCreditsGone": "No certificate credits left. Get more under Licence."
 }
