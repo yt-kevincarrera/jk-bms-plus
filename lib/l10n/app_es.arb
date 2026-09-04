@@ -2014,5 +2014,141 @@
   },
   "evidenceMedianRecoverySeconds": "Recuperación mediana",
   "evidenceAlarmCount": "Alarmas vistas",
-  "evidencePeakCurrent": "Corriente máxima vista"
+  "evidencePeakCurrent": "Corriente máxima vista",
+  "reportPackTitle": "Informe de batería",
+  "reportInspectionTitle": "Informe de inspección",
+  "reportCertificateTitle": "Certificado de inspección",
+  "reportGeneratedAt": "Generado el {date}",
+  "@reportGeneratedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "reportAppVersion": "Versión {version}",
+  "@reportAppVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "reportPageOf": "Página {page} de {total}",
+  "@reportPageOf": {
+    "placeholders": {
+      "page": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "reportUnknownPack": "Batería sin nombre",
+  "reportSectionNow": "Cómo está ahora",
+  "reportLastReading": "Última lectura",
+  "reportPackVoltage": "Tensión del pack",
+  "reportCellCount": "Celdas",
+  "reportDelta": "Diferencia entre celdas",
+  "reportCellRange": "Celda más baja y más alta",
+  "reportMaxTemperature": "Temperatura máxima",
+  "reportSectionCapacity": "Capacidad",
+  "reportConfiguredCapacity": "Configurada en el BMS",
+  "reportAdvertisedCapacity": "Anunciada al comprarla",
+  "reportCapacityTests": "Tests de capacidad completados",
+  "reportCapacityNote": "Solo la mejor medición real proviene de una descarga completa contada por la app. La capacidad configurada es un ajuste del BMS, no una medida, y se puede cambiar en un minuto.",
+  "reportSectionRange": "Autonomía",
+  "reportConsumption": "Consumo aprendido",
+  "reportRangeBasis": "Calculada a partir de",
+  "reportRangeFromMeasured": "capacidad medida",
+  "reportRangeFromCatalogue": "capacidad anunciada",
+  "reportSectionCells": "Celdas",
+  "reportCell": "Celda",
+  "reportDeviation": "Bajo la media",
+  "reportTrend": "Tendencia",
+  "reportSpan": "Medido sobre",
+  "reportDays": "{count} días",
+  "@reportDays": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "reportCellsNote": "Una celda que siempre estuvo baja es un pack fabricado así. Una que se separa mes a mes es una celda que se va.",
+  "reportSectionHistory": "Historial",
+  "reportReadings": "Lecturas guardadas",
+  "reportSectionMaintenance": "Mantenimiento registrado",
+  "reportDate": "Fecha",
+  "reportEvent": "Evento",
+  "reportNote": "Nota",
+  "reportHonestyPack": "Las cifras vienen de lo que informa el BMS y de lo que esta app ha contado durante el uso. La autonomía es una estimación aprendida de viajes reales, no una promesa. La capacidad medida requiere una descarga completa registrada por la app; sin ella, no hay medida, hay lo que dice el BMS.",
+  "reportSectionTest": "El test",
+  "reportTestedAt": "Realizado el",
+  "reportPeakCurrent": "Corriente máxima alcanzada",
+  "reportRestDelta": "Diferencia en reposo",
+  "reportMedianSag": "Caída mediana bajo carga",
+  "reportMedianResistance": "Resistencia mediana",
+  "reportMedianRecovery": "Recuperación mediana",
+  "reportDuration": "Duración",
+  "reportReadingsInline": "({count} lecturas)",
+  "@reportReadingsInline": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "reportRestVolts": "Reposo (V)",
+  "reportSag": "Caída (V)",
+  "reportResistance": "Resistencia (mOhm)",
+  "reportRecovery": "Recuperación (s)",
+  "reportNotRecovered": "no volvió",
+  "reportCellTableNote": "La caída es cuánto bajó cada celda bajo la carga fuerte. La resistencia se estima del salto de corriente, no se mide con instrumento.",
+  "reportSectionReported": "Lo que dice el BMS de sí mismo",
+  "reportModel": "Modelo",
+  "reportSerial": "Número de serie",
+  "reportSoftware": "Versión del firmware",
+  "reportCycles": "Ciclos contados",
+  "reportReportedSoh": "Salud declarada",
+  "reportReportedNote": "Estos valores son editables desde la app oficial del BMS en menos de un minuto. Se imprimen aparte a propósito: son una declaración, no una medida.",
+  "reportSectionCaveats": "Lo que este test no pudo ver",
+  "reportSectionNote": "Nota del inspector",
+  "reportSectionCertificate": "Certificado",
+  "reportCertificateCode": "Código del certificado",
+  "reportCertificateIssuer": "Emisor (instalación)",
+  "reportCertificateIssuedAt": "Firmado el",
+  "reportCertificateExplain": "La firma demuestra que estas cifras salieron de la app ese día y no se han cambiado desde entonces. No demuestra que la batería sea buena ni que el vendedor sea honesto. Escanea el QR o pega el código en la app para comprobarlo.",
+  "reportHonestyInspection": "Verificado con test rápido el {date}. La capacidad es estimada, no medida: para medirla hace falta una descarga completa. Este test detecta la celda mala y la estafa obvia, y no sustituye a una revisión en taller.",
+  "@reportHonestyInspection": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "reportPackButton": "Informe PDF",
+  "reportInspectionPdfButton": "Informe PDF",
+  "reportCertificateButton": "Certificado firmado",
+  "reportBuilding": "Preparando el PDF...",
+  "reportFailed": "No se pudo crear el PDF.",
+  "reportShareText": "Informe generado con JK BMS +",
+  "certificateVerifyTitle": "Verificar certificado",
+  "certificateVerifyIntro": "Pega aquí el código que acompaña a un certificado, o el texto del QR. La app comprueba la firma y te muestra exactamente las cifras que se firmaron.",
+  "certificateVerifyHint": "JKC1....",
+  "certificateVerifyButton": "Comprobar",
+  "certificateVerifyOpen": "Verificar un certificado",
+  "certificateValid": "Firma correcta. Estas son las cifras firmadas.",
+  "certificateBadSignature": "La firma no cuadra: el contenido se modificó después de firmarlo.",
+  "certificateMalformed": "Eso no es un certificado válido.",
+  "certificateCreditsLeft": "Firmar un certificado consume un crédito. Te quedan {count}.",
+  "@certificateCreditsLeft": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "certificateCreditsGone": "No te quedan créditos de certificado. Consigue más en Licencia."
 }

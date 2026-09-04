@@ -5693,6 +5693,510 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Corriente máxima vista'**
   String get evidencePeakCurrent;
+
+  /// No description provided for @reportPackTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Informe de batería'**
+  String get reportPackTitle;
+
+  /// No description provided for @reportInspectionTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Informe de inspección'**
+  String get reportInspectionTitle;
+
+  /// No description provided for @reportCertificateTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Certificado de inspección'**
+  String get reportCertificateTitle;
+
+  /// No description provided for @reportGeneratedAt.
+  ///
+  /// In es, this message translates to:
+  /// **'Generado el {date}'**
+  String reportGeneratedAt(String date);
+
+  /// No description provided for @reportAppVersion.
+  ///
+  /// In es, this message translates to:
+  /// **'Versión {version}'**
+  String reportAppVersion(String version);
+
+  /// No description provided for @reportPageOf.
+  ///
+  /// In es, this message translates to:
+  /// **'Página {page} de {total}'**
+  String reportPageOf(String page, String total);
+
+  /// No description provided for @reportUnknownPack.
+  ///
+  /// In es, this message translates to:
+  /// **'Batería sin nombre'**
+  String get reportUnknownPack;
+
+  /// No description provided for @reportSectionNow.
+  ///
+  /// In es, this message translates to:
+  /// **'Cómo está ahora'**
+  String get reportSectionNow;
+
+  /// No description provided for @reportLastReading.
+  ///
+  /// In es, this message translates to:
+  /// **'Última lectura'**
+  String get reportLastReading;
+
+  /// No description provided for @reportPackVoltage.
+  ///
+  /// In es, this message translates to:
+  /// **'Tensión del pack'**
+  String get reportPackVoltage;
+
+  /// No description provided for @reportCellCount.
+  ///
+  /// In es, this message translates to:
+  /// **'Celdas'**
+  String get reportCellCount;
+
+  /// No description provided for @reportDelta.
+  ///
+  /// In es, this message translates to:
+  /// **'Diferencia entre celdas'**
+  String get reportDelta;
+
+  /// No description provided for @reportCellRange.
+  ///
+  /// In es, this message translates to:
+  /// **'Celda más baja y más alta'**
+  String get reportCellRange;
+
+  /// No description provided for @reportMaxTemperature.
+  ///
+  /// In es, this message translates to:
+  /// **'Temperatura máxima'**
+  String get reportMaxTemperature;
+
+  /// No description provided for @reportSectionCapacity.
+  ///
+  /// In es, this message translates to:
+  /// **'Capacidad'**
+  String get reportSectionCapacity;
+
+  /// No description provided for @reportConfiguredCapacity.
+  ///
+  /// In es, this message translates to:
+  /// **'Configurada en el BMS'**
+  String get reportConfiguredCapacity;
+
+  /// No description provided for @reportAdvertisedCapacity.
+  ///
+  /// In es, this message translates to:
+  /// **'Anunciada al comprarla'**
+  String get reportAdvertisedCapacity;
+
+  /// No description provided for @reportCapacityTests.
+  ///
+  /// In es, this message translates to:
+  /// **'Tests de capacidad completados'**
+  String get reportCapacityTests;
+
+  /// No description provided for @reportCapacityNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo la mejor medición real proviene de una descarga completa contada por la app. La capacidad configurada es un ajuste del BMS, no una medida, y se puede cambiar en un minuto.'**
+  String get reportCapacityNote;
+
+  /// No description provided for @reportSectionRange.
+  ///
+  /// In es, this message translates to:
+  /// **'Autonomía'**
+  String get reportSectionRange;
+
+  /// No description provided for @reportConsumption.
+  ///
+  /// In es, this message translates to:
+  /// **'Consumo aprendido'**
+  String get reportConsumption;
+
+  /// No description provided for @reportRangeBasis.
+  ///
+  /// In es, this message translates to:
+  /// **'Calculada a partir de'**
+  String get reportRangeBasis;
+
+  /// No description provided for @reportRangeFromMeasured.
+  ///
+  /// In es, this message translates to:
+  /// **'capacidad medida'**
+  String get reportRangeFromMeasured;
+
+  /// No description provided for @reportRangeFromCatalogue.
+  ///
+  /// In es, this message translates to:
+  /// **'capacidad anunciada'**
+  String get reportRangeFromCatalogue;
+
+  /// No description provided for @reportSectionCells.
+  ///
+  /// In es, this message translates to:
+  /// **'Celdas'**
+  String get reportSectionCells;
+
+  /// No description provided for @reportCell.
+  ///
+  /// In es, this message translates to:
+  /// **'Celda'**
+  String get reportCell;
+
+  /// No description provided for @reportDeviation.
+  ///
+  /// In es, this message translates to:
+  /// **'Bajo la media'**
+  String get reportDeviation;
+
+  /// No description provided for @reportTrend.
+  ///
+  /// In es, this message translates to:
+  /// **'Tendencia'**
+  String get reportTrend;
+
+  /// No description provided for @reportSpan.
+  ///
+  /// In es, this message translates to:
+  /// **'Medido sobre'**
+  String get reportSpan;
+
+  /// No description provided for @reportDays.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} días'**
+  String reportDays(String count);
+
+  /// No description provided for @reportCellsNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Una celda que siempre estuvo baja es un pack fabricado así. Una que se separa mes a mes es una celda que se va.'**
+  String get reportCellsNote;
+
+  /// No description provided for @reportSectionHistory.
+  ///
+  /// In es, this message translates to:
+  /// **'Historial'**
+  String get reportSectionHistory;
+
+  /// No description provided for @reportReadings.
+  ///
+  /// In es, this message translates to:
+  /// **'Lecturas guardadas'**
+  String get reportReadings;
+
+  /// No description provided for @reportSectionMaintenance.
+  ///
+  /// In es, this message translates to:
+  /// **'Mantenimiento registrado'**
+  String get reportSectionMaintenance;
+
+  /// No description provided for @reportDate.
+  ///
+  /// In es, this message translates to:
+  /// **'Fecha'**
+  String get reportDate;
+
+  /// No description provided for @reportEvent.
+  ///
+  /// In es, this message translates to:
+  /// **'Evento'**
+  String get reportEvent;
+
+  /// No description provided for @reportNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Nota'**
+  String get reportNote;
+
+  /// No description provided for @reportHonestyPack.
+  ///
+  /// In es, this message translates to:
+  /// **'Las cifras vienen de lo que informa el BMS y de lo que esta app ha contado durante el uso. La autonomía es una estimación aprendida de viajes reales, no una promesa. La capacidad medida requiere una descarga completa registrada por la app; sin ella, no hay medida, hay lo que dice el BMS.'**
+  String get reportHonestyPack;
+
+  /// No description provided for @reportSectionTest.
+  ///
+  /// In es, this message translates to:
+  /// **'El test'**
+  String get reportSectionTest;
+
+  /// No description provided for @reportTestedAt.
+  ///
+  /// In es, this message translates to:
+  /// **'Realizado el'**
+  String get reportTestedAt;
+
+  /// No description provided for @reportPeakCurrent.
+  ///
+  /// In es, this message translates to:
+  /// **'Corriente máxima alcanzada'**
+  String get reportPeakCurrent;
+
+  /// No description provided for @reportRestDelta.
+  ///
+  /// In es, this message translates to:
+  /// **'Diferencia en reposo'**
+  String get reportRestDelta;
+
+  /// No description provided for @reportMedianSag.
+  ///
+  /// In es, this message translates to:
+  /// **'Caída mediana bajo carga'**
+  String get reportMedianSag;
+
+  /// No description provided for @reportMedianResistance.
+  ///
+  /// In es, this message translates to:
+  /// **'Resistencia mediana'**
+  String get reportMedianResistance;
+
+  /// No description provided for @reportMedianRecovery.
+  ///
+  /// In es, this message translates to:
+  /// **'Recuperación mediana'**
+  String get reportMedianRecovery;
+
+  /// No description provided for @reportDuration.
+  ///
+  /// In es, this message translates to:
+  /// **'Duración'**
+  String get reportDuration;
+
+  /// No description provided for @reportReadingsInline.
+  ///
+  /// In es, this message translates to:
+  /// **'({count} lecturas)'**
+  String reportReadingsInline(String count);
+
+  /// No description provided for @reportRestVolts.
+  ///
+  /// In es, this message translates to:
+  /// **'Reposo (V)'**
+  String get reportRestVolts;
+
+  /// No description provided for @reportSag.
+  ///
+  /// In es, this message translates to:
+  /// **'Caída (V)'**
+  String get reportSag;
+
+  /// No description provided for @reportResistance.
+  ///
+  /// In es, this message translates to:
+  /// **'Resistencia (mOhm)'**
+  String get reportResistance;
+
+  /// No description provided for @reportRecovery.
+  ///
+  /// In es, this message translates to:
+  /// **'Recuperación (s)'**
+  String get reportRecovery;
+
+  /// No description provided for @reportNotRecovered.
+  ///
+  /// In es, this message translates to:
+  /// **'no volvió'**
+  String get reportNotRecovered;
+
+  /// No description provided for @reportCellTableNote.
+  ///
+  /// In es, this message translates to:
+  /// **'La caída es cuánto bajó cada celda bajo la carga fuerte. La resistencia se estima del salto de corriente, no se mide con instrumento.'**
+  String get reportCellTableNote;
+
+  /// No description provided for @reportSectionReported.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que dice el BMS de sí mismo'**
+  String get reportSectionReported;
+
+  /// No description provided for @reportModel.
+  ///
+  /// In es, this message translates to:
+  /// **'Modelo'**
+  String get reportModel;
+
+  /// No description provided for @reportSerial.
+  ///
+  /// In es, this message translates to:
+  /// **'Número de serie'**
+  String get reportSerial;
+
+  /// No description provided for @reportSoftware.
+  ///
+  /// In es, this message translates to:
+  /// **'Versión del firmware'**
+  String get reportSoftware;
+
+  /// No description provided for @reportCycles.
+  ///
+  /// In es, this message translates to:
+  /// **'Ciclos contados'**
+  String get reportCycles;
+
+  /// No description provided for @reportReportedSoh.
+  ///
+  /// In es, this message translates to:
+  /// **'Salud declarada'**
+  String get reportReportedSoh;
+
+  /// No description provided for @reportReportedNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Estos valores son editables desde la app oficial del BMS en menos de un minuto. Se imprimen aparte a propósito: son una declaración, no una medida.'**
+  String get reportReportedNote;
+
+  /// No description provided for @reportSectionCaveats.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que este test no pudo ver'**
+  String get reportSectionCaveats;
+
+  /// No description provided for @reportSectionNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Nota del inspector'**
+  String get reportSectionNote;
+
+  /// No description provided for @reportSectionCertificate.
+  ///
+  /// In es, this message translates to:
+  /// **'Certificado'**
+  String get reportSectionCertificate;
+
+  /// No description provided for @reportCertificateCode.
+  ///
+  /// In es, this message translates to:
+  /// **'Código del certificado'**
+  String get reportCertificateCode;
+
+  /// No description provided for @reportCertificateIssuer.
+  ///
+  /// In es, this message translates to:
+  /// **'Emisor (instalación)'**
+  String get reportCertificateIssuer;
+
+  /// No description provided for @reportCertificateIssuedAt.
+  ///
+  /// In es, this message translates to:
+  /// **'Firmado el'**
+  String get reportCertificateIssuedAt;
+
+  /// No description provided for @reportCertificateExplain.
+  ///
+  /// In es, this message translates to:
+  /// **'La firma demuestra que estas cifras salieron de la app ese día y no se han cambiado desde entonces. No demuestra que la batería sea buena ni que el vendedor sea honesto. Escanea el QR o pega el código en la app para comprobarlo.'**
+  String get reportCertificateExplain;
+
+  /// No description provided for @reportHonestyInspection.
+  ///
+  /// In es, this message translates to:
+  /// **'Verificado con test rápido el {date}. La capacidad es estimada, no medida: para medirla hace falta una descarga completa. Este test detecta la celda mala y la estafa obvia, y no sustituye a una revisión en taller.'**
+  String reportHonestyInspection(String date);
+
+  /// No description provided for @reportPackButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Informe PDF'**
+  String get reportPackButton;
+
+  /// No description provided for @reportInspectionPdfButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Informe PDF'**
+  String get reportInspectionPdfButton;
+
+  /// No description provided for @reportCertificateButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Certificado firmado'**
+  String get reportCertificateButton;
+
+  /// No description provided for @reportBuilding.
+  ///
+  /// In es, this message translates to:
+  /// **'Preparando el PDF...'**
+  String get reportBuilding;
+
+  /// No description provided for @reportFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo crear el PDF.'**
+  String get reportFailed;
+
+  /// No description provided for @reportShareText.
+  ///
+  /// In es, this message translates to:
+  /// **'Informe generado con JK BMS +'**
+  String get reportShareText;
+
+  /// No description provided for @certificateVerifyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Verificar certificado'**
+  String get certificateVerifyTitle;
+
+  /// No description provided for @certificateVerifyIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Pega aquí el código que acompaña a un certificado, o el texto del QR. La app comprueba la firma y te muestra exactamente las cifras que se firmaron.'**
+  String get certificateVerifyIntro;
+
+  /// No description provided for @certificateVerifyHint.
+  ///
+  /// In es, this message translates to:
+  /// **'JKC1....'**
+  String get certificateVerifyHint;
+
+  /// No description provided for @certificateVerifyButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Comprobar'**
+  String get certificateVerifyButton;
+
+  /// No description provided for @certificateVerifyOpen.
+  ///
+  /// In es, this message translates to:
+  /// **'Verificar un certificado'**
+  String get certificateVerifyOpen;
+
+  /// No description provided for @certificateValid.
+  ///
+  /// In es, this message translates to:
+  /// **'Firma correcta. Estas son las cifras firmadas.'**
+  String get certificateValid;
+
+  /// No description provided for @certificateBadSignature.
+  ///
+  /// In es, this message translates to:
+  /// **'La firma no cuadra: el contenido se modificó después de firmarlo.'**
+  String get certificateBadSignature;
+
+  /// No description provided for @certificateMalformed.
+  ///
+  /// In es, this message translates to:
+  /// **'Eso no es un certificado válido.'**
+  String get certificateMalformed;
+
+  /// No description provided for @certificateCreditsLeft.
+  ///
+  /// In es, this message translates to:
+  /// **'Firmar un certificado consume un crédito. Te quedan {count}.'**
+  String certificateCreditsLeft(String count);
+
+  /// No description provided for @certificateCreditsGone.
+  ///
+  /// In es, this message translates to:
+  /// **'No te quedan créditos de certificado. Consigue más en Licencia.'**
+  String get certificateCreditsGone;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {
