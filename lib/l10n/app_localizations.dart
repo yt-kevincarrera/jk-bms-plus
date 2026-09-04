@@ -1039,6 +1039,18 @@ abstract class AppL10n {
   /// **'Cambia esto si los valores decodificados se ven mal. Elegir la variante equivocada no falla de forma ruidosa: decodifica en los offsets incorrectos y produce números creíbles pero falsos.'**
   String get systemVariantWarning;
 
+  /// No description provided for @systemVariantProved.
+  ///
+  /// In es, this message translates to:
+  /// **'Comprobado contra una lectura real: los números que salen con este formato describen una batería posible.'**
+  String get systemVariantProved;
+
+  /// No description provided for @systemVariantCorrected.
+  ///
+  /// In es, this message translates to:
+  /// **'La app cambió de formato por su cuenta. La versión del firmware apuntaba a otro, y con ese los números eran imposibles: este es el que cuadra con la lectura.'**
+  String get systemVariantCorrected;
+
   /// No description provided for @systemConnectionTitle.
   ///
   /// In es, this message translates to:

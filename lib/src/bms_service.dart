@@ -34,6 +34,7 @@ import 'metrics/trip_energy_repair.dart';
 import 'metrics/trip_recorder.dart';
 import 'metrics/snapshot_history.dart';
 import 'protocol/protocol_variant.dart';
+import 'protocol/variant_prober.dart';
 
 /// What has a claim on the one foreground service, strongest first.
 ///
@@ -209,12 +210,17 @@ class BmsService {
   /// Readings that reached the snapshot stream.
   int snapshotsEmitted = 0;
 
+  /// Times the framing the firmware version implied was overruled by reading
+  /// the frame. Counted so the effect can be seen rather than assumed.
+  int variantCorrections = 0;
+
   void _resetCounters() {
     deviceInfoFrames = 0;
     cellInfoFrames = 0;
     heldBackFrames = 0;
     decodeFailures = 0;
     snapshotsEmitted = 0;
+    variantCorrections = 0;
     recentProblems.clear();
   }
 
@@ -251,6 +257,10 @@ class BmsService {
   void overrideVariant(JkProtocolVariant? variant) {
     _override = variant;
     _variant = variant ?? _lastDeviceInfo?.variant;
+    // Handing the choice back to the app lets the frame speak again. Holding
+    // the previous confirmation would leave a rider who cleared their override
+    // stuck with whatever the version string implied.
+    if (variant == null) _variantConfirmed = false;
   }
 
   Stream<List<DiscoveredBms>> scan() => _transport.scan();
@@ -409,6 +419,7 @@ class BmsService {
     _segments.reset();
     rangeEstimator = RangeEstimator();
     _variant = null;
+    _variantConfirmed = false;
     _override = null;
     _lastSnapshot = null;
     _lastDeviceInfo = null;
@@ -614,6 +625,39 @@ class BmsService {
     }
   }
 
+  /// Switches to a framing the frame itself vouched for, and decodes again.
+  ///
+  /// Returns the better reading, or null when even the probed framing cannot
+  /// produce one, which would mean the probe and the parser disagree and is
+  /// worth saying rather than acting on.
+  BmsSnapshot? _adoptProbed(
+    JkProtocolVariant probed,
+    JkProtocolVariant had,
+    JkFrame frame, {
+    required bool threw,
+  }) {
+    try {
+      final snapshot = _parser.parseCellInfo(frame, probed);
+      _variant = probed;
+      _variantConfirmed = true;
+      variantCorrections++;
+      _problem(
+        threw
+            ? 'The pack\'s firmware version implied ${had.name}, which cannot '
+                  'read its frames at all. Reading one with each framing '
+                  'points at ${probed.name}, so that is what the app is using.'
+            : 'The pack\'s firmware version implied ${had.name}, which decodes '
+                  'its readings into numbers no battery could produce. Reading '
+                  'one with each framing points at ${probed.name}, so that is '
+                  'what the app is using.',
+      );
+      return snapshot;
+    } on Object catch (e) {
+      _problem('Could not decode with the probed framing ${probed.name}: $e');
+      return null;
+    }
+  }
+
   void _handleDeviceInfo(JkDeviceInfo info) {
     _lastDeviceInfo = info;
     // The serial and model only arrive once a frame has been parsed, so the
@@ -634,21 +678,72 @@ class BmsService {
     }
   }
 
+  /// Whether a framing has produced a reading that describes a battery that
+  /// could exist. Until it has, the frame itself is allowed to overrule what
+  /// the firmware version implied.
+  bool _variantConfirmed = false;
+
+  /// Whether the variant was settled by reading a frame rather than by the
+  /// version string, for the System tab to say so.
+  bool get variantProved => _variantConfirmed;
+
+  /// How the plausibility of a decode is judged. Exposed so a test can tighten
+  /// or loosen it without reaching into the parser.
+  final Plausibility plausibility = const Plausibility();
+
+  /// Tries every framing on one frame and keeps the one that reads as a real
+  /// battery. Returns null when the answer is not unambiguous, which is the
+  /// only honest outcome for two candidates that both look fine.
+  JkProtocolVariant? _probe(JkFrame frame) {
+    final result = probeVariant(
+      frame: frame,
+      parser: _parser,
+      plausibility: plausibility,
+    );
+    if (!result.decided) {
+      // Said with the evidence, because this is the case where a rider has to
+      // choose by hand and deserves to see what the app saw.
+      final detail = result.rejections.entries
+          .map(
+            (e) => e.value.isEmpty
+                ? '${e.key.name}: plausible'
+                : '${e.key.name}: ${e.value.join('; ')}',
+          )
+          .join(' | ');
+      _problem(
+        'Read one cell info frame with every framing and could not tell them '
+        'apart. Pick one in the System tab. $detail',
+      );
+      return null;
+    }
+    return result.variant;
+  }
+
   Future<void> _handleCellInfo(JkFrame frame) async {
-    final variant = _variant;
+    var variant = _variant;
+
+    // No variant from the firmware version. Rather than hold every reading
+    // back forever, read the frame itself: the wrong framing does not produce
+    // slightly wrong numbers, it produces impossible ones, so the frame can
+    // answer a question the version string could not.
     if (variant == null) {
-      // Refusing to decode is the correct behaviour here. Guessing the variant
-      // would produce plausible but wrong voltages, which is worse than a gap.
-      heldBackFrames++;
-      // Said once, then rarely: the pack sends these two or three times a
-      // second, and a notice per frame buries the one sentence that matters.
-      if (heldBackFrames == 1 || heldBackFrames % 100 == 0) {
-        _problem(
-          'Held back $heldBackFrames cell info frame(s): the protocol variant '
-          'is not known yet. Pick one in the System tab.',
-        );
+      // On the first frame, then rarely. The pack sends these two or three
+      // times a second, so both the work and the notice behind it have to be
+      // bounded; an undecidable pack must not spend the connection probing.
+      if (heldBackFrames == 0 || heldBackFrames % 100 == 0) {
+        variant = _probe(frame);
       }
-      return;
+      if (variant == null) {
+        heldBackFrames++;
+        return;
+      }
+      _variant = variant;
+      _variantConfirmed = true;
+      _problem(
+        'The firmware version did not say which JK framing this pack speaks, '
+        'so the app read a reading with each and kept the one that describes a '
+        'real battery: ${variant.name}.',
+      );
     }
 
     // This method is not awaited by its caller, so anything thrown from here
@@ -656,7 +751,7 @@ class BmsService {
     // for the first reading" for as long as you cared to look at it. Every
     // failure below is caught and said, and a reading that decoded reaches the
     // screens whatever the bookkeeping after it does.
-    final BmsSnapshot snapshot;
+    BmsSnapshot? snapshot;
     try {
       snapshot = _parser.parseCellInfo(frame, variant);
     } on Object catch (e) {
@@ -667,7 +762,46 @@ class BmsService {
           '${variant.name}: $e',
         );
       }
-      return;
+      // A framing that cannot read the frame at all is a framing worth
+      // doubting, unless the rider picked it by hand.
+      if (!_variantConfirmed && _override == null) {
+        final probed = _probe(frame);
+        if (probed != null && probed != variant) {
+          snapshot = _adoptProbed(probed, variant, frame, threw: true);
+        }
+      }
+      if (snapshot == null) return;
+      variant = _variant!;
+    }
+
+    // Confirm the framing against physics, once. The version-number rule is
+    // right for every device in the reference compatibility table and it is
+    // still a rule about a string; this is the reading itself agreeing or not.
+    // After the first plausible decode it never runs again, so a pack that
+    // works costs one check for the life of the connection.
+    if (!_variantConfirmed) {
+      final reasons = plausibility.reject(snapshot);
+      if (reasons.isEmpty) {
+        _variantConfirmed = true;
+      } else if (_override == null) {
+        final probed = _probe(frame);
+        if (probed != null && probed != variant) {
+          final better = _adoptProbed(probed, variant, frame, threw: false);
+          if (better != null) snapshot = better;
+        } else {
+          // Nothing decodes this pack sensibly. Kept rather than dropped: the
+          // rider can see the numbers are wrong, and the frame console has the
+          // bytes. Said once, because it is a property of the pack.
+          _variantConfirmed = true;
+          _problem(
+            'This reading does not describe a battery that could exist '
+            '(${reasons.join('; ')}), and no other JK framing reads it any '
+            'better. Shown as decoded; check the raw frame console.',
+          );
+        }
+      } else {
+        _variantConfirmed = true;
+      }
     }
     _silenceTimer?.cancel();
 
