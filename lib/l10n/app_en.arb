@@ -2298,5 +2298,173 @@
   "configOn": "Yes",
   "configOff": "No",
   "reportSectionDayOne": "This battery's day one",
-  "reportDayOneNote": "Compared against the state kept on the day the battery was taken on. Not a capacity measurement: a snapshot of the voltages cannot measure what a pack holds, and nothing here is presented as if it could."
+  "reportDayOneNote": "Compared against the state kept on the day the battery was taken on. Not a capacity measurement: a snapshot of the voltages cannot measure what a pack holds, and nothing here is presented as if it could.",
+  "verdictConfigOvpDangerousTitle": "The charge cutoff is above what the cells can take",
+  "verdictConfigOvpDangerousBody": "The BMS stops charging at {value} V a cell and the safe maximum for this chemistry is {limit} V. Every full charge is doing damage. Change it in the official BMS app, on your own responsibility; this app never writes anything to a battery.",
+  "@verdictConfigOvpDangerousBody": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictConfigOvpHighTitle": "The charge cutoff is high",
+  "verdictConfigOvpHighBody": "You are cutting at {value} V a cell when the pack is practically full at {limit} V. What you gain in range is almost nothing and what you lose in cycle life is not.",
+  "@verdictConfigOvpHighBody": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictConfigUvpDangerousTitle": "The discharge cutoff goes below where cells recover",
+  "verdictConfigUvpDangerousBody": "The BMS lets cells fall to {value} V and the safe minimum is {limit} V. A cell taken below that may not come back, and the ones that do come back smaller.",
+  "@verdictConfigUvpDangerousBody": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictConfigUvpLowTitle": "The discharge cutoff is low",
+  "verdictConfigUvpLowBody": "You are cutting at {value} V a cell. Below {limit} V the cells are being squeezed for a few kilometres that cost more in life than they are worth.",
+  "@verdictConfigUvpLowBody": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictConfigChargesWhenFrozenTitle": "The BMS will charge the pack below freezing",
+  "verdictConfigChargesWhenFrozenBody": "The cold cutoff is at {value} °C. Charging lithium below zero plates metal inside the cell: it is permanent, it shows up on no figure the BMS reports, and it is the most common way a winter rider ruins a pack. Raise it to 2 °C or more in the official app.",
+  "@verdictConfigChargesWhenFrozenBody": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictConfigColdCutoffOkTitle": "It will not charge a frozen pack",
+  "verdictConfigColdCutoffOkBody": "The cold cutoff is at {value} °C, so the BMS refuses to charge before the damage starts. It is one of the settings that saves the most life, and this one is set right.",
+  "@verdictConfigColdCutoffOkBody": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictConfigChargeHotLimitTitle": "The heat cutoff while charging is high",
+  "verdictConfigChargeHotLimitBody": "It allows charging up to {value} °C, and above {limit} °C charging ages cells faster than it should.",
+  "@verdictConfigChargeHotLimitBody": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictConfigDischargeHotLimitTitle": "The heat cutoff while discharging is high",
+  "verdictConfigDischargeHotLimitBody": "It allows pulling up to {value} °C. Above {limit} °C even discharging is not free.",
+  "@verdictConfigDischargeHotLimitBody": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictConfigCapacityDisagreesTitle": "The configured capacity is not what it was sold as",
+  "verdictConfigCapacityDisagreesBody": "The BMS is configured for {value} Ah and you recorded that it was sold as {sold} Ah. The BMS figure was typed in by whoever assembled the pack: it measures nothing, but the charge percentage and the remaining amp-hours on every screen are derived from it.",
+  "@verdictConfigCapacityDisagreesBody": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "sold": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictConfigCellCountDisagreesTitle": "The BMS is configured for a different number of cells",
+  "verdictConfigCellCountDisagreesBody": "Configured for {value} cells and {seen} are being read. With this wrong, the pack voltage, the percentage and the protection cutoffs are all computed for a battery this is not.",
+  "@verdictConfigCellCountDisagreesBody": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "seen": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictConfigChargeCurrentHighTitle": "The charge current is high for the size of the pack",
+  "verdictConfigChargeCurrentHighBody": "Up to {value} A into a pack configured as {capacity} Ah. It is allowed, but charging above 1C heats and ages; if you are not in a hurry, lowering it buys life.",
+  "@verdictConfigChargeCurrentHighBody": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "capacity": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictConfigBalancerOffTitle": "The balancer is switched off",
+  "verdictConfigBalancerOffBody": "Without balancing the cells drift apart on their own, and the weakest one decides the end of every charge and every discharge. It is the first cause of packs that lose range with no cell actually being bad.",
+  "verdictConfigChargeOffTitle": "Charging is disabled at the BMS",
+  "verdictConfigChargeOffBody": "If the pack takes no charge, this explains it. It may be deliberate, or it may have been left this way after a protection tripped.",
+  "verdictConfigDischargeOffTitle": "Discharging is disabled at the BMS",
+  "verdictConfigDischargeOffBody": "If the bike will not move, this explains it. It may be deliberate, or it may have been left this way after a protection tripped.",
+  "verdictConfigBalanceStartLowTitle": "Balancing starts where voltage says nothing",
+  "verdictConfigBalanceStartLowBody": "It starts at {value} V a cell, and for this chemistry it usually sits near {limit} V. On the flat part of the curve a millivolt is not a measure of charge, so the balancer can move energy the wrong way.",
+  "@verdictConfigBalanceStartLowBody": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictConfigChangedSinceDayOneTitle": "The configuration is not the one from day one",
+  "verdictConfigChangedSinceDayOneBody": "{count} setting(s) have changed since the initial state was kept. If it was not you, somebody has been in the BMS.",
+  "@verdictConfigChangedSinceDayOneBody": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictConfigChemistryUnknownTitle": "No declared chemistry, so no voltage audit",
+  "verdictConfigChemistryUnknownBody": "LFP and NMC are almost a volt a cell apart: with the wrong one this screen would bless a dangerous setting or condemn a normal one. Say which it is in the battery profile and come back.",
+  "verdictConfigLooksSaneTitle": "The configuration is reasonable",
+  "verdictConfigLooksSaneBody": "The voltage cutoffs, the temperature cutoffs and the switches are where they should be for this chemistry. This says nothing about the state of the cells: it is a review of the settings, not of the battery.",
+  "evidenceConfiguredSetting": "Configured",
+  "evidenceSafeLimit": "Safe limit",
+  "evidenceCellsSeen": "Cells being read",
+  "configAuditTitle": "Configuration audit",
+  "configAuditIntro": "What the BMS is set up to do, against what the cells you said it holds can take.",
+  "configAuditOpen": "Audit the configuration",
+  "configAuditReadOnly": "Read only. This app never writes to a BMS: a wrong value written to a battery is a fire, and the protocol's write path is reverse-engineered. Anything that needs changing is changed in the official BMS app, and that decision is yours.",
+  "configAuditSettings": "Everything that was looked at",
+  "configAuditNoSettings": "The BMS has not sent its configuration yet. Wait a few seconds with the battery connected.",
+  "configAuditChemistryRow": "Declared chemistry",
+  "configAuditNeedsProfile": "Complete the profile"
 }

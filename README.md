@@ -108,7 +108,8 @@ Spanish by default, English available, remembered across restarts.
 | M10 — PDF and certificate | Done: two printable sheets. The battery sheet is what a rider takes to a workshop or attaches to an advert, with the measured capacity, the wear against the pack's own best, the learned range, the drifting cells, the verdicts with their evidence, and the recorded maintenance; what the BMS merely claims is printed apart from what was measured. The inspection sheet is the same verdict a buyer saw in the yard, cell table included. Either can be signed as a seller certificate: the phone makes its own Ed25519 key at first use, the signature covers the whole result, and a QR plus a short code let anybody check it back in the app with no key, no account and no network. The signature proves the figures were not edited after the app produced them, and the sheet says in as many words that it proves nothing else |
 | Repeated inspections | Done: an inspection can be run again on the same pack, any number of times, and every run is compared against the ones before it. The comparison is a layer of its own: the same cell failing twice is called out as a finding rather than a reading, a cell that moves between runs is reported as the measurement problem it usually is, sag figures are only compared when the two runs pulled similar current, and counters that moved the way counters cannot (cycles down, health up, configured capacity changed) are named as a reset between visits. The earlier runs are printed on the inspection sheet and signed into the certificate, so a repeated fault is provable rather than assertable |
 | M11 — onboarding and baseline | Done: a battery is asked four things once, and none of them can be read off the wire — what it is called, what it was sold as, what the cells are made of, and when the rider got it. The chemistry is suggested from the overvoltage the pack builder set, never applied silently, and "not sure" stays a real answer because every safe range in the audit hangs off it. Today's reading can be kept as day one: cells, per-cell resistances, temperatures, counters and the whole BMS configuration, stored once and left alone. Everything the app later says about drift is measured against that rather than against whenever the app started looking, and a stated capacity is never invented. Profiles and baselines travel with the backup |
-| M12 — background alerts, M13 — config audit | Not started. Specified in [docs/PRD-monetizacion-inspeccion.md](docs/PRD-monetizacion-inspeccion.md) |
+| M13 — configuration audit | Done, and read only on purpose: the BMS's own settings read against what the declared chemistry can take. The charge and discharge cutoffs, the cold cutoff that decides whether the pack will charge below freezing, the heat cutoffs, the configured capacity against what the battery was sold as, the cell count against what is connected, the charge rate against the pack's own rating, the switches, where balancing starts, and anything that is not what it was on day one. With no chemistry declared the voltage checks stay quiet rather than guessing, because the two chemistries are a volt a cell apart and a wrong guess would bless a dangerous setting or condemn a normal one. The app never writes to a BMS and says so on the screen |
+| M12 — background alerts | Not started. Specified in [docs/PRD-monetizacion-inspeccion.md](docs/PRD-monetizacion-inspeccion.md) |
 
 ## Running it
 
@@ -155,7 +156,7 @@ watching the first real connection, settle these:
 flutter test
 ```
 
-645 tests, no device needed. The protocol ones run against 11 real 300-byte
+671 tests, no device needed. The protocol ones run against 11 real 300-byte
 frames captured from JK hardware, with expected values taken from the reference
 implementation's byte-layout tables rather than from this parser's own output.
 
@@ -175,7 +176,8 @@ lib/src/
               long_term_analysis
   pack/       chemistry (what the cells are and their safe ranges),
               pack_config (the settings worth watching), pack_baseline
-              (day one, and today against it)
+              (day one, and today against it), config_audit (those settings
+              read against those ranges)
   data/       database (drift), repository, exporter
   update/     app_version, release_info, update_checker, update_downloader,
               update_service

@@ -6731,6 +6731,288 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Comparación contra el estado guardado el día que se dio de alta la batería. No es una medida de capacidad: una foto de los voltajes no puede medir lo que aguanta un pack, y aquí no se presenta como tal.'**
   String get reportDayOneNote;
+
+  /// No description provided for @verdictConfigOvpDangerousTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'El corte de carga está por encima de lo que aguantan las celdas'**
+  String get verdictConfigOvpDangerousTitle;
+
+  /// No description provided for @verdictConfigOvpDangerousBody.
+  ///
+  /// In es, this message translates to:
+  /// **'El BMS corta la carga a {value} V por celda y el máximo seguro para esta química es {limit} V. Cada carga completa está haciendo daño. Se cambia desde la app oficial del BMS, bajo tu responsabilidad; esta app nunca escribe nada en la batería.'**
+  String verdictConfigOvpDangerousBody(String value, String limit);
+
+  /// No description provided for @verdictConfigOvpHighTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'El corte de carga está alto'**
+  String get verdictConfigOvpHighTitle;
+
+  /// No description provided for @verdictConfigOvpHighBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Cortas a {value} V por celda cuando con {limit} V la batería ya está prácticamente llena. Lo que ganas en autonomía es casi nada y lo que pierdes en vida útil no lo es.'**
+  String verdictConfigOvpHighBody(String value, String limit);
+
+  /// No description provided for @verdictConfigUvpDangerousTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'El corte de descarga deja las celdas por debajo de lo recuperable'**
+  String get verdictConfigUvpDangerousTitle;
+
+  /// No description provided for @verdictConfigUvpDangerousBody.
+  ///
+  /// In es, this message translates to:
+  /// **'El BMS deja bajar hasta {value} V por celda y el mínimo seguro es {limit} V. Una celda que baja de ahí puede no volver, y las que vuelven lo hacen con menos capacidad.'**
+  String verdictConfigUvpDangerousBody(String value, String limit);
+
+  /// No description provided for @verdictConfigUvpLowTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'El corte de descarga está bajo'**
+  String get verdictConfigUvpLowTitle;
+
+  /// No description provided for @verdictConfigUvpLowBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Cortas a {value} V por celda. Por debajo de {limit} V se aprieta a las celdas para sacar unos pocos kilómetros que salen caros en vida útil.'**
+  String verdictConfigUvpLowBody(String value, String limit);
+
+  /// No description provided for @verdictConfigChargesWhenFrozenTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'El BMS cargará la batería por debajo de cero'**
+  String get verdictConfigChargesWhenFrozenTitle;
+
+  /// No description provided for @verdictConfigChargesWhenFrozenBody.
+  ///
+  /// In es, this message translates to:
+  /// **'El corte por frío está en {value} °C. Cargar litio bajo cero deposita metal dentro de la celda: es permanente, no aparece en ningún número que el BMS reporte y es la forma más común de arruinar un pack en invierno. Súbelo a 2 °C o más desde la app oficial.'**
+  String verdictConfigChargesWhenFrozenBody(String value);
+
+  /// No description provided for @verdictConfigColdCutoffOkTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'No cargará con la batería helada'**
+  String get verdictConfigColdCutoffOkTitle;
+
+  /// No description provided for @verdictConfigColdCutoffOkBody.
+  ///
+  /// In es, this message translates to:
+  /// **'El corte por frío está en {value} °C, así que el BMS se niega a cargar antes de que empiece el daño. Es de los ajustes que más vida salvan y este está bien puesto.'**
+  String verdictConfigColdCutoffOkBody(String value);
+
+  /// No description provided for @verdictConfigChargeHotLimitTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'El corte por calor cargando está alto'**
+  String get verdictConfigChargeHotLimitTitle;
+
+  /// No description provided for @verdictConfigChargeHotLimitBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Deja cargar hasta {value} °C, y por encima de {limit} °C cargar ya envejece las celdas más rápido de lo normal.'**
+  String verdictConfigChargeHotLimitBody(String value, String limit);
+
+  /// No description provided for @verdictConfigDischargeHotLimitTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'El corte por calor descargando está alto'**
+  String get verdictConfigDischargeHotLimitTitle;
+
+  /// No description provided for @verdictConfigDischargeHotLimitBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Deja tirar hasta {value} °C. Por encima de {limit} °C ni siquiera descargar es gratis.'**
+  String verdictConfigDischargeHotLimitBody(String value, String limit);
+
+  /// No description provided for @verdictConfigCapacityDisagreesTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'La capacidad configurada no es la que te vendieron'**
+  String get verdictConfigCapacityDisagreesTitle;
+
+  /// No description provided for @verdictConfigCapacityDisagreesBody.
+  ///
+  /// In es, this message translates to:
+  /// **'El BMS está configurado a {value} Ah y tú anotaste que se vendió como {sold} Ah. El número del BMS lo escribió quien montó el pack: no mide nada, pero de él salen el porcentaje de carga y los amperios-hora restantes de todas las pantallas.'**
+  String verdictConfigCapacityDisagreesBody(String value, String sold);
+
+  /// No description provided for @verdictConfigCellCountDisagreesTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'El BMS está configurado para otro número de celdas'**
+  String get verdictConfigCellCountDisagreesTitle;
+
+  /// No description provided for @verdictConfigCellCountDisagreesBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Configurado para {value} celdas y se están leyendo {seen}. Con esto mal, el voltaje del pack, el porcentaje y los cortes de protección se calculan sobre una batería que no es esta.'**
+  String verdictConfigCellCountDisagreesBody(String value, String seen);
+
+  /// No description provided for @verdictConfigChargeCurrentHighTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'La corriente de carga es alta para el tamaño del pack'**
+  String get verdictConfigChargeCurrentHighTitle;
+
+  /// No description provided for @verdictConfigChargeCurrentHighBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Hasta {value} A en una batería configurada como de {capacity} Ah. Se puede, pero cargar por encima de 1C calienta y envejece; si no tienes prisa, bajarlo alarga la vida.'**
+  String verdictConfigChargeCurrentHighBody(String value, String capacity);
+
+  /// No description provided for @verdictConfigBalancerOffTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'El balanceador está apagado'**
+  String get verdictConfigBalancerOffTitle;
+
+  /// No description provided for @verdictConfigBalancerOffBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin balanceo, las celdas se van separando solas y la más débil marca el final de cada carga y de cada descarga. Es la causa número uno de packs que pierden autonomía sin que ninguna celda esté realmente mal.'**
+  String get verdictConfigBalancerOffBody;
+
+  /// No description provided for @verdictConfigChargeOffTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'La carga está deshabilitada en el BMS'**
+  String get verdictConfigChargeOffTitle;
+
+  /// No description provided for @verdictConfigChargeOffBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Si la batería no coge carga, esto lo explica. Puede ser a propósito, o puede que se quedara así después de una protección.'**
+  String get verdictConfigChargeOffBody;
+
+  /// No description provided for @verdictConfigDischargeOffTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'La descarga está deshabilitada en el BMS'**
+  String get verdictConfigDischargeOffTitle;
+
+  /// No description provided for @verdictConfigDischargeOffBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Si la moto no arranca, esto lo explica. Puede ser a propósito, o puede que se quedara así después de una protección.'**
+  String get verdictConfigDischargeOffBody;
+
+  /// No description provided for @verdictConfigBalanceStartLowTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'El balanceo empieza donde el voltaje no dice nada'**
+  String get verdictConfigBalanceStartLowTitle;
+
+  /// No description provided for @verdictConfigBalanceStartLowBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Empieza a {value} V por celda, y para esta química lo normal es cerca de {limit} V. En la parte plana de la curva un milivoltio no significa carga, así que el balanceador puede mover energía en la dirección equivocada.'**
+  String verdictConfigBalanceStartLowBody(String value, String limit);
+
+  /// No description provided for @verdictConfigChangedSinceDayOneTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'La configuración no es la del día uno'**
+  String get verdictConfigChangedSinceDayOneTitle;
+
+  /// No description provided for @verdictConfigChangedSinceDayOneBody.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} ajuste(s) han cambiado desde que se guardó el estado inicial. Si no fuiste tú, alguien ha tocado el BMS.'**
+  String verdictConfigChangedSinceDayOneBody(String count);
+
+  /// No description provided for @verdictConfigChemistryUnknownTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin química declarada no se auditan voltajes'**
+  String get verdictConfigChemistryUnknownTitle;
+
+  /// No description provided for @verdictConfigChemistryUnknownBody.
+  ///
+  /// In es, this message translates to:
+  /// **'LFP y NMC se llevan casi un voltio por celda: con la química equivocada esta pantalla bendeciría un ajuste peligroso o condenaría uno normal. Dilo en el perfil de la batería y vuelve.'**
+  String get verdictConfigChemistryUnknownBody;
+
+  /// No description provided for @verdictConfigLooksSaneTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'La configuración es razonable'**
+  String get verdictConfigLooksSaneTitle;
+
+  /// No description provided for @verdictConfigLooksSaneBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Los cortes de voltaje, los de temperatura y los interruptores están donde deberían para esta química. Esto no dice nada sobre el estado de las celdas: es una revisión de los ajustes, no de la batería.'**
+  String get verdictConfigLooksSaneBody;
+
+  /// No description provided for @evidenceConfiguredSetting.
+  ///
+  /// In es, this message translates to:
+  /// **'Configurado'**
+  String get evidenceConfiguredSetting;
+
+  /// No description provided for @evidenceSafeLimit.
+  ///
+  /// In es, this message translates to:
+  /// **'Límite seguro'**
+  String get evidenceSafeLimit;
+
+  /// No description provided for @evidenceCellsSeen.
+  ///
+  /// In es, this message translates to:
+  /// **'Celdas que se están leyendo'**
+  String get evidenceCellsSeen;
+
+  /// No description provided for @configAuditTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Auditoría de configuración'**
+  String get configAuditTitle;
+
+  /// No description provided for @configAuditIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que el BMS está configurado para hacer, comparado con lo que aguantan las celdas que dijiste que lleva.'**
+  String get configAuditIntro;
+
+  /// No description provided for @configAuditOpen.
+  ///
+  /// In es, this message translates to:
+  /// **'Auditar la configuración'**
+  String get configAuditOpen;
+
+  /// No description provided for @configAuditReadOnly.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo lectura. Esta app nunca escribe en el BMS: un valor mal escrito en una batería es un incendio, y el camino de escritura del protocolo está sacado a base de ingeniería inversa. Lo que haya que cambiar se cambia desde la app oficial del BMS, y esa decisión es tuya.'**
+  String get configAuditReadOnly;
+
+  /// No description provided for @configAuditSettings.
+  ///
+  /// In es, this message translates to:
+  /// **'Todo lo que se ha mirado'**
+  String get configAuditSettings;
+
+  /// No description provided for @configAuditNoSettings.
+  ///
+  /// In es, this message translates to:
+  /// **'El BMS todavía no ha mandado su configuración. Espera unos segundos con la batería conectada.'**
+  String get configAuditNoSettings;
+
+  /// No description provided for @configAuditChemistryRow.
+  ///
+  /// In es, this message translates to:
+  /// **'Química declarada'**
+  String get configAuditChemistryRow;
+
+  /// No description provided for @configAuditNeedsProfile.
+  ///
+  /// In es, this message translates to:
+  /// **'Completar el perfil'**
+  String get configAuditNeedsProfile;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {
