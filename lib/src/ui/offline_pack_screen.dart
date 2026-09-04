@@ -9,6 +9,7 @@ import '../metrics/cell_drift.dart';
 import '../metrics/degradation.dart';
 import '../metrics/range_estimator.dart';
 import '../metrics/range_outlook.dart';
+import '../pack/pack_baseline.dart';
 import '../metrics/maintenance.dart';
 import '../license/entitlements.dart';
 import '../report/pdf_reports.dart';
@@ -527,6 +528,21 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
         readings: const [],
         advertisedAh: widget.device.catalogueCapacityAh,
       );
+      // The day-one copy, and today against it, when both exist. Read here
+      // rather than held in state: a sheet is built once and this is the only
+      // place that needs it.
+      final baseline = await widget.service.repository?.baseline(
+        widget.device.id,
+      );
+      final sinceDayOne = baseline == null || _last == null
+          ? null
+          : BaselineComparison.computeFrom(
+              baseline: baseline,
+              at: _last!.timestamp,
+              cells: decodeCellVoltages(_last!.cellVoltagesJson),
+              current: _last!.current,
+              cycleCount: _last!.cycleCount.round(),
+            );
       final data = PackReportData.build(
         generatedAt: DateTime.now().toUtc(),
         device: widget.device,
@@ -547,6 +563,8 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
         whPerKm: _estimator?.hasLearned ?? false ? _estimator!.whPerKm : null,
         capacityTests: _tests.where((t) => t.completed).length,
         appVersion: _appVersion,
+        baseline: baseline,
+        sinceDayOne: sinceDayOne,
       );
       final bytes = await const PdfReports().packReport(t, data);
       await const ReportSharing().share(

@@ -334,6 +334,106 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                 const SizedBox(height: 4),
               ],
             ),
+            // Where an alert goes once it has fired. Separate from which
+            // alerts exist, above: one is about what is worth saying and this
+            // is about whether anybody will hear it.
+            Section(
+              title: t.alertsNotifyTitle,
+              intro: t.alertsNotifyIntro,
+              children: [
+                SwitchListTile(
+                  value: settings.notifyAlerts,
+                  onChanged: (v) async {
+                    await settings.setNotifyAlerts(v);
+                    if (v) {
+                      await widget.service.prepareAlertNotifications(
+                        channelName: t.alertsNotifyTitle,
+                        channelDescription: t.alertsNotifyIntro,
+                      );
+                    } else {
+                      widget.service.notifyAlerts = false;
+                    }
+                    if (mounted) setState(() {});
+                  },
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    t.alertsNotifyEnable,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ),
+                // Android can refuse, and a rider who believes alerts will
+                // arrive when they will not is worse off than one who knows.
+                if (settings.notifyAlerts &&
+                    !widget.service.alertNotifications.isReady)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4, bottom: 8),
+                    child: Text(
+                      t.alertsNotifyDenied,
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        height: 1.45,
+                        color: AppTheme.watch,
+                      ),
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 2, bottom: 6),
+                  child: Text(
+                    t.alertsNotifyOneConnection,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      height: 1.45,
+                      color: AppTheme.textFaint,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Section(
+              title: t.alertsThresholdsTitle,
+              intro: t.alertsThresholdsIntro,
+              children: [
+                _threshold(
+                  label: t.alertsDeltaWarn,
+                  value: settings.alertDeltaWarn,
+                  min: 0.030,
+                  max: 0.300,
+                  divisions: 27,
+                  format: (v) => '${(v * 1000).toStringAsFixed(0)} mV',
+                  onChanged: (v) => settings.setAlertThresholds(delta: v),
+                ),
+                _threshold(
+                  label: t.alertsTempWarn,
+                  value: settings.alertTempWarn,
+                  min: 35,
+                  max: 75,
+                  divisions: 40,
+                  format: (v) => '${v.toStringAsFixed(0)} °C',
+                  onChanged: (v) => settings.setAlertThresholds(temperature: v),
+                ),
+                _threshold(
+                  label: t.alertsLowChargeWarn,
+                  value: settings.alertLowChargeWarn,
+                  min: 5,
+                  max: 40,
+                  divisions: 35,
+                  format: (v) => '${v.toStringAsFixed(0)} %',
+                  onChanged: (v) => settings.setAlertThresholds(lowCharge: v),
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () async {
+                      await settings.resetAlertThresholds();
+                      _pushThresholds();
+                      if (mounted) setState(() {});
+                    },
+                    child: Text(t.alertsResetDefaults),
+                  ),
+                ),
+              ],
+            ),
             Section(
               title: t.settingsSectionApp,
               children: [
@@ -405,6 +505,64 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
     );
   }
 
+  /// One movable threshold. The value shows next to the label, because a
+  /// slider with no number on it is a guess.
+  Widget _threshold({
+    required String label,
+    required double value,
+    required double min,
+    required double max,
+    required int divisions,
+    required String Function(double) format,
+    required Future<void> Function(double) onChanged,
+  }) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Row(
+        children: [
+          Expanded(child: Text(label, style: const TextStyle(fontSize: 13.5))),
+          Text(
+            format(value),
+            style: const TextStyle(
+              fontSize: 13.5,
+              fontFeatures: AppTheme.tabular,
+              color: AppTheme.textSecondary,
+            ),
+          ),
+        ],
+      ),
+      Slider(
+        value: value.clamp(min, max),
+        min: min,
+        max: max,
+        divisions: divisions,
+        onChanged: (v) async {
+          await onChanged(v);
+          _pushThresholds();
+          if (mounted) setState(() {});
+        },
+      ),
+    ],
+  );
+
+  /// Hands the thresholds to the running detector, so a change takes effect
+  /// on the next reading rather than on the next launch.
+  void _pushThresholds() {
+    final settings = widget.settings;
+    widget.service.applySettings(
+      haptics: settings.hapticAlerts,
+      rawFrames: settings.recordRawFrames,
+      chargeTargetSoc: settings.chargeTargetSoc,
+      watchCharge: widget.service.chargeWatchEnabled,
+      autoTrip: settings.autoTripEnabled,
+      watchLink: settings.linkWatchEnabled,
+      muted: settings.mutedAlerts,
+      alertDeltaWarn: settings.alertDeltaWarn,
+      alertTempWarn: settings.alertTempWarn,
+      alertLowChargeWarn: settings.alertLowChargeWarn,
+    );
+  }
+
   /// Every alert the app can raise, by the name it is stored under.
   List<({String name, String label})> _alertSwitches(AppL10n t) => [
     (
@@ -420,6 +578,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
     (name: RideAlert.lowCharge.name, label: t.alertLowCharge),
     (name: RideAlert.criticalCharge.name, label: t.alertCriticalCharge),
     (name: RideAlert.cellNearCutoff.name, label: t.alertCellNearCutoff),
+    (name: RideAlert.nearCurrentLimit.name, label: t.alertNearCurrentLimit),
+    (name: BmsService.linkLostAlertKey, label: t.alertLinkLost),
   ];
 
   Widget _localeChip(String label, LanguageChoice choice) => ChoiceChip(

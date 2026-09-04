@@ -2224,10 +2224,6 @@ class AppL10nEs extends AppL10n {
   String get autoTripStopped => 'Viaje guardado';
 
   @override
-  String get autoTripBlocked =>
-      'No pude grabar el viaje: falta el permiso de ubicación. Sin él la app no aprende tu autonomía.';
-
-  @override
   String get degNowTitle => 'Capacidad ahora';
 
   @override
@@ -2384,16 +2380,6 @@ class AppL10nEs extends AppL10n {
   @override
   String linkWatchNotifText(String soc, String volts, String amps) {
     return '$soc %  ·  $volts V  ·  $amps A';
-  }
-
-  @override
-  String rideSavedNotif(String km, String whPerKm) {
-    return 'Viaje guardado: $km km, $whPerKm Wh/km';
-  }
-
-  @override
-  String rideSavedNotifNoConsumption(String km) {
-    return 'Viaje guardado: $km km';
   }
 
   @override
@@ -3715,6 +3701,491 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get reportSeriesWorstCell => 'Peor celda';
+
+  @override
+  String get profileTitle => 'Perfil de la batería';
+
+  @override
+  String get profileIntro =>
+      'Cuatro cosas que el BMS no puede saber y que cambian lo que la app puede decirte. Todas se pueden dejar en blanco.';
+
+  @override
+  String get profileName => 'Nombre';
+
+  @override
+  String get profileSoldAs => 'Vendida como';
+
+  @override
+  String get profileSoldAsHint => 'Capacidad que te dijeron';
+
+  @override
+  String get profileChemistry => 'Química de las celdas';
+
+  @override
+  String get profileChemistryWhy =>
+      'De esto dependen los rangos seguros. LFP a 4,2 V por celda es un incendio; NMC a 3,6 V es una batería a medio cargar. Si no lo sabes, déjalo en \"No lo sé\" y la app no auditará voltajes.';
+
+  @override
+  String profileChemistryFromOvp(String chemistry, String value) {
+    return 'El BMS está configurado a $value V por celda, lo que sugiere $chemistry.';
+  }
+
+  @override
+  String profileChemistryFromCell(String chemistry, String value) {
+    return 'Se ha visto una celda a $value V, así que no es LFP: sugiere $chemistry.';
+  }
+
+  @override
+  String get profileAcquired => 'La tengo desde';
+
+  @override
+  String get profileAcquiredUnknown => 'Sin fecha';
+
+  @override
+  String get profileAcquiredClear => 'Quitar la fecha';
+
+  @override
+  String profileAgeYears(String years) {
+    return '$years años contigo';
+  }
+
+  @override
+  String get profileCaptureBaseline => 'Guardar el estado de hoy como día uno';
+
+  @override
+  String get profileCaptureBaselineHint =>
+      'Celdas, resistencias y configuración del BMS tal como están ahora. Todo lo que la app diga después sobre derivas se compara contra esto. Mejor con la batería en reposo.';
+
+  @override
+  String get profileSave => 'Guardar';
+
+  @override
+  String get profileLater => 'Ahora no';
+
+  @override
+  String get profileEdit => 'Editar el perfil';
+
+  @override
+  String get profileComplete => 'Completar el perfil';
+
+  @override
+  String get profileBaseline => 'Día uno';
+
+  @override
+  String get profileBaselineMissing => 'Sin guardar';
+
+  @override
+  String get profileNoBaselineIntro =>
+      'Sin un día uno, \"el delta se ha abierto\" solo significa \"desde que la app empezó a mirar\". Guardar el estado de hoy le da a todo lo demás un punto de partida.';
+
+  @override
+  String profileSinceDayOne(String date) {
+    return 'Desde el día uno ($date)';
+  }
+
+  @override
+  String get profileNotComparable =>
+      'Una de las dos lecturas se tomó con la batería tirando corriente, así que las celdas no son comparables. Mira esto con la moto parada.';
+
+  @override
+  String get profileDeltaThenNow => 'Diferencia entre celdas';
+
+  @override
+  String get profileWorstDrift => 'La que más se ha ido';
+
+  @override
+  String profileWorstDriftValue(String cell, String mv) {
+    return 'Celda $cell, $mv mV';
+  }
+
+  @override
+  String get profileCyclesSince => 'Ciclos desde entonces';
+
+  @override
+  String get profileConfigChanged => 'Configuración del BMS';
+
+  @override
+  String get profileConfigUnchanged => 'Igual que el día uno';
+
+  @override
+  String profileConfigChangedCount(String count) {
+    return '$count ajuste(s) cambiado(s)';
+  }
+
+  @override
+  String get chemistryLfp => 'LFP';
+
+  @override
+  String get chemistryNmc => 'NMC / Li-ion';
+
+  @override
+  String get chemistryUnknown => 'No lo sé';
+
+  @override
+  String get configCellOvp => 'Corte por celda alta';
+
+  @override
+  String get configCellUvp => 'Corte por celda baja';
+
+  @override
+  String get configBalanceStart => 'Empieza a balancear';
+
+  @override
+  String get configSoc100 => 'Voltaje del 100 %';
+
+  @override
+  String get configSoc0 => 'Voltaje del 0 %';
+
+  @override
+  String get configMaxCharge => 'Corriente máxima de carga';
+
+  @override
+  String get configMaxDischarge => 'Corriente máxima de descarga';
+
+  @override
+  String get configMaxBalance => 'Corriente de balanceo';
+
+  @override
+  String get configChargeOtp => 'Corte por calor cargando';
+
+  @override
+  String get configDischargeOtp => 'Corte por calor descargando';
+
+  @override
+  String get configChargeUtp => 'Corte por frío cargando';
+
+  @override
+  String get configMosfetOtp => 'Corte por calor del MOSFET';
+
+  @override
+  String get configNominalCapacity => 'Capacidad configurada';
+
+  @override
+  String get configCellCount => 'Número de celdas';
+
+  @override
+  String get configChargeSwitch => 'Carga habilitada';
+
+  @override
+  String get configDischargeSwitch => 'Descarga habilitada';
+
+  @override
+  String get configBalancerSwitch => 'Balanceador';
+
+  @override
+  String get configOn => 'Sí';
+
+  @override
+  String get configOff => 'No';
+
+  @override
+  String get reportSectionDayOne => 'El día uno de esta batería';
+
+  @override
+  String get reportDayOneNote =>
+      'Comparación contra el estado guardado el día que se dio de alta la batería. No es una medida de capacidad: una foto de los voltajes no puede medir lo que aguanta un pack, y aquí no se presenta como tal.';
+
+  @override
+  String get verdictConfigOvpDangerousTitle =>
+      'El corte de carga está por encima de lo que aguantan las celdas';
+
+  @override
+  String verdictConfigOvpDangerousBody(String value, String limit) {
+    return 'El BMS corta la carga a $value V por celda y el máximo seguro para esta química es $limit V. Cada carga completa está haciendo daño. Se cambia desde la app oficial del BMS, bajo tu responsabilidad; esta app nunca escribe nada en la batería.';
+  }
+
+  @override
+  String get verdictConfigOvpHighTitle => 'El corte de carga está alto';
+
+  @override
+  String verdictConfigOvpHighBody(String value, String limit) {
+    return 'Cortas a $value V por celda cuando con $limit V la batería ya está prácticamente llena. Lo que ganas en autonomía es casi nada y lo que pierdes en vida útil no lo es.';
+  }
+
+  @override
+  String get verdictConfigUvpDangerousTitle =>
+      'El corte de descarga deja las celdas por debajo de lo recuperable';
+
+  @override
+  String verdictConfigUvpDangerousBody(String value, String limit) {
+    return 'El BMS deja bajar hasta $value V por celda y el mínimo seguro es $limit V. Una celda que baja de ahí puede no volver, y las que vuelven lo hacen con menos capacidad.';
+  }
+
+  @override
+  String get verdictConfigUvpLowTitle => 'El corte de descarga está bajo';
+
+  @override
+  String verdictConfigUvpLowBody(String value, String limit) {
+    return 'Cortas a $value V por celda. Por debajo de $limit V se aprieta a las celdas para sacar unos pocos kilómetros que salen caros en vida útil.';
+  }
+
+  @override
+  String get verdictConfigChargesWhenFrozenTitle =>
+      'El BMS cargará la batería por debajo de cero';
+
+  @override
+  String verdictConfigChargesWhenFrozenBody(String value) {
+    return 'El corte por frío está en $value °C. Cargar litio bajo cero deposita metal dentro de la celda: es permanente, no aparece en ningún número que el BMS reporte y es la forma más común de arruinar un pack en invierno. Súbelo a 2 °C o más desde la app oficial.';
+  }
+
+  @override
+  String get verdictConfigColdCutoffOkTitle =>
+      'No cargará con la batería helada';
+
+  @override
+  String verdictConfigColdCutoffOkBody(String value) {
+    return 'El corte por frío está en $value °C, así que el BMS se niega a cargar antes de que empiece el daño. Es de los ajustes que más vida salvan y este está bien puesto.';
+  }
+
+  @override
+  String get verdictConfigChargeHotLimitTitle =>
+      'El corte por calor cargando está alto';
+
+  @override
+  String verdictConfigChargeHotLimitBody(String value, String limit) {
+    return 'Deja cargar hasta $value °C, y por encima de $limit °C cargar ya envejece las celdas más rápido de lo normal.';
+  }
+
+  @override
+  String get verdictConfigDischargeHotLimitTitle =>
+      'El corte por calor descargando está alto';
+
+  @override
+  String verdictConfigDischargeHotLimitBody(String value, String limit) {
+    return 'Deja tirar hasta $value °C. Por encima de $limit °C ni siquiera descargar es gratis.';
+  }
+
+  @override
+  String get verdictConfigCapacityDisagreesTitle =>
+      'La capacidad configurada no es la que te vendieron';
+
+  @override
+  String verdictConfigCapacityDisagreesBody(String value, String sold) {
+    return 'El BMS está configurado a $value Ah y tú anotaste que se vendió como $sold Ah. El número del BMS lo escribió quien montó el pack: no mide nada, pero de él salen el porcentaje de carga y los amperios-hora restantes de todas las pantallas.';
+  }
+
+  @override
+  String get verdictConfigCellCountDisagreesTitle =>
+      'El BMS está configurado para otro número de celdas';
+
+  @override
+  String verdictConfigCellCountDisagreesBody(String value, String seen) {
+    return 'Configurado para $value celdas y se están leyendo $seen. Con esto mal, el voltaje del pack, el porcentaje y los cortes de protección se calculan sobre una batería que no es esta.';
+  }
+
+  @override
+  String get verdictConfigChargeCurrentHighTitle =>
+      'La corriente de carga es alta para el tamaño del pack';
+
+  @override
+  String verdictConfigChargeCurrentHighBody(String value, String capacity) {
+    return 'Hasta $value A en una batería configurada como de $capacity Ah. Se puede, pero cargar por encima de 1C calienta y envejece; si no tienes prisa, bajarlo alarga la vida.';
+  }
+
+  @override
+  String get verdictConfigBalancerOffTitle => 'El balanceador está apagado';
+
+  @override
+  String get verdictConfigBalancerOffBody =>
+      'Sin balanceo, las celdas se van separando solas y la más débil marca el final de cada carga y de cada descarga. Es la causa número uno de packs que pierden autonomía sin que ninguna celda esté realmente mal.';
+
+  @override
+  String get verdictConfigChargeOffTitle =>
+      'La carga está deshabilitada en el BMS';
+
+  @override
+  String get verdictConfigChargeOffBody =>
+      'Si la batería no coge carga, esto lo explica. Puede ser a propósito, o puede que se quedara así después de una protección.';
+
+  @override
+  String get verdictConfigDischargeOffTitle =>
+      'La descarga está deshabilitada en el BMS';
+
+  @override
+  String get verdictConfigDischargeOffBody =>
+      'Si la moto no arranca, esto lo explica. Puede ser a propósito, o puede que se quedara así después de una protección.';
+
+  @override
+  String get verdictConfigBalanceStartLowTitle =>
+      'El balanceo empieza donde el voltaje no dice nada';
+
+  @override
+  String verdictConfigBalanceStartLowBody(String value, String limit) {
+    return 'Empieza a $value V por celda, y para esta química lo normal es cerca de $limit V. En la parte plana de la curva un milivoltio no significa carga, así que el balanceador puede mover energía en la dirección equivocada.';
+  }
+
+  @override
+  String get verdictConfigChangedSinceDayOneTitle =>
+      'La configuración no es la del día uno';
+
+  @override
+  String verdictConfigChangedSinceDayOneBody(String count) {
+    return '$count ajuste(s) han cambiado desde que se guardó el estado inicial. Si no fuiste tú, alguien ha tocado el BMS.';
+  }
+
+  @override
+  String get verdictConfigChemistryUnknownTitle =>
+      'Sin química declarada no se auditan voltajes';
+
+  @override
+  String get verdictConfigChemistryUnknownBody =>
+      'LFP y NMC se llevan casi un voltio por celda: con la química equivocada esta pantalla bendeciría un ajuste peligroso o condenaría uno normal. Dilo en el perfil de la batería y vuelve.';
+
+  @override
+  String get verdictConfigLooksSaneTitle => 'La configuración es razonable';
+
+  @override
+  String get verdictConfigLooksSaneBody =>
+      'Los cortes de voltaje, los de temperatura y los interruptores están donde deberían para esta química. Esto no dice nada sobre el estado de las celdas: es una revisión de los ajustes, no de la batería.';
+
+  @override
+  String get evidenceConfiguredSetting => 'Configurado';
+
+  @override
+  String get evidenceSafeLimit => 'Límite seguro';
+
+  @override
+  String get evidenceCellsSeen => 'Celdas que se están leyendo';
+
+  @override
+  String get configAuditTitle => 'Auditoría de configuración';
+
+  @override
+  String get configAuditIntro =>
+      'Lo que el BMS está configurado para hacer, comparado con lo que aguantan las celdas que dijiste que lleva.';
+
+  @override
+  String get configAuditOpen => 'Auditar la configuración';
+
+  @override
+  String get configAuditReadOnly =>
+      'Solo lectura. Esta app nunca escribe en el BMS: un valor mal escrito en una batería es un incendio, y el camino de escritura del protocolo está sacado a base de ingeniería inversa. Lo que haya que cambiar se cambia desde la app oficial del BMS, y esa decisión es tuya.';
+
+  @override
+  String get configAuditSettings => 'Todo lo que se ha mirado';
+
+  @override
+  String get configAuditNoSettings =>
+      'El BMS todavía no ha mandado su configuración. Espera unos segundos con la batería conectada.';
+
+  @override
+  String get configAuditChemistryRow => 'Química declarada';
+
+  @override
+  String get configAuditNeedsProfile => 'Completar el perfil';
+
+  @override
+  String get alertNearCurrentLimit => 'Corriente cerca del límite del BMS';
+
+  @override
+  String get alertLinkLost => 'Se perdió la conexión con la batería';
+
+  @override
+  String get alertsNotifyTitle => 'Avisos que llegan con la app cerrada';
+
+  @override
+  String get alertsNotifyIntro =>
+      'Los avisos suenan en la barra de notificaciones aunque la app esté en segundo plano o cerrada. Sin esto, un aviso a las tres de la mañana con el móvil en otra habitación no lo ve nadie.';
+
+  @override
+  String get alertsNotifyEnable => 'Avisar en la barra de notificaciones';
+
+  @override
+  String get alertsNotifyDenied =>
+      'Android no ha dado permiso para notificar. Los avisos seguirán saliendo en pantalla y con vibración, pero no llegarán con la app cerrada.';
+
+  @override
+  String get alertsNotifyOneConnection =>
+      'Recuerda: el BMS acepta una sola conexión Bluetooth. Mientras el móvil esté conectado en segundo plano, la app oficial de JK no podrá conectarse, y al revés.';
+
+  @override
+  String get alertsThresholdsTitle => 'A partir de cuándo avisar';
+
+  @override
+  String get alertsThresholdsIntro =>
+      'Los valores por defecto son conservadores. Súbelos si tu batería vive en un rango distinto al típico y te avisa de más.';
+
+  @override
+  String get alertsDeltaWarn => 'Diferencia entre celdas';
+
+  @override
+  String get alertsTempWarn => 'Temperatura';
+
+  @override
+  String get alertsLowChargeWarn => 'Carga baja';
+
+  @override
+  String get alertsResetDefaults => 'Volver a los valores por defecto';
+
+  @override
+  String alertNotificationBodyDelta(String value) {
+    return 'Las celdas se han separado $value V. La más baja marca cuándo se acaba la batería.';
+  }
+
+  @override
+  String alertNotificationBodyTemp(String value) {
+    return '$value °C. Para y déjala enfriar antes de seguir.';
+  }
+
+  @override
+  String alertNotificationBodyLow(String value) {
+    return 'Queda $value % de carga.';
+  }
+
+  @override
+  String alertNotificationBodyCritical(String value) {
+    return 'Queda $value % de carga. Busca dónde parar.';
+  }
+
+  @override
+  String alertNotificationBodyCell(String value) {
+    return 'Una celda está a $value V, cerca del corte del BMS. Se puede quedar sin batería aunque el porcentaje aún parezca razonable.';
+  }
+
+  @override
+  String get alertNotificationBodyFault =>
+      'El BMS ha levantado una protección. Mira la pantalla antes de seguir.';
+
+  @override
+  String alertNotificationBodyNearLimit(String value) {
+    return '$value A, cerca de lo que el BMS permite. Si llega al límite, corta sin avisar.';
+  }
+
+  @override
+  String get alertNotificationBodyLinkLost =>
+      'La app dejó de recibir lecturas de la batería. Si estabas vigilando una carga, ya no se está vigilando.';
+
+  @override
+  String alertNotificationBodyChargeTarget(String value) {
+    return 'La batería ha llegado al $value % que pediste.';
+  }
+
+  @override
+  String get alertNotificationBodyChargeComplete => 'La carga ha terminado.';
+
+  @override
+  String alertNotificationBodyChargeHot(String value) {
+    return '$value °C mientras carga. Desenchufa y déjala enfriar.';
+  }
+
+  @override
+  String alertNotificationBodyChargeSpread(String value) {
+    return 'Las celdas se han separado $value V al final de la carga. Es donde mejor se ve un desbalance.';
+  }
+
+  @override
+  String get autoTripBlocked =>
+      'No pude grabar el viaje: falta el permiso de ubicación. Sin él la app no aprende tu autonomía.';
+
+  @override
+  String rideSavedNotif(String km, String whPerKm) {
+    return 'Viaje guardado: $km km, $whPerKm Wh/km';
+  }
+
+  @override
+  String rideSavedNotifNoConsumption(String km) {
+    return 'Viaje guardado: $km km';
+  }
 
   @override
   String get representativeAsk => '¿Este viaje te representa?';

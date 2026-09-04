@@ -52,6 +52,20 @@ class Devices extends Table {
   BoolColumn get catalogueFromBms =>
       boolean().withDefault(const Constant(false))();
 
+  /// What the cells are made of, by [CellChemistry] name, or empty when
+  /// nobody has said.
+  ///
+  /// Empty is a real answer and the default: every safe range in the
+  /// configuration audit hangs off this, the two chemistries disagree by a
+  /// volt a cell, and an audit run against a guess would be worse than no
+  /// audit at all.
+  TextColumn get chemistry => text().withDefault(const Constant(''))();
+
+  /// When the rider got the pack, if they said. Not when the app first saw
+  /// it: a battery bought used in 2021 and met by this app last week is four
+  /// years old, and the difference is the whole point of asking.
+  DateTimeColumn get acquiredAt => dateTime().nullable()();
+
   DateTimeColumn get firstSeenAt => dateTime()();
   DateTimeColumn get lastSeenAt => dateTime()();
 
@@ -327,6 +341,29 @@ class Inspections extends Table {
   TextColumn get note => text().withDefault(const Constant(''))();
 }
 
+/// What each pack looked like on the day it was taken on.
+///
+/// One row per battery, written once and then left alone: a baseline that
+/// moves is not a baseline. Stored as JSON because it is a document rather
+/// than a set of columns to query -- nothing selects packs by their day-one
+/// cell seven.
+class Baselines extends Table {
+  /// The pack it belongs to. One baseline per battery, so this is the key.
+  TextColumn get deviceId => text()();
+
+  DateTimeColumn get capturedAt => dateTime()();
+
+  /// A [PackBaseline] as JSON.
+  TextColumn get json => text()();
+
+  /// The rider's own words about the day, if any: where it came from, what
+  /// the seller said, what it cost.
+  TextColumn get note => text().withDefault(const Constant(''))();
+
+  @override
+  Set<Column<Object>> get primaryKey => {deviceId};
+}
+
 @DriftDatabase(
   tables: [
     Devices,
@@ -337,6 +374,7 @@ class Inspections extends Table {
     CapacityTests,
     MaintenanceEvents,
     Inspections,
+    Baselines,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -344,7 +382,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -380,7 +418,18 @@ class AppDatabase extends _$AppDatabase {
         // loudly -- it quietly rescales every health figure for that pack.
         // Asking once beats carrying a number that might be fiction.
         await m.alterTable(
-          TableMigration(devices, newColumns: [devices.catalogueFromBms]),
+          TableMigration(
+            devices,
+            // Every column added to this table after version 5 has to be
+            // listed here as well as in its own step: the copy is written
+            // from the current schema, so a column the old table never had
+            // has to be declared new or the SELECT goes looking for it.
+            newColumns: [
+              devices.catalogueFromBms,
+              devices.chemistry,
+              devices.acquiredAt,
+            ],
+          ),
         );
         await m.alterTable(TableMigration(capacityTests));
         await customStatement(
@@ -417,13 +466,29 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(inspections);
       }
       if (from < 12) {
+        await m.createTable(baselines);
+      }
+      // Same trap as the catalogue column above: anything older than 5 has
+      // had the devices table built or rebuilt from the current schema by an
+      // earlier step, which already carries these two. Adding them again
+      // fails with a duplicate-column error that stops the app opening.
+      if (from >= 5 && from < 12) {
+        await m.addColumn(devices, devices.chemistry);
+        await m.addColumn(devices, devices.acquiredAt);
+      }
+      if (from < 13) {
         // representative is nullable and needs no backfill: every existing
         // ride is honestly unanswered. summarySeen defaults to false, which
         // would have the app open with the summary of a ride the rider saw
-        // weeks ago -- before the feature that tracks "seen" even existed.
+        // weeks ago, before the feature that tracks "seen" even existed.
         // A ride from before this column is either already shown or too old
         // to matter, so mark every existing one seen rather than leave it
         // eligible to resurface.
+        //
+        // Safe from every older version, unlike the devices columns above:
+        // the from < 5 recreation rebuilds devices and capacity_tests, and
+        // never trips, so these two are added exactly once whatever the
+        // starting point.
         await m.addColumn(trips, trips.representative);
         await m.addColumn(trips, trips.summarySeen);
         await customStatement('UPDATE trips SET summary_seen = 1');
@@ -579,6 +644,29 @@ class AppDatabase extends _$AppDatabase {
   Future<List<Inspection>> allInspectionsForBackup() =>
       select(inspections).get();
 
+  // --- Day-one baselines ---
+
+  Future<void> saveBaseline(BaselinesCompanion row) =>
+      into(baselines).insertOnConflictUpdate(row);
+
+  Future<Baseline?> baselineRow(String deviceId) => (select(
+    baselines,
+  )..where((b) => b.deviceId.equals(deviceId))).getSingleOrNull();
+
+  Stream<Baseline?> watchBaselineRow(String deviceId) => (select(
+    baselines,
+  )..where((b) => b.deviceId.equals(deviceId))).watchSingleOrNull();
+
+  Future<void> deleteBaseline(String deviceId) =>
+      (delete(baselines)..where((b) => b.deviceId.equals(deviceId))).go();
+
+  Future<void> setBaselineNote(String deviceId, String note) =>
+      (update(baselines)..where((b) => b.deviceId.equals(deviceId))).write(
+        BaselinesCompanion(note: Value(note)),
+      );
+
+  Future<List<Baseline>> allBaselines() => select(baselines).get();
+
   // --- Backup ---
 
   //
@@ -602,6 +690,7 @@ class AppDatabase extends _$AppDatabase {
     await delete(capacityTests).go();
     await delete(maintenanceEvents).go();
     await delete(inspections).go();
+    await delete(baselines).go();
     await delete(devices).go();
   }
 
@@ -638,6 +727,7 @@ class AppDatabase extends _$AppDatabase {
     await (delete(rawFrames)..where((f) => f.deviceId.equals(id))).go();
     await (delete(capacityTests)..where((t) => t.deviceId.equals(id))).go();
     await (delete(maintenanceEvents)..where((e) => e.deviceId.equals(id))).go();
+    await (delete(baselines)..where((b) => b.deviceId.equals(id))).go();
     await (delete(devices)..where((d) => d.id.equals(id))).go();
   }
 

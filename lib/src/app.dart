@@ -6,6 +6,8 @@ import '../l10n/app_localizations.dart';
 import 'app_settings.dart';
 import 'ble/proximity_watcher.dart';
 import 'bms_service.dart';
+import 'metrics/charge_alerts.dart';
+import 'metrics/ride_alerts.dart';
 import 'data/repository.dart';
 import 'metrics/trip_autostart.dart';
 import 'license/entitlements.dart';
@@ -129,6 +131,10 @@ class _JkBmsAppState extends State<JkBmsApp> {
 
   /// Settings live in preferences and are pushed into the service, so nothing
   /// below the UI has to know where they came from.
+  /// Whether the alert channel has been set up this launch. Asking twice is
+  /// harmless but pointless, and the permission dialog is not.
+  bool _alertChannelAsked = false;
+
   Future<void> _loadSettings() async {
     await _license.load();
     await _settings.load();
@@ -147,6 +153,9 @@ class _JkBmsAppState extends State<JkBmsApp> {
       autoTrip: _settings.autoTripEnabled,
       watchLink: _settings.linkWatchEnabled,
       muted: _settings.mutedAlerts,
+      alertDeltaWarn: _settings.alertDeltaWarn,
+      alertTempWarn: _settings.alertTempWarn,
+      alertLowChargeWarn: _settings.alertLowChargeWarn,
     );
 
     if (mounted) setState(() {});
@@ -241,6 +250,103 @@ class _JkBmsAppState extends State<JkBmsApp> {
                       km.toStringAsFixed(1),
                       whPerKm.toStringAsFixed(0),
                     );
+              // The words for an alert that has to reach a phone in another
+              // room. Supplied here, like every other notification's wording,
+              // so the analysis layer never holds a sentence.
+              _service.rideAlertText = (alert, snapshot) => switch (alert) {
+                RideAlert.bmsFault => (
+                  t.alertBmsFault,
+                  t.alertNotificationBodyFault,
+                ),
+                RideAlert.cellSpread => (
+                  t.alertCellSpread,
+                  t.alertNotificationBodyDelta(
+                    (snapshot?.deltaCellVoltage ?? 0).toStringAsFixed(3),
+                  ),
+                ),
+                RideAlert.temperature => (
+                  t.alertTemperature,
+                  t.alertNotificationBodyTemp(
+                    (snapshot?.plausibleTemperatures.isEmpty ?? true
+                            ? 0.0
+                            : snapshot!.plausibleTemperatures.reduce(
+                                (a, b) => a > b ? a : b,
+                              ))
+                        .toStringAsFixed(0),
+                  ),
+                ),
+                RideAlert.lowCharge => (
+                  t.alertLowCharge,
+                  t.alertNotificationBodyLow(
+                    (snapshot?.soc ?? 0).toStringAsFixed(0),
+                  ),
+                ),
+                RideAlert.criticalCharge => (
+                  t.alertCriticalCharge,
+                  t.alertNotificationBodyCritical(
+                    (snapshot?.soc ?? 0).toStringAsFixed(0),
+                  ),
+                ),
+                RideAlert.cellNearCutoff => (
+                  t.alertCellNearCutoff,
+                  t.alertNotificationBodyCell(
+                    (snapshot?.minCellVoltage ?? 0).toStringAsFixed(3),
+                  ),
+                ),
+                RideAlert.nearCurrentLimit => (
+                  t.alertNearCurrentLimit,
+                  t.alertNotificationBodyNearLimit(
+                    (snapshot?.current ?? 0).abs().toStringAsFixed(0),
+                  ),
+                ),
+              };
+              _service.chargeAlertText = (alert, snapshot) => switch (alert) {
+                ChargeAlert.targetReached => (
+                  t.chargeAlertTargetReached(
+                    (snapshot?.soc ?? 0).toStringAsFixed(0),
+                  ),
+                  t.alertNotificationBodyChargeTarget(
+                    (snapshot?.soc ?? 0).toStringAsFixed(0),
+                  ),
+                ),
+                ChargeAlert.chargeComplete => (
+                  t.chargeAlertComplete,
+                  t.alertNotificationBodyChargeComplete,
+                ),
+                ChargeAlert.hotWhileCharging => (
+                  t.chargeAlertHot,
+                  t.alertNotificationBodyChargeHot(
+                    (snapshot?.plausibleTemperatures.isEmpty ?? true
+                            ? 0.0
+                            : snapshot!.plausibleTemperatures.reduce(
+                                (a, b) => a > b ? a : b,
+                              ))
+                        .toStringAsFixed(0),
+                  ),
+                ),
+                ChargeAlert.spreadAtTop => (
+                  t.chargeAlertSpread,
+                  t.alertNotificationBodyChargeSpread(
+                    (snapshot?.deltaCellVoltage ?? 0).toStringAsFixed(3),
+                  ),
+                ),
+              };
+              _service.linkLostText = () =>
+                  (t.alertLinkLost, t.alertNotificationBodyLinkLost);
+              // The channel has to exist before anything can be posted to it,
+              // and Android 13 wants the permission asked for. Done here
+              // because the channel's own name is shown in Android's settings
+              // and should be in the app's language. Once, and only when the
+              // rider has left the setting on.
+              if (!_alertChannelAsked && _settings.notifyAlerts) {
+                _alertChannelAsked = true;
+                unawaited(
+                  _service.prepareAlertNotifications(
+                    channelName: t.alertsNotifyTitle,
+                    channelDescription: t.alertsNotifyIntro,
+                  ),
+                );
+              }
               return ConnectScreen(
                 service: _service,
                 localeController: _locale,

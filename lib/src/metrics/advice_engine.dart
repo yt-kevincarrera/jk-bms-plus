@@ -137,6 +137,63 @@ enum AdviceCode {
   /// The two runs pulled very different currents, so their sag figures are
   /// not comparable.
   inspectionRepeatLoadDiffers,
+
+  // --- What the BMS is configured to do ---
+
+  /// The charge cutoff is above what the cells can take.
+  configOvpDangerous,
+
+  /// It is inside the limit but high enough to cost cycle life.
+  configOvpHigh,
+
+  /// The discharge cutoff would take cells below where they recover.
+  configUvpDangerous,
+
+  /// Low enough to be hard on the cells without being dangerous.
+  configUvpLow,
+
+  /// The BMS will charge the pack below freezing.
+  configChargesWhenFrozen,
+
+  /// It will not, which is worth saying.
+  configColdCutoffOk,
+
+  /// The heat cutoff while charging is set high.
+  configChargeHotLimit,
+
+  /// So is the one while discharging.
+  configDischargeHotLimit,
+
+  /// What the BMS is configured to hold is not what the pack was sold as.
+  configCapacityDisagrees,
+
+  /// It is set for a different number of cells than are connected.
+  configCellCountDisagrees,
+
+  /// The charge current is a large fraction of the pack's own rating.
+  configChargeCurrentHigh,
+
+  /// The balancer is switched off.
+  configBalancerOff,
+
+  /// Charging is switched off at the BMS.
+  configChargeOff,
+
+  /// So is discharging.
+  configDischargeOff,
+
+  /// Balancing starts on the flat part of the curve, where voltage is not a
+  /// measure of charge.
+  configBalanceStartLow,
+
+  /// Settings are not what they were on day one.
+  configChangedSinceDayOne,
+
+  /// Nobody has said what the cells are, so the voltage checks stayed quiet.
+  configChemistryUnknown,
+
+  /// Everything checked came back sensible.
+  configLooksSane,
 }
 
 /// One measured thing a verdict rests on.
@@ -193,6 +250,10 @@ enum EvidenceKind {
   previousSoh,
   previousConfiguredCapacity,
   previousPeakCurrent,
+  // Configuration audit.
+  configuredSetting,
+  safeLimit,
+  cellsSeen,
 }
 
 class Evidence {

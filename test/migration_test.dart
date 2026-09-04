@@ -158,11 +158,14 @@ void main() {
 
     tearDown(() async => db.close());
 
-    test('the migration runs and the schema lands on the current version', () async {
-      // Any query forces drift to open the database and run the upgrade.
-      await db.allDevices();
-      expect(raw.userVersion, 12);
-    });
+    test(
+      'the migration runs and the schema lands on the current version',
+      () async {
+        // Any query forces drift to open the database and run the upgrade.
+        await db.allDevices();
+        expect(raw.userVersion, 13);
+      },
+    );
 
     test('nothing that was stored is lost', () async {
       await db.allDevices();
@@ -179,17 +182,19 @@ void main() {
       expect(trip['energy_out_wh'], 310);
     });
 
-    test('the old rows become unattached rather than being guessed at',
-        () async {
-      final counts = await db.orphanCounts();
-      expect(counts['trips'], 1);
-      expect(counts['snapshots'], 1);
-      expect(counts['rawFrames'], 1);
-      expect(counts['capacityTests'], 1);
+    test(
+      'the old rows become unattached rather than being guessed at',
+      () async {
+        final counts = await db.orphanCounts();
+        expect(counts['trips'], 1);
+        expect(counts['snapshots'], 1);
+        expect(counts['rawFrames'], 1);
+        expect(counts['capacityTests'], 1);
 
-      // And they belong to no pack until the rider says otherwise.
-      expect(await db.recentTrips('AA:BB'), isEmpty);
-    });
+        // And they belong to no pack until the rider says otherwise.
+        expect(await db.recentTrips('AA:BB'), isEmpty);
+      },
+    );
 
     test('an upgrade leaves old rides unanswered but seen', () async {
       // Null is not false here. A ride recorded before the question existed
@@ -232,11 +237,7 @@ void main() {
     test('writing still works after the upgrade', () async {
       final now = DateTime.utc(2026, 8, 26);
       await db.upsertDevice(
-        DevicesCompanion.insert(
-          id: 'AA:BB',
-          firstSeenAt: now,
-          lastSeenAt: now,
-        ),
+        DevicesCompanion.insert(id: 'AA:BB', firstSeenAt: now, lastSeenAt: now),
       );
       await db.insertSnapshots([
         SnapshotsCompanion.insert(
@@ -289,7 +290,12 @@ void main() {
           last_seen_at INTEGER NOT NULL,
           demo INTEGER NOT NULL DEFAULT 0 CHECK (demo IN (0, 1))
         )''');
-      for (final table in ['trips', 'snapshots', 'raw_frames', 'capacity_tests']) {
+      for (final table in [
+        'trips',
+        'snapshots',
+        'raw_frames',
+        'capacity_tests',
+      ]) {
         raw.execute('ALTER TABLE $table ADD COLUMN device_id TEXT');
       }
       final now = _epoch(DateTime.utc(2026, 6, 1));
@@ -323,10 +329,7 @@ void main() {
 
     test('keeps everything else about the packs', () async {
       final devices = await db.allDevices();
-      expect(
-        devices.map((d) => d.name).toSet(),
-        {'Moto', 'La otra'},
-      );
+      expect(devices.map((d) => d.name).toSet(), {'Moto', 'La otra'});
     });
 
     test('a capacity can be set again afterwards, per pack', () async {
@@ -361,7 +364,12 @@ void main() {
           last_seen_at INTEGER NOT NULL,
           demo INTEGER NOT NULL DEFAULT 0 CHECK (demo IN (0, 1))
         )''');
-      for (final table in ['trips', 'snapshots', 'raw_frames', 'capacity_tests']) {
+      for (final table in [
+        'trips',
+        'snapshots',
+        'raw_frames',
+        'capacity_tests',
+      ]) {
         raw.execute('ALTER TABLE $table ADD COLUMN device_id TEXT');
       }
       final now = _epoch(DateTime.utc(2026, 8, 31));

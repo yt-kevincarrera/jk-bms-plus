@@ -26,13 +26,31 @@
   "connectByService": "anuncia el servicio JK",
   "tapBusy": "Ya hay un intento en marcha. Espera a que termine: tocar otra vez no lo acelera y sí puede dejar otra conexión colgada en el teléfono.",
   "tapCooling": "Espera {seconds} s antes de reintentar con esta batería. La pausa no es un capricho: el BMS tarda unos segundos en soltar el enlace anterior, y cada intento dentro de esa ventana deja una conexión que el teléfono no cierra.",
-  "@tapCooling": {"placeholders": {"seconds": {"type": "String"}}},
+  "@tapCooling": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
   "tapStackSaturated": "Van {count} intentos fallidos seguidos. A estas alturas el problema es el Bluetooth del teléfono, no la batería, y otro intento solo lo empeora. Apaga y enciende el Bluetooth; si sigue igual, reinicia el teléfono. Después toca Desconectar o vuelve a buscar para reintentar.",
-  "@tapStackSaturated": {"placeholders": {"count": {"type": "String"}}},
+  "@tapStackSaturated": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "tapHeldByPhone": "El teléfono ya tiene abierta una conexión con esta batería que esta app no controla. O la tiene otra app, o quedó colgada de un intento anterior. Ningún intento desde aquí va a ganarla: cierra la otra app, o reinicia el Bluetooth del teléfono.",
   "tileConnected": "Conectada. Toca para volver a sus pantallas.",
   "tileCooling": "En pausa {seconds} s tras un intento fallido",
-  "@tileCooling": {"placeholders": {"seconds": {"type": "String"}}},
+  "@tileCooling": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
   "tileStackSaturated": "En espera: el Bluetooth del teléfono necesita reiniciarse",
   "tilePillOpen": "abierta",
   "connectedCardNote": "El enlace sigue abierto. Salir de las pantallas de la batería ya no lo corta, así que puedes entrar y salir sin reconectar.",
@@ -1215,7 +1233,6 @@
   "autoTripHint": "Abre y cierra el viaje al detectar que estás rodando: hace falta consumo del pack y movimiento del GPS a la vez, sostenidos. Sin esto el aprendizaje depende de que te acuerdes de darle a empezar, y los viajes que se olvidan no son al azar: son los cortos y los que llevabas prisa. Usa GPS mientras rueda.",
   "autoTripStarted": "Viaje iniciado solo",
   "autoTripStopped": "Viaje guardado",
-  "autoTripBlocked": "No pude grabar el viaje: falta el permiso de ubicación. Sin él la app no aprende tu autonomía.",
   "degNowTitle": "Capacidad ahora",
   "degBaseline": "La mejor que ha dado",
   "degBaselineOn": "medida el {date}",
@@ -1307,25 +1324,6 @@
         "type": "String"
       },
       "amps": {
-        "type": "String"
-      }
-    }
-  },
-  "rideSavedNotif": "Viaje guardado: {km} km, {whPerKm} Wh/km",
-  "@rideSavedNotif": {
-    "placeholders": {
-      "km": {
-        "type": "String"
-      },
-      "whPerKm": {
-        "type": "String"
-      }
-    }
-  },
-  "rideSavedNotifNoConsumption": "Viaje guardado: {km} km",
-  "@rideSavedNotifNoConsumption": {
-    "placeholders": {
-      "km": {
         "type": "String"
       }
     }
@@ -2315,6 +2313,388 @@
   "reportSectionSeries": "Pruebas anteriores a este pack",
   "reportSeriesNote": "Cada fila es una inspección anterior guardada en el teléfono que firmó esta hoja. Repetir el test es lo que distingue una celda mala de una lectura mala.",
   "reportSeriesWorstCell": "Peor celda",
+  "profileTitle": "Perfil de la batería",
+  "profileIntro": "Cuatro cosas que el BMS no puede saber y que cambian lo que la app puede decirte. Todas se pueden dejar en blanco.",
+  "profileName": "Nombre",
+  "profileSoldAs": "Vendida como",
+  "profileSoldAsHint": "Capacidad que te dijeron",
+  "profileChemistry": "Química de las celdas",
+  "profileChemistryWhy": "De esto dependen los rangos seguros. LFP a 4,2 V por celda es un incendio; NMC a 3,6 V es una batería a medio cargar. Si no lo sabes, déjalo en \"No lo sé\" y la app no auditará voltajes.",
+  "profileChemistryFromOvp": "El BMS está configurado a {value} V por celda, lo que sugiere {chemistry}.",
+  "@profileChemistryFromOvp": {
+    "placeholders": {
+      "chemistry": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "profileChemistryFromCell": "Se ha visto una celda a {value} V, así que no es LFP: sugiere {chemistry}.",
+  "@profileChemistryFromCell": {
+    "placeholders": {
+      "chemistry": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "profileAcquired": "La tengo desde",
+  "profileAcquiredUnknown": "Sin fecha",
+  "profileAcquiredClear": "Quitar la fecha",
+  "profileAgeYears": "{years} años contigo",
+  "@profileAgeYears": {
+    "placeholders": {
+      "years": {
+        "type": "String"
+      }
+    }
+  },
+  "profileCaptureBaseline": "Guardar el estado de hoy como día uno",
+  "profileCaptureBaselineHint": "Celdas, resistencias y configuración del BMS tal como están ahora. Todo lo que la app diga después sobre derivas se compara contra esto. Mejor con la batería en reposo.",
+  "profileSave": "Guardar",
+  "profileLater": "Ahora no",
+  "profileEdit": "Editar el perfil",
+  "profileComplete": "Completar el perfil",
+  "profileBaseline": "Día uno",
+  "profileBaselineMissing": "Sin guardar",
+  "profileNoBaselineIntro": "Sin un día uno, \"el delta se ha abierto\" solo significa \"desde que la app empezó a mirar\". Guardar el estado de hoy le da a todo lo demás un punto de partida.",
+  "profileSinceDayOne": "Desde el día uno ({date})",
+  "@profileSinceDayOne": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "profileNotComparable": "Una de las dos lecturas se tomó con la batería tirando corriente, así que las celdas no son comparables. Mira esto con la moto parada.",
+  "profileDeltaThenNow": "Diferencia entre celdas",
+  "profileWorstDrift": "La que más se ha ido",
+  "profileWorstDriftValue": "Celda {cell}, {mv} mV",
+  "@profileWorstDriftValue": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      },
+      "mv": {
+        "type": "String"
+      }
+    }
+  },
+  "profileCyclesSince": "Ciclos desde entonces",
+  "profileConfigChanged": "Configuración del BMS",
+  "profileConfigUnchanged": "Igual que el día uno",
+  "profileConfigChangedCount": "{count} ajuste(s) cambiado(s)",
+  "@profileConfigChangedCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "chemistryLfp": "LFP",
+  "chemistryNmc": "NMC / Li-ion",
+  "chemistryUnknown": "No lo sé",
+  "configCellOvp": "Corte por celda alta",
+  "configCellUvp": "Corte por celda baja",
+  "configBalanceStart": "Empieza a balancear",
+  "configSoc100": "Voltaje del 100 %",
+  "configSoc0": "Voltaje del 0 %",
+  "configMaxCharge": "Corriente máxima de carga",
+  "configMaxDischarge": "Corriente máxima de descarga",
+  "configMaxBalance": "Corriente de balanceo",
+  "configChargeOtp": "Corte por calor cargando",
+  "configDischargeOtp": "Corte por calor descargando",
+  "configChargeUtp": "Corte por frío cargando",
+  "configMosfetOtp": "Corte por calor del MOSFET",
+  "configNominalCapacity": "Capacidad configurada",
+  "configCellCount": "Número de celdas",
+  "configChargeSwitch": "Carga habilitada",
+  "configDischargeSwitch": "Descarga habilitada",
+  "configBalancerSwitch": "Balanceador",
+  "configOn": "Sí",
+  "configOff": "No",
+  "reportSectionDayOne": "El día uno de esta batería",
+  "reportDayOneNote": "Comparación contra el estado guardado el día que se dio de alta la batería. No es una medida de capacidad: una foto de los voltajes no puede medir lo que aguanta un pack, y aquí no se presenta como tal.",
+  "verdictConfigOvpDangerousTitle": "El corte de carga está por encima de lo que aguantan las celdas",
+  "verdictConfigOvpDangerousBody": "El BMS corta la carga a {value} V por celda y el máximo seguro para esta química es {limit} V. Cada carga completa está haciendo daño. Se cambia desde la app oficial del BMS, bajo tu responsabilidad; esta app nunca escribe nada en la batería.",
+  "@verdictConfigOvpDangerousBody": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictConfigOvpHighTitle": "El corte de carga está alto",
+  "verdictConfigOvpHighBody": "Cortas a {value} V por celda cuando con {limit} V la batería ya está prácticamente llena. Lo que ganas en autonomía es casi nada y lo que pierdes en vida útil no lo es.",
+  "@verdictConfigOvpHighBody": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictConfigUvpDangerousTitle": "El corte de descarga deja las celdas por debajo de lo recuperable",
+  "verdictConfigUvpDangerousBody": "El BMS deja bajar hasta {value} V por celda y el mínimo seguro es {limit} V. Una celda que baja de ahí puede no volver, y las que vuelven lo hacen con menos capacidad.",
+  "@verdictConfigUvpDangerousBody": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictConfigUvpLowTitle": "El corte de descarga está bajo",
+  "verdictConfigUvpLowBody": "Cortas a {value} V por celda. Por debajo de {limit} V se aprieta a las celdas para sacar unos pocos kilómetros que salen caros en vida útil.",
+  "@verdictConfigUvpLowBody": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictConfigChargesWhenFrozenTitle": "El BMS cargará la batería por debajo de cero",
+  "verdictConfigChargesWhenFrozenBody": "El corte por frío está en {value} °C. Cargar litio bajo cero deposita metal dentro de la celda: es permanente, no aparece en ningún número que el BMS reporte y es la forma más común de arruinar un pack en invierno. Súbelo a 2 °C o más desde la app oficial.",
+  "@verdictConfigChargesWhenFrozenBody": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictConfigColdCutoffOkTitle": "No cargará con la batería helada",
+  "verdictConfigColdCutoffOkBody": "El corte por frío está en {value} °C, así que el BMS se niega a cargar antes de que empiece el daño. Es de los ajustes que más vida salvan y este está bien puesto.",
+  "@verdictConfigColdCutoffOkBody": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictConfigChargeHotLimitTitle": "El corte por calor cargando está alto",
+  "verdictConfigChargeHotLimitBody": "Deja cargar hasta {value} °C, y por encima de {limit} °C cargar ya envejece las celdas más rápido de lo normal.",
+  "@verdictConfigChargeHotLimitBody": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictConfigDischargeHotLimitTitle": "El corte por calor descargando está alto",
+  "verdictConfigDischargeHotLimitBody": "Deja tirar hasta {value} °C. Por encima de {limit} °C ni siquiera descargar es gratis.",
+  "@verdictConfigDischargeHotLimitBody": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictConfigCapacityDisagreesTitle": "La capacidad configurada no es la que te vendieron",
+  "verdictConfigCapacityDisagreesBody": "El BMS está configurado a {value} Ah y tú anotaste que se vendió como {sold} Ah. El número del BMS lo escribió quien montó el pack: no mide nada, pero de él salen el porcentaje de carga y los amperios-hora restantes de todas las pantallas.",
+  "@verdictConfigCapacityDisagreesBody": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "sold": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictConfigCellCountDisagreesTitle": "El BMS está configurado para otro número de celdas",
+  "verdictConfigCellCountDisagreesBody": "Configurado para {value} celdas y se están leyendo {seen}. Con esto mal, el voltaje del pack, el porcentaje y los cortes de protección se calculan sobre una batería que no es esta.",
+  "@verdictConfigCellCountDisagreesBody": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "seen": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictConfigChargeCurrentHighTitle": "La corriente de carga es alta para el tamaño del pack",
+  "verdictConfigChargeCurrentHighBody": "Hasta {value} A en una batería configurada como de {capacity} Ah. Se puede, pero cargar por encima de 1C calienta y envejece; si no tienes prisa, bajarlo alarga la vida.",
+  "@verdictConfigChargeCurrentHighBody": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "capacity": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictConfigBalancerOffTitle": "El balanceador está apagado",
+  "verdictConfigBalancerOffBody": "Sin balanceo, las celdas se van separando solas y la más débil marca el final de cada carga y de cada descarga. Es la causa número uno de packs que pierden autonomía sin que ninguna celda esté realmente mal.",
+  "verdictConfigChargeOffTitle": "La carga está deshabilitada en el BMS",
+  "verdictConfigChargeOffBody": "Si la batería no coge carga, esto lo explica. Puede ser a propósito, o puede que se quedara así después de una protección.",
+  "verdictConfigDischargeOffTitle": "La descarga está deshabilitada en el BMS",
+  "verdictConfigDischargeOffBody": "Si la moto no arranca, esto lo explica. Puede ser a propósito, o puede que se quedara así después de una protección.",
+  "verdictConfigBalanceStartLowTitle": "El balanceo empieza donde el voltaje no dice nada",
+  "verdictConfigBalanceStartLowBody": "Empieza a {value} V por celda, y para esta química lo normal es cerca de {limit} V. En la parte plana de la curva un milivoltio no significa carga, así que el balanceador puede mover energía en la dirección equivocada.",
+  "@verdictConfigBalanceStartLowBody": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictConfigChangedSinceDayOneTitle": "La configuración no es la del día uno",
+  "verdictConfigChangedSinceDayOneBody": "{count} ajuste(s) han cambiado desde que se guardó el estado inicial. Si no fuiste tú, alguien ha tocado el BMS.",
+  "@verdictConfigChangedSinceDayOneBody": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictConfigChemistryUnknownTitle": "Sin química declarada no se auditan voltajes",
+  "verdictConfigChemistryUnknownBody": "LFP y NMC se llevan casi un voltio por celda: con la química equivocada esta pantalla bendeciría un ajuste peligroso o condenaría uno normal. Dilo en el perfil de la batería y vuelve.",
+  "verdictConfigLooksSaneTitle": "La configuración es razonable",
+  "verdictConfigLooksSaneBody": "Los cortes de voltaje, los de temperatura y los interruptores están donde deberían para esta química. Esto no dice nada sobre el estado de las celdas: es una revisión de los ajustes, no de la batería.",
+  "evidenceConfiguredSetting": "Configurado",
+  "evidenceSafeLimit": "Límite seguro",
+  "evidenceCellsSeen": "Celdas que se están leyendo",
+  "configAuditTitle": "Auditoría de configuración",
+  "configAuditIntro": "Lo que el BMS está configurado para hacer, comparado con lo que aguantan las celdas que dijiste que lleva.",
+  "configAuditOpen": "Auditar la configuración",
+  "configAuditReadOnly": "Solo lectura. Esta app nunca escribe en el BMS: un valor mal escrito en una batería es un incendio, y el camino de escritura del protocolo está sacado a base de ingeniería inversa. Lo que haya que cambiar se cambia desde la app oficial del BMS, y esa decisión es tuya.",
+  "configAuditSettings": "Todo lo que se ha mirado",
+  "configAuditNoSettings": "El BMS todavía no ha mandado su configuración. Espera unos segundos con la batería conectada.",
+  "configAuditChemistryRow": "Química declarada",
+  "configAuditNeedsProfile": "Completar el perfil",
+  "alertNearCurrentLimit": "Corriente cerca del límite del BMS",
+  "alertLinkLost": "Se perdió la conexión con la batería",
+  "alertsNotifyTitle": "Avisos que llegan con la app cerrada",
+  "alertsNotifyIntro": "Los avisos suenan en la barra de notificaciones aunque la app esté en segundo plano o cerrada. Sin esto, un aviso a las tres de la mañana con el móvil en otra habitación no lo ve nadie.",
+  "alertsNotifyEnable": "Avisar en la barra de notificaciones",
+  "alertsNotifyDenied": "Android no ha dado permiso para notificar. Los avisos seguirán saliendo en pantalla y con vibración, pero no llegarán con la app cerrada.",
+  "alertsNotifyOneConnection": "Recuerda: el BMS acepta una sola conexión Bluetooth. Mientras el móvil esté conectado en segundo plano, la app oficial de JK no podrá conectarse, y al revés.",
+  "alertsThresholdsTitle": "A partir de cuándo avisar",
+  "alertsThresholdsIntro": "Los valores por defecto son conservadores. Súbelos si tu batería vive en un rango distinto al típico y te avisa de más.",
+  "alertsDeltaWarn": "Diferencia entre celdas",
+  "alertsTempWarn": "Temperatura",
+  "alertsLowChargeWarn": "Carga baja",
+  "alertsResetDefaults": "Volver a los valores por defecto",
+  "alertNotificationBodyDelta": "Las celdas se han separado {value} V. La más baja marca cuándo se acaba la batería.",
+  "@alertNotificationBodyDelta": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyTemp": "{value} °C. Para y déjala enfriar antes de seguir.",
+  "@alertNotificationBodyTemp": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyLow": "Queda {value} % de carga.",
+  "@alertNotificationBodyLow": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyCritical": "Queda {value} % de carga. Busca dónde parar.",
+  "@alertNotificationBodyCritical": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyCell": "Una celda está a {value} V, cerca del corte del BMS. Se puede quedar sin batería aunque el porcentaje aún parezca razonable.",
+  "@alertNotificationBodyCell": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyFault": "El BMS ha levantado una protección. Mira la pantalla antes de seguir.",
+  "alertNotificationBodyNearLimit": "{value} A, cerca de lo que el BMS permite. Si llega al límite, corta sin avisar.",
+  "@alertNotificationBodyNearLimit": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyLinkLost": "La app dejó de recibir lecturas de la batería. Si estabas vigilando una carga, ya no se está vigilando.",
+  "alertNotificationBodyChargeTarget": "La batería ha llegado al {value} % que pediste.",
+  "@alertNotificationBodyChargeTarget": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyChargeComplete": "La carga ha terminado.",
+  "alertNotificationBodyChargeHot": "{value} °C mientras carga. Desenchufa y déjala enfriar.",
+  "@alertNotificationBodyChargeHot": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyChargeSpread": "Las celdas se han separado {value} V al final de la carga. Es donde mejor se ve un desbalance.",
+  "@alertNotificationBodyChargeSpread": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "autoTripBlocked": "No pude grabar el viaje: falta el permiso de ubicación. Sin él la app no aprende tu autonomía.",
+  "rideSavedNotif": "Viaje guardado: {km} km, {whPerKm} Wh/km",
+  "@rideSavedNotif": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      },
+      "whPerKm": {
+        "type": "String"
+      }
+    }
+  },
+  "rideSavedNotifNoConsumption": "Viaje guardado: {km} km",
+  "@rideSavedNotifNoConsumption": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
   "representativeAsk": "¿Este viaje te representa?",
   "representativeAskBodyUp": "Salió en {whPerKm} Wh/km, un {percent}% por encima de lo tuyo. Ya lo conté: tu autonomía pasó de {before} a {after} km.",
   "@representativeAskBodyUp": {
