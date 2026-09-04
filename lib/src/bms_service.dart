@@ -426,6 +426,11 @@ class BmsService {
     _lastSettings = null;
     chargeAlerts.reset();
     tripAutoStart.reset();
+    // Without this, a ride's saved-summary text outlives the pack it was
+    // measured on: it survived a switch to another pack, and it survived
+    // leaving demo mode, showing one source's distance and consumption as if
+    // they had just happened on a different one.
+    _rideSavedUntil = null;
   }
 
   /// Whether the phone already holds a connection to this device that this
@@ -936,13 +941,23 @@ class BmsService {
     final summary = trip.stop();
     _segments.reset();
     await _stopLocation();
+
+    final id = _currentTripId;
+    _currentTripId = null;
+
+    if (summary != null && id != null) {
+      // Set before the one write below, not after the relearn further down:
+      // a second write once the DB work finished used to leave a moment where
+      // the connected readout flashed back before the news replaced it.
+      _rideSavedKm = summary.distanceKm;
+      _rideSavedWhPerKm = summary.whPerKm;
+      _rideSavedUntil = DateTime.now().toUtc().add(rideSavedFor);
+    }
     // Not stopped outright: the pack may still be connected, or charging, and
     // either of those has its own claim on the service. Ending a ride is not a
     // reason to stop reading.
     await _updateForegroundService();
 
-    final id = _currentTripId;
-    _currentTripId = null;
     if (summary == null) return null;
 
     if (id != null) {
@@ -966,13 +981,6 @@ class BmsService {
       // of what the in-ride segments already taught, keeps one source of truth
       // and avoids counting this ride twice.
       await relearnRangeFromTrips();
-      // Before the service is brought into line below, so the first
-      // notification the rider sees after arriving is the news and not the
-      // connected readout.
-      _rideSavedKm = summary.distanceKm;
-      _rideSavedWhPerKm = summary.whPerKm;
-      _rideSavedUntil = DateTime.now().toUtc().add(rideSavedFor);
-      await _updateForegroundService();
     }
 
     final snapshot = _lastSnapshot;

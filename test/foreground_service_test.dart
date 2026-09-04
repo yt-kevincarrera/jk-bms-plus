@@ -242,5 +242,30 @@ void main() {
       service.expireRideSavedForTest();
       expect(service.serviceTextForTest, 'conectado');
     });
+
+    test('switching packs clears the ride saved on the one before it',
+        () async {
+      // Real stopTrip(), not the test-only setter: this is the path that
+      // used to leave the fields standing, so pack B's first notification
+      // showed pack A's distance as if it had just happened on pack B.
+      link.announce(BleLinkState.connected);
+      await pumpEventQueue();
+      service.rideSavedText = (km, whPerKm) =>
+          'Guardado ${km.toStringAsFixed(1)} km';
+      service.linkWatchText = (_) => 'conectado';
+
+      expect(await service.startTrip(), isNull);
+      await service.stopTrip();
+      expect(service.claimForTest, ServiceClaim.link);
+      expect(service.serviceTextForTest, startsWith('Guardado'));
+
+      // A different pack, still within the few minutes the news would stand.
+      await service.connect('CC:DD', name: 'OtherPack');
+      await link.deliver(deviceInfoFrames[1]);
+      await feedReading();
+
+      expect(service.claimForTest, ServiceClaim.link);
+      expect(service.serviceTextForTest, 'conectado');
+    });
   });
 }
