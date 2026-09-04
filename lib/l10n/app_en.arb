@@ -2466,5 +2466,93 @@
   "configAuditSettings": "Everything that was looked at",
   "configAuditNoSettings": "The BMS has not sent its configuration yet. Wait a few seconds with the battery connected.",
   "configAuditChemistryRow": "Declared chemistry",
-  "configAuditNeedsProfile": "Complete the profile"
+  "configAuditNeedsProfile": "Complete the profile",
+  "alertNearCurrentLimit": "Current close to the BMS limit",
+  "alertLinkLost": "Lost the connection to the battery",
+  "alertsNotifyTitle": "Alerts that arrive with the app closed",
+  "alertsNotifyIntro": "Alerts land in the notification shade even when the app is in the background or closed. Without this, an alert at three in the morning with the phone in another room reaches nobody.",
+  "alertsNotifyEnable": "Post alerts to the notification shade",
+  "alertsNotifyDenied": "Android has not granted permission to notify. Alerts will still appear on screen and buzz, but they will not arrive with the app closed.",
+  "alertsNotifyOneConnection": "Remember: the BMS accepts a single Bluetooth connection. While the phone is connected in the background the official JK app cannot connect, and the other way round.",
+  "alertsThresholdsTitle": "When to speak up",
+  "alertsThresholdsIntro": "The defaults are conservative. Raise them if your pack lives outside the usual range and it is warning you too often.",
+  "alertsDeltaWarn": "Spread between cells",
+  "alertsTempWarn": "Temperature",
+  "alertsLowChargeWarn": "Low charge",
+  "alertsResetDefaults": "Back to the defaults",
+  "alertNotificationBodyDelta": "The cells have drifted {value} V apart. The lowest one decides when the battery is finished.",
+  "@alertNotificationBodyDelta": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyTemp": "{value} °C. Stop and let it cool before carrying on.",
+  "@alertNotificationBodyTemp": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyLow": "{value} % charge left.",
+  "@alertNotificationBodyLow": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyCritical": "{value} % charge left. Find somewhere to stop.",
+  "@alertNotificationBodyCritical": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyCell": "A cell is at {value} V, close to the BMS cutoff. It can run out even while the percentage still looks reasonable.",
+  "@alertNotificationBodyCell": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyFault": "The BMS has raised a protection. Look at the screen before carrying on.",
+  "alertNotificationBodyNearLimit": "{value} A, close to what the BMS allows. If it reaches the limit it cuts without warning.",
+  "@alertNotificationBodyNearLimit": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyLinkLost": "The app stopped receiving readings from the battery. If you were watching a charge, nothing is watching it now.",
+  "alertNotificationBodyChargeTarget": "The pack has reached the {value} % you asked for.",
+  "@alertNotificationBodyChargeTarget": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyChargeComplete": "Charging has finished.",
+  "alertNotificationBodyChargeHot": "{value} °C while charging. Unplug it and let it cool.",
+  "@alertNotificationBodyChargeHot": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyChargeSpread": "The cells have drifted {value} V apart at the top of the charge. That is where an imbalance shows up best.",
+  "@alertNotificationBodyChargeSpread": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  }
 }

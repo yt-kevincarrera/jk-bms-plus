@@ -4073,4 +4073,103 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get configAuditNeedsProfile => 'Completar el perfil';
+
+  @override
+  String get alertNearCurrentLimit => 'Corriente cerca del límite del BMS';
+
+  @override
+  String get alertLinkLost => 'Se perdió la conexión con la batería';
+
+  @override
+  String get alertsNotifyTitle => 'Avisos que llegan con la app cerrada';
+
+  @override
+  String get alertsNotifyIntro =>
+      'Los avisos suenan en la barra de notificaciones aunque la app esté en segundo plano o cerrada. Sin esto, un aviso a las tres de la mañana con el móvil en otra habitación no lo ve nadie.';
+
+  @override
+  String get alertsNotifyEnable => 'Avisar en la barra de notificaciones';
+
+  @override
+  String get alertsNotifyDenied =>
+      'Android no ha dado permiso para notificar. Los avisos seguirán saliendo en pantalla y con vibración, pero no llegarán con la app cerrada.';
+
+  @override
+  String get alertsNotifyOneConnection =>
+      'Recuerda: el BMS acepta una sola conexión Bluetooth. Mientras el móvil esté conectado en segundo plano, la app oficial de JK no podrá conectarse, y al revés.';
+
+  @override
+  String get alertsThresholdsTitle => 'A partir de cuándo avisar';
+
+  @override
+  String get alertsThresholdsIntro =>
+      'Los valores por defecto son conservadores. Súbelos si tu batería vive en un rango distinto al típico y te avisa de más.';
+
+  @override
+  String get alertsDeltaWarn => 'Diferencia entre celdas';
+
+  @override
+  String get alertsTempWarn => 'Temperatura';
+
+  @override
+  String get alertsLowChargeWarn => 'Carga baja';
+
+  @override
+  String get alertsResetDefaults => 'Volver a los valores por defecto';
+
+  @override
+  String alertNotificationBodyDelta(String value) {
+    return 'Las celdas se han separado $value V. La más baja marca cuándo se acaba la batería.';
+  }
+
+  @override
+  String alertNotificationBodyTemp(String value) {
+    return '$value °C. Para y déjala enfriar antes de seguir.';
+  }
+
+  @override
+  String alertNotificationBodyLow(String value) {
+    return 'Queda $value % de carga.';
+  }
+
+  @override
+  String alertNotificationBodyCritical(String value) {
+    return 'Queda $value % de carga. Busca dónde parar.';
+  }
+
+  @override
+  String alertNotificationBodyCell(String value) {
+    return 'Una celda está a $value V, cerca del corte del BMS. Se puede quedar sin batería aunque el porcentaje aún parezca razonable.';
+  }
+
+  @override
+  String get alertNotificationBodyFault =>
+      'El BMS ha levantado una protección. Mira la pantalla antes de seguir.';
+
+  @override
+  String alertNotificationBodyNearLimit(String value) {
+    return '$value A, cerca de lo que el BMS permite. Si llega al límite, corta sin avisar.';
+  }
+
+  @override
+  String get alertNotificationBodyLinkLost =>
+      'La app dejó de recibir lecturas de la batería. Si estabas vigilando una carga, ya no se está vigilando.';
+
+  @override
+  String alertNotificationBodyChargeTarget(String value) {
+    return 'La batería ha llegado al $value % que pediste.';
+  }
+
+  @override
+  String get alertNotificationBodyChargeComplete => 'La carga ha terminado.';
+
+  @override
+  String alertNotificationBodyChargeHot(String value) {
+    return '$value °C mientras carga. Desenchufa y déjala enfriar.';
+  }
+
+  @override
+  String alertNotificationBodyChargeSpread(String value) {
+    return 'Las celdas se han separado $value V al final de la carga. Es donde mejor se ve un desbalance.';
+  }
 }
