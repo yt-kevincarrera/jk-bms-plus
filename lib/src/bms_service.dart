@@ -1410,7 +1410,19 @@ class BmsService {
   final TripAutoStart tripAutoStart = TripAutoStart();
 
   /// Whether to open and close trips without being asked.
-  bool autoTripEnabled = true;
+  bool get autoTripEnabled => _autoTripEnabled;
+  bool _autoTripEnabled = true;
+
+  /// Setting this can change the service's *type*, not just whether the
+  /// detector runs, so the service has to be brought into line. Assigning the
+  /// field directly left a connected app holding a dataSync-typed service
+  /// after the rider switched auto-start on, which is the very failure this
+  /// type exists to prevent.
+  set autoTripEnabled(bool value) {
+    if (_autoTripEnabled == value) return;
+    _autoTripEnabled = value;
+    unawaited(_updateForegroundService());
+  }
 
   /// Fires when a trip was started or stopped without anybody pressing
   /// anything, so a screen can say so rather than leaving the rider to work

@@ -201,5 +201,24 @@ void main() {
       expect(service.claimForTest, ServiceClaim.link);
       expect(service.serviceUsesLocationForTest, isFalse);
     });
+
+    test('toggling auto-start on while connected restarts with location type',
+        () async {
+      // The settings screen lets the rider switch auto-start on after connecting.
+      // Without restarting the service, it keeps the dataSync type it was born
+      // with, which is the exact bug this type exists to prevent.
+      service.applySettings(haptics: false, rawFrames: false, autoTrip: false);
+      link.announce(BleLinkState.connected);
+      await pumpEventQueue();
+
+      expect(service.claimForTest, ServiceClaim.link);
+      expect(service.serviceUsesLocationForTest, isFalse);
+
+      // Now toggle auto-start on.
+      service.autoTripEnabled = true;
+      await pumpEventQueue();
+
+      expect(service.serviceUsesLocationForTest, isTrue);
+    });
   });
 }
