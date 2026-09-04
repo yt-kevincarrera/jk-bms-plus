@@ -357,6 +357,12 @@ class _EvidenceRow extends StatelessWidget {
       t.evidencePreviousPeakCurrent(_date(e.at)),
       '${v.toStringAsFixed(1)} A',
     ),
+    EvidenceKind.configuredSetting => (
+      t.evidenceConfiguredSetting,
+      v.toStringAsFixed(3),
+    ),
+    EvidenceKind.safeLimit => (t.evidenceSafeLimit, v.toStringAsFixed(3)),
+    EvidenceKind.cellsSeen => (t.evidenceCellsSeen, whole(v)),
   };
 }
 
@@ -411,6 +417,26 @@ String adviceTitle(AppL10n t, Advice advice) {
       t.verdictInspRepeatCountersResetTitle,
     AdviceCode.inspectionRepeatLoadDiffers =>
       t.verdictInspRepeatLoadDiffersTitle,
+    AdviceCode.configOvpDangerous => t.verdictConfigOvpDangerousTitle,
+    AdviceCode.configOvpHigh => t.verdictConfigOvpHighTitle,
+    AdviceCode.configUvpDangerous => t.verdictConfigUvpDangerousTitle,
+    AdviceCode.configUvpLow => t.verdictConfigUvpLowTitle,
+    AdviceCode.configChargesWhenFrozen => t.verdictConfigChargesWhenFrozenTitle,
+    AdviceCode.configColdCutoffOk => t.verdictConfigColdCutoffOkTitle,
+    AdviceCode.configChargeHotLimit => t.verdictConfigChargeHotLimitTitle,
+    AdviceCode.configDischargeHotLimit => t.verdictConfigDischargeHotLimitTitle,
+    AdviceCode.configCapacityDisagrees => t.verdictConfigCapacityDisagreesTitle,
+    AdviceCode.configCellCountDisagrees =>
+      t.verdictConfigCellCountDisagreesTitle,
+    AdviceCode.configChargeCurrentHigh => t.verdictConfigChargeCurrentHighTitle,
+    AdviceCode.configBalancerOff => t.verdictConfigBalancerOffTitle,
+    AdviceCode.configChargeOff => t.verdictConfigChargeOffTitle,
+    AdviceCode.configDischargeOff => t.verdictConfigDischargeOffTitle,
+    AdviceCode.configBalanceStartLow => t.verdictConfigBalanceStartLowTitle,
+    AdviceCode.configChangedSinceDayOne =>
+      t.verdictConfigChangedSinceDayOneTitle,
+    AdviceCode.configChemistryUnknown => t.verdictConfigChemistryUnknownTitle,
+    AdviceCode.configLooksSane => t.verdictConfigLooksSaneTitle,
   };
 }
 
@@ -530,6 +556,60 @@ String adviceBody(AppL10n t, Advice advice) {
       t.verdictInspRepeatCountersResetBody,
     AdviceCode.inspectionRepeatLoadDiffers =>
       t.verdictInspRepeatLoadDiffersBody,
+    AdviceCode.configOvpDangerous => t.verdictConfigOvpDangerousBody(
+      v.toStringAsFixed(3),
+      f(EvidenceKind.safeLimit, 3),
+    ),
+    AdviceCode.configOvpHigh => t.verdictConfigOvpHighBody(
+      v.toStringAsFixed(3),
+      f(EvidenceKind.safeLimit, 3),
+    ),
+    AdviceCode.configUvpDangerous => t.verdictConfigUvpDangerousBody(
+      v.toStringAsFixed(3),
+      f(EvidenceKind.safeLimit, 3),
+    ),
+    AdviceCode.configUvpLow => t.verdictConfigUvpLowBody(
+      v.toStringAsFixed(3),
+      f(EvidenceKind.safeLimit, 3),
+    ),
+    AdviceCode.configChargesWhenFrozen => t.verdictConfigChargesWhenFrozenBody(
+      v.toStringAsFixed(0),
+    ),
+    AdviceCode.configColdCutoffOk => t.verdictConfigColdCutoffOkBody(
+      v.toStringAsFixed(0),
+    ),
+    AdviceCode.configChargeHotLimit => t.verdictConfigChargeHotLimitBody(
+      v.toStringAsFixed(0),
+      f(EvidenceKind.safeLimit, 0),
+    ),
+    AdviceCode.configDischargeHotLimit => t.verdictConfigDischargeHotLimitBody(
+      v.toStringAsFixed(0),
+      f(EvidenceKind.safeLimit, 0),
+    ),
+    AdviceCode.configCapacityDisagrees => t.verdictConfigCapacityDisagreesBody(
+      v.toStringAsFixed(1),
+      f(EvidenceKind.catalogueCapacity, 1),
+    ),
+    AdviceCode.configCellCountDisagrees =>
+      t.verdictConfigCellCountDisagreesBody(
+        v.toStringAsFixed(0),
+        f(EvidenceKind.cellsSeen, 0),
+      ),
+    AdviceCode.configChargeCurrentHigh => t.verdictConfigChargeCurrentHighBody(
+      v.toStringAsFixed(0),
+      f(EvidenceKind.impliedCapacity, 0),
+    ),
+    AdviceCode.configBalancerOff => t.verdictConfigBalancerOffBody,
+    AdviceCode.configChargeOff => t.verdictConfigChargeOffBody,
+    AdviceCode.configDischargeOff => t.verdictConfigDischargeOffBody,
+    AdviceCode.configBalanceStartLow => t.verdictConfigBalanceStartLowBody(
+      v.toStringAsFixed(3),
+      f(EvidenceKind.safeLimit, 2),
+    ),
+    AdviceCode.configChangedSinceDayOne =>
+      t.verdictConfigChangedSinceDayOneBody(v.toStringAsFixed(0)),
+    AdviceCode.configChemistryUnknown => t.verdictConfigChemistryUnknownBody,
+    AdviceCode.configLooksSane => t.verdictConfigLooksSaneBody,
   };
 }
 
