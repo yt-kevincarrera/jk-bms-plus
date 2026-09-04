@@ -532,6 +532,14 @@ class AppL10nEn extends AppL10n {
       'Override this if the decoded values look wrong. Picking the wrong variant does not fail loudly: it decodes at the wrong offsets and produces plausible nonsense.';
 
   @override
+  String get systemVariantProved =>
+      'Checked against a real reading: the numbers this framing produces describe a battery that could exist.';
+
+  @override
+  String get systemVariantCorrected =>
+      'The app switched framing on its own. The firmware version pointed at another one, and with that one the numbers were impossible; this is the one the reading agrees with.';
+
+  @override
   String get systemConnectionTitle => 'Connection';
 
   @override

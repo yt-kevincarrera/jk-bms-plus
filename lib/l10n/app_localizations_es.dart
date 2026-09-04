@@ -532,6 +532,14 @@ class AppL10nEs extends AppL10n {
       'Cambia esto si los valores decodificados se ven mal. Elegir la variante equivocada no falla de forma ruidosa: decodifica en los offsets incorrectos y produce números creíbles pero falsos.';
 
   @override
+  String get systemVariantProved =>
+      'Comprobado contra una lectura real: los números que salen con este formato describen una batería posible.';
+
+  @override
+  String get systemVariantCorrected =>
+      'La app cambió de formato por su cuenta. La versión del firmware apuntaba a otro, y con ese los números eran imposibles: este es el que cuadra con la lectura.';
+
+  @override
   String get systemConnectionTitle => 'Conexión';
 
   @override

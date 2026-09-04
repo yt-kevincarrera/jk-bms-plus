@@ -341,6 +341,20 @@ class _SystemTabState extends State<SystemTab> {
           valueColor: service.variant == null ? AppTheme.watch : null,
           hint: info == null ? null : _variantReason(t, info.detection),
         ),
+        if (service.variantProved)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              service.variantCorrections > 0
+                  ? t.systemVariantCorrected
+                  : t.systemVariantProved,
+              style: const TextStyle(
+                fontSize: 11.5,
+                height: 1.4,
+                color: AppTheme.good,
+              ),
+            ),
+          ),
         Padding(
           padding: const EdgeInsets.only(top: 4, bottom: 10),
           child: Text(
