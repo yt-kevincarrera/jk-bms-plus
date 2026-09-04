@@ -8,6 +8,7 @@ import 'package:jk_bms/src/ble/bms_link.dart';
 import 'package:jk_bms/src/bms_service.dart';
 import 'package:jk_bms/src/data/database.dart';
 import 'package:jk_bms/src/data/repository.dart';
+import 'package:jk_bms/src/metrics/trip_energy_repair.dart';
 import 'package:jk_bms/src/platform/pack_widget.dart';
 
 import 'fixtures/captured_frames.dart';
@@ -54,6 +55,24 @@ class FakeLink implements BmsLink {
       _bytes.add(frame.sublist(i, (i + chunk).clamp(0, frame.length)));
     }
     await pumpEventQueue();
+  }
+}
+
+/// A repository whose history repair never finishes, standing in for a pack
+/// with days of stored readings on a phone that takes its time.
+class StuckRepairRepository extends BmsRepository {
+  StuckRepairRepository({required AppDatabase database})
+      : super(database: database);
+
+  bool asked = false;
+
+  @override
+  Future<TripRepairReport> repairTripEnergy(
+    String deviceId, {
+    TripEnergyRepair repairer = const TripEnergyRepair(),
+  }) {
+    asked = true;
+    return Completer<TripRepairReport>().future;
   }
 }
 
@@ -177,5 +196,34 @@ void main() {
     // The honest answer for the simulator and for a test: a diagnosis nobody
     // can make must not be invented.
     expect(await service.heldByPhone('pack-a'), isFalse);
+  });
+
+  test('a reading does not wait for the pack history to be rebuilt', () async {
+    // The rider's own pack sat on "waiting for the first reading" while a
+    // battery that arrived that morning connected and showed its data at once.
+    // The difference was stored history: everything derived from it was
+    // awaited on the first decoded frame, before any reading was allowed
+    // through. A pack with no history did all of it instantly.
+    await service.dispose();
+    link = FakeLink();
+    final stuck = StuckRepairRepository(database: db);
+    service = BmsService(transport: link)..repository = stuck;
+
+    final snapshots = <double>[];
+    service.snapshots.listen((s) => snapshots.add(s.packVoltage));
+
+    await service.connect('pack-a', name: 'pack-a');
+    await link.deliver(deviceInfoFrames[0]);
+    await link.deliver(cellInfo24s[0]);
+    await pumpEventQueue();
+
+    expect(stuck.asked, isTrue, reason: 'the rebuild was started');
+    expect(snapshots, hasLength(1), reason: 'and the reading did not wait');
+    expect(service.snapshotsEmitted, 1);
+
+    // And the readings after it keep coming.
+    await link.deliver(cellInfo24s[1]);
+    await pumpEventQueue();
+    expect(snapshots, hasLength(2));
   });
 }

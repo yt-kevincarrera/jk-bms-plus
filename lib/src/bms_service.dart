@@ -296,6 +296,20 @@ class BmsService {
   static const String demoDeviceId = 'demo';
 
   /// Records which pack is connected and points storage at it.
+  ///
+  /// Deliberately short, and awaited by the reading that triggered it: a
+  /// reading cannot be filed before there is a battery to file it under, and
+  /// this is the whole of what that needs. One upsert.
+  ///
+  /// Everything derived from that pack's history used to be awaited here too,
+  /// and that is what left the rider's own pack hanging. The first decoded
+  /// frame of every connection paid for a trip repair, a range relearn, a
+  /// capacity scan and a capacity refresh over days of stored readings before
+  /// any reading was allowed to reach a screen. A pack with no history did all
+  /// of it instantly, which is why a battery that arrived that morning
+  /// connected and showed its data while his own sat on "waiting for the first
+  /// reading" -- and why, before the connect screen learned to accept device
+  /// info as proof, his own pack was declared not to be a JK BMS.
   Future<void> _activate({
     required String id,
     required String name,
@@ -307,18 +321,35 @@ class BmsService {
     repo.activeDeviceId = id;
     repo.activeIsDemo = demo;
     _deviceController.add(activeDevice);
+    unawaited(_rebuildFromHistory(id));
+  }
 
-    // Everything derived from history has to be rebuilt for *this* pack. None
-    // of it can happen at startup any more, because until a pack is connected
-    // there is no history to speak of -- only several histories, and no way to
-    // know which one applies.
-    // Before the relearn, so the estimator is rebuilt from mended figures
-    // rather than from the ones that made it refuse everything.
-    lastTripRepair = await repo.repairTripEnergy(id);
-    await relearnRangeFromTrips();
-    await resumeCapacityTest();
-    await scanForCapacityCycles();
-    await refreshMeasuredCapacity();
+  /// Rebuilds what this pack's stored history implies, after the readings have
+  /// started flowing.
+  ///
+  /// Not at startup, because until a pack is connected there is no history to
+  /// speak of, only several histories with no way to know which applies. Not
+  /// awaited by the reading path either, because none of it is needed to show
+  /// a reading: it fills in the learned range, the measured capacity and any
+  /// test left running, all of which appear a moment later on their own
+  /// streams. A rider watching the Now tab sees the pack immediately and the
+  /// learned figures fill in behind it.
+  Future<void> _rebuildFromHistory(String id) async {
+    final repo = repository;
+    if (repo == null) return;
+    try {
+      // Before the relearn, so the estimator is rebuilt from mended figures
+      // rather than from the ones that made it refuse everything.
+      lastTripRepair = await repo.repairTripEnergy(id);
+      await relearnRangeFromTrips();
+      await resumeCapacityTest();
+      await scanForCapacityCycles();
+      await refreshMeasuredCapacity();
+    } on Object catch (e) {
+      // Nothing here is load-bearing for showing a reading, so a failure is
+      // worth saying and not worth stopping for.
+      _problem('Could not rebuild what this pack has learned: $e');
+    }
   }
 
   /// Re-reads the stored row, after a rename or a catalogue change.

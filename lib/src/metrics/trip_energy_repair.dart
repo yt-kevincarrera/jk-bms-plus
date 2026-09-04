@@ -23,6 +23,50 @@ class TripRepairReport {
       TripRepairReport(examined: 0, repaired: 0, unrepairable: 0);
 }
 
+/// Groups items into runs whose total span stays within [maxSpan].
+///
+/// Exists because reading every stale ride's readings in one query was right
+/// for the case it was written for and catastrophic for the case that actually
+/// happens. An evening's rides are dozens of rows minutes apart, and one query
+/// covering all of them beats a query each. Rides spread over weeks are the
+/// same code reading every reading stored in those weeks, unbounded, on the
+/// first decoded frame of a connection -- which is what left the rider's own
+/// pack sitting on "waiting for the first reading" while a pack with no
+/// history connected instantly.
+///
+/// Generic over the accessors so it can be tested without building database
+/// rows.
+List<List<T>> groupBySpan<T>(
+  List<T> items, {
+  required DateTime Function(T) startOf,
+  required DateTime Function(T) endOf,
+  required Duration maxSpan,
+}) {
+  if (items.isEmpty) return const [];
+  final sorted = [...items]
+    ..sort((a, b) => startOf(a).compareTo(startOf(b)));
+
+  final groups = <List<T>>[];
+  var current = <T>[sorted.first];
+  var from = startOf(sorted.first);
+  var to = endOf(sorted.first);
+
+  for (final item in sorted.skip(1)) {
+    final end = endOf(item).isAfter(to) ? endOf(item) : to;
+    if (end.difference(from) > maxSpan) {
+      groups.add(current);
+      current = <T>[item];
+      from = startOf(item);
+      to = endOf(item);
+      continue;
+    }
+    current.add(item);
+    to = end;
+  }
+  groups.add(current);
+  return groups;
+}
+
 /// Recomputes the energy of rides recorded before the integration bug was
 /// fixed.
 ///

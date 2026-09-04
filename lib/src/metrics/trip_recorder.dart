@@ -19,6 +19,19 @@ enum EnergySource {
   /// there is when the counter has not moved, and blind to every second the
   /// link was down.
   integrated,
+
+  /// The repair looked and could not measure this ride: its readings are gone
+  /// from disk, or the counter never moved past its own quantisation.
+  ///
+  /// Written rather than left blank, and that is the whole point of it. A ride
+  /// left blank looks stale forever, so every connection examined it again,
+  /// re-read every reading in the window it forced, and reached the same
+  /// answer. One ride from a week ago was enough to make every connection read
+  /// a week of readings before the first live one could reach the screen.
+  ///
+  /// Distinguishable on purpose: a future repair that knows a new trick can
+  /// look for exactly these rides and try again.
+  unmeasurable,
 }
 
 /// One point of the recorded track, with what the pack was doing there.
