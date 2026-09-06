@@ -1115,6 +1115,15 @@ class AppL10nEs extends AppL10n {
   }
 
   @override
+  String get adviceSocCounterAheadTitle =>
+      'El porcentaje de carga va por delante del pack';
+
+  @override
+  String adviceSocCounterAheadBody(String gap, String soc) {
+    return 'El BMS dice $soc %, pero la celda más alta está $gap V por debajo del corte de carga, que es donde termina una carga de verdad. Ese porcentaje no se mide: el BMS suma amperios por tiempo contra la capacidad que tiene configurada, y ese contador deriva. Se vuelve a anclar solo si dejas que una carga llegue hasta el corte de una sentada. Si el desajuste vuelve después de eso, la capacidad configurada no es la que tiene el pack: mídela con un test de capacidad antes de cambiarla.';
+  }
+
+  @override
   String get adviceHealthDecorativeTitle => 'El SOH del BMS no se mueve';
 
   @override
@@ -2288,6 +2297,13 @@ class AppL10nEs extends AppL10n {
   String get etaDone => 'Está lleno';
 
   @override
+  String get etaNearlyThere => 'Ya casi';
+
+  @override
+  String get etaCounterAhead =>
+      'el contador va por delante de las celdas, así que no doy minutos';
+
+  @override
   String adviceDeepestSoFar(String from, String to) {
     return 'Lo más hondo hasta ahora: del $from % al $to %.';
   }
@@ -2849,6 +2865,14 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get evidenceReportedSoh => 'SOH según el BMS';
+
+  @override
+  String get evidenceReportedSoc => 'Carga según el BMS';
+
+  @override
+  String evidenceHighestCell(String cell) {
+    return 'Celda más alta (celda $cell)';
+  }
 
   @override
   String get evidenceImpliedCapacity =>

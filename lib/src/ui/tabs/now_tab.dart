@@ -624,7 +624,9 @@ class _FullPackRange extends StatelessWidget {
   }
 }
 
-/// Time until the pack is full, from what is going in right now.
+/// Time until the pack is full, from what is going in right now — or, when
+/// the BMS's charge counter has run ahead of the cells, the admission that
+/// there is no honest number to give.
 Widget _chargeEta(AppL10n t, BmsSnapshot s, BmsService service) {
   // Remaining over charge, which reads back the capacity the BMS is
   // configured with. That cancellation makes it useless as a measurement of
@@ -636,19 +638,31 @@ Widget _chargeEta(AppL10n t, BmsSnapshot s, BmsService service) {
       : null;
   if (capacity == null) return const SizedBox.shrink();
 
+  // What the counter gets checked against. Both are allowed to be missing —
+  // an empty cell list reads as 0 V, which is not a low cell, and the cutoff
+  // only exists once a settings frame has arrived.
+  final cutoff = service.lastSettings?.cellOvp;
   final eta = const ChargeEtaEstimator().estimate(
     current: s.current,
     soc: s.soc,
     capacityAh: capacity,
+    highestCellVolts: s.cellVoltages.isEmpty ? null : s.maxCellVoltage,
+    cellFullVolts: cutoff != null && cutoff > 0 ? cutoff : null,
   );
   final left = eta.remaining;
-  if (left == null) return const SizedBox.shrink();
+  // No number and no reason to doubt one: nothing to say.
+  if (left == null && !eta.socLooksOptimistic) return const SizedBox.shrink();
 
-  final label = left == Duration.zero
-      ? t.etaDone
-      : left.inHours >= 1
-      ? '${left.inHours} h ${left.inMinutes % 60} min'
-      : '${left.inMinutes} min';
+  final String label;
+  if (eta.socLooksOptimistic || left == null) {
+    label = t.etaNearlyThere;
+  } else if (left == Duration.zero) {
+    label = t.etaDone;
+  } else if (left.inHours >= 1) {
+    label = '${left.inHours} h ${left.inMinutes % 60} min';
+  } else {
+    label = '${left.inMinutes} min';
+  }
 
   return Padding(
     padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -668,14 +682,24 @@ Widget _chargeEta(AppL10n t, BmsSnapshot s, BmsService service) {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  left == Duration.zero ? label : '${t.etaFull} $label',
+                  left == Duration.zero || eta.socLooksOptimistic
+                      ? label
+                      : '${t.etaFull} $label',
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppTheme.cool,
                   ),
                 ),
-                if (eta.isTapering && left != Duration.zero)
+                if (eta.socLooksOptimistic)
+                  Text(
+                    t.etaCounterAhead,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      color: AppTheme.textFaint,
+                    ),
+                  )
+                else if (eta.isTapering && left != Duration.zero)
                   Text(
                     t.etaTapering,
                     style: const TextStyle(

@@ -16,6 +16,7 @@ BmsSnapshot snap({
   int cycles = 63,
   double cycleCapacityAh = 2843.5,
   double soh = 97,
+  double current = -20,
 }) {
   final v = cells ?? List.filled(20, 3.90);
   return BmsSnapshot(
@@ -26,7 +27,7 @@ BmsSnapshot snap({
     cellResistances: List.filled(20, 0.0025),
     enabledCellMask: 0xFFFFF,
     packVoltage: v.reduce((a, b) => a + b),
-    current: -20,
+    current: current,
     temperatures: temperatures,
     temperatureSensorMask: 7,
     mosfetTemp: mosfetTemp,
@@ -291,6 +292,66 @@ void main() {
     test('says nothing about stranded energy on a balanced pack', () {
       final advice = run(usableWh: 2750, grossWh: 2800);
       expect(has(advice, AdviceCode.imbalanceCostingRange), isFalse);
+    });
+
+    // The charge percentage is a running total, not a measurement, and it is
+    // the number every other figure on the screen is built on.
+    test('calls out a charge counter that has run ahead of the cells', () {
+      // 99% claimed with every cell at 4.00 V and the cutoff at 4.20: a fifth
+      // of a volt a cell short of where a charge ends.
+      final advice = run(
+        snapshot: snap(
+          cells: List.filled(20, 4.00),
+          soc: 99,
+          remainingAh: 39.6,
+          current: 8,
+        ),
+        config: settings(),
+      );
+      expect(has(advice, AdviceCode.socCounterAhead), isTrue);
+      final item = advice.firstWhere(
+        (a) => a.code == AdviceCode.socCounterAhead,
+      );
+      expect(item.level, AdviceLevel.info);
+      expect(item.value, closeTo(0.20, 0.005));
+      expect(
+        item.evidence.map((e) => e.kind),
+        containsAll(<EvidenceKind>[
+          EvidenceKind.reportedSoc,
+          EvidenceKind.highestCell,
+          EvidenceKind.cellOvp,
+        ]),
+      );
+    });
+
+    test('says nothing when the cells agree with the counter', () {
+      final advice = run(
+        snapshot: snap(
+          cells: List.filled(20, 4.17),
+          soc: 99,
+          remainingAh: 39.6,
+          current: 3,
+        ),
+        config: settings(),
+      );
+      expect(has(advice, AdviceCode.socCounterAhead), isFalse);
+    });
+
+    test('does not call a discharging pack a disagreement', () {
+      // A pack that is not being charged sits below its charge voltage as a
+      // matter of course. Checking there would fire on every healthy battery.
+      final advice = run(
+        snapshot: snap(cells: List.filled(20, 4.00), soc: 99, current: -20),
+        config: settings(),
+      );
+      expect(has(advice, AdviceCode.socCounterAhead), isFalse);
+    });
+
+    test('stays quiet with no cutoff to compare against', () {
+      final advice = run(
+        snapshot: snap(cells: List.filled(20, 4.00), soc: 99, current: 8),
+      );
+      expect(has(advice, AdviceCode.socCounterAhead), isFalse);
     });
 
     test('puts the loudest advice first', () {

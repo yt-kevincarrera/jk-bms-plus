@@ -55,6 +55,10 @@ enum AdviceCode {
   /// through the pack.
   cycleCounterInflated,
 
+  /// The charge counter reads nearly full while the cells are still well
+  /// below the cutoff a charge ends at.
+  socCounterAhead,
+
   /// State of health has not moved off its initial value despite real use.
   healthFigureDecorative,
 
@@ -210,6 +214,8 @@ enum EvidenceKind {
   reportedCycles,
   equivalentCycles,
   reportedSoh,
+  reportedSoc,
+  highestCell,
   impliedCapacity,
   catalogueCapacity,
   capacityTests,
@@ -322,6 +328,8 @@ class VerdictThresholds {
     this.weakCellMinReadings = 50,
     this.weakCellShare = 0.6,
     this.cycleInflation = 1.4,
+    this.socCounterSuspectPercent = 95,
+    this.socCounterDisagreementVolts = 0.12,
     this.catalogueShortfall = 0.12,
     this.hotWatchCelsius = 45,
     this.hotProblemCelsius = 55,
@@ -351,6 +359,17 @@ class VerdictThresholds {
   /// BMS cycles over equivalent full cycles, above which the counter is
   /// called inflated.
   final double cycleInflation;
+
+  /// State of charge at which the charge counter stops being taken at face
+  /// value, and how far the highest cell may sit below the configured cutoff
+  /// at that point before the counter is called ahead of the pack.
+  ///
+  /// The voltage figure is loose on purpose. The cutoff read back from the
+  /// BMS is a protection threshold, normally set a little above where the
+  /// charger actually stops, so a genuinely full cell can rest some tens of
+  /// millivolts short of it. Past this, headroom stops explaining the gap.
+  final double socCounterSuspectPercent;
+  final double socCounterDisagreementVolts;
 
   /// Fraction short of the advertised capacity worth mentioning.
   final double catalogueShortfall;
@@ -542,6 +561,45 @@ class AdviceEngine {
               EvidenceKind.equivalentCycles,
               value: report.equivalentFullCycles,
             ),
+          ],
+        ),
+      );
+    }
+
+    // The charge percentage, checked the same way: against something nobody
+    // typed in. It is a running total of amps over time against a configured
+    // capacity, so it drifts, and it drifts in the direction that matters
+    // most — a counter working from a stale zero, or against a nominal
+    // capacity smaller than the pack really holds, reaches the high nineties
+    // while the cells are still a long way from the cutoff a charge ends at,
+    // then sits there for an hour. It is also the number a rider reads more
+    // than any other, and the one every time-to-full and range figure is
+    // built on.
+    //
+    // Only checked while charging: a resting pack sits below its charge
+    // voltage as a matter of course, and calling that a disagreement would
+    // fire on every healthy battery.
+    final chargeCutoff = settings?.cellOvp;
+    if (snapshot.isCharging &&
+        snapshot.soc >= th.socCounterSuspectPercent &&
+        snapshot.cellVoltages.isNotEmpty &&
+        chargeCutoff != null &&
+        chargeCutoff > 0 &&
+        chargeCutoff - snapshot.maxCellVoltage >
+            th.socCounterDisagreementVolts) {
+      advice.add(
+        Advice(
+          code: AdviceCode.socCounterAhead,
+          level: AdviceLevel.info,
+          value: chargeCutoff - snapshot.maxCellVoltage,
+          evidence: [
+            Evidence(EvidenceKind.reportedSoc, value: snapshot.soc),
+            Evidence(
+              EvidenceKind.highestCell,
+              value: snapshot.maxCellVoltage,
+              cell: snapshot.maxCellIndex,
+            ),
+            Evidence(EvidenceKind.cellOvp, value: chargeCutoff),
           ],
         ),
       );

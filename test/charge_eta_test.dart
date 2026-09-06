@@ -8,12 +8,15 @@ void main() {
     required double soc,
     double current = 10,
     double capacityAh = 40,
-  }) =>
-      estimator.estimate(
-        current: current,
-        soc: soc,
-        capacityAh: capacityAh,
-      );
+    double? highestCellVolts,
+    double? cellFullVolts,
+  }) => estimator.estimate(
+    current: current,
+    soc: soc,
+    capacityAh: capacityAh,
+    highestCellVolts: highestCellVolts,
+    cellFullVolts: cellFullVolts,
+  );
 
   group('through the flat part of a charge', () {
     test('is roughly amp-hours left over amps going in', () {
@@ -59,8 +62,103 @@ void main() {
     });
 
     test('reaches zero once the pack is full', () {
-      expect(at(soc: 100).remaining, Duration.zero);
-      expect(at(soc: 99.6).remaining, Duration.zero);
+      // With the cells at the cutoff, so the near-full reading is believed.
+      expect(
+        at(soc: 100, highestCellVolts: 4.20, cellFullVolts: 4.25).remaining,
+        Duration.zero,
+      );
+      expect(
+        at(soc: 99.6, highestCellVolts: 4.20, cellFullVolts: 4.25).remaining,
+        Duration.zero,
+      );
+    });
+  });
+
+  // The screen this was written for: a 40 Ah nameplate reading 99% and 39.6 Ah
+  // with 8 A still going in and the pack at 80.1 V. The arithmetic was right
+  // and said three minutes; the charge had the best part of an hour to run,
+  // because the 99% was a drifted counter rather than a measurement.
+  group('when the charge counter disagrees with the pack', () {
+    test('says nothing rather than three minutes', () {
+      // 20S NMC, so 80.1 V is 4.005 V a cell against a 4.20 V cutoff.
+      final eta = at(
+        soc: 99,
+        current: 8,
+        highestCellVolts: 4.009,
+        cellFullVolts: 4.20,
+      );
+      expect(eta.remaining, isNull);
+      expect(eta.socLooksOptimistic, isTrue);
+      expect(eta.isTapering, isTrue);
+    });
+
+    test('the same pack read as LFP', () {
+      // 24S at 3.34 V a cell against a 3.65 V cutoff. Different chemistry,
+      // same verdict: nowhere near the end of a charge.
+      final eta = at(
+        soc: 99,
+        current: 8,
+        highestCellVolts: 3.342,
+        cellFullVolts: 3.65,
+      );
+      expect(eta.remaining, isNull);
+      expect(eta.socLooksOptimistic, isTrue);
+    });
+
+    test('a cell at the cutoff is believed, whatever the current', () {
+      // Voltage settles it in both directions. This one really is at the end
+      // of a charge, so it keeps its number.
+      final eta = at(
+        soc: 98,
+        current: 8,
+        highestCellVolts: 4.19,
+        cellFullVolts: 4.25,
+      );
+      expect(eta.socLooksOptimistic, isFalse);
+      expect(eta.remaining, isNotNull);
+    });
+
+    test('a cutoff set above where the charger stops is not a disagreement', () {
+      // Builders leave headroom above the charge voltage on the protection
+      // threshold. A full cell resting 70 mV under it is normal.
+      final eta = at(
+        soc: 99,
+        current: 1.5,
+        highestCellVolts: 4.18,
+        cellFullVolts: 4.25,
+      );
+      expect(eta.socLooksOptimistic, isFalse);
+      expect(eta.remaining, isNotNull);
+    });
+
+    test('nothing below the check bar is touched', () {
+      final eta = at(soc: 80, highestCellVolts: 3.9, cellFullVolts: 4.2);
+      expect(eta.socLooksOptimistic, isFalse);
+      expect(eta.remaining, isNotNull);
+    });
+  });
+
+  group('with no cutoff to compare against', () {
+    test('a tenth of C into a pack that claims 99% is not believed', () {
+      // No settings frame, so the current has to carry it: 8 A into 40 Ah is
+      // constant current, and a constant-current charge is not at 99%.
+      final eta = at(soc: 99, current: 8);
+      expect(eta.remaining, isNull);
+      expect(eta.socLooksOptimistic, isTrue);
+    });
+
+    test('a real tail keeps its answer', () {
+      final eta = at(soc: 99, current: 1.2);
+      expect(eta.socLooksOptimistic, isFalse);
+      expect(eta.remaining!.inMinutes, greaterThan(5));
+    });
+
+    test('the current alone will not call the mid-nineties wrong', () {
+      // A flat-curve pack can genuinely still be taking full current there,
+      // and with nothing measured to check against, guessing is worse than
+      // leaving it alone.
+      final eta = at(soc: 96, current: 8);
+      expect(eta.socLooksOptimistic, isFalse);
     });
   });
 

@@ -526,6 +526,18 @@
       }
     }
   },
+  "adviceSocCounterAheadTitle": "The charge percentage is ahead of the pack",
+  "adviceSocCounterAheadBody": "The BMS says {soc} % while the highest cell sits {gap} V below the charge cutoff, which is where a charge actually ends. That percentage is not measured: the BMS adds up amps over time against the capacity it was configured with, and that counter drifts. It re-anchors itself when you let one charge run all the way to the cutoff. If the gap comes back afterwards, the configured capacity is not this pack's real one — measure it with a capacity test before changing it.",
+  "@adviceSocCounterAheadBody": {
+    "placeholders": {
+      "gap": {
+        "type": "String"
+      },
+      "soc": {
+        "type": "String"
+      }
+    }
+  },
   "adviceHealthDecorativeTitle": "The BMS health figure never moves",
   "adviceHealthDecorativeBody": "It is still pinned at 100% with real cycles behind it. Plenty of firmwares never recompute it. Ignore it and go by measured capacity.",
   "adviceCapacityBelowTitle": "It holds less than the label claimed",
@@ -1272,6 +1284,8 @@
   "etaFull": "Full in",
   "etaTapering": "approx., the current is already tailing off",
   "etaDone": "It is full",
+  "etaNearlyThere": "Nearly there",
+  "etaCounterAhead": "the counter is ahead of the cells, so no minutes here",
   "adviceDeepestSoFar": "Deepest so far: {from} % down to {to} %.",
   "adviceDeepestNone": "No discharge recorded yet.",
   "@adviceDeepestSoFar": {
@@ -1605,6 +1619,15 @@
   "evidenceReportedCycles": "Cycles per the BMS (editable figure)",
   "evidenceEquivalentCycles": "Equivalent cycles from amp-hours that flowed",
   "evidenceReportedSoh": "SOH per the BMS",
+  "evidenceReportedSoc": "Charge per the BMS",
+  "evidenceHighestCell": "Highest cell (cell {cell})",
+  "@evidenceHighestCell": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
   "evidenceImpliedCapacity": "Capacity configured in the BMS (editable)",
   "evidenceCatalogueCapacity": "Advertised capacity",
   "evidenceCapacityTests": "Full discharges measured",
