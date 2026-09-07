@@ -85,6 +85,7 @@ class TripEnergyRepair {
   const TripEnergyRepair({
     this.minimumAh = 0.01,
     this.window = const Duration(seconds: 2),
+    this.bracketReach = const Duration(minutes: 10),
   });
 
   /// Below this the counter has not moved past its own quantisation.
@@ -94,6 +95,17 @@ class TripEnergyRepair {
   /// row's start and end are written a moment apart from the readings around
   /// them.
   final Duration window;
+
+  /// How far either side of a ride to look for the readings that bracket it,
+  /// when nothing at all arrived during the ride itself.
+  ///
+  /// Short on purpose. The pack is parked in that time and draws next to
+  /// nothing, so a few minutes of it costs the figure almost nothing -- but
+  /// the amp-hours counted across the gap belong to *everything* that happened
+  /// in it, and the only defence against that is for the gap to be too short
+  /// for anything else to fit. Ten minutes covers connecting before setting
+  /// off and reconnecting on arrival; it does not cover another ride.
+  final Duration bracketReach;
 
   /// Works out what a ride really cost, from the readings stored during it.
   ///
@@ -106,7 +118,7 @@ class TripEnergyRepair {
         if (!s.timestamp.isBefore(from) && !s.timestamp.isAfter(to)) s,
     ]..sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
-    if (during.length < 2) return null;
+    if (during.length < 2) return _fromBrackets(trip, readings);
 
     // The counter, first choice.
     final ah = during.first.remainingAh - during.last.remainingAh;
@@ -153,6 +165,56 @@ class TripEnergyRepair {
       source: EnergySource.integrated,
     );
   }
+
+  /// Measures a ride nothing was received during, from the readings either
+  /// side of it.
+  ///
+  /// The link being down is not the counter being down. The BMS accumulated
+  /// amp-hours through every second of the blackout, so the last reading
+  /// before setting off and the first one on arrival still have the whole ride
+  /// between them, and the difference is what it cost.
+  ///
+  /// Both sides are required. One of them plus a reading from inside the ride
+  /// would cover only part of it and quietly under-report the rest, which is
+  /// worse than admitting the ride cannot be measured.
+  RepairedEnergy? _fromBrackets(Trip trip, List<Snapshot> readings) {
+    Snapshot? before;
+    Snapshot? after;
+    final earliest = trip.startedAt.subtract(bracketReach);
+    final latest = trip.endedAt.add(bracketReach);
+
+    for (final s in readings) {
+      if (!s.timestamp.isAfter(trip.startedAt) &&
+          !s.timestamp.isBefore(earliest)) {
+        if (before == null || s.timestamp.isAfter(before.timestamp)) {
+          before = s;
+        }
+      }
+      if (!s.timestamp.isBefore(trip.endedAt) &&
+          !s.timestamp.isAfter(latest)) {
+        if (after == null || s.timestamp.isBefore(after.timestamp)) after = s;
+      }
+    }
+    if (before == null || after == null) return null;
+    if (before.packVoltage <= 0 || after.packVoltage <= 0) return null;
+
+    // A counter that went up means the pack was charged somewhere in there,
+    // and a net figure cannot separate the two directions. Nothing to say.
+    final ah = before.remainingAh - after.remainingAh;
+    if (ah < minimumAh) return null;
+
+    // Priced at the mean of the two ends. There are no readings from the ride
+    // to average, and the ends are where the pack actually was.
+    final meanVolts = (before.packVoltage + after.packVoltage) / 2;
+
+    return RepairedEnergy(
+      outWh: ah * meanVolts,
+      ahOut: ah,
+      startSoc: before.soc,
+      endSoc: after.soc,
+      source: EnergySource.bracketedCoulombCount,
+    );
+  }
 }
 
 /// One ride's energy, measured again.
@@ -162,10 +224,22 @@ class RepairedEnergy {
     required this.source,
     this.inWh = 0,
     this.ahOut,
+    this.startSoc,
+    this.endSoc,
   });
 
   final double outWh;
   final double inWh;
   final double? ahOut;
+
+  /// The charge either side of the ride, when the repair had to reach outside
+  /// it to find any reading at all.
+  ///
+  /// Only set by the bracketing path. A ride the link was up for already has
+  /// these, recorded as it happened, and they are not to be overwritten with a
+  /// worse version of themselves.
+  final double? startSoc;
+  final double? endSoc;
+
   final EnergySource source;
 }
