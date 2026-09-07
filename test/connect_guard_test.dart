@@ -41,6 +41,17 @@ void main() {
       );
     });
 
+    test('is over the instant the countdown reads zero', () {
+      // The boundary the rider hit. The tile is drawn from the same clock, and
+      // it used to keep a stale frame past this moment and refuse taps with
+      // it. The verdict is what decides now, and it is read fresh on every
+      // tap, so the drawing can lag without stranding anybody.
+      final g = ConnectGuard()..recordFailure(deviceId: a, at: t0);
+      final zero = t0.add(const Duration(seconds: 5));
+      expect(g.cooldownLeft(deviceId: a, now: zero), isNull);
+      expect(g.judge(deviceId: a, now: zero, busy: false), TapVerdict.go);
+    });
+
     test('counts down, so the screen can say how long is left', () {
       final g = ConnectGuard()..recordFailure(deviceId: a, at: t0);
       expect(
