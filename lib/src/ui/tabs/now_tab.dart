@@ -681,7 +681,10 @@ Widget _chargeEta(AppL10n t, BmsSnapshot s, BmsService service) {
 
   final String label;
   if (eta.socLooksOptimistic || left == null) {
-    label = t.etaNearlyThere;
+    // Not "nearly there". At 99 % with the cells still low, the charge the
+    // rider reported had two hours to run: "nearly there" is the same wrong
+    // promise as "3 min", only vaguer. The subtitle below says why.
+    label = t.etaCannotSay;
   } else if (left == Duration.zero) {
     label = t.etaDone;
   } else if (left.inHours >= 1) {

@@ -693,11 +693,15 @@ class PdfReports {
       InspectionLight.good => _good,
       InspectionLight.watch => _watch,
       InspectionLight.problem => _bad,
+      // Not a colour on the good-to-bad scale. The test did not run, and a
+      // sheet that shaded this green or red would be making a claim.
+      InspectionLight.unmeasured => _faint,
     };
     final text = switch (light) {
       InspectionLight.good => t.inspectionLightGood,
       InspectionLight.watch => t.inspectionLightWatch,
       InspectionLight.problem => t.inspectionLightProblem,
+      InspectionLight.unmeasured => t.inspectionLightUnmeasured,
     };
     return pw.Container(
       margin: const pw.EdgeInsets.only(top: 14),
@@ -804,6 +808,7 @@ class PdfReports {
     InspectionCaveat.noRecovery => t.inspectionCaveatNoRecovery,
     InspectionCaveat.currentStepTooSmall => t.inspectionCaveatStepTooSmall,
     InspectionCaveat.fewReadings => t.inspectionCaveatFewReadings,
+    InspectionCaveat.heavyWasCharge => t.inspectionCaveatHeavyWasCharge,
   };
 
   /// The stored kind is an enum name, which is fine in a database and no use

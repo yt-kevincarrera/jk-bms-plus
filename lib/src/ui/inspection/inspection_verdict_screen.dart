@@ -133,6 +133,10 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
       InspectionLight.good => (t.inspectionLightGood, AppTheme.good),
       InspectionLight.watch => (t.inspectionLightWatch, AppTheme.watch),
       InspectionLight.problem => (t.inspectionLightProblem, AppTheme.bad),
+      InspectionLight.unmeasured => (
+        t.inspectionLightUnmeasured,
+        AppTheme.textFaint,
+      ),
     };
 
     return Scaffold(
@@ -193,6 +197,29 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
                 ],
               ),
             ),
+            // Straight under the headline, before any findings, because it
+            // is the thing that decides how to read everything below: the
+            // test never got its load, so nothing below is about this pack.
+            if (light == InspectionLight.unmeasured)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceRaised,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppTheme.watch),
+                  ),
+                  child: Text(
+                    t.inspectionUnmeasuredBody,
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      height: 1.45,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                ),
+              ),
             AdviceList(
               advice: advice,
               title: t.verdictTitle,
@@ -700,6 +727,7 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
     InspectionCaveat.noRecovery => t.inspectionCaveatNoRecovery,
     InspectionCaveat.currentStepTooSmall => t.inspectionCaveatStepTooSmall,
     InspectionCaveat.fewReadings => t.inspectionCaveatFewReadings,
+    InspectionCaveat.heavyWasCharge => t.inspectionCaveatHeavyWasCharge,
   };
 
   static String _date(DateTime utc) {

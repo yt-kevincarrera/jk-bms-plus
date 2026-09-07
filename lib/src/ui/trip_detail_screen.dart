@@ -22,6 +22,8 @@ class TripDetailScreen extends StatelessWidget {
     required this.trip,
     required this.repository,
     required this.service,
+    required this.learned,
+    this.onChanged,
     super.key,
   });
 
@@ -31,6 +33,14 @@ class TripDetailScreen extends StatelessWidget {
   /// Handed to [RepresentativeQuestion], which needs it to record and to
   /// re-learn from an answer given here, same as from the sheet.
   final BmsService service;
+
+  /// The figures of the pack this ride belongs to. Passed down rather than
+  /// read off [service] because this screen is also opened from the
+  /// saved-pack screen, with nothing connected.
+  final LearnedRange Function() learned;
+
+  /// Refreshes whatever [learned] reads, after an answer changes it.
+  final Future<void> Function()? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +67,13 @@ class TripDetailScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 14),
-            RepresentativeQuestion(view: view, service: service, t: t),
+            RepresentativeQuestion(
+              view: view,
+              service: service,
+              learned: learned,
+              onChanged: onChanged,
+              t: t,
+            ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(

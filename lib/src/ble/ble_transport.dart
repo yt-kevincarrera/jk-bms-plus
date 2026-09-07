@@ -6,6 +6,7 @@ import '../protocol/jk_constants.dart';
 import 'bms_link.dart';
 import 'link_quiet.dart';
 import 'link_trouble.dart';
+import 'reconnect_backoff.dart';
 
 /// What the link is doing right now.
 enum BleLinkState {
@@ -319,8 +320,26 @@ class BleTransport implements BmsLink {
   /// two racing each other for the same pack.
   Timer? _reconnectTimer;
 
-  /// The pause the next reconnect should take instead of [reconnectDelay].
+  /// The pause the next reconnect should take instead of the backoff's.
   Duration? _nextReconnectDelay;
+
+  /// How long to wait before each retry, and when to stop retrying.
+  ///
+  /// The loop used to have neither. It retried every 400 ms for ever, which is
+  /// exactly what [ConnectGuard] exists to stop a *thumb* doing, for exactly
+  /// the reason written at the top of that file: every failed attempt can
+  /// leave a connection Android never closes, and those resources belong to
+  /// the whole phone. A tap was protected. The loop, running unattended for a
+  /// whole ride, was not.
+  late final ReconnectBackoff _backoff = ReconnectBackoff(
+    firstDelay: reconnectDelay,
+  );
+
+  @override
+  LinkRetryState get retry => LinkRetryState(
+        failures: _backoff.failures,
+        gaveUp: _backoff.hasGivenUp,
+      );
 
   /// Scans for BLE devices and reports every one of them.
   ///
@@ -522,6 +541,10 @@ class BleTransport implements BmsLink {
       _setState(BleLinkState.connected);
       _connectedAt = DateTime.now();
       _nudgesThisLink = 0;
+      // Everything the failures implied is disproved, so the next drop gets
+      // the quick retry rather than inheriting a long wait from an outage
+      // that is over.
+      _backoff.recordSuccess();
       final since = _droppedAt;
       if (since != null) {
         timeDisconnected += DateTime.now().difference(since);
@@ -547,6 +570,7 @@ class BleTransport implements BmsLink {
       // cancelled connect throws, and reporting that would land a generic
       // Bluetooth complaint on top of whatever the screen was about to say.
       if (!_wantConnection) return;
+      _backoff.recordFailure();
       _setState(BleLinkState.failed);
       _errorController.add(_describeConnectFailure(e));
       _scheduleReconnect();
@@ -658,12 +682,43 @@ class BleTransport implements BmsLink {
   void _scheduleReconnect() {
     if (!_wantConnection || _disposed) return;
     _reconnectTimer?.cancel();
-    final delay = _nextReconnectDelay ?? reconnectDelay;
+    // The mute-link reset names its own pause and knows why; the backoff does
+    // not get a vote there.
+    final delay = _nextReconnectDelay ?? _backoff.nextDelay();
     _nextReconnectDelay = null;
+    if (delay == null) {
+      _giveUp();
+      return;
+    }
     _reconnectTimer = Timer(delay, () {
       _reconnectTimer = null;
       if (_wantConnection && !_disposed) _attach();
     });
+  }
+
+  /// Stops retrying and says so, rather than hammering a stack that has run
+  /// out of the resources these attempts consume.
+  ///
+  /// The state stays [BleLinkState.failed] from here: nothing starts again on
+  /// its own, and the screen offers [retryNow] instead of a spinner that will
+  /// never resolve. That spinner was the rider's other complaint — the app
+  /// gave no sign the reconnect had failed, and the reason only turned up on
+  /// the connect screen.
+  void _giveUp() {
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    _setState(BleLinkState.failed);
+  }
+
+  /// One more go, because the rider asked. Clears the ledger first: walking
+  /// back to the bike or restarting Bluetooth is what makes the next attempt
+  /// worth trying, and it is not the app's place to know which happened.
+  @override
+  Future<void> retryNow() async {
+    if (_device == null || _disposed) return;
+    _wantConnection = true;
+    _backoff.forgive();
+    _scheduleReconnect();
   }
 
   /// Lets go of a link that is up and has said nothing for [muteBefore].
@@ -760,6 +815,9 @@ class BleTransport implements BmsLink {
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
     _nextReconnectDelay = null;
+    // A pack the rider let go of starts the next connection from nothing,
+    // rather than inheriting the failures of the one before it.
+    _backoff.forgive();
     await _notifySub?.cancel();
     await _connectionSub?.cancel();
     _notifySub = null;

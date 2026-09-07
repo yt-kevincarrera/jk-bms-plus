@@ -65,7 +65,12 @@ class TripSummarySheet extends StatelessWidget {
               ),
             ),
           ),
-          RepresentativeQuestion(view: view, service: service, t: t),
+          RepresentativeQuestion(
+            view: view,
+            service: service,
+            learned: () => LearnedRange.ofService(service),
+            t: t,
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(

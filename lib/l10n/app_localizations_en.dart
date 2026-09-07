@@ -1862,6 +1862,14 @@ class AppL10nEn extends AppL10n {
   String get offlineTrips => 'Rides';
 
   @override
+  String offlineSeeTrips(String count) {
+    return 'See the $count rides';
+  }
+
+  @override
+  String get offlineNoTrips => 'No rides stored for this pack yet.';
+
+  @override
   String offlineTripsCount(String count) {
     return '$count stored';
   }
@@ -2298,7 +2306,7 @@ class AppL10nEn extends AppL10n {
   String get etaDone => 'It is full';
 
   @override
-  String get etaNearlyThere => 'Nearly there';
+  String get etaCannotSay => 'Cannot say';
 
   @override
   String get etaCounterAhead =>
@@ -2330,6 +2338,17 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get linkConnectingTitle => 'Connecting';
+
+  @override
+  String get linkGaveUpTitle => 'Could not reconnect';
+
+  @override
+  String linkGaveUpBody(String attempts) {
+    return 'Stopped after $attempts attempts. Each failed attempt uses up Bluetooth resources belonging to the whole phone, so it will not keep going on its own.';
+  }
+
+  @override
+  String get linkRetryNow => 'Try again';
 
   @override
   String linkReadingAge(String age) {
@@ -2998,7 +3017,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get inspectionStepHeavyBody =>
-      'Rear wheel in the air and throttle, or 50 metres down the road with the phone in your pocket, or the charger plugged in. Any of them works: the app measures the current.';
+      'Three ways, any of them works: ride 50 metres accelerating properly, or hold the rear brake on the stand and open the throttle, or plug the charger in for half a minute. A wheel spinning free in the air will NOT do: the motor has nothing to push against, so the current stays near zero however hard you twist it.';
 
   @override
   String get inspectionStepRecoveryTitle => 'Let go and wait';
@@ -3019,8 +3038,8 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String inspectionLoadTooLow(String amps) {
-    return 'Too little current ($amps A). Give it more.';
+  String inspectionLoadTooLow(String amps, String need) {
+    return 'Seeing $amps A, and $need A held is what it takes.';
   }
 
   @override
@@ -3060,6 +3079,14 @@ class AppL10nEn extends AppL10n {
   String get inspectionLightProblem => 'Don\'t buy blind: there is a problem';
 
   @override
+  String get inspectionLightUnmeasured =>
+      'No verdict: the pack was never loaded';
+
+  @override
+  String get inspectionUnmeasuredBody =>
+      'Per-cell sag under load is where this test gets its answer, and no load big enough ever arrived, so there is nothing here about this battery either way. Run it again and give it one of these: ride fifty metres accelerating properly, or hold the rear brake on the stand and open the throttle, or plug the charger in for half a minute. A wheel spinning free in the air is not a load: there is nothing for the motor to push against, so the current stays near zero however hard you twist it.';
+
+  @override
   String get inspectionFidelityNote =>
       'A quick test catches the obvious scam and the bad cell; it does not measure real capacity. Real capacity takes a full discharge.';
 
@@ -3069,6 +3096,10 @@ class AppL10nEn extends AppL10n {
   @override
   String get inspectionCaveatNoHeavyLoad =>
       'No hard pull: per-cell sag could not be measured.';
+
+  @override
+  String get inspectionCaveatHeavyWasCharge =>
+      'The load was a charger, so the cells were lifted rather than pulled down. The arithmetic is the same; the direction is not.';
 
   @override
   String get inspectionCaveatNoLightLoad =>

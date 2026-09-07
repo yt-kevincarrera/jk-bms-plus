@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../ble/ble_transport.dart';
+import '../ble/bms_link.dart';
 import '../ble/link_trouble.dart';
 import '../app_settings.dart';
 import '../ble/proximity_watcher.dart';
@@ -160,6 +161,7 @@ class _HomeShellState extends State<HomeShell> {
     // The demo link never drops, and a warning about a simulated radio would
     // be a claim about a pack that does not exist.
     final down = !service.isDemo && _link != BleLinkState.connected;
+    final retry = service.linkRetry;
     return _appBarBottomFor(
       demo: service.isDemo,
       demoText: t.demoBanner,
@@ -168,8 +170,15 @@ class _HomeShellState extends State<HomeShell> {
               state: _link,
               trouble: _trouble,
               lastReadingAt: _lastReadingAt,
+              retry: retry,
+              onRetry: () async {
+                await service.retryLink();
+                if (mounted) setState(() {});
+              },
             )
           : null,
+      // The given-up banner carries a button, which the spinning one does not.
+      linkHeight: down && retry.gaveUp ? 92.0 : 62.0,
     );
   }
 
@@ -259,11 +268,11 @@ PreferredSizeWidget? _appBarBottomFor({
   required bool demo,
   required String demoText,
   required Widget? linkBanner,
+  double linkHeight = 62.0,
 }) {
   final bars = <Widget>[if (demo) _DemoBanner(text: demoText), ?linkBanner];
   if (bars.isEmpty) return null;
   const demoHeight = 22.0;
-  const linkHeight = 62.0;
   return PreferredSize(
     preferredSize: Size.fromHeight(
       (demo ? demoHeight : 0) + (linkBanner != null ? linkHeight : 0),
@@ -279,11 +288,19 @@ class _LinkBanner extends StatelessWidget {
     required this.state,
     required this.trouble,
     required this.lastReadingAt,
+    required this.retry,
+    required this.onRetry,
   });
 
   final BleLinkState state;
   final LinkTrouble? trouble;
   final DateTime? lastReadingAt;
+
+  /// How the automatic reconnect is getting on. Once it has given up, the
+  /// spinner would be a lie: nothing is happening and nothing will until
+  /// somebody asks.
+  final LinkRetryState retry;
+  final VoidCallback onRetry;
 
   String _age(AppL10n t) {
     final at = lastReadingAt;
@@ -297,13 +314,21 @@ class _LinkBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
-    final title = switch (state) {
-      BleLinkState.reconnecting => t.linkReconnectingTitle,
-      BleLinkState.connecting ||
-      BleLinkState.negotiating => t.linkConnectingTitle,
-      _ => t.linkLostTitle,
-    };
-    final why = trouble == null
+    final gaveUp = retry.gaveUp;
+    final title = gaveUp
+        ? t.linkGaveUpTitle
+        : switch (state) {
+            BleLinkState.reconnecting => t.linkReconnectingTitle,
+            BleLinkState.connecting ||
+            BleLinkState.negotiating => t.linkConnectingTitle,
+            _ => t.linkLostTitle,
+          };
+    // Once it has stopped, the reason it stopped for is the useful half and
+    // the count is what makes it credible. Before that, the reason alone.
+    final why = gaveUp
+        ? '${trouble == null ? t.linkLostBody : linkTroubleWording(t, trouble!)} '
+              '${t.linkGaveUpBody('${retry.failures}')}'
+        : trouble == null
         ? t.linkLostBody
         : linkTroubleWording(t, trouble!);
     final age = _age(t);
@@ -315,15 +340,23 @@ class _LinkBanner extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.only(top: 2),
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
             child: SizedBox(
               width: 12,
               height: 12,
-              child: CircularProgressIndicator(
-                strokeWidth: 1.8,
-                color: AppTheme.watch,
-              ),
+              // A spinner claims something is happening. Once the loop has
+              // stopped, nothing is.
+              child: gaveUp
+                  ? const Icon(
+                      Icons.link_off,
+                      size: 12,
+                      color: AppTheme.watch,
+                    )
+                  : const CircularProgressIndicator(
+                      strokeWidth: 1.8,
+                      color: AppTheme.watch,
+                    ),
             ),
           ),
           const SizedBox(width: 10),
@@ -358,7 +391,7 @@ class _LinkBanner extends StatelessWidget {
                 const SizedBox(height: 1),
                 Text(
                   why,
-                  maxLines: 2,
+                  maxLines: gaveUp ? 3 : 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 10.5,
@@ -366,6 +399,26 @@ class _LinkBanner extends StatelessWidget {
                     color: AppTheme.textFaint,
                   ),
                 ),
+                if (gaveUp)
+                  SizedBox(
+                    height: 28,
+                    child: TextButton(
+                      onPressed: onRetry,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        foregroundColor: AppTheme.watch,
+                      ),
+                      child: Text(
+                        t.linkRetryNow,
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),

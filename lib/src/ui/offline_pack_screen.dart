@@ -18,9 +18,11 @@ import '../report/report_sharing.dart';
 import 'license_scope.dart';
 import 'widgets/pro_gate.dart';
 import 'theme.dart';
+import 'pack_trips_screen.dart';
 import 'trends_screen.dart';
 import 'widgets/advice_list.dart';
 import 'widgets/common.dart';
+import 'widgets/representative_question.dart';
 import 'widgets/maintenance_card.dart';
 
 /// What is known about one battery without talking to it.
@@ -490,6 +492,21 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
               ),
           ],
           const SizedBox(height: 10),
+          // The rides themselves live behind this rather than under the
+          // section. They used to hang off the bottom of the screen, outside
+          // every section, growing without limit: a pack with two hundred of
+          // them turned everything above into something you scrolled past.
+          // Inside the section is where they belong, and a screen of their own
+          // is the only way to put them there without a card inside a card and
+          // a page with no end.
+          if (_rideCount > 0) ...[
+            OutlinedButton.icon(
+              onPressed: () => _openRides(t),
+              icon: const Icon(Icons.route, size: 18),
+              label: Text(t.offlineSeeTrips('$_rideCount')),
+            ),
+            const SizedBox(height: 8),
+          ],
           OutlinedButton.icon(
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
@@ -506,6 +523,36 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
         ],
       ),
     ];
+  }
+
+  /// Rides that actually went somewhere. A row exists from the moment
+  /// recording starts, so one in progress has no distance yet; the same cut
+  /// the totals use.
+  int get _rideCount =>
+      _trips.where((tr) => tr.distanceKm > 0).length;
+
+  /// Opens this pack's rides, and takes back whatever changed while they were
+  /// open: deleting a ride or calling it an exception moves the totals and the
+  /// estimate on this screen too.
+  Future<void> _openRides(AppL10n t) async {
+    if (widget.service.repository == null) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => PackTripsScreen(
+          service: widget.service,
+          device: widget.device,
+          // This pack's figures, not the connected pack's. With nothing
+          // connected the service's estimator belongs to no pack at all, and
+          // quoting it would put a number in front of the rider that describes
+          // nothing they are looking at.
+          learned: () => LearnedRange(
+            whPerKm: _estimator?.whPerKm ?? 0,
+            fullKm: _outlook.fullKm,
+          ),
+          onChanged: _load,
+        ),
+      ),
+    );
   }
 
   /// How long ago, in words, because "hace 3 días" answers the question that

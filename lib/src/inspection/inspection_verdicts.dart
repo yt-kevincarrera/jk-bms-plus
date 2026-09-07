@@ -23,11 +23,21 @@ class InspectionVerdicts {
     for (final a in evaluate(r)) {
       if (a.level.index > worst.index) worst = a.level;
     }
-    return switch (worst) {
-      AdviceLevel.problem => InspectionLight.problem,
-      AdviceLevel.watch => InspectionLight.watch,
-      AdviceLevel.info || AdviceLevel.good => InspectionLight.good,
-    };
+    // Anything actually found still gets said, whatever else was missed: a
+    // cell that is far out at rest is a finding even with no load behind it,
+    // and burying it because the pull never happened would be its own kind of
+    // dishonesty.
+    if (worst == AdviceLevel.problem) return InspectionLight.problem;
+    if (worst == AdviceLevel.watch) return InspectionLight.watch;
+
+    // Nothing found. Whether that means anything depends entirely on whether
+    // there was anything to find it in. Per-cell sag under load is where this
+    // test gets its answer; with no sag captured, "nothing found" is a fact
+    // about the test rather than about the pack.
+    if (!r.hasHeavyLoad || r.medianHeavySagVolts == null) {
+      return InspectionLight.unmeasured;
+    }
+    return InspectionLight.good;
   }
 
   List<Advice> evaluate(InspectionResult r) {

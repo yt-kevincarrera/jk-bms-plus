@@ -2128,7 +2128,7 @@ abstract class AppL10n {
   /// No description provided for @adviceSocCounterBehindBody.
   ///
   /// In es, this message translates to:
-  /// **'El BMS dice {soc} %, pero la celda más baja está {gap} V por encima de donde el propio BMS llama vacío.'**
+  /// **'El BMS dice {soc} %, pero la celda más baja está {gap} V por encima de donde el propio BMS llama vacío. Hay batería aquí que la pantalla no está contando. Ese porcentaje no se mide: es amperios por tiempo contra la capacidad configurada, y ese contador deriva. Si se repite, la capacidad configurada se queda corta frente a la real: mídela con un test de capacidad antes de cambiarla.'**
   String adviceSocCounterBehindBody(String gap, String soc);
 
   /// No description provided for @adviceHealthDecorativeTitle.
@@ -3379,6 +3379,18 @@ abstract class AppL10n {
   /// **'Viajes'**
   String get offlineTrips;
 
+  /// No description provided for @offlineSeeTrips.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver los {count} viajes'**
+  String offlineSeeTrips(String count);
+
+  /// No description provided for @offlineNoTrips.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía no hay viajes guardados de esta batería.'**
+  String get offlineNoTrips;
+
   /// No description provided for @offlineTripsCount.
   ///
   /// In es, this message translates to:
@@ -4129,11 +4141,11 @@ abstract class AppL10n {
   /// **'Está lleno'**
   String get etaDone;
 
-  /// No description provided for @etaNearlyThere.
+  /// No description provided for @etaCannotSay.
   ///
   /// In es, this message translates to:
-  /// **'Ya casi'**
-  String get etaNearlyThere;
+  /// **'No puedo decirlo'**
+  String get etaCannotSay;
 
   /// No description provided for @etaCounterAhead.
   ///
@@ -4188,6 +4200,24 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Conectando'**
   String get linkConnectingTitle;
+
+  /// No description provided for @linkGaveUpTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'No pude reconectar'**
+  String get linkGaveUpTitle;
+
+  /// No description provided for @linkGaveUpBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Me detuve tras {attempts} intentos. Cada intento fallido consume recursos Bluetooth de todo el teléfono, así que no sigue solo.'**
+  String linkGaveUpBody(String attempts);
+
+  /// No description provided for @linkRetryNow.
+  ///
+  /// In es, this message translates to:
+  /// **'Reintentar'**
+  String get linkRetryNow;
 
   /// No description provided for @linkReadingAge.
   ///
@@ -5278,7 +5308,7 @@ abstract class AppL10n {
   /// No description provided for @inspectionStepHeavyBody.
   ///
   /// In es, this message translates to:
-  /// **'Rueda trasera al aire y acelera, o 50 metros en la moto con el teléfono en el bolsillo, o el cargador conectado. Cualquiera sirve: la app mide la corriente.'**
+  /// **'Tres formas, cualquiera sirve: rodar 50 metros acelerando de verdad, o apretar el freno trasero en el caballete y abrir gas, o enchufar el cargador medio minuto. La rueda girando libre al aire NO sirve: el motor no tiene contra qué empujar y la corriente se queda casi en cero por mucho que gires el puño.'**
   String get inspectionStepHeavyBody;
 
   /// No description provided for @inspectionStepRecoveryTitle.
@@ -5314,8 +5344,8 @@ abstract class AppL10n {
   /// No description provided for @inspectionLoadTooLow.
   ///
   /// In es, this message translates to:
-  /// **'Muy poca corriente ({amps} A). Dale más.'**
-  String inspectionLoadTooLow(String amps);
+  /// **'Veo {amps} A y hacen falta {need} A sostenidos.'**
+  String inspectionLoadTooLow(String amps, String need);
 
   /// No description provided for @inspectionNotQuiet.
   ///
@@ -5377,6 +5407,18 @@ abstract class AppL10n {
   /// **'No compres a ciegas: hay un problema'**
   String get inspectionLightProblem;
 
+  /// No description provided for @inspectionLightUnmeasured.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin veredicto: nunca se cargó el pack'**
+  String get inspectionLightUnmeasured;
+
+  /// No description provided for @inspectionUnmeasuredBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Este test saca su respuesta de la caída por celda bajo carga, y nunca llegó una carga suficiente, así que aquí no hay nada sobre esta batería ni a favor ni en contra. Repítelo y dale una de estas: rodar cincuenta metros acelerando de verdad, o apretar el freno trasero en el caballete y abrir gas, o enchufar el cargador medio minuto. La rueda girando al aire no es carga: el motor no tiene contra qué empujar, así que la corriente se queda casi en cero por mucho que gires el puño.'**
+  String get inspectionUnmeasuredBody;
+
   /// No description provided for @inspectionFidelityNote.
   ///
   /// In es, this message translates to:
@@ -5394,6 +5436,12 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Sin carga fuerte: la caída por celda no se pudo medir.'**
   String get inspectionCaveatNoHeavyLoad;
+
+  /// No description provided for @inspectionCaveatHeavyWasCharge.
+  ///
+  /// In es, this message translates to:
+  /// **'La carga fue un cargador, así que las celdas subieron en vez de bajar. La cuenta es la misma; la dirección no.'**
+  String get inspectionCaveatHeavyWasCharge;
 
   /// No description provided for @inspectionCaveatNoLightLoad.
   ///

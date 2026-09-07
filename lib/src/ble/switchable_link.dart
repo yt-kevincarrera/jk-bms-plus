@@ -58,6 +58,12 @@ class SwitchableLink implements BmsLink {
   LinkHealth get health => _active.health;
 
   @override
+  LinkRetryState get retry => _active.retry;
+
+  @override
+  Future<void> retryNow() => _active.retryNow();
+
+  @override
   Future<void> disconnect() => _active.disconnect();
 
   /// Switches to the simulated pack. Any real connection is dropped first: the
@@ -120,6 +126,10 @@ class _Uninitialised implements BmsLink {
   int? get negotiatedMtu => null;
   @override
   LinkHealth get health => LinkHealth.unknown;
+  @override
+  LinkRetryState get retry => LinkRetryState.none;
+  @override
+  Future<void> retryNow() async {}
   @override
   Stream<List<DiscoveredBms>> scan() => const Stream.empty();
   @override
