@@ -36,9 +36,10 @@ class InspectionThresholds {
   const InspectionThresholds({
     this.restSeconds = 30,
     this.restCurrentAmps = 1.0,
-    this.lightLoadMinAmps = 1.0,
+    this.lightLoadStepAmps = 0.25,
     this.lightLoadSeconds = 15,
-    this.heavyLoadMinAmps = 15.0,
+    this.heavyLoadCRate = 0.10,
+    this.heavyLoadFloorAmps = 3.0,
     this.heavyLoadSeconds = 5,
     this.recoverySeconds = 45,
     this.recoverySettleVolts = 0.005,
@@ -61,14 +62,39 @@ class InspectionThresholds {
   /// Below this, in either direction, the pack is at rest.
   final double restCurrentAmps;
 
-  /// A draw at least this big counts as the lights being on. 72 V lights
-  /// pull one to two amps; VERIFY on the Yoazaky.
-  final double lightLoadMinAmps;
+  /// How far above rest the current has to step for the lights to count as
+  /// on.
+  ///
+  /// Above rest, not an absolute figure, and this is the whole fix. It used to
+  /// be a flat 1.0 A, guessed from "72 V lights pull one to two amps" and
+  /// marked VERIFY. Verified at last, against the pack this app was written
+  /// for: the lights draw **0.44 A**, flat, and rest is 0.00 A exactly. So the
+  /// step timed out after two minutes with the lights plainly on, and the
+  /// screen told the rider the pack needed more.
+  ///
+  /// 0.25 A sits comfortably under that 0.44 A and comfortably over the
+  /// current's own resolution, which is a milliamp. And a step above rest
+  /// cannot collide with [restCurrentAmps] the way an absolute bar did: at
+  /// 1.0 A for both, a 0.44 A load was quiet enough to be rest and too small
+  /// to be the lights at the same time.
+  final double lightLoadStepAmps;
   final int lightLoadSeconds;
 
-  /// A draw at least this big counts as the hard pull. Free-wheel on the
-  /// stand is expected to land here; VERIFY.
-  final double heavyLoadMinAmps;
+  /// The hard pull, as a fraction of the pack's own configured capacity.
+  ///
+  /// Also measured rather than guessed. It used to be a flat 15.0 A, which is
+  /// 0.375C on a 40 Ah pack and 0.5C on a 30 Ah one: the same number meaning
+  /// two different demands. A tenth of C is enough current to move a cell
+  /// far enough to measure against a 1 mV reading, and little enough that a
+  /// charger can produce it.
+  final double heavyLoadCRate;
+
+  /// The least the hard pull may ask for, whatever the C-rate works out to.
+  ///
+  /// Firmware that leaves the configured capacity at zero would otherwise let
+  /// any twitch of current count as a hard pull.
+  final double heavyLoadFloorAmps;
+
   final int heavyLoadSeconds;
 
   /// How long to watch the cells climb back after the load is released.
@@ -111,6 +137,7 @@ class InspectionPrompt {
   const InspectionPrompt({
     required this.step,
     required this.currentAmps,
+    required this.neededAmps,
     required this.loadDetected,
     required this.secondsLeft,
     required this.progress,
@@ -121,6 +148,14 @@ class InspectionPrompt {
 
   /// Discharge current as a positive number, the way a person reads it.
   final double currentAmps;
+
+  /// What this step is waiting for, as a magnitude.
+  ///
+  /// On the screen because "give it more" is not an instruction. A rider told
+  /// their 0.44 A was too small, with no idea what would have been big
+  /// enough, spent two minutes revving a wheel in the air that was never
+  /// going to get there. Zero while the step wants quiet instead of load.
+  final double neededAmps;
 
   /// Whether the load the step asks for is present right now.
   final bool loadDetected;
@@ -216,6 +251,34 @@ class InspectionSession {
   double _peakDischargeAmps = 0;
   BmsSnapshot? _last;
 
+  /// What the pack was drawing while it sat quiet, as a magnitude.
+  ///
+  /// Learned rather than assumed, and it is what the light step is judged
+  /// against. A bike whose alarm or dash sits on the pack rests at something
+  /// other than zero, and "the lights are on" means the current went up from
+  /// wherever that was.
+  double _restLevelAmps = 0;
+
+  double get restLevelAmps => _restLevelAmps;
+
+  /// The current this pack's hard pull has to reach, worked out from its own
+  /// configured capacity once a reading has arrived.
+  ///
+  /// Exposed so the analysis filters the heavy window on the same figure the
+  /// steps advanced on. Two copies of that arithmetic is how a step passes on
+  /// screen and then reports nothing measured.
+  double get heavyLoadAmps {
+    final capacity = _last?.nominalCapacityAh ?? 0;
+    final byRate = capacity * thresholds.heavyLoadCRate;
+    return byRate > thresholds.heavyLoadFloorAmps
+        ? byRate
+        : thresholds.heavyLoadFloorAmps;
+  }
+
+  /// The current the light step has to reach: a step above where this pack
+  /// actually rests.
+  double get lightLoadAmps => _restLevelAmps + thresholds.lightLoadStepAmps;
+
   InspectionStep get step => _step;
   bool get isDone => _step == InspectionStep.done;
   DateTime? get startedAt => _startedAt;
@@ -250,6 +313,13 @@ class InspectionSession {
     return InspectionPrompt(
       step: _step,
       currentAmps: amps,
+      neededAmps: switch (_step) {
+        InspectionStep.lightLoad => lightLoadAmps,
+        InspectionStep.heavyLoad => heavyLoadAmps,
+        InspectionStep.rest ||
+        InspectionStep.recovery ||
+        InspectionStep.done => 0,
+      },
       loadDetected: _conditionMet(last),
       secondsLeft: left,
       progress: needed == 0 ? 1 : (heldFor / needed).clamp(0.0, 1.0),
@@ -287,25 +357,29 @@ class InspectionSession {
         // app asks for quiet restarts the clock rather than poisoning the
         // resting picture with a sagging cell.
         _track(s, met: amps < th.restCurrentAmps);
+        // Whatever it settled at is what the light step gets measured
+        // against, so a bike with something already on the pack is not asked
+        // for a load on top of a rest of zero it never had.
+        if (amps < th.restCurrentAmps) _restLevelAmps = amps;
         if (_heldForSeconds(s) >= th.restSeconds) {
           _advance(s, InspectionStep.lightLoad);
         }
       case InspectionStep.lightLoad:
         // A hard pull straight away is not a failure of the light step: the
         // user went past it, and the heavy step takes over.
-        if (amps >= th.heavyLoadMinAmps) {
+        if (amps >= heavyLoadAmps) {
           _advance(s, InspectionStep.heavyLoad);
           _track(s, met: true);
           break;
         }
-        _track(s, met: amps >= th.lightLoadMinAmps);
+        _track(s, met: amps >= lightLoadAmps);
         if (_heldForSeconds(s) >= th.lightLoadSeconds) {
           _advance(s, InspectionStep.heavyLoad);
         } else if (_timedOut(s)) {
           _skip(s, InspectionStep.heavyLoad);
         }
       case InspectionStep.heavyLoad:
-        _track(s, met: amps >= th.heavyLoadMinAmps);
+        _track(s, met: amps >= heavyLoadAmps);
         if (_heldForSeconds(s) >= th.heavyLoadSeconds) {
           _advance(s, InspectionStep.recovery);
         } else if (_timedOut(s)) {
@@ -365,8 +439,8 @@ class InspectionSession {
     final th = thresholds;
     return switch (_step) {
       InspectionStep.rest => amps < th.restCurrentAmps,
-      InspectionStep.lightLoad => amps >= th.lightLoadMinAmps,
-      InspectionStep.heavyLoad => amps >= th.heavyLoadMinAmps,
+      InspectionStep.lightLoad => amps >= lightLoadAmps,
+      InspectionStep.heavyLoad => amps >= heavyLoadAmps,
       InspectionStep.recovery => amps < th.restCurrentAmps,
       InspectionStep.done => true,
     };

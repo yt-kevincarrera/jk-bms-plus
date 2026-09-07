@@ -142,6 +142,9 @@ class _CertificateVerifyScreenState extends State<CertificateVerifyScreen> {
       InspectionLight.problem => AppTheme.bad,
       InspectionLight.watch => AppTheme.watch,
       InspectionLight.good => AppTheme.good,
+      // The test never ran. Neither reassuring nor alarming, and it must not
+      // be dressed as either on a certificate somebody is being shown.
+      InspectionLight.unmeasured => AppTheme.textFaint,
     };
     return [
       const SizedBox(height: 16),

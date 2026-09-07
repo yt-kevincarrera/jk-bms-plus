@@ -3,7 +3,28 @@ import 'dart:math' as math;
 import 'inspection_session.dart';
 
 /// The one word at the top of the verdict screen.
-enum InspectionLight { good, watch, problem }
+/// The headline. Four states, not three, and the fourth exists because a test
+/// that measured nothing used to come out green.
+///
+/// The verdict starts at good and rises only when a finding fires, and nothing
+/// can fire on data that was never captured. A real inspection of a real pack
+/// ran for 318 seconds, recorded both "not measured" caveats and a null median
+/// sag, and showed a green light. For a tool whose whole purpose is not buying
+/// a battery blind, that is the worst answer it can give.
+enum InspectionLight {
+  /// Nothing was found wrong, and enough was measured for that to mean
+  /// something.
+  good,
+
+  watch,
+
+  problem,
+
+  /// The test never got the load it needed, so there is no opinion here about
+  /// the pack in either direction. Not a fourth colour on the same scale as
+  /// the others: it is a statement about the test, not about the battery.
+  unmeasured,
+}
 
 /// Why the result is worth less than a full one. Every caveat is said out
 /// loud on the verdict and in the report: the PRD's word for this test is
@@ -26,6 +47,11 @@ enum InspectionCaveat {
 
   /// Fewer readings than the analysis wants.
   fewReadings,
+
+  /// The hard pull was a charger rather than a load. A valid way to move the
+  /// current, and worth saying out loud: the cells were lifted rather than
+  /// pulled down, and a buyer reading the sheet should know which.
+  heavyWasCharge,
 }
 
 /// One cell, through the test.
@@ -333,7 +359,7 @@ class InspectionAnalysis {
         .where(
           (s) =>
               s.step == InspectionStep.lightLoad &&
-              s.current.abs() >= th.lightLoadMinAmps,
+              s.current.abs() >= session.lightLoadAmps,
         )
         .toList();
     List<double>? lightSag;
@@ -354,7 +380,7 @@ class InspectionAnalysis {
         .where(
           (s) =>
               s.step == InspectionStep.heavyLoad &&
-              s.current.abs() >= th.heavyLoadMinAmps,
+              s.current.abs() >= session.heavyLoadAmps,
         )
         .toList();
     List<double>? heavySag;
@@ -362,19 +388,35 @@ class InspectionAnalysis {
     var stepAmps = 0.0;
     double? medianSag;
     double? medianIr;
+    var heavyWasCharge = false;
     if (heavy.isNotEmpty &&
         !session.skippedSteps.contains(InspectionStep.heavyLoad)) {
-      // The lowest each cell went under the pull. Minimum, not median: the
-      // sag at the hardest moment is the figure a buyer needs, and every
-      // cell is read at the same moments so they stay comparable.
-      final heavyMin = List<double>.generate(
+      // Which way the current was flowing. The PRD offers a charger as the
+      // load for a vendor with no room to ride, and the step accepts one, but
+      // this arithmetic did not: it took each cell's *lowest* reading under
+      // load, which under charge is roughly where it started. Every cell then
+      // came out with no sag and no resistance, and a pack nobody had loaded
+      // came out perfect.
+      //
+      // A charge moves a cell the other way for the same reason a discharge
+      // moves it: current through the same internal resistance. So the
+      // measurement is the size of the excursion, taken on the side the
+      // current puts it.
+      heavyWasCharge = _mean(heavy.map((s) => s.current)) > 0;
+      final heavyExtreme = List<double>.generate(
         cellCount,
-        (i) => heavy.map((s) => s.cells[i]).reduce(math.min),
+        (i) => heavy
+            .map((s) => s.cells[i])
+            .reduce(heavyWasCharge ? math.max : math.min),
       );
       heavySag = [
-        for (var i = 0; i < cellCount; i++) restCells[i] - heavyMin[i],
+        for (var i = 0; i < cellCount; i++)
+          heavyWasCharge
+              ? heavyExtreme[i] - restCells[i]
+              : restCells[i] - heavyExtreme[i],
       ];
       medianSag = _median(heavySag);
+      if (heavyWasCharge) caveats.add(InspectionCaveat.heavyWasCharge);
       stepAmps = _mean(heavy.map((s) => s.current.abs())) - restAmps;
       if (stepAmps >= th.minimumStepAmps) {
         resistance = [for (final sag in heavySag) math.max(0, sag) / stepAmps];
@@ -405,9 +447,17 @@ class InspectionAnalysis {
         recovery = List<double?>.filled(cellCount, null);
         recovered = List<bool>.filled(cellCount, false);
         for (var i = 0; i < cellCount; i++) {
-          final target = restCells[i] - th.recoverySettleVolts;
+          // Back to within a whisker of where it rested, from whichever side
+          // the load pushed it. One-sided on purpose: a cell that overshoots
+          // past rest has plainly recovered. Under a charge that side is the
+          // other one, and testing the discharge side there would call every
+          // cell recovered on the first reading, since they are all still
+          // above rest at that point.
+          final target = heavyWasCharge
+              ? restCells[i] + th.recoverySettleVolts
+              : restCells[i] - th.recoverySettleVolts;
           for (final s in after) {
-            if (s.cells[i] >= target) {
+            if (heavyWasCharge ? s.cells[i] <= target : s.cells[i] >= target) {
               recovery[i] = s.at.difference(release).inMilliseconds / 1000;
               recovered[i] = true;
               break;

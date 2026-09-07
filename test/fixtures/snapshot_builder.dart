@@ -15,6 +15,7 @@ BmsSnapshot buildSnapshot({
   double cycleCapacityAh = 2843.5,
   double soh = 97,
   double current = -20,
+  double nominalCapacityAh = 45,
 }) {
   final v = cells ?? List.filled(20, 3.90);
   return BmsSnapshot(
@@ -32,7 +33,7 @@ BmsSnapshot buildSnapshot({
     soc: soc,
     soh: soh,
     remainingCapacityAh: remainingAh,
-    nominalCapacityAh: 45,
+    nominalCapacityAh: nominalCapacityAh,
     cycleCount: cycles,
     cycleCapacityAh: cycleCapacityAh,
     balancingAction: 0,

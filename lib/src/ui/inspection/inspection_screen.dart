@@ -248,7 +248,13 @@ class _InspectionScreenState extends State<InspectionScreen> {
         ? (p.loadDetected ? t.inspectionQuietOk : t.inspectionNotQuiet(amps))
         : (p.loadDetected
               ? t.inspectionLoadEnough(amps)
-              : t.inspectionLoadTooLow(amps));
+              // Says how much, not just "more". Being told a 0.44 A load was
+              // too small, with no idea what would have been big enough, is
+              // what left a rider revving on a stand for two minutes.
+              : t.inspectionLoadTooLow(
+                  amps,
+                  p.neededAmps.toStringAsFixed(1),
+                ));
     final tone = p.loadDetected ? AppTheme.good : AppTheme.watch;
 
     return Container(
