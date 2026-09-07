@@ -135,9 +135,11 @@ void main() {
       final trip = (await repo.tripsForLearning('AA:BB')).single;
       expect(trip.energyOutWh, closeTo(4.29, 0.001));
       expect(trip.ahOut, isNull);
-      // Marked, and marked distinguishably, so a future repair that knows a
-      // new trick can come looking for exactly these.
-      expect(trip.energySource, EnergySource.unmeasurable.name);
+      // Marked, and marked distinguishably. The bracketing repair was the
+      // future trick this was written for, and it has now been tried too, so
+      // the ride settles on the terminal marker rather than the one that
+      // invites another retry.
+      expect(trip.energySource, EnergySource.unmeasurableBracketed.name);
     });
 
     test('an old one no longer drags every later reading into the query',
