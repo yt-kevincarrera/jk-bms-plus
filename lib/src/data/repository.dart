@@ -275,9 +275,18 @@ class BmsRepository {
   }) async {
     await flush();
     final trips = await db.recentTrips(deviceId, limit: 500);
+    // Rides the old repair gave up on are retried, once. That is what
+    // [EnergySource.unmeasurable] was written down for: it marks a ride as
+    // examined so every connection stops re-reading it, while staying findable
+    // for a repair that knows something the last one did not. Whatever happens
+    // below, they settle on a terminal marker and are not looked at again.
     final stale = [
       for (final t in trips)
-        if (t.ahOut == null && t.energySource == null && t.distanceKm > 0) t,
+        if (t.distanceKm > 0 &&
+            t.ahOut == null &&
+            (t.energySource == null ||
+                t.energySource == EnergySource.unmeasurable.name))
+          t,
     ];
     if (stale.isEmpty) return TripRepairReport.none;
 
@@ -302,10 +311,15 @@ class BmsRepository {
         if (t.startedAt.isBefore(earliest)) earliest = t.startedAt;
         if (t.endedAt.isAfter(latest)) latest = t.endedAt;
       }
+      // Reaching past the ride, because a ride nothing was received during is
+      // measured from the readings either side of it. Bounded by the repair's
+      // own reach, so this stays a fixed cost rather than the unbounded read
+      // that used to hold up every connection.
+      final margin = repairer.bracketReach + const Duration(minutes: 1);
       final readings = await db.snapshotsBetween(
         deviceId,
-        earliest.subtract(const Duration(minutes: 1)),
-        latest.add(const Duration(minutes: 1)),
+        earliest.subtract(margin),
+        latest.add(margin),
       );
 
       for (final t in group) {
@@ -316,7 +330,9 @@ class BmsRepository {
           // stayed stale forever, and every connection paid for it.
           await db.updateTrip(
             t.id,
-            TripsCompanion(energySource: Value(EnergySource.unmeasurable.name)),
+            TripsCompanion(
+              energySource: Value(EnergySource.unmeasurableBracketed.name),
+            ),
           );
           continue;
         }
@@ -327,6 +343,14 @@ class BmsRepository {
             energyInWh: Value(fixed.inWh),
             ahOut: Value(fixed.ahOut),
             energySource: Value(fixed.source.name),
+            // Only present when the repair had to reach outside the ride, and
+            // then only because the ride has none of its own.
+            startSoc: fixed.startSoc == null
+                ? const Value.absent()
+                : Value(fixed.startSoc!),
+            endSoc: fixed.endSoc == null
+                ? const Value.absent()
+                : Value(fixed.endSoc!),
           ),
         );
         repaired++;
