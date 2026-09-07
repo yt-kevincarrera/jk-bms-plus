@@ -18,11 +18,11 @@ import '../report/report_sharing.dart';
 import 'license_scope.dart';
 import 'widgets/pro_gate.dart';
 import 'theme.dart';
+import 'pack_trips_screen.dart';
 import 'trends_screen.dart';
 import 'widgets/advice_list.dart';
 import 'widgets/common.dart';
 import 'widgets/representative_question.dart';
-import 'widgets/trip_card.dart';
 import 'widgets/maintenance_card.dart';
 
 /// What is known about one battery without talking to it.
@@ -492,6 +492,21 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
               ),
           ],
           const SizedBox(height: 10),
+          // The rides themselves live behind this rather than under the
+          // section. They used to hang off the bottom of the screen, outside
+          // every section, growing without limit: a pack with two hundred of
+          // them turned everything above into something you scrolled past.
+          // Inside the section is where they belong, and a screen of their own
+          // is the only way to put them there without a card inside a card and
+          // a page with no end.
+          if (_rideCount > 0) ...[
+            OutlinedButton.icon(
+              onPressed: () => _openRides(t),
+              icon: const Icon(Icons.route, size: 18),
+              label: Text(t.offlineSeeTrips('$_rideCount')),
+            ),
+            const SizedBox(height: 8),
+          ],
           OutlinedButton.icon(
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
@@ -507,79 +522,37 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
           const SizedBox(height: 6),
         ],
       ),
-      // The rides themselves, outside the section rather than in it: each card
-      // is already a raised surface, and a card inside a card reads as a
-      // mistake. Bare in the list is how the history tab shows them, and this
-      // screen shows the same ones.
-      ...?_rideList(t),
     ];
   }
 
-  /// Every stored ride of this pack, with no radio involved.
-  ///
-  /// The whole point of this screen: a ride is rows in `trips`, written when
-  /// it happened, and reading them back has never needed a Bluetooth link.
-  /// Until this existed the only way to look at one was to connect, which
-  /// meant a pack that was sold, lent out or simply not to hand had a history
-  /// nobody could open.
-  List<Widget>? _rideList(AppL10n t) {
-    final repo = widget.service.repository;
-    if (repo == null) return null;
-    // A ride row exists from the moment recording starts, so one in progress
-    // has no distance yet. Same cut the totals above use.
-    final rides = _trips.where((tr) => tr.distanceKm > 0).toList();
-    if (rides.isEmpty) return null;
+  /// Rides that actually went somewhere. A row exists from the moment
+  /// recording starts, so one in progress has no distance yet; the same cut
+  /// the totals use.
+  int get _rideCount =>
+      _trips.where((tr) => tr.distanceKm > 0).length;
 
-    // The same window the history tab applies. Reading a pack offline is not
-    // a way around what the free tier shows: the rows are all still stored
-    // and the estimate still learns from every one of them, only the list is
-    // cut, and it says how much is behind the cut.
-    final window = LicenseScope.entitlements(context).historyWindow;
-    final cutoff = window == null
-        ? null
-        : DateTime.now().toUtc().subtract(window);
-    final shown = cutoff == null
-        ? rides
-        : rides.where((tr) => tr.startedAt.isAfter(cutoff)).toList();
-    final hidden = rides.length - shown.length;
-
-    return [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 6),
-        child: Caption(t.historyTrips),
-      ),
-      for (final trip in shown)
-        TripCard(
-          trip: trip,
+  /// Opens this pack's rides, and takes back whatever changed while they were
+  /// open: deleting a ride or calling it an exception moves the totals and the
+  /// estimate on this screen too.
+  Future<void> _openRides(AppL10n t) async {
+    if (widget.service.repository == null) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => PackTripsScreen(
           service: widget.service,
-          repository: repo,
+          device: widget.device,
           // This pack's figures, not the connected pack's. With nothing
-          // connected the service's estimator belongs to no pack at all,
-          // and quoting it would put a number in front of the rider that
-          // describes nothing they are looking at.
+          // connected the service's estimator belongs to no pack at all, and
+          // quoting it would put a number in front of the rider that describes
+          // nothing they are looking at.
           learned: () => LearnedRange(
             whPerKm: _estimator?.whPerKm ?? 0,
             fullKm: _outlook.fullKm,
           ),
-          // Nothing relearns on its own here, because relearning is scoped to
-          // the connected pack. Reloading is what rebuilds this screen's own
-          // estimate after a ride is deleted or called an exception.
           onChanged: _load,
-          t: t,
-        ),
-      if (hidden > 0)
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-          child: OlderRidesLocked(count: hidden),
-        ),
-      Padding(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-        child: Text(
-          t.tripSwipeHint,
-          style: const TextStyle(fontSize: 11.5, color: AppTheme.textFaint),
         ),
       ),
-    ];
+    );
   }
 
   /// How long ago, in words, because "hace 3 días" answers the question that
