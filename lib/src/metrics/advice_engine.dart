@@ -7,6 +7,7 @@ import 'degradation.dart';
 import 'pack_health_report.dart';
 import 'range_estimator.dart';
 import 'range_outlook.dart';
+import 'soc_trust.dart';
 
 /// How much a verdict wants your attention.
 ///
@@ -54,6 +55,14 @@ enum AdviceCode {
   /// The BMS cycle counter reads far higher than the charge actually put
   /// through the pack.
   cycleCounterInflated,
+
+  /// The charge counter reads nearly full while the cells are still well
+  /// below where a charge ends.
+  socCounterAhead,
+
+  /// It reads nearly empty while the cells are still well above where the BMS
+  /// itself calls empty. There is more battery here than the screen admits.
+  socCounterBehind,
 
   /// State of health has not moved off its initial value despite real use.
   healthFigureDecorative,
@@ -210,6 +219,11 @@ enum EvidenceKind {
   reportedCycles,
   equivalentCycles,
   reportedSoh,
+  reportedSoc,
+  highestCell,
+  lowestCell,
+  socFullAnchor,
+  socEmptyAnchor,
   impliedCapacity,
   catalogueCapacity,
   capacityTests,
@@ -392,9 +406,17 @@ class VerdictThresholds {
 /// shows with no radio in range; [evaluate] calls it too, so the two screens
 /// never disagree about the same battery.
 class AdviceEngine {
-  const AdviceEngine({this.thresholds = VerdictThresholds.defaults});
+  const AdviceEngine({
+    this.thresholds = VerdictThresholds.defaults,
+    this.trust = SocTrust.defaults,
+  });
 
   final VerdictThresholds thresholds;
+
+  /// Where the charge counter is checked against the cells. Its own home
+  /// rather than a row in [VerdictThresholds], because the charge ETA draws
+  /// the same lines and two copies of a number drift apart.
+  final SocTrust trust;
 
   /// [restingDelta] and [loadedDelta] come from the stored history — the widest
   /// delta seen with no meaningful current, and the widest seen under load.
@@ -545,6 +567,77 @@ class AdviceEngine {
           ],
         ),
       );
+    }
+
+    // The charge percentage, checked the same way: against something nobody
+    // typed in. It is a running total of amps over time against a configured
+    // capacity, so it drifts, and every figure on the screen is built on it.
+    //
+    // Only the two ends are checkable. In between, a flat-curve chemistry
+    // says almost nothing and load sags the reading; at the ends the cells
+    // are decisive, and that is where the drift shows.
+    final cells = snapshot.cellVoltages.isEmpty;
+    final socDrift = trust.check(
+      soc: snapshot.soc,
+      current: snapshot.current,
+      capacityAh: snapshot.nominalCapacityAh,
+      highestCellVolts: cells ? null : snapshot.maxCellVoltage,
+      lowestCellVolts: cells ? null : snapshot.minCellVoltage,
+      full: SocTrust.fullAnchor(
+        soc100Volts: settings?.soc100Voltage,
+        cellOvp: settings?.cellOvp,
+      ),
+      empty: SocTrust.emptyAnchor(soc0Volts: settings?.soc0Voltage),
+    );
+    switch (socDrift) {
+      case SocDrift.aheadOfCells:
+        final anchor = SocTrust.fullAnchor(
+          soc100Volts: settings?.soc100Voltage,
+          cellOvp: settings?.cellOvp,
+        );
+        advice.add(
+          Advice(
+            code: AdviceCode.socCounterAhead,
+            level: AdviceLevel.info,
+            value: anchor == null
+                ? null
+                : anchor.volts - snapshot.maxCellVoltage,
+            evidence: [
+              Evidence(EvidenceKind.reportedSoc, value: snapshot.soc),
+              if (!cells)
+                Evidence(
+                  EvidenceKind.highestCell,
+                  value: snapshot.maxCellVoltage,
+                  cell: snapshot.maxCellIndex,
+                ),
+              if (anchor != null)
+                Evidence(EvidenceKind.socFullAnchor, value: anchor.volts),
+            ],
+          ),
+        );
+      case SocDrift.behindCells:
+        final anchor = SocTrust.emptyAnchor(soc0Volts: settings?.soc0Voltage);
+        advice.add(
+          Advice(
+            code: AdviceCode.socCounterBehind,
+            level: AdviceLevel.info,
+            value: anchor == null
+                ? null
+                : snapshot.minCellVoltage - anchor.volts,
+            evidence: [
+              Evidence(EvidenceKind.reportedSoc, value: snapshot.soc),
+              Evidence(
+                EvidenceKind.lowestCell,
+                value: snapshot.minCellVoltage,
+                cell: snapshot.minCellIndex,
+              ),
+              if (anchor != null)
+                Evidence(EvidenceKind.socEmptyAnchor, value: anchor.volts),
+            ],
+          ),
+        );
+      case SocDrift.none:
+        break;
     }
 
     // Falling short of the advertised capacity is worth mentioning once, and
