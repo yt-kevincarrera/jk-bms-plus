@@ -20,6 +20,20 @@ enum EnergySource {
   /// link was down.
   integrated,
 
+  /// The counter again, but read from the readings either side of the ride
+  /// rather than from any taken during it, because none were.
+  ///
+  /// For the ride where the link was down from the first metre to the last.
+  /// The phone saw nothing, but the BMS counted every amp-hour anyway, so the
+  /// reading taken before setting off and the one taken on arrival still
+  /// bracket the whole ride between them.
+  ///
+  /// Kept apart from [coulombCount] because it is a weaker measurement, and
+  /// says so: the amp-hours are real, but they include whatever else the pack
+  /// did between those two readings, and the voltage they are priced at comes
+  /// from the two ends rather than from the ride.
+  bracketedCoulombCount,
+
   /// The repair looked and could not measure this ride: its readings are gone
   /// from disk, or the counter never moved past its own quantisation.
   ///
@@ -32,6 +46,14 @@ enum EnergySource {
   /// Distinguishable on purpose: a future repair that knows a new trick can
   /// look for exactly these rides and try again.
   unmeasurable,
+
+  /// Tried again with the bracketing trick, and still nothing.
+  ///
+  /// The second half of what [unmeasurable] promised. Rides marked with the
+  /// older value are retried once when a new trick arrives; this is where they
+  /// settle afterwards, so the retry happens once rather than on every
+  /// connection for the rest of the ride's life.
+  unmeasurableBracketed,
 }
 
 /// One point of the recorded track, with what the pack was doing there.
