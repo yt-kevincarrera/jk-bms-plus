@@ -410,13 +410,17 @@ void main() {
   group('the inspection sheet with earlier runs', () {
     test('prints the earlier runs and what repeating them showed', () async {
       final r = _result();
+      // Midday, not midnight: the sheet dates a run in the reader's own
+      // time, the way it prints the clock time beside it, so a run stamped
+      // at 00:00 UTC reads as the day before anywhere west of Greenwich and
+      // the dates asserted below would move with whoever runs the test.
       final earlier = [
         PastInspection(
-          at: DateTime.utc(2026, 3, 2),
+          at: DateTime.utc(2026, 3, 2, 12),
           result: _result(sagOnCell7: 0.28),
         ),
         PastInspection(
-          at: DateTime.utc(2026, 4, 6),
+          at: DateTime.utc(2026, 4, 6, 12),
           result: _result(sagOnCell7: 0.29),
         ),
       ];
