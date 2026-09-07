@@ -527,8 +527,20 @@
     }
   },
   "adviceSocCounterAheadTitle": "The charge percentage is ahead of the pack",
-  "adviceSocCounterAheadBody": "The BMS says {soc} % while the highest cell sits {gap} V below the charge cutoff, which is where a charge actually ends. That percentage is not measured: the BMS adds up amps over time against the capacity it was configured with, and that counter drifts. It re-anchors itself when you let one charge run all the way to the cutoff. If the gap comes back afterwards, the configured capacity is not this pack's real one — measure it with a capacity test before changing it.",
+  "adviceSocCounterAheadBody": "The BMS says {soc} % while the highest cell sits {gap} V below where a charge ends. That percentage is not measured: the BMS adds up amps over time against the capacity it was configured with, and that counter drifts. It re-anchors itself when you let one charge run all the way to the cutoff. If the gap comes back afterwards, the configured capacity is not this pack's real one — measure it with a capacity test before changing it.",
   "@adviceSocCounterAheadBody": {
+    "placeholders": {
+      "gap": {
+        "type": "String"
+      },
+      "soc": {
+        "type": "String"
+      }
+    }
+  },
+  "adviceSocCounterBehindTitle": "There is more charge left than it says",
+  "adviceSocCounterBehindBody": "The BMS says {soc} % while the lowest cell sits {gap} V above where the BMS itself calls empty. There is battery here the screen is not counting. That percentage is not measured: it is amps over time against the configured capacity, and that counter drifts. If it keeps happening, the configured capacity is short of the real one — measure it with a capacity test before changing it.",
+  "@adviceSocCounterBehindBody": {
     "placeholders": {
       "gap": {
         "type": "String"
@@ -1286,6 +1298,8 @@
   "etaDone": "It is full",
   "etaNearlyThere": "Nearly there",
   "etaCounterAhead": "the counter is ahead of the cells, so no minutes here",
+  "socNoteAhead": "the counter is ahead of the cells",
+  "socNoteBehind": "there is more left than this says",
   "adviceDeepestSoFar": "Deepest so far: {from} % down to {to} %.",
   "adviceDeepestNone": "No discharge recorded yet.",
   "@adviceDeepestSoFar": {
@@ -1620,6 +1634,16 @@
   "evidenceEquivalentCycles": "Equivalent cycles from amp-hours that flowed",
   "evidenceReportedSoh": "SOH per the BMS",
   "evidenceReportedSoc": "Charge per the BMS",
+  "evidenceSocFullAnchor": "Where a charge ends (per cell)",
+  "evidenceSocEmptyAnchor": "Where the BMS calls empty (per cell)",
+  "evidenceLowestCell": "Lowest cell (cell {cell})",
+  "@evidenceLowestCell": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
   "evidenceHighestCell": "Highest cell (cell {cell})",
   "@evidenceHighestCell": {
     "placeholders": {

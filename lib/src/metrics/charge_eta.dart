@@ -1,3 +1,5 @@
+import 'soc_trust.dart';
+
 /// How long until the pack is full.
 class ChargeEta {
   const ChargeEta({
@@ -55,10 +57,7 @@ class ChargeEtaEstimator {
     this.taperStartsAt = 0.90,
     this.minimumCurrent = 0.5,
     this.fullAt = 0.995,
-    this.checkedAbove = 0.95,
-    this.checkedAboveOnCurrentAlone = 0.97,
-    this.disagreementVolts = 0.12,
-    this.taperCurrentCRate = 0.10,
+    this.trust = SocTrust.defaults,
   });
 
   /// Charge fraction at which the charger stops giving full current.
@@ -71,60 +70,34 @@ class ChargeEtaEstimator {
   /// Where "full" is called.
   final double fullAt;
 
-  /// Charge fraction above which a near-full reading stops being taken at
-  /// face value and gets checked against something measured.
-  final double checkedAbove;
-
-  /// The same bar for the current-only fallback, set higher because it is the
-  /// weaker test. A flat-curve chemistry can genuinely still be taking most
-  /// of its charge current well into the nineties, so the fallback only calls
-  /// a reading wrong once even that stops being plausible.
-  final double checkedAboveOnCurrentAlone;
-
-  /// How far the highest cell may sit below the configured per-cell cutoff
-  /// while the counter claims nearly full.
-  ///
-  /// Not tight, deliberately. The cutoff read back here is the BMS's
-  /// protection threshold, and pack builders normally leave it a little above
-  /// where the charger actually stops, so a genuinely full pack can rest a
-  /// few tens of millivolts short of it. Past this, though, no amount of
-  /// headroom explains the gap: it is most of a volt across the pack.
-  final double disagreementVolts;
-
-  /// Fraction of C still going in that makes a near-full reading impossible
-  /// to believe, when there is nothing configured to compare voltages
-  /// against.
-  ///
-  /// Past the knee the charger holds voltage and the current decays away;
-  /// chargers call a charge finished somewhere around a twentieth of C. A
-  /// pack still swallowing a tenth of C is in constant current, and a pack in
-  /// constant current is not at 99%.
-  final double taperCurrentCRate;
+  /// Checks the charge counter against the cells before any of this
+  /// arithmetic is allowed to rest on it.
+  final SocTrust trust;
 
   /// [current] is positive charging, in the app's convention.
   ///
-  /// [highestCellVolts] and [cellFullVolts] — the per-cell charge cutoff the
-  /// BMS is configured with — are what the counter gets checked against.
+  /// [highestCellVolts] and [fullAnchor] — where a charge ends, per cell, from
+  /// [SocTrust.fullAnchor] — are what the counter gets checked against.
   /// Without them the check falls back to the current alone.
   ChargeEta estimate({
     required double current,
     required double soc,
     required double capacityAh,
     double? highestCellVolts,
-    double? cellFullVolts,
+    SocAnchor? fullAnchor,
   }) {
     if (current < minimumCurrent || capacityAh <= 0) return ChargeEta.unknown;
 
     final fraction = (soc / 100).clamp(0.0, 1.0);
 
-    if (fraction >= checkedAbove &&
-        _counterContradicted(
-          fraction: fraction,
-          current: current,
-          capacityAh: capacityAh,
-          highestCellVolts: highestCellVolts,
-          cellFullVolts: cellFullVolts,
-        )) {
+    final drift = trust.check(
+      soc: soc,
+      current: current,
+      capacityAh: capacityAh,
+      highestCellVolts: highestCellVolts,
+      full: fullAnchor,
+    );
+    if (drift == SocDrift.aheadOfCells) {
       return const ChargeEta(
         remaining: null,
         isTapering: true,
@@ -161,29 +134,5 @@ class ChargeEtaEstimator {
       remaining: Duration(seconds: (hours * 3600).round()),
       isTapering: inTaper,
     );
-  }
-
-  /// Whether something measured disagrees with a near-full charge counter.
-  bool _counterContradicted({
-    required double fraction,
-    required double current,
-    required double capacityAh,
-    required double? highestCellVolts,
-    required double? cellFullVolts,
-  }) {
-    // A charge ends when the highest cell reaches the cutoff, so where that
-    // cell sits settles the question in both directions. When it is known,
-    // nothing else gets a vote: a cell at the cutoff is genuinely at the end
-    // of a charge whatever the current is doing, and a cell well below it is
-    // genuinely not.
-    if (highestCellVolts != null && cellFullVolts != null && cellFullVolts > 0) {
-      return cellFullVolts - highestCellVolts > disagreementVolts;
-    }
-
-    // Nothing configured to compare against — an unread settings frame, or a
-    // pack whose cutoff the BMS never reported. The current is left, and it
-    // needs no configuration to be believed because it is measured.
-    return fraction >= checkedAboveOnCurrentAlone &&
-        current > taperCurrentCRate * capacityAh;
   }
 }

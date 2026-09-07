@@ -527,8 +527,20 @@
     }
   },
   "adviceSocCounterAheadTitle": "El porcentaje de carga va por delante del pack",
-  "adviceSocCounterAheadBody": "El BMS dice {soc} %, pero la celda más alta está {gap} V por debajo del corte de carga, que es donde termina una carga de verdad. Ese porcentaje no se mide: el BMS suma amperios por tiempo contra la capacidad que tiene configurada, y ese contador deriva. Se vuelve a anclar solo si dejas que una carga llegue hasta el corte de una sentada. Si el desajuste vuelve después de eso, la capacidad configurada no es la que tiene el pack: mídela con un test de capacidad antes de cambiarla.",
+  "adviceSocCounterAheadBody": "El BMS dice {soc} %, pero la celda más alta está {gap} V por debajo de donde termina una carga. Ese porcentaje no se mide: el BMS suma amperios por tiempo contra la capacidad que tiene configurada, y ese contador deriva. Se vuelve a anclar solo si dejas que una carga llegue hasta el corte de una sentada. Si el desajuste vuelve después de eso, la capacidad configurada no es la que tiene el pack: mídela con un test de capacidad antes de cambiarla.",
   "@adviceSocCounterAheadBody": {
+    "placeholders": {
+      "gap": {
+        "type": "String"
+      },
+      "soc": {
+        "type": "String"
+      }
+    }
+  },
+  "adviceSocCounterBehindTitle": "Queda más carga de la que dice",
+  "adviceSocCounterBehindBody": "El BMS dice {soc} %, pero la celda más baja está {gap} V por encima de donde el propio BMS llama vacío. Hay batería aquí que la pantalla no está contando. Ese porcentaje no se mide: es amperios por tiempo contra la capacidad configurada, y ese contador deriva. Si se repite, la capacidad configurada se queda corta frente a la real: mídela con un test de capacidad antes de cambiarla.",
+  "@adviceSocCounterBehindBody": {
     "placeholders": {
       "gap": {
         "type": "String"
@@ -1286,6 +1298,8 @@
   "etaDone": "Está lleno",
   "etaNearlyThere": "Ya casi",
   "etaCounterAhead": "el contador va por delante de las celdas, así que no doy minutos",
+  "socNoteAhead": "el contador va por delante de las celdas",
+  "socNoteBehind": "queda más de lo que dice",
   "adviceDeepestSoFar": "Lo más hondo hasta ahora: del {from} % al {to} %.",
   "adviceDeepestNone": "Todavía no se ha registrado ninguna descarga.",
   "@adviceDeepestSoFar": {
@@ -1722,6 +1736,16 @@
   "evidenceEquivalentCycles": "Ciclos equivalentes por los amperios que pasaron",
   "evidenceReportedSoh": "SOH según el BMS",
   "evidenceReportedSoc": "Carga según el BMS",
+  "evidenceSocFullAnchor": "Donde termina la carga (por celda)",
+  "evidenceSocEmptyAnchor": "Donde el BMS llama vacío (por celda)",
+  "evidenceLowestCell": "Celda más baja (celda {cell})",
+  "@evidenceLowestCell": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
   "evidenceHighestCell": "Celda más alta (celda {cell})",
   "@evidenceHighestCell": {
     "placeholders": {

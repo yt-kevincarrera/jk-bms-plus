@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jk_bms/src/metrics/charge_eta.dart';
+import 'package:jk_bms/src/metrics/soc_trust.dart';
 
 void main() {
   const estimator = ChargeEtaEstimator();
@@ -10,12 +11,16 @@ void main() {
     double capacityAh = 40,
     double? highestCellVolts,
     double? cellFullVolts,
+    double? soc100Volts,
   }) => estimator.estimate(
     current: current,
     soc: soc,
     capacityAh: capacityAh,
     highestCellVolts: highestCellVolts,
-    cellFullVolts: cellFullVolts,
+    fullAnchor: SocTrust.fullAnchor(
+      soc100Volts: soc100Volts,
+      cellOvp: cellFullVolts,
+    ),
   );
 
   group('through the flat part of a charge', () {
@@ -129,6 +134,21 @@ void main() {
       );
       expect(eta.socLooksOptimistic, isFalse);
       expect(eta.remaining, isNotNull);
+    });
+
+    test('the BMS\'s own 100% voltage is held to a tighter margin', () {
+      // 70 mV under a protection threshold is builder headroom; 70 mV under
+      // the voltage the BMS itself calls full is the counter being early.
+      expect(
+        at(soc: 99, current: 3, highestCellVolts: 4.13, cellFullVolts: 4.20)
+            .socLooksOptimistic,
+        isFalse,
+      );
+      expect(
+        at(soc: 99, current: 3, highestCellVolts: 4.13, soc100Volts: 4.20)
+            .socLooksOptimistic,
+        isTrue,
+      );
     });
 
     test('nothing below the check bar is touched', () {

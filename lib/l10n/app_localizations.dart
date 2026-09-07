@@ -2116,8 +2116,20 @@ abstract class AppL10n {
   /// No description provided for @adviceSocCounterAheadBody.
   ///
   /// In es, this message translates to:
-  /// **'El BMS dice {soc} %, pero la celda más alta está {gap} V por debajo del corte de carga, que es donde termina una carga de verdad. Ese porcentaje no se mide: el BMS suma amperios por tiempo contra la capacidad que tiene configurada, y ese contador deriva. Se vuelve a anclar solo si dejas que una carga llegue hasta el corte de una sentada. Si el desajuste vuelve después de eso, la capacidad configurada no es la que tiene el pack: mídela con un test de capacidad antes de cambiarla.'**
+  /// **'El BMS dice {soc} %, pero la celda más alta está {gap} V por debajo de donde termina una carga. Ese porcentaje no se mide: el BMS suma amperios por tiempo contra la capacidad que tiene configurada, y ese contador deriva. Se vuelve a anclar solo si dejas que una carga llegue hasta el corte de una sentada. Si el desajuste vuelve después de eso, la capacidad configurada no es la que tiene el pack: mídela con un test de capacidad antes de cambiarla.'**
   String adviceSocCounterAheadBody(String gap, String soc);
+
+  /// No description provided for @adviceSocCounterBehindTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Queda más carga de la que dice'**
+  String get adviceSocCounterBehindTitle;
+
+  /// No description provided for @adviceSocCounterBehindBody.
+  ///
+  /// In es, this message translates to:
+  /// **'El BMS dice {soc} %, pero la celda más baja está {gap} V por encima de donde el propio BMS llama vacío.'**
+  String adviceSocCounterBehindBody(String gap, String soc);
 
   /// No description provided for @adviceHealthDecorativeTitle.
   ///
@@ -4129,6 +4141,18 @@ abstract class AppL10n {
   /// **'el contador va por delante de las celdas, así que no doy minutos'**
   String get etaCounterAhead;
 
+  /// No description provided for @socNoteAhead.
+  ///
+  /// In es, this message translates to:
+  /// **'el contador va por delante de las celdas'**
+  String get socNoteAhead;
+
+  /// No description provided for @socNoteBehind.
+  ///
+  /// In es, this message translates to:
+  /// **'queda más de lo que dice'**
+  String get socNoteBehind;
+
   /// No description provided for @adviceDeepestSoFar.
   ///
   /// In es, this message translates to:
@@ -5028,6 +5052,24 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Carga según el BMS'**
   String get evidenceReportedSoc;
+
+  /// No description provided for @evidenceSocFullAnchor.
+  ///
+  /// In es, this message translates to:
+  /// **'Donde termina la carga (por celda)'**
+  String get evidenceSocFullAnchor;
+
+  /// No description provided for @evidenceSocEmptyAnchor.
+  ///
+  /// In es, this message translates to:
+  /// **'Donde el BMS llama vacío (por celda)'**
+  String get evidenceSocEmptyAnchor;
+
+  /// No description provided for @evidenceLowestCell.
+  ///
+  /// In es, this message translates to:
+  /// **'Celda más baja (celda {cell})'**
+  String evidenceLowestCell(String cell);
 
   /// No description provided for @evidenceHighestCell.
   ///

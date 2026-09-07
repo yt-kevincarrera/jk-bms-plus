@@ -10,6 +10,7 @@ import '../../bms_service.dart';
 import '../../metrics/charge_eta.dart';
 import '../../metrics/range_estimator.dart';
 import '../../metrics/range_outlook.dart';
+import '../../metrics/soc_trust.dart';
 import '../../model/bms_snapshot.dart';
 import '../theme.dart';
 import '../warning_labels.dart';
@@ -182,6 +183,24 @@ class _NowTabState extends State<NowTab> {
 
     final status = packStatusOf(s);
 
+    // Whether the charge percentage can be taken at face value. The gauge and
+    // the charge ETA ask the same question of the same reading, so they are
+    // never allowed to answer it differently.
+    final drift = SocTrust.defaults.check(
+      soc: s.soc,
+      current: s.current,
+      capacityAh: s.nominalCapacityAh,
+      highestCellVolts: s.cellVoltages.isEmpty ? null : s.maxCellVoltage,
+      lowestCellVolts: s.cellVoltages.isEmpty ? null : s.minCellVoltage,
+      full: SocTrust.fullAnchor(
+        soc100Volts: service.lastSettings?.soc100Voltage,
+        cellOvp: service.lastSettings?.cellOvp,
+      ),
+      empty: SocTrust.emptyAnchor(
+        soc0Volts: service.lastSettings?.soc0Voltage,
+      ),
+    );
+
     return ListView(
       padding: const EdgeInsets.only(bottom: 28),
       children: [
@@ -214,6 +233,11 @@ class _NowTabState extends State<NowTab> {
                   centreLabel: t.soc,
                   centreValue: '${s.soc.toStringAsFixed(0)}%',
                   subtitle: '${s.remainingCapacityAh.toStringAsFixed(1)} Ah',
+                  note: switch (drift) {
+                    SocDrift.aheadOfCells => t.socNoteAhead,
+                    SocDrift.behindCells => t.socNoteBehind,
+                    SocDrift.none => null,
+                  },
                   size: 166,
                 ),
               ),
@@ -639,15 +663,17 @@ Widget _chargeEta(AppL10n t, BmsSnapshot s, BmsService service) {
   if (capacity == null) return const SizedBox.shrink();
 
   // What the counter gets checked against. Both are allowed to be missing —
-  // an empty cell list reads as 0 V, which is not a low cell, and the cutoff
+  // an empty cell list reads as 0 V, which is not a low cell, and the anchor
   // only exists once a settings frame has arrived.
-  final cutoff = service.lastSettings?.cellOvp;
   final eta = const ChargeEtaEstimator().estimate(
     current: s.current,
     soc: s.soc,
     capacityAh: capacity,
     highestCellVolts: s.cellVoltages.isEmpty ? null : s.maxCellVoltage,
-    cellFullVolts: cutoff != null && cutoff > 0 ? cutoff : null,
+    fullAnchor: SocTrust.fullAnchor(
+      soc100Volts: service.lastSettings?.soc100Voltage,
+      cellOvp: service.lastSettings?.cellOvp,
+    ),
   );
   final left = eta.remaining;
   // No number and no reason to doubt one: nothing to say.

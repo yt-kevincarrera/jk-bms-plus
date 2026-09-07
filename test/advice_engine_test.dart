@@ -54,6 +54,8 @@ JkSettings settings({
   double cellOvp = 4.2,
   double balanceStart = 3.4,
   bool balancerOn = true,
+  double soc100Voltage = 0,
+  double soc0Voltage = 0,
 }) =>
     JkSettings(
       receivedAt: DateTime.utc(2026, 1, 1),
@@ -63,8 +65,8 @@ JkSettings settings({
       cellOvp: cellOvp,
       cellOvpRecovery: cellOvp - 0.1,
       balanceTriggerVoltage: 0.01,
-      soc100Voltage: 0,
-      soc0Voltage: 0,
+      soc100Voltage: soc100Voltage,
+      soc0Voltage: soc0Voltage,
       cellRequestChargeVoltage: 0,
       cellRequestFloatVoltage: 0,
       powerOffVoltage: 2.7,
@@ -319,7 +321,7 @@ void main() {
         containsAll(<EvidenceKind>[
           EvidenceKind.reportedSoc,
           EvidenceKind.highestCell,
-          EvidenceKind.cellOvp,
+          EvidenceKind.socFullAnchor,
         ]),
       );
     });
@@ -347,11 +349,121 @@ void main() {
       expect(has(advice, AdviceCode.socCounterAhead), isFalse);
     });
 
-    test('stays quiet with no cutoff to compare against', () {
+    test('with no cutoff configured, the current alone still catches it', () {
+      // 8 A into a 45 Ah pack is constant current, and a constant-current
+      // charge is not at 99% whatever the counter says.
       final advice = run(
         snapshot: snap(cells: List.filled(20, 4.00), soc: 99, current: 8),
       );
+      expect(has(advice, AdviceCode.socCounterAhead), isTrue);
+    });
+
+    test('but a real tail with no cutoff configured is left alone', () {
+      final advice = run(
+        snapshot: snap(cells: List.filled(20, 4.00), soc: 99, current: 1.5),
+      );
       expect(has(advice, AdviceCode.socCounterAhead), isFalse);
+    });
+
+    test('prefers the voltage the BMS itself calls full', () {
+      // 4.13 V is builder headroom under a 4.20 V protection threshold, and
+      // the counter running early under a declared 4.20 V full point.
+      expect(
+        has(
+          run(
+            snapshot: snap(
+              cells: List.filled(20, 4.13),
+              soc: 99,
+              current: 3,
+            ),
+            config: settings(cellOvp: 4.20),
+          ),
+          AdviceCode.socCounterAhead,
+        ),
+        isFalse,
+      );
+      expect(
+        has(
+          run(
+            snapshot: snap(
+              cells: List.filled(20, 4.13),
+              soc: 99,
+              current: 3,
+            ),
+            config: settings(cellOvp: 4.25, soc100Voltage: 4.20),
+          ),
+          AdviceCode.socCounterAhead,
+        ),
+        isTrue,
+      );
+    });
+
+    // The other end, and the one that has a rider stop early: the counter
+    // calls it empty while the cells say there is plenty left.
+    test('calls out a counter that gives up before the cells do', () {
+      final advice = run(
+        snapshot: snap(
+          cells: List.filled(20, 3.55),
+          soc: 2,
+          remainingAh: 0.8,
+          current: -12,
+        ),
+        config: settings(soc0Voltage: 3.10),
+      );
+      expect(has(advice, AdviceCode.socCounterBehind), isTrue);
+      final item = advice.firstWhere(
+        (a) => a.code == AdviceCode.socCounterBehind,
+      );
+      expect(item.value, closeTo(0.45, 0.005));
+      expect(
+        item.evidence.map((e) => e.kind),
+        containsAll(<EvidenceKind>[
+          EvidenceKind.reportedSoc,
+          EvidenceKind.lowestCell,
+          EvidenceKind.socEmptyAnchor,
+        ]),
+      );
+    });
+
+    test('says nothing when an empty counter matches empty cells', () {
+      final advice = run(
+        snapshot: snap(
+          cells: List.filled(20, 3.14),
+          soc: 2,
+          remainingAh: 0.8,
+          current: -12,
+        ),
+        config: settings(soc0Voltage: 3.10),
+      );
+      expect(has(advice, AdviceCode.socCounterBehind), isFalse);
+    });
+
+    test('will not guess at empty with no 0% voltage configured', () {
+      // The undervoltage limit is a protection floor, and how far the useful
+      // one sits above it is a fact about the chemistry, not this pack.
+      final advice = run(
+        snapshot: snap(
+          cells: List.filled(20, 3.55),
+          soc: 2,
+          remainingAh: 0.8,
+          current: -12,
+        ),
+        config: settings(),
+      );
+      expect(has(advice, AdviceCode.socCounterBehind), isFalse);
+    });
+
+    test('does not check the bottom while charging', () {
+      final advice = run(
+        snapshot: snap(
+          cells: List.filled(20, 3.55),
+          soc: 2,
+          remainingAh: 0.8,
+          current: 8,
+        ),
+        config: settings(soc0Voltage: 3.10),
+      );
+      expect(has(advice, AdviceCode.socCounterBehind), isFalse);
     });
 
     test('puts the loudest advice first', () {

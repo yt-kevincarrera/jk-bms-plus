@@ -16,6 +16,7 @@ class SocGauge extends StatelessWidget {
     required this.centreLabel,
     required this.centreValue,
     this.subtitle,
+    this.note,
     this.size = 180,
     super.key,
   });
@@ -26,6 +27,14 @@ class SocGauge extends StatelessWidget {
   final String centreLabel;
   final String centreValue;
   final String? subtitle;
+
+  /// A caveat about the reading itself, shown under it in the watch colour.
+  ///
+  /// The percentage is the one figure on this screen nobody measures, and a
+  /// gauge that looks the same whether or not it can be believed teaches
+  /// people to believe it always.
+  final String? note;
+
   final double size;
 
   @override
@@ -56,6 +65,18 @@ class SocGauge extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 11.5,
                     color: AppTheme.textFaint,
+                  ),
+                ),
+              ],
+              if (note != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  note!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 10.5,
+                    height: 1.25,
+                    color: AppTheme.watch,
                   ),
                 ),
               ],
