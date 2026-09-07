@@ -32,6 +32,69 @@ double shiftFraction({required double? before, required double? after}) {
   return (after - before).abs() / before;
 }
 
+/// Full-pack kilometres at a given consumption, so the two halves of the
+/// sentence are comparable.
+///
+/// Free function, and taking the pack's own figures as arguments rather than
+/// reading them off a service, because this question is also asked from the
+/// saved-pack screen with nothing connected. Read off the service, the
+/// figures belong to whatever happens to be on the radio, or with nothing
+/// connected at all, to no pack at all.
+///
+/// Null when there is no full-pack figure to convert, which the caller must
+/// handle by saying the same thing in Wh/km instead, never by reaching for
+/// [RangeOutlook.nowKm]. No capacity measured or catalogued is an everyday
+/// state, not an edge case.
+double? fullPackKmAt({
+  required double whPerKm,
+  required double? fullKm,
+  required double learnedWhPerKm,
+}) {
+  if (fullKm == null || fullKm <= 0 || whPerKm <= 0 || learnedWhPerKm <= 0) {
+    return null;
+  }
+  return fullKm * learnedWhPerKm / whPerKm;
+}
+
+/// Whether a ride's recorded "after" still describes what the pack currently
+/// believes, and so whether kilometres may be quoted for it.
+///
+/// Converting through the current full-pack range is only honest for the most
+/// recent counted ride. Open an older ride and every ride since has moved the
+/// estimate, so the kilometres would be a projection from today's figure
+/// dressed up as what that ride actually did. A pack with nothing learned
+/// yet answers no rather than matching every ride against zero.
+bool quotesCurrentEstimate({
+  required double after,
+  required double learnedWhPerKm,
+}) {
+  if (learnedWhPerKm <= 0) return false;
+  return (after - learnedWhPerKm).abs() < 0.05;
+}
+
+/// The two figures the representative question quotes, for one pack.
+///
+/// Exists so the question can be asked about a pack that is not connected.
+/// Both figures used to be read straight off [BmsService], which ties them to
+/// whatever is on the radio; from the saved-pack screen that is nothing, and
+/// the question would quote a default estimator belonging to no pack.
+class LearnedRange {
+  const LearnedRange({required this.whPerKm, required this.fullKm});
+
+  /// What this pack has been measured to consume.
+  final double whPerKm;
+
+  /// Kilometres on a full pack, or null where no capacity has been measured
+  /// or cataloged and there is nothing honest to quote.
+  final double? fullKm;
+
+  /// The figures of the connected pack.
+  factory LearnedRange.ofService(BmsService service) => LearnedRange(
+    whPerKm: service.rangeEstimator.whPerKm,
+    fullKm: service.rangeOutlook.fullKm,
+  );
+}
+
 /// Asks whether one ride represents how this bike normally gets ridden.
 ///
 /// The estimator has no notion of context: one deliberately gentle ride to
@@ -45,12 +108,30 @@ class RepresentativeQuestion extends StatelessWidget {
   const RepresentativeQuestion({
     required this.view,
     required this.service,
+    required this.learned,
     required this.t,
+    this.onChanged,
     super.key,
   });
 
   final TripSummaryView view;
   final BmsService service;
+
+  /// The figures of the pack being looked at, read fresh each time.
+  ///
+  /// A getter rather than a value because the confirmation quotes what the
+  /// answer *resulted in*, so it has to be read again after the write. A
+  /// callback keeps that honest for both callers: connected, the service has
+  /// already relearned by then; from the saved-pack screen, [onChanged] has
+  /// just rebuilt the screen's own figures.
+  final LearnedRange Function() learned;
+
+  /// Awaited after a write, before the confirmation reads [learned] again.
+  ///
+  /// Null where the write already refreshed what [learned] reads, which is
+  /// the connected case: `setTripRepresentative` relearns before it returns.
+  final Future<void> Function()? onChanged;
+
   final AppL10n t;
 
   @override
@@ -66,7 +147,12 @@ class RepresentativeQuestion extends StatelessWidget {
     if (view.representative != null) {
       return _Answered(
         representative: view.representative!,
-        onChange: () => service.setTripRepresentative(tripId, null),
+        // Unanswering has to refresh the same things answering does, or the
+        // saved-pack screen keeps showing figures that still count the ride.
+        onChange: () async {
+          await service.setTripRepresentative(tripId, null);
+          await onChanged?.call();
+        },
         t: t,
       );
     }
@@ -87,17 +173,13 @@ class RepresentativeQuestion extends StatelessWidget {
 
     // Reachable only when shift > 0, which the branch above rules out unless
     // before and after are both real numbers.
-    final rawBeforeKm = _fullPackKm(before!);
-    final rawAfterKm = _fullPackKm(after!);
-    // Converting through today's fullKm is only honest for the ride that
-    // just ended. Open an older ride from history and its recorded "after"
-    // no longer matches what the estimator currently believes -- every ride
-    // since has moved it -- so the km figures below would be a projection
-    // from today's estimate dressed up as what that ride actually did. Only
-    // the most recent counted ride still has fullKm and whPerKmAfter talking
-    // about the same moment.
-    final isCurrentEstimate =
-        (after - service.rangeEstimator.whPerKm).abs() < 0.05;
+    final figures = learned();
+    final rawBeforeKm = _fullPackKm(before!, figures);
+    final rawAfterKm = _fullPackKm(after!, figures);
+    final isCurrentEstimate = quotesCurrentEstimate(
+      after: after,
+      learnedWhPerKm: figures.whPerKm,
+    );
     final beforeKm = isCurrentEstimate ? rawBeforeKm : null;
     final afterKm = isCurrentEstimate ? rawAfterKm : null;
     final percent = ((rideWhPerKm - before).abs() / before * 100).round();
@@ -170,46 +252,41 @@ class RepresentativeQuestion extends StatelessWidget {
     );
   }
 
-  /// Full-pack kilometres at a given consumption, so the two halves of the
-  /// sentence are comparable. Null when there is no full-pack figure to
-  /// convert, which the caller must handle by saying the same thing in
-  /// Wh/km instead, never by reaching for [RangeOutlook.nowKm].
-  ///
-  /// [outlook.fullKm] and [service.rangeEstimator.whPerKm] are both read off
-  /// the same current estimator, so their product is the pack's full energy
-  /// in watt-hours regardless of what "current" happens to be at the moment
-  /// this builds; dividing that back by [whPerKm] is what turns one reference
-  /// point into a figure for a different consumption.
-  double? _fullPackKm(double whPerKm) {
-    final fullKm = service.rangeOutlook.fullKm;
-    final learned = service.rangeEstimator.whPerKm;
-    if (fullKm == null || fullKm <= 0 || whPerKm <= 0 || learned <= 0) {
-      return null;
-    }
-    return fullKm * learned / whPerKm;
-  }
+  /// [LearnedRange.fullKm] and [LearnedRange.whPerKm] are both read off the
+  /// same estimator, so their product is the pack's full energy in watt-hours
+  /// regardless of what "current" happens to be at the moment this builds;
+  /// dividing that back by [whPerKm] is what turns one reference point into a
+  /// figure for a different consumption.
+  double? _fullPackKm(double whPerKm, LearnedRange figures) => fullPackKmAt(
+    whPerKm: whPerKm,
+    fullKm: figures.fullKm,
+    learnedWhPerKm: figures.whPerKm,
+  );
 
   Future<void> _answer(BuildContext context, int tripId, bool normal) async {
     final messenger = ScaffoldMessenger.of(context);
     await service.setTripRepresentative(tripId, normal);
-    // The consequence, not the action, and true either way:
-    // setTripRepresentative has already relearned by the time this reads, so
-    // both answers report what resulted rather than "saved", which would tell
-    // the rider nothing they could not already see. Wh/km rather than km when
-    // there is no full-pack figure, for the same reason the ask body falls
-    // back the same way: nowKm is a different quantity and substituting it
-    // would confirm a number the rider never actually asked about.
-    final fullKm = service.rangeOutlook.fullKm;
+    // Whatever reads [learned] has to be rebuilt before the figure below is
+    // taken, or the confirmation quotes the state from before the answer.
+    // Connected, setTripRepresentative relearned on the way here and there is
+    // nothing to wait for; from the saved-pack screen the screen reloads.
+    await onChanged?.call();
+    // The consequence, not the action, and true either way: both answers
+    // report what resulted rather than "saved", which would tell the rider
+    // nothing they could not already see. Wh/km rather than km when there is
+    // no full-pack figure, for the same reason the ask body falls back the
+    // same way: nowKm is a different quantity and substituting it would
+    // confirm a number the rider never actually asked about.
+    final figures = learned();
+    final fullKm = figures.fullKm;
     final message = fullKm != null
         ? (normal
               ? t.representativeDone(fullKm.toStringAsFixed(0))
               : t.representativeMarkedException(fullKm.toStringAsFixed(0)))
         : (normal
-              ? t.representativeDoneNoKm(
-                  service.rangeEstimator.whPerKm.toStringAsFixed(1),
-                )
+              ? t.representativeDoneNoKm(figures.whPerKm.toStringAsFixed(1))
               : t.representativeMarkedExceptionNoKm(
-                  service.rangeEstimator.whPerKm.toStringAsFixed(1),
+                  figures.whPerKm.toStringAsFixed(1),
                 ));
     messenger.showSnackBar(SnackBar(content: Text(message)));
   }
