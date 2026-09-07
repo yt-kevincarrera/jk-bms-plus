@@ -48,4 +48,51 @@ void main() {
       expect(shiftFraction(before: 17.5, after: null), 0.0);
     });
   });
+
+  group('the figures the question quotes', () {
+    // These exist because the question used to read the learned figure and
+    // the full-pack range straight off the connected pack's service. Opened
+    // from the saved-pack screen, with nothing connected, that meant either
+    // silence or a number belonging to no pack at all. The figures now come
+    // from whichever pack is being looked at, so they have to be arguments.
+
+    test('converts a consumption using the figures of the pack in hand', () {
+      // 100 km at a learned 17.5 Wh/km is 1750 Wh of usable pack. The same
+      // pack ridden at 20 Wh/km goes 87.5 km.
+      expect(
+        fullPackKmAt(whPerKm: 20, fullKm: 100, learnedWhPerKm: 17.5),
+        closeTo(87.5, 0.001),
+      );
+    });
+
+    test('says nothing when the pack has no full-pack figure', () {
+      // No capacity measured and none in the catalogue is an everyday state,
+      // not an edge case. The caller falls back to Wh/km wording.
+      expect(fullPackKmAt(whPerKm: 20, fullKm: null, learnedWhPerKm: 17.5),
+          isNull);
+    });
+
+    test('refuses to divide by figures that cannot answer', () {
+      expect(fullPackKmAt(whPerKm: 20, fullKm: 0, learnedWhPerKm: 17.5),
+          isNull);
+      expect(fullPackKmAt(whPerKm: 0, fullKm: 100, learnedWhPerKm: 17.5),
+          isNull);
+      expect(fullPackKmAt(whPerKm: 20, fullKm: 100, learnedWhPerKm: 0), isNull);
+    });
+
+    test('quotes kilometres only while the ride still owns the estimate', () {
+      // Only the most recent counted ride has its recorded "after" and the
+      // pack's current learned figure talking about the same moment. Open an
+      // older ride and every ride since has moved the estimate.
+      expect(quotesCurrentEstimate(after: 20.4, learnedWhPerKm: 20.4), isTrue);
+      expect(quotesCurrentEstimate(after: 20.4, learnedWhPerKm: 17.5), isFalse);
+    });
+
+    test('measures against the pack in hand, not the one connected', () {
+      // The bug this whole change is about: browsing KevinJK with nothing
+      // connected used to compare the ride against a default estimator, which
+      // made every older ride look current.
+      expect(quotesCurrentEstimate(after: 17.5, learnedWhPerKm: 0), isFalse);
+    });
+  });
 }

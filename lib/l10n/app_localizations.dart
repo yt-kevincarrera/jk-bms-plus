@@ -2128,7 +2128,7 @@ abstract class AppL10n {
   /// No description provided for @adviceSocCounterBehindBody.
   ///
   /// In es, this message translates to:
-  /// **'El BMS dice {soc} %, pero la celda más baja está {gap} V por encima de donde el propio BMS llama vacío.'**
+  /// **'El BMS dice {soc} %, pero la celda más baja está {gap} V por encima de donde el propio BMS llama vacío. Hay batería aquí que la pantalla no está contando. Ese porcentaje no se mide: es amperios por tiempo contra la capacidad configurada, y ese contador deriva. Si se repite, la capacidad configurada se queda corta frente a la real: mídela con un test de capacidad antes de cambiarla.'**
   String adviceSocCounterBehindBody(String gap, String soc);
 
   /// No description provided for @adviceHealthDecorativeTitle.
