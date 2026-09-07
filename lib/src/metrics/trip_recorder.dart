@@ -313,11 +313,19 @@ class TripRecorder {
   /// figure and cannot separate the two directions.
   double get energyInWh => _integratedInWh;
 
-  /// Which of the two produced [energyOutWh], so a stored ride can say.
-  EnergySource get energySource =>
-      ahOut != null && meanPackVoltage > 0
-          ? EnergySource.coulombCount
-          : EnergySource.integrated;
+  /// Which of them produced [energyOutWh], so a stored ride can say.
+  ///
+  /// A ride nothing arrived during is [EnergySource.unmeasurable] rather than
+  /// [EnergySource.integrated]. Integrating over no readings does return
+  /// zero, but calling that "integrated" claims a measurement that was never
+  /// made, and the repair that exists to mend exactly this ride reads that
+  /// claim and leaves the ride alone. Zero received frames is not a
+  /// measurement of no energy; it is no energy measured.
+  EnergySource get energySource {
+    if (ahOut != null && meanPackVoltage > 0) return EnergySource.coulombCount;
+    if (_voltageSamples == 0) return EnergySource.unmeasurable;
+    return EnergySource.integrated;
+  }
 
   double? get startSoc => _startSoc;
 

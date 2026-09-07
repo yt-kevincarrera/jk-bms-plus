@@ -59,6 +59,12 @@ void main() {
     Duration length = const Duration(minutes: 21, seconds: 55),
     double startSoc = 64,
     double endSoc = 60,
+    // Null is the shape of a ride stored before the column existed. Rides
+    // stored by a current build always carry one, which is the whole point of
+    // the blackout case below.
+    String? energySource,
+    double maxDischargeCurrent = 21.9,
+    double maxTemperature = 30,
   }) =>
       db.insertTrip(
         TripsCompanion.insert(
@@ -75,11 +81,12 @@ void main() {
           endSoc: endSoc,
           minPackVoltage: 70,
           maxPackVoltage: 78,
-          maxDischargeCurrent: 21.9,
-          maxTemperature: 30,
+          maxDischargeCurrent: maxDischargeCurrent,
+          maxTemperature: maxTemperature,
           maxDeltaVolts: 0.02,
           climbM: 20,
           descentM: 20,
+          energySource: Value(energySource),
         ),
       );
 
@@ -168,6 +175,71 @@ void main() {
       startSoc: 0,
       endSoc: 0,
     );
+
+    /// The same ride, stored the way the recorder actually stores it today.
+    ///
+    /// Every other test here builds a ride with no `energySource` at all,
+    /// which is the shape of a ride from before that column existed. A ride
+    /// recorded now always carries one: with no readings there is no
+    /// amp-hour figure, so `TripRecorder.energySource` falls to `integrated`
+    /// and the row claims power was integrated over readings that never
+    /// arrived. Nothing else about the ride differs, and that one word was
+    /// enough to hide it from the repair.
+    Future<int> blackoutTripAsRecordedToday() => staleTrip(
+      km: 22.09,
+      outWh: 0,
+      length: const Duration(minutes: 50),
+      startSoc: 0,
+      endSoc: 0,
+      energySource: EnergySource.integrated.name,
+      maxDischargeCurrent: 0,
+      maxTemperature: 0,
+    );
+
+    test('is still found when the recorder called it integrated', () async {
+      // The bug this test exists for. The bracketing worked from the day it
+      // was merged and never ran once on a real ride, because the filter that
+      // decides what to look at accepted only rides from before the column
+      // existed. Riders whose link drops kept seeing zeroes.
+      await blackoutTripAsRecordedToday();
+      await reading(
+        t0.subtract(const Duration(minutes: 1)),
+        remainingAh: 39.6,
+        packVoltage: 81,
+        soc: 99,
+      );
+      await reading(
+        t0.add(const Duration(minutes: 52)),
+        remainingAh: 33.8,
+        packVoltage: 77,
+        soc: 84,
+      );
+
+      final report = await repo.repairTripEnergy('AA:BB');
+      expect(report.repaired, 1);
+
+      final fixed = (await repo.tripsForLearning('AA:BB')).single;
+      expect(fixed.ahOut, closeTo(5.8, 0.001));
+      expect(fixed.energySource, EnergySource.bracketedCoulombCount.name);
+      expect(fixed.energyOutWh, closeTo(458.2, 0.5));
+    });
+
+    test('leaves a ride that really was integrated alone', () async {
+      // The guard on the widened filter. A ride with readings has energy, and
+      // re-measuring it from the readings either side would price a real
+      // measurement against a coarser one.
+      await staleTrip(
+        km: 20,
+        outWh: 350,
+        energySource: EnergySource.integrated.name,
+      );
+      await reading(t0.subtract(const Duration(minutes: 1)), remainingAh: 39.6);
+      await reading(t0.add(const Duration(minutes: 23)), remainingAh: 33.8);
+
+      final report = await repo.repairTripEnergy('AA:BB');
+      expect(report.examined, 0);
+      expect(report.repaired, 0);
+    });
 
     test('is measured from the readings either side of it', () async {
       // Connected a minute before setting off, reconnected two minutes after

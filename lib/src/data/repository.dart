@@ -280,12 +280,24 @@ class BmsRepository {
     // examined so every connection stops re-reading it, while staying findable
     // for a repair that knows something the last one did not. Whatever happens
     // below, they settle on a terminal marker and are not looked at again.
+    // A ride the recorder called integrated that integrated nothing. Rides
+    // recorded from now on say [EnergySource.unmeasurable] instead, but the
+    // ones already on disk say this, and they are the rides this repair was
+    // written for: the blackout ride that prompted all of it was stored this
+    // way and the repair never once looked at it. Guarded on the energy
+    // rather than the marker alone, so a ride that really was integrated,
+    // which by definition had readings and therefore has energy, is left with
+    // the measurement it made.
+    bool integratedNothing(Trip t) =>
+        t.energySource == EnergySource.integrated.name && t.energyOutWh <= 0;
+
     final stale = [
       for (final t in trips)
         if (t.distanceKm > 0 &&
             t.ahOut == null &&
             (t.energySource == null ||
-                t.energySource == EnergySource.unmeasurable.name))
+                t.energySource == EnergySource.unmeasurable.name ||
+                integratedNothing(t)))
           t,
     ];
     if (stale.isEmpty) return TripRepairReport.none;

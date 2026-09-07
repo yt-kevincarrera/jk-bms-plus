@@ -257,4 +257,33 @@ void main() {
       expect(r.maxSpeedKmh, 0);
     });
   });
+
+  group('a ride nothing arrived during', () {
+    // The ride that exposed this: the link dropped on departure and came back
+    // on arrival, so the recorder saw GPS and never a frame. It stored the
+    // ride as `integrated`, which reads as "measured by integrating power"
+    // and hid it from the repair that exists to mend exactly this. Nothing
+    // was integrated, and the row has to say so.
+    test('is called unmeasurable rather than integrated', () {
+      final r = TripRecorder()..start();
+      r.addFix(fix(t0));
+      r.addFix(fix(t0.add(const Duration(seconds: 5)), lat: 0.001));
+
+      expect(r.ahOut, isNull);
+      expect(r.energyOutWh, 0);
+      expect(r.energySource, EnergySource.unmeasurable);
+    });
+
+    test('still says integrated once a reading has been folded in', () {
+      // The guard: one frame is enough to make integrating meaningful, and a
+      // ride measured that way must keep saying so.
+      final r = TripRecorder()..start();
+      r.addFix(fix(t0));
+      r.addSnapshot(snap(t0));
+      r.addSnapshot(snap(t0.add(const Duration(seconds: 1))));
+      r.addFix(fix(t0.add(const Duration(seconds: 5)), lat: 0.001));
+
+      expect(r.energySource, EnergySource.integrated);
+    });
+  });
 }
