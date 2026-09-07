@@ -30,6 +30,27 @@ class LinkHealth {
   static const LinkHealth unknown = LinkHealth();
 }
 
+/// How the automatic reconnect is getting on, for a screen to show.
+///
+/// Exists because the app had no way to say "it tried and it failed". The
+/// transport cycled connecting, failed, connecting every few hundred
+/// milliseconds, so the banner never rested on a failure and showed a spinner
+/// instead — while the rider's only way to learn the reason was to leave the
+/// screen and open the connect screen, where the same error had been arriving
+/// all along.
+class LinkRetryState {
+  const LinkRetryState({this.failures = 0, this.gaveUp = false});
+
+  /// Attempts that have failed in a row, with no reading in between.
+  final int failures;
+
+  /// Whether the loop has stopped trying. Nothing starts it again on its own;
+  /// [BmsLink.retryNow] is how the rider asks for another go.
+  final bool gaveUp;
+
+  static const LinkRetryState none = LinkRetryState();
+}
+
 /// The surface [BmsService] needs from a transport.
 ///
 /// Exists so the service can be tested by feeding it captured bytes, without a
@@ -49,6 +70,14 @@ abstract interface class BmsLink {
   /// Link behaviour so far. Defaults to nothing worth reporting, which is the
   /// honest answer for a simulated or captured-byte transport.
   LinkHealth get health => LinkHealth.unknown;
+
+  /// How the automatic reconnect is getting on. Defaults to nothing to
+  /// report, which is the honest answer for a transport that cannot drop.
+  LinkRetryState get retry => LinkRetryState.none;
+
+  /// Another go after the loop has given up, because the rider asked. A
+  /// transport with no loop has nothing to do here.
+  Future<void> retryNow() async {}
 
   Stream<List<DiscoveredBms>> scan();
 

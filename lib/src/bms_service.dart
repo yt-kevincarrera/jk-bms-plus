@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'ble/ble_transport.dart';
 import 'ble/bms_link.dart';
+import 'ble/link_lost_alarm.dart';
 import 'ble/simulator/simulated_pack.dart';
 import 'ble/switchable_link.dart';
 import 'data/database.dart';
@@ -87,9 +88,12 @@ class BmsService {
       lastLinkState = s;
       // A link that was up and is now down, with nobody having asked for it.
       // Overnight, watching a charge, this is the difference between "the
-      // pack finished" and "the app stopped looking four hours ago".
+      // pack finished" and "the app stopped looking four hours ago". Mid-ride
+      // it is neither, so the clock starts here and the shouting waits.
       if (was == BleLinkState.connected && s != BleLinkState.connected) {
-        _noteLinkLost();
+        _onLinkDown();
+      } else if (s == BleLinkState.connected) {
+        _onLinkUp();
       }
       // Readings are what normally drive the service, and a dropped link stops
       // producing them, so the link state has to be able to stand it down
@@ -241,6 +245,13 @@ class BmsService {
 
   /// How the link has been behaving, for the System tab to report.
   LinkHealth get linkHealth => _transport.health;
+
+  /// How the automatic reconnect is getting on, so a screen can say "tried
+  /// nine times and stopped" rather than showing a spinner for ever.
+  LinkRetryState get linkRetry => _transport.retry;
+
+  /// Another go after the reconnect gave up, because the rider asked.
+  Future<void> retryLink() => _transport.retryNow();
 
   BmsSnapshot? get lastSnapshot => _lastSnapshot;
   JkDeviceInfo? get lastDeviceInfo => _lastDeviceInfo;
@@ -574,6 +585,9 @@ class BmsService {
     _pendingDeviceId = null;
     _inspecting = false;
     _silenceTimer?.cancel();
+    // Not an outage. Clears the clock and takes down anything it posted, so
+    // the next real drop starts from nothing.
+    _onLinkUp();
     _cellInfoTimer?.cancel();
     _cellInfoTimer = null;
     await _transport.disconnect();
@@ -1469,7 +1483,9 @@ class BmsService {
   /// The foreground service notification is a quiet readout by design and is
   /// the wrong thing to shout with, so anything worth waking somebody for
   /// goes out on its own high-importance channel.
-  final AlertNotifications alertNotifications = AlertNotifications();
+  /// Not final so a test can put a recorder here and read what would have
+  /// reached the shade instead of reaching it.
+  AlertNotifications alertNotifications = AlertNotifications();
 
   /// Wording for those notifications, supplied by the UI so the analysis
   /// layer never holds a sentence. Returns a title and a body, or null when
@@ -1560,7 +1576,52 @@ class BmsService {
   /// is not reported as the link being lost.
   bool _disconnectRequested = false;
 
-  /// Says the link went down when nobody asked it to.
+  /// When to call a link that has gone down lost. Settable so a test does not
+  /// have to sit through the real wait.
+  LinkLostAlarm linkLostAlarm = const LinkLostAlarm();
+
+  /// When the link went down, or null while it is up.
+  DateTime? _linkDownSince;
+
+  /// Whether this outage has already been reported. One outage, one
+  /// notification, however many times the transport cycles through
+  /// reconnecting and failed while it retries.
+  bool _linkLostWarned = false;
+
+  /// Fires once, [LinkLostAlarm.graceBefore] after the link goes down.
+  ///
+  /// A timer rather than a check on the next reading, because there are no
+  /// readings: the link being down is precisely what stops them arriving.
+  Timer? _linkLostTimer;
+
+  /// The link went down. Starts the clock rather than shouting.
+  ///
+  /// It used to shout. Every connected-to-not-connected transition posted a
+  /// high-importance notification at once, gated only on
+  /// `chargeWatchEnabled || linkWatchEnabled` — and [linkWatchEnabled] is on
+  /// by default and means the foreground service, not a request to be
+  /// interrupted. A real ride has 26 gaps in 21 minutes, all of which closed
+  /// on their own, so that is 26 interruptions for nothing.
+  void _onLinkDown() {
+    if (_disconnectRequested) return;
+    if (_linkDownSince != null) return;
+    _linkDownSince = DateTime.now();
+    _linkLostTimer?.cancel();
+    _linkLostTimer = Timer(linkLostAlarm.graceBefore, _noteLinkLost);
+  }
+
+  /// The link came back. Whatever was said about it being gone is over.
+  void _onLinkUp() {
+    _linkLostTimer?.cancel();
+    _linkLostTimer = null;
+    _linkDownSince = null;
+    if (_linkLostWarned) {
+      _linkLostWarned = false;
+      unawaited(alertNotifications.clear(linkLostAlertKey));
+    }
+  }
+
+  /// Says the link went down when nobody asked it to, and stayed down.
   ///
   /// Only while a watch is running: with the app open and in hand, the
   /// screens already say it in three places, and a notification would be
@@ -1569,6 +1630,17 @@ class BmsService {
     if (_disconnectRequested) return;
     if (!(chargeWatchEnabled || linkWatchEnabled)) return;
     if (mutedAlerts.contains(linkLostAlertKey)) return;
+    if (!linkLostAlarm.shouldWarn(
+      downSince: _linkDownSince,
+      now: DateTime.now(),
+      // Riding is when the link flaps by design — phone in a pocket, pack
+      // under the seat — and when nobody could act on being told so anyway.
+      riding: trip.isRecording,
+      alreadyWarned: _linkLostWarned,
+    )) {
+      return;
+    }
+    _linkLostWarned = true;
     _notify(key: linkLostAlertKey, words: linkLostText?.call(), critical: true);
   }
 
@@ -2067,6 +2139,7 @@ class BmsService {
 
   Future<void> dispose() async {
     _silenceTimer?.cancel();
+    _linkLostTimer?.cancel();
     _cellInfoTimer?.cancel();
     _notificationTimer?.cancel();
     _notificationTimer = null;

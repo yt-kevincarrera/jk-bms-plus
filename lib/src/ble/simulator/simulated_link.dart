@@ -141,6 +141,10 @@ class SimulatedLink implements BmsLink {
 
   @override
   LinkHealth get health => LinkHealth.unknown;
+  @override
+  LinkRetryState get retry => LinkRetryState.none;
+  @override
+  Future<void> retryNow() async {}
 
   @override
   Future<void> disconnect() async {

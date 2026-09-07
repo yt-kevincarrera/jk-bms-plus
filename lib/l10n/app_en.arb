@@ -1022,6 +1022,15 @@
   "offlineLastReading": "Last reading",
   "offlineStateOfCharge": "Charge then",
   "offlineTrips": "Rides",
+  "offlineSeeTrips": "See the {count} rides",
+  "@offlineSeeTrips": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineNoTrips": "No rides stored for this pack yet.",
   "offlineTripsCount": "{count} stored",
   "@offlineTripsCount": {
     "placeholders": {
@@ -1296,7 +1305,7 @@
   "etaFull": "Full in",
   "etaTapering": "approx., the current is already tailing off",
   "etaDone": "It is full",
-  "etaNearlyThere": "Nearly there",
+  "etaCannotSay": "Cannot say",
   "etaCounterAhead": "the counter is ahead of the cells, so no minutes here",
   "socNoteAhead": "the counter is ahead of the cells",
   "socNoteBehind": "there is more left than this says",
@@ -1316,6 +1325,16 @@
   "linkLostBody": "Out of range of the pack, or something else is holding the Bluetooth channel. Keeps trying on its own; what is on screen is the last reading.",
   "linkReconnectingTitle": "Reconnecting",
   "linkConnectingTitle": "Connecting",
+  "linkGaveUpTitle": "Could not reconnect",
+  "linkGaveUpBody": "Stopped after {attempts} attempts. Each failed attempt uses up Bluetooth resources belonging to the whole phone, so it will not keep going on its own.",
+  "@linkGaveUpBody": {
+    "placeholders": {
+      "attempts": {
+        "type": "String"
+      }
+    }
+  },
+  "linkRetryNow": "Try again",
   "linkReadingAge": "Last reading {age} ago",
   "linkBack": "Reading again",
   "linkDetails": "Details",
@@ -1706,7 +1725,7 @@
   "inspectionStepLightTitle": "Turn the lights on",
   "inspectionStepLightBody": "A small, steady draw. The app moves on by itself when it sees it.",
   "inspectionStepHeavyTitle": "Now a hard pull",
-  "inspectionStepHeavyBody": "Rear wheel in the air and throttle, or 50 metres down the road with the phone in your pocket, or the charger plugged in. Any of them works: the app measures the current.",
+  "inspectionStepHeavyBody": "Three ways, any of them works: ride 50 metres accelerating properly, or hold the rear brake on the stand and open the throttle, or plug the charger in for half a minute. A wheel spinning free in the air will NOT do: the motor has nothing to push against, so the current stays near zero however hard you twist it.",
   "inspectionStepRecoveryTitle": "Let go and wait",
   "inspectionStepRecoveryBody": "No current. The app watches how long each cell takes to climb back to where it rested.",
   "inspectionStepDoneTitle": "Done",
@@ -1719,10 +1738,13 @@
       }
     }
   },
-  "inspectionLoadTooLow": "Too little current ({amps} A). Give it more.",
+  "inspectionLoadTooLow": "Seeing {amps} A, and {need} A held is what it takes.",
   "@inspectionLoadTooLow": {
     "placeholders": {
       "amps": {
+        "type": "String"
+      },
+      "need": {
         "type": "String"
       }
     }
@@ -1758,9 +1780,12 @@
   "inspectionLightGood": "Nothing serious in sight",
   "inspectionLightWatch": "Something to look at",
   "inspectionLightProblem": "Don't buy blind: there is a problem",
+  "inspectionLightUnmeasured": "No verdict: the pack was never loaded",
+  "inspectionUnmeasuredBody": "Per-cell sag under load is where this test gets its answer, and no load big enough ever arrived, so there is nothing here about this battery either way. Run it again and give it one of these: ride fifty metres accelerating properly, or hold the rear brake on the stand and open the throttle, or plug the charger in for half a minute. A wheel spinning free in the air is not a load: there is nothing for the motor to push against, so the current stays near zero however hard you twist it.",
   "inspectionFidelityNote": "A quick test catches the obvious scam and the bad cell; it does not measure real capacity. Real capacity takes a full discharge.",
   "inspectionCaveatsTitle": "What this test could not see",
   "inspectionCaveatNoHeavyLoad": "No hard pull: per-cell sag could not be measured.",
+  "inspectionCaveatHeavyWasCharge": "The load was a charger, so the cells were lifted rather than pulled down. The arithmetic is the same; the direction is not.",
   "inspectionCaveatNoLightLoad": "No light load: the lights step never happened.",
   "inspectionCaveatRestNoisy": "The pack was never fully quiet: the resting picture is approximate.",
   "inspectionCaveatNoRecovery": "The load was never released: recovery was not measured.",
