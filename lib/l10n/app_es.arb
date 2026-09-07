@@ -1022,6 +1022,15 @@
   "offlineLastReading": "Última lectura",
   "offlineStateOfCharge": "Carga entonces",
   "offlineTrips": "Viajes",
+  "offlineSeeTrips": "Ver los {count} viajes",
+  "@offlineSeeTrips": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineNoTrips": "Todavía no hay viajes guardados de esta batería.",
   "offlineTripsCount": "{count} guardados",
   "@offlineTripsCount": {
     "placeholders": {
@@ -1296,7 +1305,7 @@
   "etaFull": "Lleno en",
   "etaTapering": "aprox., ya va bajando la corriente",
   "etaDone": "Está lleno",
-  "etaNearlyThere": "Ya casi",
+  "etaCannotSay": "No puedo decirlo",
   "etaCounterAhead": "el contador va por delante de las celdas, así que no doy minutos",
   "socNoteAhead": "el contador va por delante de las celdas",
   "socNoteBehind": "queda más de lo que dice",
@@ -1316,6 +1325,16 @@
   "linkLostBody": "Estás fuera del alcance de la batería, o algo más tiene tomado el canal Bluetooth. Sigue reintentando solo; lo que ves en pantalla es la última lectura.",
   "linkReconnectingTitle": "Reconectando",
   "linkConnectingTitle": "Conectando",
+  "linkGaveUpTitle": "No pude reconectar",
+  "linkGaveUpBody": "Me detuve tras {attempts} intentos. Cada intento fallido consume recursos Bluetooth de todo el teléfono, así que no sigue solo.",
+  "@linkGaveUpBody": {
+    "placeholders": {
+      "attempts": {
+        "type": "String"
+      }
+    }
+  },
+  "linkRetryNow": "Reintentar",
   "linkReadingAge": "Última lectura hace {age}",
   "@linkReadingAge": {
     "placeholders": {
@@ -1808,7 +1827,7 @@
   "inspectionStepLightTitle": "Enciende las luces",
   "inspectionStepLightBody": "Una carga pequeña y estable. La app avanza sola cuando la detecta.",
   "inspectionStepHeavyTitle": "Ahora una carga fuerte",
-  "inspectionStepHeavyBody": "Rueda trasera al aire y acelera, o 50 metros en la moto con el teléfono en el bolsillo, o el cargador conectado. Cualquiera sirve: la app mide la corriente.",
+  "inspectionStepHeavyBody": "Tres formas, cualquiera sirve: rodar 50 metros acelerando de verdad, o apretar el freno trasero en el caballete y abrir gas, o enchufar el cargador medio minuto. La rueda girando libre al aire NO sirve: el motor no tiene contra qué empujar y la corriente se queda casi en cero por mucho que gires el puño.",
   "inspectionStepRecoveryTitle": "Suelta todo y espera",
   "inspectionStepRecoveryBody": "Sin corriente. La app mira cuánto tarda cada celda en volver a su voltaje de reposo.",
   "inspectionStepDoneTitle": "Listo",
@@ -1821,10 +1840,13 @@
       }
     }
   },
-  "inspectionLoadTooLow": "Muy poca corriente ({amps} A). Dale más.",
+  "inspectionLoadTooLow": "Veo {amps} A y hacen falta {need} A sostenidos.",
   "@inspectionLoadTooLow": {
     "placeholders": {
       "amps": {
+        "type": "String"
+      },
+      "need": {
         "type": "String"
       }
     }
@@ -1860,9 +1882,12 @@
   "inspectionLightGood": "Nada grave a la vista",
   "inspectionLightWatch": "Hay algo que mirar",
   "inspectionLightProblem": "No compres a ciegas: hay un problema",
+  "inspectionLightUnmeasured": "Sin veredicto: nunca se cargó el pack",
+  "inspectionUnmeasuredBody": "Este test saca su respuesta de la caída por celda bajo carga, y nunca llegó una carga suficiente, así que aquí no hay nada sobre esta batería ni a favor ni en contra. Repítelo y dale una de estas: rodar cincuenta metros acelerando de verdad, o apretar el freno trasero en el caballete y abrir gas, o enchufar el cargador medio minuto. La rueda girando al aire no es carga: el motor no tiene contra qué empujar, así que la corriente se queda casi en cero por mucho que gires el puño.",
   "inspectionFidelityNote": "Un test rápido detecta la estafa obvia y la celda mala; no mide capacidad real. Para capacidad real hace falta una descarga completa.",
   "inspectionCaveatsTitle": "Lo que este test no pudo ver",
   "inspectionCaveatNoHeavyLoad": "Sin carga fuerte: la caída por celda no se pudo medir.",
+  "inspectionCaveatHeavyWasCharge": "La carga fue un cargador, así que las celdas subieron en vez de bajar. La cuenta es la misma; la dirección no.",
   "inspectionCaveatNoLightLoad": "Sin carga ligera: el paso de las luces no ocurrió.",
   "inspectionCaveatRestNoisy": "El pack nunca estuvo quieto del todo: la foto en reposo es aproximada.",
   "inspectionCaveatNoRecovery": "La carga no se soltó: la recuperación no se midió.",

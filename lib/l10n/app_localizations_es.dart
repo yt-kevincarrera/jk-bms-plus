@@ -1868,6 +1868,15 @@ class AppL10nEs extends AppL10n {
   String get offlineTrips => 'Viajes';
 
   @override
+  String offlineSeeTrips(String count) {
+    return 'Ver los $count viajes';
+  }
+
+  @override
+  String get offlineNoTrips =>
+      'Todavía no hay viajes guardados de esta batería.';
+
+  @override
   String offlineTripsCount(String count) {
     return '$count guardados';
   }
@@ -2305,7 +2314,7 @@ class AppL10nEs extends AppL10n {
   String get etaDone => 'Está lleno';
 
   @override
-  String get etaNearlyThere => 'Ya casi';
+  String get etaCannotSay => 'No puedo decirlo';
 
   @override
   String get etaCounterAhead =>
@@ -2338,6 +2347,17 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get linkConnectingTitle => 'Conectando';
+
+  @override
+  String get linkGaveUpTitle => 'No pude reconectar';
+
+  @override
+  String linkGaveUpBody(String attempts) {
+    return 'Me detuve tras $attempts intentos. Cada intento fallido consume recursos Bluetooth de todo el teléfono, así que no sigue solo.';
+  }
+
+  @override
+  String get linkRetryNow => 'Reintentar';
 
   @override
   String linkReadingAge(String age) {
@@ -3011,7 +3031,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get inspectionStepHeavyBody =>
-      'Rueda trasera al aire y acelera, o 50 metros en la moto con el teléfono en el bolsillo, o el cargador conectado. Cualquiera sirve: la app mide la corriente.';
+      'Tres formas, cualquiera sirve: rodar 50 metros acelerando de verdad, o apretar el freno trasero en el caballete y abrir gas, o enchufar el cargador medio minuto. La rueda girando libre al aire NO sirve: el motor no tiene contra qué empujar y la corriente se queda casi en cero por mucho que gires el puño.';
 
   @override
   String get inspectionStepRecoveryTitle => 'Suelta todo y espera';
@@ -3032,8 +3052,8 @@ class AppL10nEs extends AppL10n {
   }
 
   @override
-  String inspectionLoadTooLow(String amps) {
-    return 'Muy poca corriente ($amps A). Dale más.';
+  String inspectionLoadTooLow(String amps, String need) {
+    return 'Veo $amps A y hacen falta $need A sostenidos.';
   }
 
   @override
@@ -3073,6 +3093,14 @@ class AppL10nEs extends AppL10n {
   String get inspectionLightProblem => 'No compres a ciegas: hay un problema';
 
   @override
+  String get inspectionLightUnmeasured =>
+      'Sin veredicto: nunca se cargó el pack';
+
+  @override
+  String get inspectionUnmeasuredBody =>
+      'Este test saca su respuesta de la caída por celda bajo carga, y nunca llegó una carga suficiente, así que aquí no hay nada sobre esta batería ni a favor ni en contra. Repítelo y dale una de estas: rodar cincuenta metros acelerando de verdad, o apretar el freno trasero en el caballete y abrir gas, o enchufar el cargador medio minuto. La rueda girando al aire no es carga: el motor no tiene contra qué empujar, así que la corriente se queda casi en cero por mucho que gires el puño.';
+
+  @override
   String get inspectionFidelityNote =>
       'Un test rápido detecta la estafa obvia y la celda mala; no mide capacidad real. Para capacidad real hace falta una descarga completa.';
 
@@ -3082,6 +3110,10 @@ class AppL10nEs extends AppL10n {
   @override
   String get inspectionCaveatNoHeavyLoad =>
       'Sin carga fuerte: la caída por celda no se pudo medir.';
+
+  @override
+  String get inspectionCaveatHeavyWasCharge =>
+      'La carga fue un cargador, así que las celdas subieron en vez de bajar. La cuenta es la misma; la dirección no.';
 
   @override
   String get inspectionCaveatNoLightLoad =>

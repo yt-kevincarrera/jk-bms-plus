@@ -35,6 +35,12 @@ class FakeLink implements BmsLink {
   LinkHealth get health => LinkHealth.unknown;
 
   @override
+  LinkRetryState get retry => LinkRetryState.none;
+
+  @override
+  Future<void> retryNow() async {}
+
+  @override
   Future<void> connect(String deviceId) async => connectedTo = deviceId;
 
   @override
