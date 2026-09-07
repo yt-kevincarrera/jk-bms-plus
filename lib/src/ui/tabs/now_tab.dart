@@ -10,6 +10,7 @@ import '../../bms_service.dart';
 import '../../metrics/charge_eta.dart';
 import '../../metrics/range_estimator.dart';
 import '../../metrics/range_outlook.dart';
+import '../../metrics/soc_trust.dart';
 import '../../model/bms_snapshot.dart';
 import '../theme.dart';
 import '../warning_labels.dart';
@@ -182,6 +183,24 @@ class _NowTabState extends State<NowTab> {
 
     final status = packStatusOf(s);
 
+    // Whether the charge percentage can be taken at face value. The gauge and
+    // the charge ETA ask the same question of the same reading, so they are
+    // never allowed to answer it differently.
+    final drift = SocTrust.defaults.check(
+      soc: s.soc,
+      current: s.current,
+      capacityAh: s.nominalCapacityAh,
+      highestCellVolts: s.cellVoltages.isEmpty ? null : s.maxCellVoltage,
+      lowestCellVolts: s.cellVoltages.isEmpty ? null : s.minCellVoltage,
+      full: SocTrust.fullAnchor(
+        soc100Volts: service.lastSettings?.soc100Voltage,
+        cellOvp: service.lastSettings?.cellOvp,
+      ),
+      empty: SocTrust.emptyAnchor(
+        soc0Volts: service.lastSettings?.soc0Voltage,
+      ),
+    );
+
     return ListView(
       padding: const EdgeInsets.only(bottom: 28),
       children: [
@@ -214,6 +233,11 @@ class _NowTabState extends State<NowTab> {
                   centreLabel: t.soc,
                   centreValue: '${s.soc.toStringAsFixed(0)}%',
                   subtitle: '${s.remainingCapacityAh.toStringAsFixed(1)} Ah',
+                  note: switch (drift) {
+                    SocDrift.aheadOfCells => t.socNoteAhead,
+                    SocDrift.behindCells => t.socNoteBehind,
+                    SocDrift.none => null,
+                  },
                   size: 166,
                 ),
               ),
@@ -624,7 +648,9 @@ class _FullPackRange extends StatelessWidget {
   }
 }
 
-/// Time until the pack is full, from what is going in right now.
+/// Time until the pack is full, from what is going in right now — or, when
+/// the BMS's charge counter has run ahead of the cells, the admission that
+/// there is no honest number to give.
 Widget _chargeEta(AppL10n t, BmsSnapshot s, BmsService service) {
   // Remaining over charge, which reads back the capacity the BMS is
   // configured with. That cancellation makes it useless as a measurement of
@@ -636,19 +662,33 @@ Widget _chargeEta(AppL10n t, BmsSnapshot s, BmsService service) {
       : null;
   if (capacity == null) return const SizedBox.shrink();
 
+  // What the counter gets checked against. Both are allowed to be missing —
+  // an empty cell list reads as 0 V, which is not a low cell, and the anchor
+  // only exists once a settings frame has arrived.
   final eta = const ChargeEtaEstimator().estimate(
     current: s.current,
     soc: s.soc,
     capacityAh: capacity,
+    highestCellVolts: s.cellVoltages.isEmpty ? null : s.maxCellVoltage,
+    fullAnchor: SocTrust.fullAnchor(
+      soc100Volts: service.lastSettings?.soc100Voltage,
+      cellOvp: service.lastSettings?.cellOvp,
+    ),
   );
   final left = eta.remaining;
-  if (left == null) return const SizedBox.shrink();
+  // No number and no reason to doubt one: nothing to say.
+  if (left == null && !eta.socLooksOptimistic) return const SizedBox.shrink();
 
-  final label = left == Duration.zero
-      ? t.etaDone
-      : left.inHours >= 1
-      ? '${left.inHours} h ${left.inMinutes % 60} min'
-      : '${left.inMinutes} min';
+  final String label;
+  if (eta.socLooksOptimistic || left == null) {
+    label = t.etaNearlyThere;
+  } else if (left == Duration.zero) {
+    label = t.etaDone;
+  } else if (left.inHours >= 1) {
+    label = '${left.inHours} h ${left.inMinutes % 60} min';
+  } else {
+    label = '${left.inMinutes} min';
+  }
 
   return Padding(
     padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -668,14 +708,24 @@ Widget _chargeEta(AppL10n t, BmsSnapshot s, BmsService service) {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  left == Duration.zero ? label : '${t.etaFull} $label',
+                  left == Duration.zero || eta.socLooksOptimistic
+                      ? label
+                      : '${t.etaFull} $label',
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppTheme.cool,
                   ),
                 ),
-                if (eta.isTapering && left != Duration.zero)
+                if (eta.socLooksOptimistic)
+                  Text(
+                    t.etaCounterAhead,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      color: AppTheme.textFaint,
+                    ),
+                  )
+                else if (eta.isTapering && left != Duration.zero)
                   Text(
                     t.etaTapering,
                     style: const TextStyle(

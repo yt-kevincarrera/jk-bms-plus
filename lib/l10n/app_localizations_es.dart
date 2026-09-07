@@ -1115,6 +1115,23 @@ class AppL10nEs extends AppL10n {
   }
 
   @override
+  String get adviceSocCounterAheadTitle =>
+      'El porcentaje de carga va por delante del pack';
+
+  @override
+  String adviceSocCounterAheadBody(String gap, String soc) {
+    return 'El BMS dice $soc %, pero la celda más alta está $gap V por debajo de donde termina una carga. Ese porcentaje no se mide: el BMS suma amperios por tiempo contra la capacidad que tiene configurada, y ese contador deriva. Se vuelve a anclar solo si dejas que una carga llegue hasta el corte de una sentada. Si el desajuste vuelve después de eso, la capacidad configurada no es la que tiene el pack: mídela con un test de capacidad antes de cambiarla.';
+  }
+
+  @override
+  String get adviceSocCounterBehindTitle => 'Queda más carga de la que dice';
+
+  @override
+  String adviceSocCounterBehindBody(String gap, String soc) {
+    return 'El BMS dice $soc %, pero la celda más baja está $gap V por encima de donde el propio BMS llama vacío. Hay batería aquí que la pantalla no está contando. Ese porcentaje no se mide: es amperios por tiempo contra la capacidad configurada, y ese contador deriva. Si se repite, la capacidad configurada se queda corta frente a la real: mídela con un test de capacidad antes de cambiarla.';
+  }
+
+  @override
   String get adviceHealthDecorativeTitle => 'El SOH del BMS no se mueve';
 
   @override
@@ -2288,6 +2305,19 @@ class AppL10nEs extends AppL10n {
   String get etaDone => 'Está lleno';
 
   @override
+  String get etaNearlyThere => 'Ya casi';
+
+  @override
+  String get etaCounterAhead =>
+      'el contador va por delante de las celdas, así que no doy minutos';
+
+  @override
+  String get socNoteAhead => 'el contador va por delante de las celdas';
+
+  @override
+  String get socNoteBehind => 'queda más de lo que dice';
+
+  @override
   String adviceDeepestSoFar(String from, String to) {
     return 'Lo más hondo hasta ahora: del $from % al $to %.';
   }
@@ -2849,6 +2879,25 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get evidenceReportedSoh => 'SOH según el BMS';
+
+  @override
+  String get evidenceReportedSoc => 'Carga según el BMS';
+
+  @override
+  String get evidenceSocFullAnchor => 'Donde termina la carga (por celda)';
+
+  @override
+  String get evidenceSocEmptyAnchor => 'Donde el BMS llama vacío (por celda)';
+
+  @override
+  String evidenceLowestCell(String cell) {
+    return 'Celda más baja (celda $cell)';
+  }
+
+  @override
+  String evidenceHighestCell(String cell) {
+    return 'Celda más alta (celda $cell)';
+  }
 
   @override
   String get evidenceImpliedCapacity =>

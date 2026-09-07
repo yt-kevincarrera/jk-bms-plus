@@ -248,6 +248,23 @@ class _EvidenceRow extends StatelessWidget {
     EvidenceKind.reportedCycles => (t.evidenceReportedCycles, whole(v)),
     EvidenceKind.equivalentCycles => (t.evidenceEquivalentCycles, whole(v)),
     EvidenceKind.reportedSoh => (t.evidenceReportedSoh, '${whole(v)} %'),
+    EvidenceKind.reportedSoc => (t.evidenceReportedSoc, '${whole(v)} %'),
+    EvidenceKind.highestCell => (
+      t.evidenceHighestCell('${e.cell ?? 0}'),
+      volts(v),
+    ),
+    EvidenceKind.lowestCell => (
+      t.evidenceLowestCell('${e.cell ?? 0}'),
+      volts(v),
+    ),
+    EvidenceKind.socFullAnchor => (
+      t.evidenceSocFullAnchor,
+      '${v.toStringAsFixed(3)} V',
+    ),
+    EvidenceKind.socEmptyAnchor => (
+      t.evidenceSocEmptyAnchor,
+      '${v.toStringAsFixed(3)} V',
+    ),
     EvidenceKind.impliedCapacity => (t.evidenceImpliedCapacity, ah(v)),
     EvidenceKind.catalogueCapacity => (t.evidenceCatalogueCapacity, ah(v)),
     EvidenceKind.capacityTests => (t.evidenceCapacityTests, whole(v)),
@@ -380,6 +397,8 @@ String adviceTitle(AppL10n t, Advice advice) {
     AdviceCode.imbalanceUnderLoad => t.adviceImbalanceUnderLoadTitle,
     AdviceCode.weakCellDominant => t.adviceWeakCellTitle,
     AdviceCode.cycleCounterInflated => t.adviceCycleInflatedTitle,
+    AdviceCode.socCounterAhead => t.adviceSocCounterAheadTitle,
+    AdviceCode.socCounterBehind => t.adviceSocCounterBehindTitle,
     AdviceCode.healthFigureDecorative => t.adviceHealthDecorativeTitle,
     AdviceCode.capacityBelowCatalogue => t.adviceCapacityBelowTitle,
     AdviceCode.noCapacityTestYet => t.adviceNoCapacityTestTitle,
@@ -493,6 +512,14 @@ String adviceBody(AppL10n t, Advice advice) {
     ),
     AdviceCode.cycleCounterInflated => t.adviceCycleInflatedBody(
       v.toStringAsFixed(1),
+    ),
+    AdviceCode.socCounterAhead => t.adviceSocCounterAheadBody(
+      v.toStringAsFixed(2),
+      f(EvidenceKind.reportedSoc, 0),
+    ),
+    AdviceCode.socCounterBehind => t.adviceSocCounterBehindBody(
+      v.toStringAsFixed(2),
+      f(EvidenceKind.reportedSoc, 0),
     ),
     AdviceCode.healthFigureDecorative => t.adviceHealthDecorativeBody,
     AdviceCode.capacityBelowCatalogue => t.adviceCapacityBelowBody(
