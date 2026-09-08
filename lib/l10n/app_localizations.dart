@@ -7399,6 +7399,54 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Cambiar'**
   String get representativeChange;
+
+  /// No description provided for @tripRemeasure.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver a medir'**
+  String get tripRemeasure;
+
+  /// No description provided for @tripRemeasureWhy.
+  ///
+  /// In es, this message translates to:
+  /// **'Si el Bluetooth se cortó durante el viaje, el consumo pudo quedar muy por debajo de lo real. Esto lo vuelve a calcular desde las lecturas guardadas del pack.'**
+  String get tripRemeasureWhy;
+
+  /// No description provided for @tripRemeasureDone.
+  ///
+  /// In es, this message translates to:
+  /// **'Medido de nuevo: {whPerKm} Wh/km, antes {before} Wh/km.'**
+  String tripRemeasureDone(String whPerKm, String before);
+
+  /// No description provided for @tripRemeasureSame.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya estaba bien medido. No hay nada que cambiar.'**
+  String get tripRemeasureSame;
+
+  /// No description provided for @tripRemeasureFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'No quedan lecturas suficientes para medir este viaje. Su consumo deja de contar para la autonomía.'**
+  String get tripRemeasureFailed;
+
+  /// No description provided for @tripUphill.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuesta arriba'**
+  String get tripUphill;
+
+  /// No description provided for @tripFlat.
+  ///
+  /// In es, this message translates to:
+  /// **'Llano'**
+  String get tripFlat;
+
+  /// No description provided for @tripDownhill.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuesta abajo'**
+  String get tripDownhill;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

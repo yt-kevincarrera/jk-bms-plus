@@ -241,10 +241,6 @@ class _TripScreenState extends State<TripScreen> {
                         '${trip.energyOutWh.toStringAsFixed(1)} Wh',
                       ),
                       InfoRow(
-                        t.tripEnergyIn,
-                        '${trip.energyInWh.toStringAsFixed(1)} Wh',
-                      ),
-                      InfoRow(
                         t.tripSocUsed,
                         trip.startSoc == null || snapshot == null
                             ? '--'

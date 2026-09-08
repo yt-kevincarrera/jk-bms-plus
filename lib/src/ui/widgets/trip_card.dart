@@ -142,8 +142,12 @@ class TripCard extends StatelessWidget {
                         '${_duration(trip.movingSeconds)} / '
                         '${_duration(trip.totalSeconds)}  ·  '
                         '${trip.maxSpeedKmh.toStringAsFixed(0)} km/h  ·  '
-                        '${(trip.startSoc - trip.endSoc).toStringAsFixed(0)} %'
-                        '${trip.climbM >= 5 ? "  ·  +${trip.climbM.toStringAsFixed(0)} m" : ""}',
+                        // No climb figure here any more. The uphill and
+                        // downhill distances that replaced it are worked out
+                        // from the track, and a list of cards is the one place
+                        // that cannot afford to read a thousand points per row
+                        // to fill in one line of small print.
+                        '${(trip.startSoc - trip.endSoc).toStringAsFixed(0)} %',
                         style: const TextStyle(
                           fontSize: 11.5,
                           color: AppTheme.textSecondary,
