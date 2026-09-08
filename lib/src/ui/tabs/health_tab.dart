@@ -12,7 +12,9 @@ import '../../model/bms_snapshot.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../../metrics/advice_engine.dart';
+import '../../metrics/advice_grouping.dart';
 import '../../metrics/snapshot_history.dart';
+import '../../pack/pack_baseline.dart';
 import '../../license/entitlements.dart';
 import '../widgets/advice_list.dart';
 import '../widgets/pro_gate.dart';
@@ -45,6 +47,16 @@ class _HealthTabState extends State<HealthTab> {
   /// short to say anything either way. Read once with the degradation.
   List<CellDrift> _drift = const [];
 
+  /// The pack as it was on day one, for the one resistance figure worth
+  /// showing.
+  ///
+  /// The card this replaced reported how far the worst cell's resistance sat
+  /// above the median *today*, which on a real pack read +2% against a
+  /// warning threshold of +40% and would have read +2% for ever. Cells differ
+  /// a little; that they differ is not news. One climbing away from where it
+  /// started is.
+  PackBaseline? _baseline;
+
   @override
   void initState() {
     super.initState();
@@ -76,10 +88,12 @@ class _HealthTabState extends State<HealthTab> {
       advertisedAh: widget.service.catalogueCapacityAh,
     );
     final drift = const CellDriftAnalysis().analyse(readings);
+    final baseline = await repo.baseline(device);
     if (mounted) {
       setState(() {
         _degradation = result;
         _drift = drift;
+        _baseline = baseline;
       });
     }
   }
@@ -235,69 +249,51 @@ class _HealthTabState extends State<HealthTab> {
             ),
           ),
         ],
+        // Three of the old grid cards -- which cell is weakest, what the
+        // imbalance costs, and how the resistances sit -- were three views of
+        // one thing, scattered across a grid as though they were three
+        // subjects. One block says more, and has room to say what the
+        // resistance figure actually means.
+        _WeakCellSection(
+          report: report,
+          comparison: _baseline == null
+              ? null
+              : BaselineComparison.compute(baseline: _baseline!, now: s),
+          t: t,
+        ),
         const SizedBox(height: 14),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
+          // Four across two rows rather than nine across three. Three of the
+          // nine said nothing a rider could act on, and with four left a
+          // three-wide grid strands one card alone on the second row.
           child: GridView.count(
-            crossAxisCount: 3,
+            crossAxisCount: 2,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             mainAxisSpacing: 8,
             crossAxisSpacing: 8,
-            childAspectRatio: 1.85,
+            childAspectRatio: 2.6,
             children: [
-              StatCard(
-                label: t.healthCardShortOfAdvert,
-                value: report.shortOfAdvertisedFraction == null
-                    ? '--'
-                    : (report.shortOfAdvertisedFraction! * 100).toStringAsFixed(
-                        1,
-                      ),
-                unit: '%',
-                color: report.shortOfAdvertisedFraction == null
-                    ? AppTheme.textFaint
-                    : _lossTone(report.shortOfAdvertisedFraction! * 100),
-                emphasis: true,
-              ),
+              // "Frente al anuncio" used to lead this grid. It is gone, and
+              // nothing was lost: the degradation section above already says
+              // the same thing in a sentence that explains it -- sold as 45,
+              // best it has held is 40, and that is not wear. A stat card
+              // repeating the percentage was a duplicate of a better line.
+              //
+              // "Contador infla" is gone too, folded into the cycle count
+              // below. As a bare multiplier it read 0.53, 0.91, 0.83, 0.70 and
+              // 0.96 on consecutive days of a real pack: integer rounding
+              // against three counted cycles, every value under 1, on a card
+              // whose name claimed the opposite.
               StatCard(
                 label: t.healthCardCycles,
-                value: report.equivalentFullCycles.toStringAsFixed(0),
-              ),
-              StatCard(
-                label: t.healthCardInflation,
-                value: report.cycleInflation == null
-                    ? '--'
-                    : report.cycleInflation!.toStringAsFixed(2),
-                unit: 'x',
-                color: (report.cycleInflation ?? 1) > 1.4
-                    ? AppTheme.watch
-                    : null,
-              ),
-              StatCard(
-                label: t.healthCardImbalance,
-                value: report.imbalanceLossFraction == null
-                    ? '--'
-                    : (report.imbalanceLossFraction! * 100).toStringAsFixed(1),
-                unit: '%',
-                color: (report.imbalanceLossFraction ?? 0) > 0.05
-                    ? AppTheme.watch
-                    : null,
-                emphasis: true,
-              ),
-              StatCard(
-                label: t.healthCardWeakest,
-                value: '${report.weakestCellIndex}',
-                color: AppTheme.watch,
-              ),
-              StatCard(
-                label: t.healthCardSpread,
-                value: report.resistanceSpreadPercent == null
-                    ? '--'
-                    : '+${report.resistanceSpreadPercent!.toStringAsFixed(0)}',
-                unit: '%',
-                color: (report.resistanceSpreadPercent ?? 0) > 40
-                    ? AppTheme.watch
-                    : null,
+                value: report.equivalentFullCycles.toStringAsFixed(1),
+                footnote: report.bmsCycleCountWorthQuoting == null
+                    ? null
+                    : t.healthCardCyclesBms(
+                        '${report.bmsCycleCountWorthQuoting}',
+                      ),
               ),
               StatCard(
                 label: t.healthCardUsable,
@@ -325,6 +321,9 @@ class _HealthTabState extends State<HealthTab> {
         ProGate(
           feature: Feature.verdicts,
           child: AdviceList(
+            // This screen asks about all six, so a subject that produced
+            // nothing is genuinely unmeasured and worth saying so.
+            expected: AdviceSubject.values.toSet(),
             advice: const AdviceEngine().evaluate(
               snapshot: s,
               report: report,
@@ -404,9 +403,72 @@ class _HealthTabState extends State<HealthTab> {
     return AppTheme.bad;
   }
 
-  Color _lossTone(double percent) {
-    if (percent > 20) return AppTheme.bad;
-    if (percent > 8) return AppTheme.watch;
-    return AppTheme.good;
+}
+
+/// Everything about the cell that decides when the pack stops.
+///
+/// Replaces three grid cards that were three views of one subject: which cell
+/// is weakest, what its imbalance strands, and how the resistances sit. The
+/// third of those was the one nobody could use -- how far the worst cell sat
+/// above the median today, which on a real pack read +2% against a warning
+/// threshold of +40%, and would have read +2% for ever. Here it is a rise
+/// since day one instead, which is a cell doing something rather than cells
+/// merely differing.
+class _WeakCellSection extends StatelessWidget {
+  const _WeakCellSection({
+    required this.report,
+    required this.comparison,
+    required this.t,
+  });
+
+  final PackHealthReport report;
+
+  /// Null with no day-one snapshot stored, in which case the resistance row
+  /// says what is missing rather than showing a dash.
+  final BaselineComparison? comparison;
+
+  final AppL10n t;
+
+  @override
+  Widget build(BuildContext context) {
+    final strandedFraction = report.imbalanceLossFraction;
+    final strandedAh = report.imbalanceLossAh;
+    final rise = comparison?.worstResistanceRise;
+
+    final String resistance;
+    if (comparison == null) {
+      resistance = t.healthWeakCellResistanceNoBaseline;
+    } else if (rise == null) {
+      resistance = t.healthWeakCellResistanceFlat;
+    } else {
+      resistance = t.healthWeakCellResistanceUp(
+        (rise.resistanceRise! * 100).toStringAsFixed(0),
+        '${rise.index}',
+      );
+    }
+
+    return Section(
+      title: t.healthWeakCell,
+      intro: t.healthWeakCellWhy,
+      children: [
+        InfoRow(t.healthWeakCellWhich, '${report.weakestCellIndex}'),
+        InfoRow(
+          t.healthWeakCellStrands,
+          strandedFraction == null
+              ? '--'
+              : '${(strandedFraction * 100).toStringAsFixed(1)} %'
+                  '${strandedAh == null ? "" : "  ·  ${strandedAh.toStringAsFixed(1)} Ah"}',
+          dim: strandedFraction == null,
+          valueColor: (strandedFraction ?? 0) > 0.05 ? AppTheme.watch : null,
+        ),
+        InfoRow(
+          t.healthWeakCellResistance,
+          resistance,
+          dim: rise == null,
+          valueColor: rise == null ? null : AppTheme.watch,
+          last: true,
+        ),
+      ],
+    );
   }
 }

@@ -240,16 +240,6 @@ void main() {
       expect(r.imbalanceLossAh, greaterThan(9));
     });
 
-    test('ranks the worst cell resistance against the median', () {
-      final resistances = List.filled(20, 0.0025);
-      resistances[6] = 0.0050;
-      final r = PackHealthReport.from(
-        snapshot: snapshot(resistances: resistances),
-        catalogueCapacityAh: null,
-      );
-      expect(r.resistanceSpreadPercent, closeTo(100, 1));
-    });
-
     test('flags a health figure that never moves', () {
       final decorative = PackHealthReport.from(
         catalogueCapacityAh: null,

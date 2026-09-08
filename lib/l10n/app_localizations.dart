@@ -1663,30 +1663,6 @@ abstract class AppL10n {
   /// **'Ciclos reales'**
   String get healthCardCycles;
 
-  /// No description provided for @healthCardInflation.
-  ///
-  /// In es, this message translates to:
-  /// **'Contador infla'**
-  String get healthCardInflation;
-
-  /// No description provided for @healthCardImbalance.
-  ///
-  /// In es, this message translates to:
-  /// **'Desbalance'**
-  String get healthCardImbalance;
-
-  /// No description provided for @healthCardWeakest.
-  ///
-  /// In es, this message translates to:
-  /// **'Celda que manda'**
-  String get healthCardWeakest;
-
-  /// No description provided for @healthCardSpread.
-  ///
-  /// In es, this message translates to:
-  /// **'Peor resistencia'**
-  String get healthCardSpread;
-
   /// No description provided for @healthCardUsable.
   ///
   /// In es, this message translates to:
@@ -4530,12 +4506,6 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Una medición hasta ahora: {ah} Ah. La segunda, dentro de unos meses, es la que la convierte en desgaste.'**
   String offlineHealthOneTest(String ah);
-
-  /// No description provided for @healthCardShortOfAdvert.
-  ///
-  /// In es, this message translates to:
-  /// **'Frente al anuncio'**
-  String get healthCardShortOfAdvert;
 
   /// No description provided for @systemDrops.
   ///
@@ -7447,6 +7417,120 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Cuesta abajo'**
   String get tripDownhill;
+
+  /// No description provided for @healthCardCyclesBms.
+  ///
+  /// In es, this message translates to:
+  /// **'el BMS dice {n}'**
+  String healthCardCyclesBms(String n);
+
+  /// No description provided for @healthWeakCell.
+  ///
+  /// In es, this message translates to:
+  /// **'La celda que manda'**
+  String get healthWeakCell;
+
+  /// No description provided for @healthWeakCellWhy.
+  ///
+  /// In es, this message translates to:
+  /// **'El pack se apaga cuando la celda más baja llega al corte, no cuando la media llega. Todo lo que las demás todavía tienen por encima de ese punto no lo vas a usar.'**
+  String get healthWeakCellWhy;
+
+  /// No description provided for @healthWeakCellWhich.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuál es'**
+  String get healthWeakCellWhich;
+
+  /// No description provided for @healthWeakCellStrands.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que deja sin usar'**
+  String get healthWeakCellStrands;
+
+  /// No description provided for @healthWeakCellResistance.
+  ///
+  /// In es, this message translates to:
+  /// **'Resistencia desde el día uno'**
+  String get healthWeakCellResistance;
+
+  /// No description provided for @healthWeakCellResistanceUp.
+  ///
+  /// In es, this message translates to:
+  /// **'+{pct} % en la celda {cell}'**
+  String healthWeakCellResistanceUp(String pct, String cell);
+
+  /// No description provided for @healthWeakCellResistanceFlat.
+  ///
+  /// In es, this message translates to:
+  /// **'Ninguna se ha movido'**
+  String get healthWeakCellResistanceFlat;
+
+  /// No description provided for @healthWeakCellResistanceNoBaseline.
+  ///
+  /// In es, this message translates to:
+  /// **'Hace falta una foto del día uno para comparar'**
+  String get healthWeakCellResistanceNoBaseline;
+
+  /// No description provided for @subjectCells.
+  ///
+  /// In es, this message translates to:
+  /// **'Celdas'**
+  String get subjectCells;
+
+  /// No description provided for @subjectCapacity.
+  ///
+  /// In es, this message translates to:
+  /// **'Capacidad'**
+  String get subjectCapacity;
+
+  /// No description provided for @subjectRange.
+  ///
+  /// In es, this message translates to:
+  /// **'Autonomía'**
+  String get subjectRange;
+
+  /// No description provided for @subjectTemperature.
+  ///
+  /// In es, this message translates to:
+  /// **'Temperatura'**
+  String get subjectTemperature;
+
+  /// No description provided for @subjectConfiguration.
+  ///
+  /// In es, this message translates to:
+  /// **'Configuración'**
+  String get subjectConfiguration;
+
+  /// No description provided for @subjectBmsClaims.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que el BMS dice de sí mismo'**
+  String get subjectBmsClaims;
+
+  /// No description provided for @adviceCheckedAllFine.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisé {subjects}. Todo bien.'**
+  String adviceCheckedAllFine(String subjects);
+
+  /// No description provided for @adviceCheckedSomeFine.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisé {subjects}: bien.'**
+  String adviceCheckedSomeFine(String subjects);
+
+  /// No description provided for @adviceNotChecked.
+  ///
+  /// In es, this message translates to:
+  /// **'De {subjects} todavía no puedo decir nada.'**
+  String adviceNotChecked(String subjects);
+
+  /// No description provided for @adviceCaveatsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuánto vale esta medición'**
+  String get adviceCaveatsTitle;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

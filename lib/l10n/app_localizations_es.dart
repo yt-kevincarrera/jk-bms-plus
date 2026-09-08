@@ -874,18 +874,6 @@ class AppL10nEs extends AppL10n {
   String get healthCardCycles => 'Ciclos reales';
 
   @override
-  String get healthCardInflation => 'Contador infla';
-
-  @override
-  String get healthCardImbalance => 'Desbalance';
-
-  @override
-  String get healthCardWeakest => 'Celda que manda';
-
-  @override
-  String get healthCardSpread => 'Peor resistencia';
-
-  @override
   String get healthCardUsable => 'Energía utilizable';
 
   @override
@@ -2560,9 +2548,6 @@ class AppL10nEs extends AppL10n {
   String offlineHealthOneTest(String ah) {
     return 'Una medición hasta ahora: $ah Ah. La segunda, dentro de unos meses, es la que la convierte en desgaste.';
   }
-
-  @override
-  String get healthCardShortOfAdvert => 'Frente al anuncio';
 
   @override
   String get systemDrops => 'Caídas del enlace';
@@ -4368,4 +4353,73 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get tripDownhill => 'Cuesta abajo';
+
+  @override
+  String healthCardCyclesBms(String n) {
+    return 'el BMS dice $n';
+  }
+
+  @override
+  String get healthWeakCell => 'La celda que manda';
+
+  @override
+  String get healthWeakCellWhy =>
+      'El pack se apaga cuando la celda más baja llega al corte, no cuando la media llega. Todo lo que las demás todavía tienen por encima de ese punto no lo vas a usar.';
+
+  @override
+  String get healthWeakCellWhich => 'Cuál es';
+
+  @override
+  String get healthWeakCellStrands => 'Lo que deja sin usar';
+
+  @override
+  String get healthWeakCellResistance => 'Resistencia desde el día uno';
+
+  @override
+  String healthWeakCellResistanceUp(String pct, String cell) {
+    return '+$pct % en la celda $cell';
+  }
+
+  @override
+  String get healthWeakCellResistanceFlat => 'Ninguna se ha movido';
+
+  @override
+  String get healthWeakCellResistanceNoBaseline =>
+      'Hace falta una foto del día uno para comparar';
+
+  @override
+  String get subjectCells => 'Celdas';
+
+  @override
+  String get subjectCapacity => 'Capacidad';
+
+  @override
+  String get subjectRange => 'Autonomía';
+
+  @override
+  String get subjectTemperature => 'Temperatura';
+
+  @override
+  String get subjectConfiguration => 'Configuración';
+
+  @override
+  String get subjectBmsClaims => 'Lo que el BMS dice de sí mismo';
+
+  @override
+  String adviceCheckedAllFine(String subjects) {
+    return 'Revisé $subjects. Todo bien.';
+  }
+
+  @override
+  String adviceCheckedSomeFine(String subjects) {
+    return 'Revisé $subjects: bien.';
+  }
+
+  @override
+  String adviceNotChecked(String subjects) {
+    return 'De $subjects todavía no puedo decir nada.';
+  }
+
+  @override
+  String get adviceCaveatsTitle => 'Cuánto vale esta medición';
 }

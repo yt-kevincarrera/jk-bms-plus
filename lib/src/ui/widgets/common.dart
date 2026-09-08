@@ -577,6 +577,7 @@ class StatCard extends StatelessWidget {
     required this.value,
     this.unit,
     this.color,
+    this.footnote,
     this.emphasis = false,
     super.key,
   });
@@ -585,6 +586,11 @@ class StatCard extends StatelessWidget {
   final String value;
   final String? unit;
   final Color? color;
+
+  /// A third line, under the label, for context the figure needs but cannot
+  /// carry. Written for putting the BMS's own claim beside a measured figure,
+  /// which used to be a bare multiplier nobody could read.
+  final String? footnote;
 
   /// Draws the border in [color] too, for the one or two that matter most.
   final bool emphasis;
@@ -642,6 +648,20 @@ class StatCard extends StatelessWidget {
               color: AppTheme.textSecondary,
             ),
           ),
+          if (footnote != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 3),
+              child: Text(
+                footnote!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 10,
+                  height: 1.2,
+                  color: AppTheme.textFaint,
+                ),
+              ),
+            ),
         ],
       ),
     );

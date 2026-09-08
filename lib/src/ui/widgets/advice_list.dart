@@ -2,20 +2,28 @@ import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../metrics/advice_engine.dart';
+import '../../metrics/advice_grouping.dart';
 import '../theme.dart';
 import 'common.dart';
 
-/// Renders what the advice engine found.
+/// Renders what the advice engine found, one card per subject.
 ///
 /// The engine deals in codes; the wording lives here, so the analysis has no
 /// opinion about what language the rider reads. Every item opens on a tap to
 /// show the measured facts it rests on: a sentence about a battery that cannot
 /// point at a number is an opinion, and this app does not offer those.
+///
+/// It used to draw one flat list ordered by nothing but severity, which put a
+/// cause and its price in different places with unrelated findings between
+/// them. Twenty rows, and several of them reading as if they said the same
+/// thing. Grouping by [AdviceSubject] closes both halves of that; see
+/// `advice_grouping.dart` for why the subjects are the ones they are.
 class AdviceList extends StatelessWidget {
   const AdviceList({
     required this.advice,
     this.title,
     this.showHonestyNote = true,
+    this.expected = const {},
     super.key,
   });
 
@@ -27,6 +35,13 @@ class AdviceList extends StatelessWidget {
 
   /// Whether to close with the line about editable BMS figures.
   final bool showHonestyNote;
+
+  /// The subjects this screen actually evaluates.
+  ///
+  /// Only these can be reported as not yet measurable. Without it the
+  /// configuration audit would announce that it has nothing to say about range
+  /// on a screen that never asks about range.
+  final Set<AdviceSubject> expected;
 
   @override
   Widget build(BuildContext context) {
@@ -61,16 +76,33 @@ class AdviceList extends StatelessWidget {
       );
     }
 
+    final grouped = groupAdvice(advice, expected: expected);
+
     // The accent follows the worst thing said. Good news alone reads calm.
-    final worst = advice.first.level;
+    final worst = grouped.cards.isEmpty
+        ? AdviceLevel.good
+        : grouped.cards.first.level;
     return Section(
       title: heading,
       accent: accentFor(worst),
       children: [
-        for (final item in advice)
+        // Above the cards, because it is what tells the rider that a subject
+        // absent from the list was looked at rather than skipped. That
+        // distinction is the price of not drawing a green card per subject.
+        if (grouped.hasSummary)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: AdviceItem(advice: item),
+            child: _SummaryLine(grouped: grouped, t: t),
+          ),
+        for (final card in grouped.cards)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _SubjectCard(card: card, t: t),
+          ),
+        if (grouped.caveats.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _Caveats(caveats: grouped.caveats, t: t),
           ),
         if (showHonestyNote)
           Padding(
@@ -94,6 +126,149 @@ class AdviceList extends StatelessWidget {
     AdviceLevel.info => AppTheme.good,
     AdviceLevel.good => AppTheme.good,
   };
+}
+
+/// The name of a subject, in the rider's language.
+String subjectName(AppL10n t, AdviceSubject subject) => switch (subject) {
+  AdviceSubject.cells => t.subjectCells,
+  AdviceSubject.capacity => t.subjectCapacity,
+  AdviceSubject.range => t.subjectRange,
+  AdviceSubject.temperature => t.subjectTemperature,
+  AdviceSubject.configuration => t.subjectConfiguration,
+  AdviceSubject.bmsClaims => t.subjectBmsClaims,
+};
+
+/// Joins subject names the way a person would say them.
+///
+/// "celdas, capacidad y autonomía" rather than a comma-separated dump: the
+/// line is a sentence the rider reads, not a list they parse.
+String _listOf(AppL10n t, List<AdviceSubject> subjects) {
+  final names = subjects.map((s) => subjectName(t, s).toLowerCase()).toList();
+  if (names.length == 1) return names.single;
+  return '${names.sublist(0, names.length - 1).join(', ')} y ${names.last}';
+}
+
+/// One subject: its worst finding as the heading, the rest underneath.
+class _SubjectCard extends StatelessWidget {
+  const _SubjectCard({required this.card, required this.t});
+
+  final AdviceCard card;
+  final AppL10n t;
+
+  @override
+  Widget build(BuildContext context) {
+    final tone = AdviceList.accentFor(card.level);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(width: 3, height: 12, color: tone),
+            const SizedBox(width: 8),
+            Text(
+              subjectName(t, card.subject).toUpperCase(),
+              style: const TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
+                color: AppTheme.textFaint,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        for (final item in card.all)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: AdviceItem(advice: item),
+          ),
+      ],
+    );
+  }
+}
+
+/// What was looked at and had nothing to say, and what could not be looked at.
+class _SummaryLine extends StatelessWidget {
+  const _SummaryLine({required this.grouped, required this.t});
+
+  final GroupedAdvice grouped;
+  final AppL10n t;
+
+  @override
+  Widget build(BuildContext context) {
+    final parts = <String>[
+      if (grouped.checkedAndFine.isNotEmpty)
+        // Two forms on purpose. With nothing pending, the line can close with
+        // "todo bien"; with something pending it cannot, because that would
+        // claim more than was measured.
+        grouped.cards.isEmpty && grouped.notChecked.isEmpty
+            ? t.adviceCheckedAllFine(_listOf(t, grouped.checkedAndFine))
+            : t.adviceCheckedSomeFine(_listOf(t, grouped.checkedAndFine)),
+      if (grouped.notChecked.isNotEmpty)
+        t.adviceNotChecked(_listOf(t, grouped.notChecked)),
+    ];
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(top: 1, right: 8),
+          child: Icon(Icons.done_all, size: 14, color: AppTheme.textFaint),
+        ),
+        Expanded(
+          child: Text(
+            parts.join(' '),
+            style: const TextStyle(
+              fontSize: 11.5,
+              height: 1.45,
+              color: AppTheme.textFaint,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Findings about the measurement rather than about the battery.
+///
+/// Kept at the foot and visibly apart. Mixed in among findings about cells,
+/// "no heavy load was seen" reads as a fault in the pack and makes a reader
+/// doubt the findings that are sound.
+class _Caveats extends StatelessWidget {
+  const _Caveats({required this.caveats, required this.t});
+
+  final List<Advice> caveats;
+  final AppL10n t;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        t.adviceCaveatsTitle.toUpperCase(),
+        style: const TextStyle(
+          fontSize: 10.5,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.8,
+          color: AppTheme.textFaint,
+        ),
+      ),
+      const SizedBox(height: 6),
+      for (final item in caveats)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Text(
+            adviceBody(t, item),
+            style: const TextStyle(
+              fontSize: 11.5,
+              height: 1.45,
+              color: AppTheme.textFaint,
+            ),
+          ),
+        ),
+    ],
+  );
 }
 
 /// One verdict: a title, a sentence, and the facts behind it on a tap.

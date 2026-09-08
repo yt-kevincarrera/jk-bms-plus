@@ -20,7 +20,6 @@ class PackHealthReport {
     required this.imbalanceLossAh,
     required this.imbalanceLossFraction,
     required this.weakestCellIndex,
-    required this.resistanceSpreadPercent,
     required this.reportedSoh,
     required this.capacityMeaningful,
   });
@@ -60,7 +59,13 @@ class PackHealthReport {
         : null;
 
     // The honest cycle count: total charge throughput divided by pack capacity.
-    // The BMS counter increments on partial charges, so it always reads higher.
+    //
+    // It used to say here that the BMS counter always reads higher, because it
+    // increments on partial charges. It does not. On a real pack it read 1, 1,
+    // 2, 2, 2, 2, 2 and 3 against honest counts of 1.9 to 3.1 -- lower every
+    // time, because the counter is a whole number and this is not. Which way
+    // the two disagree is not something to assume; see
+    // [bmsCycleCountWorthQuoting] for what to do about it.
     final equivalent = configured > 0
         ? snapshot.cycleCapacityAh / configured
         : 0.0;
@@ -79,18 +84,6 @@ class PackHealthReport {
       imbalanceAh = snapshot.remainingCapacityAh * imbalanceFraction;
     }
 
-    // Resistance spread: the worst cell against the median, in percent.
-    double? spread;
-    final resistances = [
-      for (final r in snapshot.cellResistances)
-        if (r > 0) r,
-    ]..sort();
-    if (resistances.length >= 3) {
-      final median = resistances[resistances.length ~/ 2];
-      final worst = resistances.last;
-      if (median > 0) spread = (worst / median - 1) * 100;
-    }
-
     return PackHealthReport._(
       impliedCapacityAh: implied,
       configuredCapacityAh: configured,
@@ -102,7 +95,6 @@ class PackHealthReport {
       imbalanceLossAh: imbalanceAh,
       imbalanceLossFraction: imbalanceFraction,
       weakestCellIndex: snapshot.minCellIndex,
-      resistanceSpreadPercent: spread,
       reportedSoh: snapshot.soh,
       capacityMeaningful: meaningful,
     );
@@ -139,15 +131,36 @@ class PackHealthReport {
   /// How many times higher the BMS counter reads than the honest figure.
   final double? cycleInflation;
 
+  /// Honest cycles the pack must have on it before the BMS's own count is
+  /// worth putting beside it.
+  ///
+  /// The BMS counts in whole numbers while [equivalentFullCycles] runs in
+  /// decimals, so on a young pack the difference between them is rounding and
+  /// nothing else. On the pack that prompted this the ratio read 0.53, 0.91,
+  /// 0.83, 0.70 and 0.96 on consecutive days -- every one of them under 1, on
+  /// a card that called itself "counter inflates" -- because three counted
+  /// cycles were being compared against 3.1 honest ones.
+  ///
+  /// Twenty is where one cycle of disagreement stops being able to swing the
+  /// comparison by more than a few percent.
+  static const double cycleComparisonFloor = 20;
+
+  /// The BMS's cycle count, when quoting it alongside the honest figure says
+  /// something. Null while it would only be showing integer rounding.
+  ///
+  /// This is the figure worth having when somebody quotes a cycle count at
+  /// you: a pack advertised at 800 cycles whose throughput is 320 pack-fulls
+  /// has done 320, and the two numbers side by side say so without anyone
+  /// having to interpret a multiplier.
+  int? get bmsCycleCountWorthQuoting =>
+      equivalentFullCycles >= cycleComparisonFloor ? reportedCycles : null;
+
   /// Amp-hours stranded above cutoff in the healthier cells.
   final double? imbalanceLossAh;
   final double? imbalanceLossFraction;
 
   /// 1-based index of the cell that will hit cutoff first.
   final int weakestCellIndex;
-
-  /// How far above the median the worst cell's resistance sits, in percent.
-  final double? resistanceSpreadPercent;
 
   final double reportedSoh;
 

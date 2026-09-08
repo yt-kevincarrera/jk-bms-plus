@@ -874,18 +874,6 @@ class AppL10nEn extends AppL10n {
   String get healthCardCycles => 'Real cycles';
 
   @override
-  String get healthCardInflation => 'Counter inflates';
-
-  @override
-  String get healthCardImbalance => 'Imbalance';
-
-  @override
-  String get healthCardWeakest => 'Cell in charge';
-
-  @override
-  String get healthCardSpread => 'Worst resistance';
-
-  @override
   String get healthCardUsable => 'Usable energy';
 
   @override
@@ -2549,9 +2537,6 @@ class AppL10nEn extends AppL10n {
   String offlineHealthOneTest(String ah) {
     return 'One measurement so far: $ah Ah. A second one, months from now, is what turns it into wear.';
   }
-
-  @override
-  String get healthCardShortOfAdvert => 'Vs. advertised';
 
   @override
   String get systemDrops => 'Link drops';
@@ -4346,4 +4331,73 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get tripDownhill => 'Downhill';
+
+  @override
+  String healthCardCyclesBms(String n) {
+    return 'the BMS says $n';
+  }
+
+  @override
+  String get healthWeakCell => 'The cell that decides';
+
+  @override
+  String get healthWeakCellWhy =>
+      'The pack stops when the lowest cell reaches cutoff, not when the average does. Whatever the others still hold above that point is not yours to use.';
+
+  @override
+  String get healthWeakCellWhich => 'Which one';
+
+  @override
+  String get healthWeakCellStrands => 'What it strands';
+
+  @override
+  String get healthWeakCellResistance => 'Resistance since day one';
+
+  @override
+  String healthWeakCellResistanceUp(String pct, String cell) {
+    return '+$pct % on cell $cell';
+  }
+
+  @override
+  String get healthWeakCellResistanceFlat => 'Nobody has moved';
+
+  @override
+  String get healthWeakCellResistanceNoBaseline =>
+      'Needs a day-one snapshot to compare against';
+
+  @override
+  String get subjectCells => 'Cells';
+
+  @override
+  String get subjectCapacity => 'Capacity';
+
+  @override
+  String get subjectRange => 'Range';
+
+  @override
+  String get subjectTemperature => 'Temperature';
+
+  @override
+  String get subjectConfiguration => 'Configuration';
+
+  @override
+  String get subjectBmsClaims => 'What the BMS says about itself';
+
+  @override
+  String adviceCheckedAllFine(String subjects) {
+    return 'Checked $subjects. All fine.';
+  }
+
+  @override
+  String adviceCheckedSomeFine(String subjects) {
+    return 'Checked $subjects: fine.';
+  }
+
+  @override
+  String adviceNotChecked(String subjects) {
+    return 'Nothing to say about $subjects yet.';
+  }
+
+  @override
+  String get adviceCaveatsTitle => 'What this measurement is worth';
 }
