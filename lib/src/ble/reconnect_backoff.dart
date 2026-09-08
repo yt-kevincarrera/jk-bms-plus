@@ -70,6 +70,20 @@ class ReconnectBackoff {
     return grown > maxDelay ? maxDelay : grown;
   }
 
+  /// [nextDelay], but never shorter than [floor].
+  ///
+  /// For a caller that knows something about *this* retry that the ledger does
+  /// not: letting go of a mute link and coming straight back gives the module
+  /// no time to notice it was let go, so that path names three seconds. What
+  /// it must not do is name a delay *instead of* asking, which is what it used
+  /// to do -- that skipped [hasGivenUp] as well, and a loop that never asks
+  /// whether to stop never stops.
+  Duration? nextDelayAtLeast(Duration? floor) {
+    final grown = nextDelay();
+    if (grown == null || floor == null) return grown;
+    return floor > grown ? floor : grown;
+  }
+
   void recordFailure() => _failures++;
 
   /// The pack answered. Everything the failures implied is disproved.

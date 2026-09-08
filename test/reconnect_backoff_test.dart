@@ -88,6 +88,41 @@ void main() {
     });
   });
 
+  group('a caller that names its own pause', () {
+    // The mute-link reset. It knows 400 ms is too quick for a module that has
+    // to notice it was let go, and it knows nothing about how many attempts
+    // have already failed. So it raises the floor and nothing else.
+    const mutePause = Duration(seconds: 3);
+
+    test('gets its pause when the backoff would be quicker', () {
+      final backoff = ReconnectBackoff();
+      expect(backoff.nextDelayAtLeast(mutePause), mutePause);
+    });
+
+    test('does not shorten a backoff that has grown past it', () {
+      final backoff = ReconnectBackoff();
+      for (var i = 0; i < 5; i++) {
+        backoff.recordFailure();
+      }
+      final grown = backoff.nextDelay()!;
+      expect(grown, greaterThan(mutePause));
+      expect(backoff.nextDelayAtLeast(mutePause), grown);
+    });
+
+    test('cannot talk the loop out of stopping', () {
+      // The bug this is here for. A pack that accepts the connection and then
+      // says nothing was let go and reconnected every twenty-three seconds,
+      // for ever, because naming a pause skipped the question of whether to
+      // ask again at all -- and every one of those attempts spends a
+      // connection the phone does not get back.
+      final backoff = ReconnectBackoff();
+      for (var i = 0; i < backoff.giveUpAfter; i++) {
+        backoff.recordFailure();
+      }
+      expect(backoff.nextDelayAtLeast(mutePause), isNull);
+    });
+  });
+
   group('a rider who taps retry', () {
     test('gets one more go after it has given up', () {
       // Restarting Bluetooth, or walking back to the bike, is exactly what
