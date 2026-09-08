@@ -291,13 +291,22 @@ class BmsRepository {
     bool integratedNothing(Trip t) =>
         t.energySource == EnergySource.integrated.name && t.energyOutWh <= 0;
 
+    // A ride the recorder itself flagged as measured across only part of its
+    // length. It carries an amp-hour figure of null and an energy of zero, so
+    // it would not be caught by the clause above on its own, and it is worth
+    // catching: the readings are on disk and the brackets either side of the
+    // ride can still measure it.
+    bool partiallyMeasured(Trip t) =>
+        t.energySource == EnergySource.partialCoulombCount.name;
+
     final stale = [
       for (final t in trips)
         if (t.distanceKm > 0 &&
-            t.ahOut == null &&
-            (t.energySource == null ||
-                t.energySource == EnergySource.unmeasurable.name ||
-                integratedNothing(t)))
+            (partiallyMeasured(t) ||
+                (t.ahOut == null &&
+                    (t.energySource == null ||
+                        t.energySource == EnergySource.unmeasurable.name ||
+                        integratedNothing(t)))))
           t,
     ];
     if (stale.isEmpty) return TripRepairReport.none;
@@ -335,37 +344,11 @@ class BmsRepository {
       );
 
       for (final t in group) {
-        final fixed = repairer.recompute(t, readings);
-        if (fixed == null) {
+        if (await _applyRepair(t, readings, repairer)) {
+          repaired++;
+        } else {
           unrepairable++;
-          // Recorded, so this ride is never examined again. Left blank it
-          // stayed stale forever, and every connection paid for it.
-          await db.updateTrip(
-            t.id,
-            TripsCompanion(
-              energySource: Value(EnergySource.unmeasurableBracketed.name),
-            ),
-          );
-          continue;
         }
-        await db.updateTrip(
-          t.id,
-          TripsCompanion(
-            energyOutWh: Value(fixed.outWh),
-            energyInWh: Value(fixed.inWh),
-            ahOut: Value(fixed.ahOut),
-            energySource: Value(fixed.source.name),
-            // Only present when the repair had to reach outside the ride, and
-            // then only because the ride has none of its own.
-            startSoc: fixed.startSoc == null
-                ? const Value.absent()
-                : Value(fixed.startSoc!),
-            endSoc: fixed.endSoc == null
-                ? const Value.absent()
-                : Value(fixed.endSoc!),
-          ),
-        );
-        repaired++;
       }
     }
 
@@ -373,6 +356,86 @@ class BmsRepository {
       examined: stale.length,
       repaired: repaired,
       unrepairable: unrepairable,
+    );
+  }
+
+  /// Measures one ride again and writes what it finds. True if it could.
+  Future<bool> _applyRepair(
+    Trip t,
+    List<Snapshot> readings,
+    TripEnergyRepair repairer,
+  ) async {
+    final fixed = repairer.recompute(t, readings);
+    if (fixed == null) {
+      // Recorded, so this ride is never examined again. Left blank it stayed
+      // stale forever, and every connection paid for it.
+      //
+      // The energy it already has is left alone. A poor measurement is still
+      // a measurement, and overwriting it with a zero would be inventing a
+      // figure rather than admitting to a bad one. What stops it teaching the
+      // estimator is the marker, which [tripsForLearning] reads.
+      await db.updateTrip(
+        t.id,
+        TripsCompanion(
+          energySource: Value(EnergySource.unmeasurableBracketed.name),
+        ),
+      );
+      return false;
+    }
+    await db.updateTrip(
+      t.id,
+      TripsCompanion(
+        energyOutWh: Value(fixed.outWh),
+        energyInWh: Value(fixed.inWh),
+        ahOut: Value(fixed.ahOut),
+        energySource: Value(fixed.source.name),
+        // Only present when the repair had to reach outside the ride, and
+        // then only because the ride has none of its own.
+        startSoc: fixed.startSoc == null
+            ? const Value.absent()
+            : Value(fixed.startSoc!),
+        endSoc: fixed.endSoc == null
+            ? const Value.absent()
+            : Value(fixed.endSoc!),
+      ),
+    );
+    return true;
+  }
+
+  /// Measures one ride again on demand, whatever its row currently claims.
+  ///
+  /// The automatic pass deliberately looks only at rides whose own row admits
+  /// something is missing, because it runs on the first decoded frame of every
+  /// connection and reading a week of history there once held up the live
+  /// screen for the pack in front of the rider. That cheapness is also a
+  /// blind spot: the two rides that prompted all of this were stored as
+  /// [EnergySource.coulombCount] with an amp-hour figure and high confidence,
+  /// so nothing in the row hinted at the problem and no pass would ever look
+  /// again.
+  ///
+  /// This is the way back in. It is a rider asking about one ride they can see
+  /// is wrong, so it can afford the read the automatic pass cannot, and it
+  /// ignores the staleness filter entirely.
+  Future<TripRepairReport> repairTrip(
+    int tripId, {
+    TripEnergyRepair repairer = const TripEnergyRepair(),
+  }) async {
+    await flush();
+    final trip = await db.tripById(tripId);
+    if (trip == null || trip.deviceId == null) return TripRepairReport.none;
+
+    final margin = repairer.bracketReach + const Duration(minutes: 1);
+    final readings = await db.snapshotsBetween(
+      trip.deviceId!,
+      trip.startedAt.subtract(margin),
+      trip.endedAt.add(margin),
+    );
+
+    final repaired = await _applyRepair(trip, readings, repairer);
+    return TripRepairReport(
+      examined: 1,
+      repaired: repaired ? 1 : 0,
+      unrepairable: repaired ? 0 : 1,
     );
   }
 
@@ -389,6 +452,21 @@ class BmsRepository {
         ),
       );
 
+  /// Sources whose energy figure is not a measurement of the ride, so nothing
+  /// may be learned from it.
+  ///
+  /// This is the guard that was missing when a ride whose link died nine
+  /// minutes in taught the estimator 4.3 Wh/km and had it quote 225 km of
+  /// range. The estimator does reject the physically absurd -- anything under
+  /// 2 Wh/km -- but 4.3 is not absurd in the abstract, only against this bike,
+  /// and a threshold tuned to catch it would be a guess. The row already knows
+  /// it was never measured properly; asking it is a fact rather than a guess.
+  static const Set<String> _unmeasuredSources = {
+    'partialCoulombCount',
+    'unmeasurable',
+    'unmeasurableBracketed',
+  };
+
   Future<List<Trip>> tripsForLearning(String deviceId) async {
     final all = await db.recentTrips(deviceId, limit: 500);
     final usable =
@@ -397,6 +475,7 @@ class BmsRepository {
               (t) =>
                   t.distanceKm >= 0.2 &&
                   t.energyOutWh > t.energyInWh &&
+                  !_unmeasuredSources.contains(t.energySource) &&
                   // Null is not false: a ride nobody was asked about counts,
                   // which keeps the behaviour of every ride recorded before
                   // the question existed. Only an explicit no takes one out.

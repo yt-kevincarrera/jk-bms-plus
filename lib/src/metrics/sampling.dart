@@ -41,3 +41,48 @@ Duration? usableInterval(
 /// The other half of the same mistake: `inSeconds / 3600` on a 400 ms sample
 /// is zero. Only `inMicroseconds` is safe at these intervals.
 double hoursIn(Duration d) => d.inMicroseconds / 3600000000.0;
+
+/// How much of a ride may go unwatched before the readings taken during it
+/// stop being a measurement of it.
+///
+/// Three minutes at a real 17 Wh/km and 25 km/h is about 21 Wh: around 5% of a
+/// 22 km ride, and small enough to ignore. It is also loose enough to cover
+/// the ordinary slop between a ride's own start and stop and the readings
+/// nearest them.
+const Duration counterEdgeTolerance = Duration(minutes: 3);
+
+/// Whether readings spanning [firstReading] to [lastReading] actually cover a
+/// ride that lasted [rideDuration].
+///
+/// This is the guard the coulomb counter was always missing, and the reason it
+/// is needed is the same reason the counter is preferred in the first place.
+///
+/// The BMS accumulates amp-hours inside itself, so a dropped link costs its
+/// figure nothing: whatever passed while the phone was deaf is still in the
+/// difference between the reading before the gap and the one after it. One
+/// real ride blacked out for 63 of its 108 minutes and still measured
+/// correctly, which is why the gaps inside a ride are not counted here.
+///
+/// What the counter cannot do is measure a stretch of the ride it was never
+/// read across. A link that died a minute into a 53-minute ride leaves a
+/// difference that measures that one minute -- 0.13 Ah -- and attributing it
+/// to the whole ride reported 0.5 Wh/km on a bike that really does 17. The
+/// figure was not noisy or approximate; it was a measurement of a different,
+/// much shorter journey. Worse, it looked authoritative, so nothing
+/// downstream ever questioned it.
+///
+/// So what matters is how much of the ride falls outside the readings
+/// altogether, which is the ride's own duration less the span the readings
+/// cover. Comparing the two ends against the ride's clock directly would mean
+/// subtracting a BMS timestamp from a wall-clock one; this way each clock is
+/// only ever compared with itself.
+///
+/// Readings from either side of the ride -- what the bracketing repair finds
+/// -- span more than the ride lasted, which is better than covered, not worse.
+bool readingsCoverRide({
+  required Duration rideDuration,
+  required DateTime firstReading,
+  required DateTime lastReading,
+  Duration tolerance = counterEdgeTolerance,
+}) =>
+    rideDuration - lastReading.difference(firstReading) <= tolerance;

@@ -395,14 +395,20 @@ void main() {
       // Readings are thinned after thirty days and dropped eventually. An old
       // ride with nothing left to measure keeps its wrong figure rather than
       // getting a made-up one.
-      await staleTrip(km: 5.95, outWh: 4.29);
+      final id = await staleTrip(km: 5.95, outWh: 4.29);
 
       final report = await repo.repairTripEnergy('AA:BB');
       expect(report.repaired, 0);
       expect(report.unrepairable, 1);
 
-      final untouched = (await repo.tripsForLearning('AA:BB')).single;
+      // Read straight off the row. Reading it through
+      // [BmsRepository.tripsForLearning] would find nothing now, and that is
+      // the point of the next expectation rather than a problem here: keeping
+      // the wrong figure is only safe because the marker keeps it out of the
+      // estimate.
+      final untouched = (await db.tripById(id))!;
       expect(untouched.energyOutWh, closeTo(4.29, 0.001));
+      expect(await repo.tripsForLearning('AA:BB'), isEmpty);
     });
 
     test('falls back to integrating when the counter did not move', () async {

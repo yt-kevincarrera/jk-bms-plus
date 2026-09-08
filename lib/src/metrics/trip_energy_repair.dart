@@ -118,7 +118,26 @@ class TripEnergyRepair {
         if (!s.timestamp.isBefore(from) && !s.timestamp.isAfter(to)) s,
     ]..sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
-    if (during.length < 2) return _fromBrackets(trip, readings);
+    // Two readings from inside the ride are not the same as two readings that
+    // cover it. This used to ask only the first question, so a link that died
+    // a minute into a 53-minute ride left a 0.13 Ah difference that measured
+    // that minute, and the repair would have confirmed it as the cost of the
+    // whole ride: 0.5 Wh/km on a bike that really does 17.
+    //
+    // The file's own doc for [_fromBrackets] had the principle all along --
+    // part of a ride "would cover only part of it and quietly under-report the
+    // rest, which is worse than admitting the ride cannot be measured" -- but
+    // applied it only where nothing arrived at all. It holds just as well
+    // where a little arrived, so the brackets are preferred there too: they at
+    // least span the ride.
+    if (during.length < 2 ||
+        !readingsCoverRide(
+          rideDuration: trip.endedAt.difference(trip.startedAt),
+          firstReading: during.first.timestamp,
+          lastReading: during.last.timestamp,
+        )) {
+      return _fromBrackets(trip, readings);
+    }
 
     // The counter, first choice.
     final ah = during.first.remainingAh - during.last.remainingAh;

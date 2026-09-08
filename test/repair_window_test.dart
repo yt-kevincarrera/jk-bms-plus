@@ -129,10 +129,14 @@ void main() {
     });
 
     test('keeps its wrong figure rather than getting a made-up one', () async {
-      await staleTrip();
+      final id = await staleTrip();
       await repo.repairTripEnergy('AA:BB');
 
-      final trip = (await repo.tripsForLearning('AA:BB')).single;
+      // Read straight off the row. It used to be read through
+      // [BmsRepository.tripsForLearning], which no longer returns it: a ride
+      // whose own marker says it was never measured is not something to learn
+      // consumption from, and the case below is what that is for.
+      final trip = (await db.tripById(id))!;
       expect(trip.energyOutWh, closeTo(4.29, 0.001));
       expect(trip.ahOut, isNull);
       // Marked, and marked distinguishably. The bracketing repair was the
@@ -140,6 +144,18 @@ void main() {
       // the ride settles on the terminal marker rather than the one that
       // invites another retry.
       expect(trip.energySource, EnergySource.unmeasurableBracketed.name);
+    });
+
+    test('and teaches the estimator nothing while it keeps it', () async {
+      // The other half of leaving the bad figure in place. A ride marked as
+      // never measured is excluded by its marker, so the wrong number can sit
+      // in the row without reaching the range estimate. This is the guard that
+      // was missing when a ride whose link died nine minutes in taught 4.3
+      // Wh/km and had the app quote 225 km of range.
+      await staleTrip();
+      await repo.repairTripEnergy('AA:BB');
+
+      expect(await repo.tripsForLearning('AA:BB'), isEmpty);
     });
 
     test('an old one no longer drags every later reading into the query',

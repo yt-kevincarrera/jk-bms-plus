@@ -818,6 +818,10 @@ class AppDatabase extends _$AppDatabase {
   /// Every read here takes a pack. There is deliberately no unscoped variant:
   /// an accidental call to one would silently mix two batteries' histories,
   /// which is the exact failure this table structure exists to prevent.
+  /// One ride by id, or null if it has been deleted.
+  Future<Trip?> tripById(int tripId) =>
+      (select(trips)..where((t) => t.id.equals(tripId))).getSingleOrNull();
+
   Future<List<Trip>> recentTrips(String deviceId, {int limit = 50}) =>
       (select(trips)
             ..where((t) => t.deviceId.equals(deviceId))
