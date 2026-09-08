@@ -16,6 +16,31 @@ bool shouldAskAbout({required double shiftFraction, required bool? answered}) =>
     answered == null &&
     shiftFraction > RangeEstimator.askThresholdFraction;
 
+/// Whether the rider may set this ride's answer at all.
+///
+/// Deliberately separate from [shouldAskAbout], and that separation is the fix
+/// for a dead end. Asking is a question about how much a ride moved the
+/// estimate; being *allowed to say* is not, and tying the two together meant a
+/// ride that moved the estimate by nothing could never be marked, or
+/// unmarked. Three of one rider's stored rides have a before and after of
+/// 17.1/17.1, 17.5/17.5 and 19.6/19.6 -- a shift of zero -- so for those the
+/// control simply did not exist.
+///
+/// The only real requirement is that there be a consumption to judge. A ride
+/// too short to divide, or one whose energy was never measurable, has nothing
+/// to include in the estimate or leave out of it.
+bool shouldOfferChoice({required double? rideWhPerKm}) => rideWhPerKm != null;
+
+/// The answer that is not this one.
+///
+/// Named, rather than written as `!current` at the call site, because the bug
+/// it replaces was a third possibility nobody meant to offer. Changing an
+/// answer used to write null, and null is not the opposite of anything: it
+/// means "never asked", it counts towards the estimate like a yes, and the
+/// question that would have let the rider answer again had already decided not
+/// to appear.
+bool otherChoice(bool current) => !current;
+
 /// How far a ride moved the learned consumption, as a fraction of where it
 /// stood before the ride.
 ///
@@ -138,23 +163,8 @@ class RepresentativeQuestion extends StatelessWidget {
   Widget build(BuildContext context) {
     final tripId = view.tripId;
     final rideWhPerKm = view.whPerKm;
-    if (tripId == null || rideWhPerKm == null) {
+    if (tripId == null || !shouldOfferChoice(rideWhPerKm: rideWhPerKm)) {
       return const SizedBox.shrink();
-    }
-
-    // Already answered: a line saying so, and a way to change it. Not the
-    // question again.
-    if (view.representative != null) {
-      return _Answered(
-        representative: view.representative!,
-        // Unanswering has to refresh the same things answering does, or the
-        // saved-pack screen keeps showing figures that still count the ride.
-        onChange: () async {
-          await service.setTripRepresentative(tripId, null);
-          await onChanged?.call();
-        },
-        t: t,
-      );
     }
 
     // The shift has to come from what this ride actually did, not from asking
@@ -167,8 +177,17 @@ class RepresentativeQuestion extends StatelessWidget {
     final before = view.whPerKmBefore;
     final after = view.whPerKmAfter;
     final shift = shiftFraction(before: before, after: after);
-    if (!shouldAskAbout(shiftFraction: shift, answered: null)) {
-      return const SizedBox.shrink();
+
+    // No question to put, but the choice stays on offer. It used to disappear
+    // here, which is how a ride the rider had already answered could become
+    // unanswerable: pressing change threw the answer away and this branch
+    // then declined to draw anything at all.
+    if (!shouldAskAbout(shiftFraction: shift, answered: view.representative)) {
+      return _ChoiceRow(
+        selected: view.representative,
+        onChoose: (normal) => _answer(context, tripId, normal),
+        t: t,
+      );
     }
 
     // Reachable only when shift > 0, which the branch above rules out unless
@@ -182,9 +201,12 @@ class RepresentativeQuestion extends StatelessWidget {
     );
     final beforeKm = isCurrentEstimate ? rawBeforeKm : null;
     final afterKm = isCurrentEstimate ? rawAfterKm : null;
-    final percent = ((rideWhPerKm - before).abs() / before * 100).round();
-    final higher = rideWhPerKm > before;
-    final rideWh = rideWhPerKm.toStringAsFixed(0);
+    // Non-null by [shouldOfferChoice] at the top, which the analyser cannot
+    // see through a named predicate.
+    final ride = rideWhPerKm!;
+    final percent = ((ride - before).abs() / before * 100).round();
+    final higher = ride > before;
+    final rideWh = ride.toStringAsFixed(0);
     final percentStr = '$percent';
 
     // Kilometres only when there is a real full-pack figure to quote them
@@ -229,23 +251,16 @@ class RepresentativeQuestion extends StatelessWidget {
             color: AppTheme.textSecondary,
           ),
         ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () => _answer(context, tripId, true),
-                child: Text(t.representativeYes),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () => _answer(context, tripId, false),
-                child: Text(t.representativeNo),
-              ),
-            ),
-          ],
+        const SizedBox(height: 4),
+        // The same control the answered state shows, so the rider is never
+        // looking at two different things that mean the same. It used to be
+        // two identical outlined buttons here and a line of text with a
+        // "change" link there, and neither said which option was in force.
+        _ChoiceRow(
+          selected: view.representative,
+          onChoose: (normal) => _answer(context, tripId, normal),
+          t: t,
+          padded: false,
         ),
         const SizedBox(height: 6),
       ],
@@ -292,30 +307,55 @@ class RepresentativeQuestion extends StatelessWidget {
   }
 }
 
-class _Answered extends StatelessWidget {
-  const _Answered({
-    required this.representative,
-    required this.onChange,
+/// The two answers, with the one in force visibly in force.
+///
+/// Replaces two controls that between them managed to say nothing. Asking used
+/// to be a pair of identical outlined buttons, which look like a toggle and
+/// behave like actions, so there was no way to tell what had been picked;
+/// answered was a line of grey text with a "change" link, which threw the
+/// answer away rather than switching it, and did so in silence.
+///
+/// A chip pair says all of it at once: which answer is set, that there is
+/// another one, and that picking it is one tap. There is no third state to
+/// land in, because [onChoose] only ever carries an answer.
+class _ChoiceRow extends StatelessWidget {
+  const _ChoiceRow({
+    required this.selected,
+    required this.onChoose,
     required this.t,
+    this.padded = true,
   });
 
-  final bool representative;
-  final VoidCallback onChange;
+  /// Null before either has been picked, which is a real state to draw: it
+  /// means the ride counts because nobody has said otherwise.
+  final bool? selected;
+  final void Function(bool normal) onChoose;
   final AppL10n t;
 
+  /// False inside a [Section], which supplies its own padding.
+  final bool padded;
+
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-    child: Row(
+  Widget build(BuildContext context) {
+    final row = Row(
       children: [
-        Expanded(
-          child: Text(
-            representative ? t.representativeYes : t.representativeNo,
-            style: const TextStyle(fontSize: 12, color: AppTheme.textFaint),
-          ),
+        ChoiceChip(
+          label: Text(t.representativeYes),
+          selected: selected == true,
+          onSelected: (_) => onChoose(true),
         ),
-        TextButton(onPressed: onChange, child: Text(t.representativeChange)),
+        const SizedBox(width: 8),
+        ChoiceChip(
+          label: Text(t.representativeNo),
+          selected: selected == false,
+          onSelected: (_) => onChoose(false),
+        ),
       ],
-    ),
-  );
+    );
+    if (!padded) return row;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: row,
+    );
+  }
 }
