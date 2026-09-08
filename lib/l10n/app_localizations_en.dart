@@ -2038,7 +2038,7 @@ class AppL10nEn extends AppL10n {
   String get backupWorking => 'Working...';
 
   @override
-  String get chargeAlertsTitle => 'Charge alerts';
+  String get chargeAlertsTitle => 'Charge target';
 
   @override
   String get chargeAlertsIntro =>
@@ -2217,11 +2217,11 @@ class AppL10nEn extends AppL10n {
       'One by one. Switching off the one that annoys you should not cost you the ones you want.';
 
   @override
-  String get autoTripTitle => 'Start rides on their own';
+  String get autoTripTitle => 'Record rides on their own';
 
   @override
   String get autoTripHint =>
-      'Opens and closes the ride when it detects you are riding: it needs pack current and GPS movement together, sustained. Without it the learning depends on remembering to press start, and the rides people forget are not a random sample: they are the short ones and the ones you were late for. Uses GPS while riding.';
+      'Records the ride without you having to remember, and closes it after about three minutes standing still. Turn it off and the app only learns your range from rides you start by hand, and the ones people forget are not a random sample: they are the short ones and the rushed ones. Starting needs pack current and GPS movement together, so switching the bike on does not open a ride.';
 
   @override
   String get autoTripStarted => 'Ride started automatically';
@@ -4400,4 +4400,8 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get adviceCaveatsTitle => 'What this measurement is worth';
+
+  @override
+  String get chargeWatchRedundant =>
+      'With the setting above on this is already covered: the link stays open anyway. You only need it if you turn that one off and still want charge alerts overnight.';
 }
