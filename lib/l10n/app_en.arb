@@ -2751,5 +2751,20 @@
       }
     }
   },
-  "representativeChange": "Change"
+  "representativeChange": "Change",
+  "tripRemeasure": "Measure again",
+  "tripRemeasureWhy": "If Bluetooth dropped during the ride, its consumption may have been recorded far too low. This works it out again from the readings kept for the pack.",
+  "tripRemeasureDone": "Measured again: {whPerKm} Wh/km, was {before} Wh/km.",
+  "@tripRemeasureDone": {
+    "placeholders": {
+      "whPerKm": {
+        "type": "String"
+      },
+      "before": {
+        "type": "String"
+      }
+    }
+  },
+  "tripRemeasureSame": "It was already measured properly. Nothing to change.",
+  "tripRemeasureFailed": "Not enough readings are left to measure this ride. Its consumption no longer counts towards range."
 }

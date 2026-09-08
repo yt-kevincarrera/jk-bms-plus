@@ -17,7 +17,7 @@ import 'widgets/trip_summary_view.dart';
 /// The profile chart puts speed and altitude on the same time axis because that
 /// is where the interesting question lives: a stretch where consumption spiked
 /// is either a hill or a heavy right hand, and the two lines together say which.
-class TripDetailScreen extends StatelessWidget {
+class TripDetailScreen extends StatefulWidget {
   const TripDetailScreen({
     required this.trip,
     required this.repository,
@@ -41,6 +41,78 @@ class TripDetailScreen extends StatelessWidget {
 
   /// Refreshes whatever [learned] reads, after an answer changes it.
   final Future<void> Function()? onChanged;
+
+  @override
+  State<TripDetailScreen> createState() => _TripDetailScreenState();
+}
+
+class _TripDetailScreenState extends State<TripDetailScreen> {
+  /// The row as it stands now.
+  ///
+  /// Held in state rather than read off the widget because re-measuring a ride
+  /// rewrites it, and a screen showing the figure the rider just corrected
+  /// would be the same "nothing appeared to happen" the change button was
+  /// guilty of.
+  late Trip trip = widget.trip;
+
+  BmsRepository get repository => widget.repository;
+  BmsService get service => widget.service;
+
+  bool _remeasuring = false;
+
+  /// Re-reads the row after something rewrites it.
+  Future<void> _reload() async {
+    final fresh = await repository.db.tripById(trip.id);
+    if (!mounted || fresh == null) return;
+    setState(() => trip = fresh);
+  }
+
+  /// Measures this ride again, on the rider's say-so.
+  ///
+  /// Exists because the automatic pass cannot help here. It looks only at
+  /// rides whose own row admits something is missing, since it runs on the
+  /// first decoded frame of every connection and reading a week of history
+  /// there once held up the live screen. Two real rides were stored as a
+  /// confident coulomb count that was out by a factor of thirty, so nothing in
+  /// the row hinted at it and no pass would ever look again. The rider can see
+  /// the figure is wrong; this is them saying so.
+  Future<void> _remeasure(AppL10n t) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final before = trip.distanceKm < 0.2
+        ? null
+        : (trip.energyOutWh - trip.energyInWh) / trip.distanceKm;
+
+    setState(() => _remeasuring = true);
+    final report = await service.repairTrip(trip.id);
+    await _reload();
+    // The range estimate is rebuilt inside repairTrip, so whatever shows the
+    // learned figures has to be told as well.
+    await widget.onChanged?.call();
+    if (!mounted) return;
+    setState(() => _remeasuring = false);
+
+    final after = trip.distanceKm < 0.2
+        ? null
+        : (trip.energyOutWh - trip.energyInWh) / trip.distanceKm;
+
+    // Say what happened, always. The change button next to the representative
+    // answer did its work in silence, and a button that appears to do nothing
+    // is worse than no button: it got pressed twice.
+    final String message;
+    if (report.repaired == 0) {
+      message = t.tripRemeasureFailed;
+    } else if (before == null ||
+        after == null ||
+        (after - before).abs() < 0.5) {
+      message = t.tripRemeasureSame;
+    } else {
+      message = t.tripRemeasureDone(
+        after.toStringAsFixed(1),
+        before.toStringAsFixed(1),
+      );
+    }
+    messenger.showSnackBar(SnackBar(content: Text(message)));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,8 +142,8 @@ class TripDetailScreen extends StatelessWidget {
             RepresentativeQuestion(
               view: view,
               service: service,
-              learned: learned,
-              onChanged: onChanged,
+              learned: widget.learned,
+              onChanged: widget.onChanged,
               t: t,
             ),
             Padding(
@@ -186,6 +258,31 @@ class TripDetailScreen extends StatelessWidget {
                       trip.maxDeltaVolts > 0.10 ? AppTheme.watch : null,
                   last: true,
                 ),
+              ],
+            ),
+            // Offered on every ride, not only the ones whose row admits to a
+            // problem. That is the whole point: the rides this was written for
+            // looked perfectly healthy in the database, and gating the button
+            // on the row's own opinion would hide it in exactly the case it
+            // exists for.
+            Section(
+              title: t.tripRemeasure,
+              intro: t.tripRemeasureWhy,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: OutlinedButton(
+                    onPressed: _remeasuring ? null : () => _remeasure(t),
+                    child: _remeasuring
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(t.tripRemeasure),
+                  ),
+                ),
+                const SizedBox(height: 6),
               ],
             ),
           ],

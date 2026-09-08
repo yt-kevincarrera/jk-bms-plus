@@ -1213,6 +1213,24 @@ class BmsService {
     await relearnRangeFromTrips();
   }
 
+  /// Measures one stored ride again from the readings kept for it.
+  ///
+  /// Goes through the service rather than the repository so the range estimate
+  /// is rebuilt afterwards, which is the whole point: a ride whose figure was
+  /// out by a factor of thirty had already taught the estimator, and mending
+  /// the row without relearning would leave the range quoting what it learned
+  /// from the wrong number.
+  ///
+  /// Relearns even when nothing could be measured. A failed pass still settles
+  /// the ride's marker, and that alone changes what the estimate is built from.
+  Future<TripRepairReport> repairTrip(int tripId) async {
+    final repo = repository;
+    if (repo == null) return TripRepairReport.none;
+    final report = await repo.repairTrip(tripId);
+    await relearnRangeFromTrips();
+    return report;
+  }
+
   /// Records that the rider has seen this ride's summary.
   ///
   /// Nothing here needs relearning: seen is a fact about the rider, not about

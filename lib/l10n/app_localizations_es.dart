@@ -4339,4 +4339,24 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get representativeChange => 'Cambiar';
+
+  @override
+  String get tripRemeasure => 'Volver a medir';
+
+  @override
+  String get tripRemeasureWhy =>
+      'Si el Bluetooth se cortó durante el viaje, el consumo pudo quedar muy por debajo de lo real. Esto lo vuelve a calcular desde las lecturas guardadas del pack.';
+
+  @override
+  String tripRemeasureDone(String whPerKm, String before) {
+    return 'Medido de nuevo: $whPerKm Wh/km, antes $before Wh/km.';
+  }
+
+  @override
+  String get tripRemeasureSame =>
+      'Ya estaba bien medido. No hay nada que cambiar.';
+
+  @override
+  String get tripRemeasureFailed =>
+      'No quedan lecturas suficientes para medir este viaje. Su consumo deja de contar para la autonomía.';
 }

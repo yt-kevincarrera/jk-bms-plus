@@ -4317,4 +4317,24 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get representativeChange => 'Change';
+
+  @override
+  String get tripRemeasure => 'Measure again';
+
+  @override
+  String get tripRemeasureWhy =>
+      'If Bluetooth dropped during the ride, its consumption may have been recorded far too low. This works it out again from the readings kept for the pack.';
+
+  @override
+  String tripRemeasureDone(String whPerKm, String before) {
+    return 'Measured again: $whPerKm Wh/km, was $before Wh/km.';
+  }
+
+  @override
+  String get tripRemeasureSame =>
+      'It was already measured properly. Nothing to change.';
+
+  @override
+  String get tripRemeasureFailed =>
+      'Not enough readings are left to measure this ride. Its consumption no longer counts towards range.';
 }

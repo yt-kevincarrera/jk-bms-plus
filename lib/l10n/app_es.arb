@@ -2870,5 +2870,20 @@
       }
     }
   },
-  "representativeChange": "Cambiar"
+  "representativeChange": "Cambiar",
+  "tripRemeasure": "Volver a medir",
+  "tripRemeasureWhy": "Si el Bluetooth se cortó durante el viaje, el consumo pudo quedar muy por debajo de lo real. Esto lo vuelve a calcular desde las lecturas guardadas del pack.",
+  "tripRemeasureDone": "Medido de nuevo: {whPerKm} Wh/km, antes {before} Wh/km.",
+  "@tripRemeasureDone": {
+    "placeholders": {
+      "whPerKm": {
+        "type": "String"
+      },
+      "before": {
+        "type": "String"
+      }
+    }
+  },
+  "tripRemeasureSame": "Ya estaba bien medido. No hay nada que cambiar.",
+  "tripRemeasureFailed": "No quedan lecturas suficientes para medir este viaje. Su consumo deja de contar para la autonomía."
 }
