@@ -98,85 +98,6 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               feature: Feature.backupExportImport,
               child: BackupCard(service: widget.service),
             ),
-            Section(
-              title: t.chargeAlertsTitle,
-              intro: t.chargeAlertsIntro,
-              children: [
-                InfoRow(
-                  t.chargeTarget,
-                  settings.chargeTargetSoc == null
-                      ? t.chargeTargetOff
-                      : '${settings.chargeTargetSoc!.toStringAsFixed(0)} %',
-                  dim: settings.chargeTargetSoc == null,
-                ),
-                Slider(
-                  // 50 is the off position rather than a level anybody wants
-                  // announced: below that the alert would fire on the way up
-                  // from every ride.
-                  value: (settings.chargeTargetSoc ?? 50).clamp(50, 100),
-                  min: 50,
-                  max: 100,
-                  divisions: 50,
-                  label: settings.chargeTargetSoc == null
-                      ? t.chargeTargetOff
-                      : settings.chargeTargetSoc!.toStringAsFixed(0),
-                  onChanged: (v) async {
-                    final soc = v.roundToDouble();
-                    await settings.setChargeTarget(soc <= 50 ? null : soc);
-                    widget.service.chargeAlerts.targetSoc =
-                        settings.chargeTargetSoc;
-                    if (mounted) setState(() {});
-                  },
-                ),
-                // Reaching a closed app is the Pro half of the alerts; the
-                // ones that fire with the app open stay free. The switch
-                // shows off when the licence does not cover it, whatever
-                // the stored preference says, because the service is told
-                // the same thing at startup.
-                SwitchListTile(
-                  value: canWatchCharge && settings.chargeWatchEnabled,
-                  onChanged: canWatchCharge
-                      ? (v) async {
-                          await settings.setChargeWatch(v);
-                          widget.service.chargeWatchEnabled = v;
-                          if (mounted) setState(() {});
-                        }
-                      : null,
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  title: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          t.chargeWatchTitle,
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                      ),
-                      if (!canWatchCharge) const ProBadge(),
-                    ],
-                  ),
-                  subtitle: Text(
-                    canWatchCharge
-                        ? t.chargeWatchHint
-                        : '${t.chargeWatchProHint}\n${t.chargeWatchHint}',
-                    style: const TextStyle(
-                      fontSize: 11.5,
-                      height: 1.4,
-                      color: AppTheme.textFaint,
-                    ),
-                  ),
-                ),
-                if (!canWatchCharge)
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton(
-                      onPressed: () => openLicenseScreen(context),
-                      child: Text(t.licenseOpen),
-                    ),
-                  ),
-                const SizedBox(height: 4),
-              ],
-            ),
             // Rides had ended up inside the charging section, along with the
             // link and the screen. Four of that section's five controls had
             // nothing to do with charging: it had quietly become the place new
@@ -236,6 +157,61 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                     ),
                   ),
                 ),
+                // Moved here from the charging section, because it is the same
+                // mechanism as the switch above and not a kind of alert. Two
+                // controls that both hold the one foreground service open,
+                // sitting in different sections under different headings, is
+                // why a rider could not work out which one to touch.
+                //
+                // The subtitle says outright that the switch above already
+                // covers this while it is on. It used to describe Android's
+                // service rules and never the consequence, so the honest
+                // reading of it was "turn both on and hope".
+                SwitchListTile(
+                  value: canWatchCharge && settings.chargeWatchEnabled,
+                  onChanged: canWatchCharge
+                      ? (v) async {
+                          await settings.setChargeWatch(v);
+                          widget.service.chargeWatchEnabled = v;
+                          if (mounted) setState(() {});
+                        }
+                      : null,
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  title: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          t.chargeWatchTitle,
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                      if (!canWatchCharge) const ProBadge(),
+                    ],
+                  ),
+                  subtitle: Text(
+                    [
+                      if (!canWatchCharge) t.chargeWatchProHint,
+                      if (settings.linkWatchEnabled && canWatchCharge)
+                        t.chargeWatchRedundant
+                      else
+                        t.chargeWatchHint,
+                    ].join('\n'),
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      height: 1.4,
+                      color: AppTheme.textFaint,
+                    ),
+                  ),
+                ),
+                if (!canWatchCharge)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton(
+                      onPressed: () => openLicenseScreen(context),
+                      child: Text(t.licenseOpen),
+                    ),
+                  ),
                 // Three positions rather than a switch: "never" and "always"
                 // are both real answers, and the middle one is the reason the
                 // wakelock existed in the first place.
@@ -334,6 +310,83 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                 const SizedBox(height: 4),
               ],
             ),
+            Section(
+              title: t.alertsThresholdsTitle,
+              intro: t.alertsThresholdsIntro,
+              children: [
+                _threshold(
+                  label: t.alertsDeltaWarn,
+                  value: settings.alertDeltaWarn,
+                  min: 0.030,
+                  max: 0.300,
+                  divisions: 27,
+                  format: (v) => '${(v * 1000).toStringAsFixed(0)} mV',
+                  onChanged: (v) => settings.setAlertThresholds(delta: v),
+                ),
+                _threshold(
+                  label: t.alertsTempWarn,
+                  value: settings.alertTempWarn,
+                  min: 35,
+                  max: 75,
+                  divisions: 40,
+                  format: (v) => '${v.toStringAsFixed(0)} °C',
+                  onChanged: (v) => settings.setAlertThresholds(temperature: v),
+                ),
+                _threshold(
+                  label: t.alertsLowChargeWarn,
+                  value: settings.alertLowChargeWarn,
+                  min: 5,
+                  max: 40,
+                  divisions: 35,
+                  format: (v) => '${v.toStringAsFixed(0)} %',
+                  onChanged: (v) => settings.setAlertThresholds(lowCharge: v),
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () async {
+                      await settings.resetAlertThresholds();
+                      _pushThresholds();
+                      if (mounted) setState(() {});
+                    },
+                    child: Text(t.alertsResetDefaults),
+                  ),
+                ),
+              ],
+            ),
+            Section(
+              title: t.chargeAlertsTitle,
+              intro: t.chargeAlertsIntro,
+              children: [
+                InfoRow(
+                  t.chargeTarget,
+                  settings.chargeTargetSoc == null
+                      ? t.chargeTargetOff
+                      : '${settings.chargeTargetSoc!.toStringAsFixed(0)} %',
+                  dim: settings.chargeTargetSoc == null,
+                ),
+                Slider(
+                  // 50 is the off position rather than a level anybody wants
+                  // announced: below that the alert would fire on the way up
+                  // from every ride.
+                  value: (settings.chargeTargetSoc ?? 50).clamp(50, 100),
+                  min: 50,
+                  max: 100,
+                  divisions: 50,
+                  label: settings.chargeTargetSoc == null
+                      ? t.chargeTargetOff
+                      : settings.chargeTargetSoc!.toStringAsFixed(0),
+                  onChanged: (v) async {
+                    final soc = v.roundToDouble();
+                    await settings.setChargeTarget(soc <= 50 ? null : soc);
+                    widget.service.chargeAlerts.targetSoc =
+                        settings.chargeTargetSoc;
+                    if (mounted) setState(() {});
+                  },
+                ),
+                const SizedBox(height: 4),
+              ],
+            ),
             // Where an alert goes once it has fired. Separate from which
             // alerts exist, above: one is about what is worth saying and this
             // is about whether anybody will hear it.
@@ -386,50 +439,6 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                       height: 1.45,
                       color: AppTheme.textFaint,
                     ),
-                  ),
-                ),
-              ],
-            ),
-            Section(
-              title: t.alertsThresholdsTitle,
-              intro: t.alertsThresholdsIntro,
-              children: [
-                _threshold(
-                  label: t.alertsDeltaWarn,
-                  value: settings.alertDeltaWarn,
-                  min: 0.030,
-                  max: 0.300,
-                  divisions: 27,
-                  format: (v) => '${(v * 1000).toStringAsFixed(0)} mV',
-                  onChanged: (v) => settings.setAlertThresholds(delta: v),
-                ),
-                _threshold(
-                  label: t.alertsTempWarn,
-                  value: settings.alertTempWarn,
-                  min: 35,
-                  max: 75,
-                  divisions: 40,
-                  format: (v) => '${v.toStringAsFixed(0)} °C',
-                  onChanged: (v) => settings.setAlertThresholds(temperature: v),
-                ),
-                _threshold(
-                  label: t.alertsLowChargeWarn,
-                  value: settings.alertLowChargeWarn,
-                  min: 5,
-                  max: 40,
-                  divisions: 35,
-                  format: (v) => '${v.toStringAsFixed(0)} %',
-                  onChanged: (v) => settings.setAlertThresholds(lowCharge: v),
-                ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () async {
-                      await settings.resetAlertThresholds();
-                      _pushThresholds();
-                      if (mounted) setState(() {});
-                    },
-                    child: Text(t.alertsResetDefaults),
                   ),
                 ),
               ],

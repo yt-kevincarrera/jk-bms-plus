@@ -3676,7 +3676,7 @@ abstract class AppL10n {
   /// No description provided for @chargeAlertsTitle.
   ///
   /// In es, this message translates to:
-  /// **'Avisos de carga'**
+  /// **'Objetivo de carga'**
   String get chargeAlertsTitle;
 
   /// No description provided for @chargeAlertsIntro.
@@ -3982,13 +3982,13 @@ abstract class AppL10n {
   /// No description provided for @autoTripTitle.
   ///
   /// In es, this message translates to:
-  /// **'Empezar viajes solo'**
+  /// **'Grabar viajes solo'**
   String get autoTripTitle;
 
   /// No description provided for @autoTripHint.
   ///
   /// In es, this message translates to:
-  /// **'Abre y cierra el viaje al detectar que estás rodando: hace falta consumo del pack y movimiento del GPS a la vez, sostenidos. Sin esto el aprendizaje depende de que te acuerdes de darle a empezar, y los viajes que se olvidan no son al azar: son los cortos y los que llevabas prisa. Usa GPS mientras rueda.'**
+  /// **'Graba el viaje sin que tengas que acordarte, y lo cierra tras unos tres minutos quieto. Si lo apagas, la app solo aprende tu autonomía de los viajes que empieces a mano, y los que se olvidan no son al azar: son los cortos y los que llevabas prisa. Para arrancar necesita consumo del pack y movimiento del GPS a la vez, así que no abre un viaje porque encendiste la moto.'**
   String get autoTripHint;
 
   /// No description provided for @autoTripStarted.
@@ -7531,6 +7531,12 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Cuánto vale esta medición'**
   String get adviceCaveatsTitle;
+
+  /// No description provided for @chargeWatchRedundant.
+  ///
+  /// In es, this message translates to:
+  /// **'Con el ajuste de arriba encendido esto ya está cubierto: la conexión se mantiene igual. Solo hace falta si apagas el de arriba y aun así quieres que los avisos de carga lleguen de noche.'**
+  String get chargeWatchRedundant;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

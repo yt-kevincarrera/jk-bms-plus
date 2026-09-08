@@ -2046,7 +2046,7 @@ class AppL10nEs extends AppL10n {
   String get backupWorking => 'Trabajando...';
 
   @override
-  String get chargeAlertsTitle => 'Avisos de carga';
+  String get chargeAlertsTitle => 'Objetivo de carga';
 
   @override
   String get chargeAlertsIntro =>
@@ -2225,11 +2225,11 @@ class AppL10nEs extends AppL10n {
       'Cada uno por separado. Apagar el que te molesta no debería costarte los que sí quieres.';
 
   @override
-  String get autoTripTitle => 'Empezar viajes solo';
+  String get autoTripTitle => 'Grabar viajes solo';
 
   @override
   String get autoTripHint =>
-      'Abre y cierra el viaje al detectar que estás rodando: hace falta consumo del pack y movimiento del GPS a la vez, sostenidos. Sin esto el aprendizaje depende de que te acuerdes de darle a empezar, y los viajes que se olvidan no son al azar: son los cortos y los que llevabas prisa. Usa GPS mientras rueda.';
+      'Graba el viaje sin que tengas que acordarte, y lo cierra tras unos tres minutos quieto. Si lo apagas, la app solo aprende tu autonomía de los viajes que empieces a mano, y los que se olvidan no son al azar: son los cortos y los que llevabas prisa. Para arrancar necesita consumo del pack y movimiento del GPS a la vez, así que no abre un viaje porque encendiste la moto.';
 
   @override
   String get autoTripStarted => 'Viaje iniciado solo';
@@ -4422,4 +4422,8 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get adviceCaveatsTitle => 'Cuánto vale esta medición';
+
+  @override
+  String get chargeWatchRedundant =>
+      'Con el ajuste de arriba encendido esto ya está cubierto: la conexión se mantiene igual. Solo hace falta si apagas el de arriba y aun así quieres que los avisos de carga lleguen de noche.';
 }

@@ -67,6 +67,13 @@ void main() {
 
   tearDown(() async {
     service.dispose();
+    // The repository owns a five second flush timer. Left running it fires
+    // after the database below is closed, and the write lands as an
+    // unhandled async error attributed to whichever test happens to be
+    // running by then. That is how this file started failing only inside a
+    // full-suite run, and only once the suite grew long enough to reach the
+    // first tick.
+    await repo.dispose();
     await db.close();
   });
 

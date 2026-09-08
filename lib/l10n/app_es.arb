@@ -1136,7 +1136,7 @@
     }
   },
   "backupWorking": "Trabajando...",
-  "chargeAlertsTitle": "Avisos de carga",
+  "chargeAlertsTitle": "Objetivo de carga",
   "chargeAlertsIntro": "Se carga de noche y nadie lo mira. Estos avisos existen para eso. Parar antes del tope no es superstición: la parte alta del rango es donde una celda de litio envejece más, así que si mañana no necesitas el pack entero, te conviene quedarte antes.",
   "chargeTarget": "Avisar al llegar a",
   "chargeTargetOff": "Desactivado",
@@ -1258,8 +1258,8 @@
   "alertSilenced": "Silenciado. Puedes volver a activarlo en Ajustes.",
   "alertsSectionTitle": "Qué avisos quieres",
   "alertsSectionHint": "Cada uno por separado. Apagar el que te molesta no debería costarte los que sí quieres.",
-  "autoTripTitle": "Empezar viajes solo",
-  "autoTripHint": "Abre y cierra el viaje al detectar que estás rodando: hace falta consumo del pack y movimiento del GPS a la vez, sostenidos. Sin esto el aprendizaje depende de que te acuerdes de darle a empezar, y los viajes que se olvidan no son al azar: son los cortos y los que llevabas prisa. Usa GPS mientras rueda.",
+  "autoTripTitle": "Grabar viajes solo",
+  "autoTripHint": "Graba el viaje sin que tengas que acordarte, y lo cierra tras unos tres minutos quieto. Si lo apagas, la app solo aprende tu autonomía de los viajes que empieces a mano, y los que se olvidan no son al azar: son los cortos y los que llevabas prisa. Para arrancar necesita consumo del pack y movimiento del GPS a la vez, así que no abre un viaje porque encendiste la moto.",
   "autoTripStarted": "Viaje iniciado solo",
   "autoTripStopped": "Viaje guardado",
   "degNowTitle": "Capacidad ahora",
@@ -2940,5 +2940,6 @@
       }
     }
   },
-  "adviceCaveatsTitle": "Cuánto vale esta medición"
+  "adviceCaveatsTitle": "Cuánto vale esta medición",
+  "chargeWatchRedundant": "Con el ajuste de arriba encendido esto ya está cubierto: la conexión se mantiene igual. Solo hace falta si apagas el de arriba y aun así quieres que los avisos de carga lleguen de noche."
 }
