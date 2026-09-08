@@ -2885,7 +2885,7 @@
     }
   },
   "tripRemeasureSame": "Ya estaba bien medido. No hay nada que cambiar.",
-  "tripRemeasureFailed": "No quedan lecturas suficientes para medir este viaje. Su consumo deja de contar para la autonomía.",
+  "tripRemeasureFailed": "No quedan lecturas para volver a medir este viaje, así que se queda como estaba.",
   "tripUphill": "Cuesta arriba",
   "tripFlat": "Llano",
   "tripDownhill": "Cuesta abajo"

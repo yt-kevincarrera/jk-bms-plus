@@ -7427,7 +7427,7 @@ abstract class AppL10n {
   /// No description provided for @tripRemeasureFailed.
   ///
   /// In es, this message translates to:
-  /// **'No quedan lecturas suficientes para medir este viaje. Su consumo deja de contar para la autonomía.'**
+  /// **'No quedan lecturas para volver a medir este viaje, así que se queda como estaba.'**
   String get tripRemeasureFailed;
 
   /// No description provided for @tripUphill.

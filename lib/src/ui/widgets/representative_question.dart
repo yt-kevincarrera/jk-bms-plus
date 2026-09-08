@@ -129,7 +129,7 @@ class LearnedRange {
 /// thing the rider disliked in the first place. So it asks, once, at the only
 /// moment the context is still in somebody's head, and only when the answer
 /// would actually change the number.
-class RepresentativeQuestion extends StatelessWidget {
+class RepresentativeQuestion extends StatefulWidget {
   const RepresentativeQuestion({
     required this.view,
     required this.service,
@@ -160,6 +160,41 @@ class RepresentativeQuestion extends StatelessWidget {
   final AppL10n t;
 
   @override
+  State<RepresentativeQuestion> createState() =>
+      _RepresentativeQuestionState();
+}
+
+class _RepresentativeQuestionState extends State<RepresentativeQuestion> {
+  TripSummaryView get view => widget.view;
+  BmsService get service => widget.service;
+  AppL10n get t => widget.t;
+
+  /// What the rider has just picked here, before anything has re-read the row.
+  ///
+  /// Null until they pick something. The control used to draw straight from
+  /// the row it was handed, and nothing re-read that row after a write: the
+  /// database changed, the range changed, and the chips went on showing the
+  /// previous answer until the screen was closed and opened again. Reported as
+  /// "you have to leave and come back to notice it changed", and it is the
+  /// second time this control has failed by not showing its own state.
+  bool? _chosen;
+
+  /// The answer to draw: what was just picked, else what the row says.
+  bool? get _selection => _chosen ?? view.representative;
+
+  @override
+  void didUpdateWidget(RepresentativeQuestion old) {
+    super.didUpdateWidget(old);
+    // A row that changed underneath wins over a stale local pick, so a parent
+    // that reloads -- or a different ride arriving in the same slot -- is not
+    // overridden by what was tapped on the last one.
+    if (old.view.representative != view.representative ||
+        old.view.tripId != view.tripId) {
+      _chosen = null;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final tripId = view.tripId;
     final rideWhPerKm = view.whPerKm;
@@ -184,7 +219,7 @@ class RepresentativeQuestion extends StatelessWidget {
     // then declined to draw anything at all.
     if (!shouldAskAbout(shiftFraction: shift, answered: view.representative)) {
       return _ChoiceRow(
-        selected: view.representative,
+        selected: _selection,
         onChoose: (normal) => _answer(context, tripId, normal),
         t: t,
       );
@@ -192,7 +227,7 @@ class RepresentativeQuestion extends StatelessWidget {
 
     // Reachable only when shift > 0, which the branch above rules out unless
     // before and after are both real numbers.
-    final figures = learned();
+    final figures = widget.learned();
     final rawBeforeKm = _fullPackKm(before!, figures);
     final rawAfterKm = _fullPackKm(after!, figures);
     final isCurrentEstimate = quotesCurrentEstimate(
@@ -257,7 +292,7 @@ class RepresentativeQuestion extends StatelessWidget {
         // two identical outlined buttons here and a line of text with a
         // "change" link there, and neither said which option was in force.
         _ChoiceRow(
-          selected: view.representative,
+          selected: _selection,
           onChoose: (normal) => _answer(context, tripId, normal),
           t: t,
           padded: false,
@@ -280,19 +315,24 @@ class RepresentativeQuestion extends StatelessWidget {
 
   Future<void> _answer(BuildContext context, int tripId, bool normal) async {
     final messenger = ScaffoldMessenger.of(context);
+    // Before the write, not after. A chip that only moves once the database
+    // and the estimator have caught up is a chip that does not appear to
+    // respond, which is what this control was reported for. The write is a
+    // local row and the outcome is checked against it in the tests.
+    setState(() => _chosen = normal);
     await service.setTripRepresentative(tripId, normal);
     // Whatever reads [learned] has to be rebuilt before the figure below is
     // taken, or the confirmation quotes the state from before the answer.
     // Connected, setTripRepresentative relearned on the way here and there is
     // nothing to wait for; from the saved-pack screen the screen reloads.
-    await onChanged?.call();
+    await widget.onChanged?.call();
     // The consequence, not the action, and true either way: both answers
     // report what resulted rather than "saved", which would tell the rider
     // nothing they could not already see. Wh/km rather than km when there is
     // no full-pack figure, for the same reason the ask body falls back the
     // same way: nowKm is a different quantity and substituting it would
     // confirm a number the rider never actually asked about.
-    final figures = learned();
+    final figures = widget.learned();
     final fullKm = figures.fullKm;
     final message = fullKm != null
         ? (normal

@@ -162,10 +162,18 @@ void main() {
     expect(service.rangeEstimator.whPerKm, lessThan(18.5));
   });
 
-  test('a ride with nothing left to measure says so instead of guessing',
+  test('a ride with nothing left to measure is left exactly as it was',
       () async {
-    // Readings are thinned with age and dropped eventually. The button has to
-    // have an honest answer for that, because it is the rider asking.
+    // Readings are thinned to one a minute after thirty days and eventually
+    // go. A ride old enough cannot be re-measured, and its row says
+    // coulombCount with an amp-hour figure -- which is precisely what the two
+    // broken rides said too.
+    //
+    // So nothing here can tell a ride that was measured correctly from one
+    // that was not, and the app must not pretend otherwise in either
+    // direction. Demoting it would drop a good ride out of the range estimate
+    // on no evidence; inventing a figure would be worse. It stays as it is,
+    // and the button says as much.
     final id = await db.insertTrip(
       TripsCompanion.insert(
         deviceId: Value(device),
@@ -195,10 +203,79 @@ void main() {
     expect(report.repaired, 0);
     expect(report.unrepairable, 1);
 
-    // Demoted, so it stops teaching the estimator the figure nobody can back
-    // up, and stops being offered as a measurement.
+    // Untouched, all of it. Pressing the button on a ride nothing can be said
+    // about must not change the ride.
     final tried = (await db.tripById(id))!;
-    expect(tried.energySource, EnergySource.unmeasurableBracketed.name);
+    expect(tried.energySource, EnergySource.coulombCount.name);
+    expect(tried.ahOut, closeTo(1.17, 0.001));
+    expect(tried.energyOutWh, closeTo(95.48, 0.01));
+    expect(await repo.tripsForLearning(device), isNotEmpty);
+  });
+
+  test('a healthy old ride with no readings left keeps its measurement',
+      () async {
+    // The trap in offering the button on every ride. Readings are thinned to
+    // one a minute after thirty days, and a ride old enough to have lost even
+    // those cannot be re-measured -- but it was measured correctly at the
+    // time, and pressing the button must not throw that away.
+    //
+    // Marking it unmeasurable would, now that learning skips rides whose
+    // marker says they were never measured: a perfectly good 17.5 Wh/km ride
+    // would silently drop out of the range estimate because the rider was
+    // curious.
+    final at = start.subtract(const Duration(days: 90));
+    final id = await goodRide(at);
+    await service.relearnRangeFromTrips();
+    final before = service.rangeEstimator.whPerKm;
+
+    final report = await service.repairTrip(id);
+    expect(report.repaired, 0);
+
+    final after = (await db.tripById(id))!;
+    expect(after.energySource, EnergySource.coulombCount.name);
+    expect(after.ahOut, closeTo(6.3, 0.01));
+    expect(after.energyOutWh / after.distanceKm, closeTo(17.5, 0.01));
+
+    // And it still teaches the estimator, exactly as before the button was
+    // pressed.
+    expect(await repo.tripsForLearning(device), isNotEmpty);
+    expect(service.rangeEstimator.whPerKm, closeTo(before, 0.01));
+  });
+
+  test('a ride that never had an honest figure is still demoted', () async {
+    // The other side of it, and why the demotion exists at all: a ride the
+    // recorder itself flagged as measured across only part of its length has
+    // nothing worth keeping, so when the readings cannot mend it the marker
+    // has to settle terminally and the ride has to stop counting.
+    final id = await db.insertTrip(
+      TripsCompanion.insert(
+        deviceId: Value(device),
+        startedAt: start,
+        endedAt: start.add(length),
+        distanceKm: 22.05,
+        movingSeconds: 2600,
+        totalSeconds: length.inSeconds,
+        maxSpeedKmh: 55,
+        energyOutWh: 95.48,
+        energyInWh: 0,
+        startSoc: 98,
+        endSoc: 95,
+        minPackVoltage: 70,
+        maxPackVoltage: 80,
+        maxDischargeCurrent: 18.4,
+        maxTemperature: 30,
+        maxDeltaVolts: 0.02,
+        climbM: 40,
+        descentM: 40,
+        energySource: Value(EnergySource.partialCoulombCount.name),
+      ),
+    );
+
+    final report = await service.repairTrip(id);
+    expect(report.repaired, 0);
+
+    final after = (await db.tripById(id))!;
+    expect(after.energySource, EnergySource.unmeasurableBracketed.name);
     expect(await repo.tripsForLearning(device), isEmpty);
   });
 

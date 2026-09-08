@@ -359,6 +359,21 @@ class BmsRepository {
     );
   }
 
+  /// Whether a ride's stored energy figure was never a measurement of it: no
+  /// source recorded, nothing arrived during it, the counter covered only part
+  /// of it, or it claimed to have integrated and integrated nothing.
+  ///
+  /// Close to the staleness filter in [repairTripEnergy] but not the same
+  /// question, which is why they are not shared. That one asks what is worth a
+  /// cheap look on every connection, and guards on a null `ahOut` so a ride
+  /// that really was integrated is passed over. This one asks whether there is
+  /// anything in the row worth protecting from a demotion.
+  static bool _wasNeverProperlyMeasured(Trip t) =>
+      t.energySource == null ||
+      t.energySource == EnergySource.unmeasurable.name ||
+      t.energySource == EnergySource.partialCoulombCount.name ||
+      (t.energySource == EnergySource.integrated.name && t.energyOutWh <= 0);
+
   /// Measures one ride again and writes what it finds. True if it could.
   Future<bool> _applyRepair(
     Trip t,
@@ -367,19 +382,33 @@ class BmsRepository {
   ) async {
     final fixed = repairer.recompute(t, readings);
     if (fixed == null) {
-      // Recorded, so this ride is never examined again. Left blank it stayed
-      // stale forever, and every connection paid for it.
+      // Nothing could be measured. Whether to say so in the row depends on
+      // what the row already claims, and getting that wrong costs real data.
       //
-      // The energy it already has is left alone. A poor measurement is still
-      // a measurement, and overwriting it with a zero would be inventing a
-      // figure rather than admitting to a bad one. What stops it teaching the
-      // estimator is the marker, which [tripsForLearning] reads.
-      await db.updateTrip(
-        t.id,
-        TripsCompanion(
-          energySource: Value(EnergySource.unmeasurableBracketed.name),
-        ),
-      );
+      // A ride that never had an honest figure settles on the terminal
+      // marker, so it is never examined again -- left blank it stayed stale
+      // forever and every connection paid for it -- and so it stops teaching
+      // the estimator a number nobody can back up.
+      //
+      // A ride that *was* measured properly keeps everything. Readings are
+      // thinned to one a minute after thirty days and eventually go, so a
+      // ride old enough has nothing left to re-measure from; marking that
+      // unmeasurable would drop a perfectly good ride out of the range
+      // estimate for no reason other than the rider having pressed the button
+      // out of curiosity. The automatic pass never reaches these rides, but
+      // [repairTrip] is offered on every one.
+      if (_wasNeverProperlyMeasured(t)) {
+        // The energy it already has is left alone even so. A poor measurement
+        // is still a measurement, and overwriting it with a zero would be
+        // inventing a figure rather than admitting to a bad one. What stops it
+        // teaching the estimator is the marker.
+        await db.updateTrip(
+          t.id,
+          TripsCompanion(
+            energySource: Value(EnergySource.unmeasurableBracketed.name),
+          ),
+        );
+      }
       return false;
     }
     await db.updateTrip(
