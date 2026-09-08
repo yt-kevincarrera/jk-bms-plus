@@ -227,10 +227,6 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                   t.tripEnergyOut,
                   '${trip.energyOutWh.toStringAsFixed(1)} Wh',
                 ),
-                InfoRow(
-                  t.tripEnergyIn,
-                  '${trip.energyInWh.toStringAsFixed(1)} Wh',
-                ),
                 InfoRow(t.tripSocUsed, '${socUsed.toStringAsFixed(0)} %'),
                 InfoRow(
                   t.tripSocPerKm,

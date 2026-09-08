@@ -126,10 +126,6 @@ class TripSummarySheet extends StatelessWidget {
                 '${view.energyOutWh.toStringAsFixed(1)} Wh',
               ),
               InfoRow(
-                t.tripEnergyIn,
-                '${view.energyInWh.toStringAsFixed(1)} Wh',
-              ),
-              InfoRow(
                 t.tripSocUsed,
                 '${view.socUsed.toStringAsFixed(0)} %',
               ),

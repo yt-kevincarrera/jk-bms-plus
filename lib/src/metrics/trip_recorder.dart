@@ -148,6 +148,16 @@ class TripSummary {
   final double energyOutWh;
 
   /// Watt-hours put back in, by regeneration or by charging mid-trip.
+  ///
+  /// Kept, still subtracted in [whPerKm], and no longer shown. It read 0.0 on
+  /// every ride ever recorded, including a 25 km one, which is correct rather
+  /// than broken: this bike has no regeneration, its measured current never
+  /// goes positive while riding, and nobody charges mid-ride. A row that is
+  /// always zero teaches the rider nothing except to stop reading the section
+  /// it sits in.
+  ///
+  /// It stays in the model and the CSV because the arithmetic is right and a
+  /// bike with regen would fill it in.
   final double energyInWh;
 
   final double startSoc;
