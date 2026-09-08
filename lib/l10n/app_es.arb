@@ -408,10 +408,6 @@
   "healthCardCapacity": "Capacidad real",
   "healthCardLoss": "Pérdida",
   "healthCardCycles": "Ciclos reales",
-  "healthCardInflation": "Contador infla",
-  "healthCardImbalance": "Desbalance",
-  "healthCardWeakest": "Celda que manda",
-  "healthCardSpread": "Peor resistencia",
   "healthCardUsable": "Energía utilizable",
   "healthCardConsumption": "Consumo",
   "healthCardLearnedKm": "Km aprendidos",
@@ -1482,7 +1478,6 @@
     }
   },
   "offlineHealthOneTest": "Una medición hasta ahora: {ah} Ah. La segunda, dentro de unos meses, es la que la convierte en desgaste.",
-  "healthCardShortOfAdvert": "Frente al anuncio",
   "systemDrops": "Caídas del enlace",
   "systemTimeDisconnected": "Tiempo desconectado",
   "systemNudges": "Veces que hubo que insistirle",
@@ -2888,5 +2883,62 @@
   "tripRemeasureFailed": "No quedan lecturas para volver a medir este viaje, así que se queda como estaba.",
   "tripUphill": "Cuesta arriba",
   "tripFlat": "Llano",
-  "tripDownhill": "Cuesta abajo"
+  "tripDownhill": "Cuesta abajo",
+  "healthCardCyclesBms": "el BMS dice {n}",
+  "@healthCardCyclesBms": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "healthWeakCell": "La celda que manda",
+  "healthWeakCellWhy": "El pack se apaga cuando la celda más baja llega al corte, no cuando la media llega. Todo lo que las demás todavía tienen por encima de ese punto no lo vas a usar.",
+  "healthWeakCellWhich": "Cuál es",
+  "healthWeakCellStrands": "Lo que deja sin usar",
+  "healthWeakCellResistance": "Resistencia desde el día uno",
+  "healthWeakCellResistanceUp": "+{pct} % en la celda {cell}",
+  "@healthWeakCellResistanceUp": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      },
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
+  "healthWeakCellResistanceFlat": "Ninguna se ha movido",
+  "healthWeakCellResistanceNoBaseline": "Hace falta una foto del día uno para comparar",
+  "subjectCells": "Celdas",
+  "subjectCapacity": "Capacidad",
+  "subjectRange": "Autonomía",
+  "subjectTemperature": "Temperatura",
+  "subjectConfiguration": "Configuración",
+  "subjectBmsClaims": "Lo que el BMS dice de sí mismo",
+  "adviceCheckedAllFine": "Revisé {subjects}. Todo bien.",
+  "@adviceCheckedAllFine": {
+    "placeholders": {
+      "subjects": {
+        "type": "String"
+      }
+    }
+  },
+  "adviceCheckedSomeFine": "Revisé {subjects}: bien.",
+  "@adviceCheckedSomeFine": {
+    "placeholders": {
+      "subjects": {
+        "type": "String"
+      }
+    }
+  },
+  "adviceNotChecked": "De {subjects} todavía no puedo decir nada.",
+  "@adviceNotChecked": {
+    "placeholders": {
+      "subjects": {
+        "type": "String"
+      }
+    }
+  },
+  "adviceCaveatsTitle": "Cuánto vale esta medición"
 }

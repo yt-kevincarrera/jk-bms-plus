@@ -408,10 +408,6 @@
   "healthCardCapacity": "Real capacity",
   "healthCardLoss": "Loss",
   "healthCardCycles": "Real cycles",
-  "healthCardInflation": "Counter inflates",
-  "healthCardImbalance": "Imbalance",
-  "healthCardWeakest": "Cell in charge",
-  "healthCardSpread": "Worst resistance",
   "healthCardUsable": "Usable energy",
   "healthCardConsumption": "Consumption",
   "healthCardLearnedKm": "Kilometres learned",
@@ -1387,7 +1383,6 @@
   "offlineRangeAtLastSeen": "At the charge in the last reading",
   "offlineHealthNeedsTests": "Needs two full discharges before wear can be measured at all. One gives a capacity; it takes two to show a decline.",
   "offlineHealthOneTest": "One measurement so far: {ah} Ah. A second one, months from now, is what turns it into wear.",
-  "healthCardShortOfAdvert": "Vs. advertised",
   "systemDrops": "Link drops",
   "systemTimeDisconnected": "Time disconnected",
   "systemNudges": "Times the pack was prodded",
@@ -2769,5 +2764,41 @@
   "tripRemeasureFailed": "No readings are left to measure this ride again, so it stays as it was.",
   "tripUphill": "Uphill",
   "tripFlat": "Flat",
-  "tripDownhill": "Downhill"
+  "tripDownhill": "Downhill",
+  "healthCardCyclesBms": "the BMS says {n}",
+  "@healthCardCyclesBms": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "healthWeakCell": "The cell that decides",
+  "healthWeakCellWhy": "The pack stops when the lowest cell reaches cutoff, not when the average does. Whatever the others still hold above that point is not yours to use.",
+  "healthWeakCellWhich": "Which one",
+  "healthWeakCellStrands": "What it strands",
+  "healthWeakCellResistance": "Resistance since day one",
+  "healthWeakCellResistanceUp": "+{pct} % on cell {cell}",
+  "@healthWeakCellResistanceUp": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      },
+      "cell": {
+        "type": "String"
+      }
+    }
+  },
+  "healthWeakCellResistanceFlat": "Nobody has moved",
+  "healthWeakCellResistanceNoBaseline": "Needs a day-one snapshot to compare against",
+  "subjectCells": "Cells",
+  "subjectCapacity": "Capacity",
+  "subjectRange": "Range",
+  "subjectTemperature": "Temperature",
+  "subjectConfiguration": "Configuration",
+  "subjectBmsClaims": "What the BMS says about itself",
+  "adviceCheckedAllFine": "Checked {subjects}. All fine.",
+  "adviceCheckedSomeFine": "Checked {subjects}: fine.",
+  "adviceNotChecked": "Nothing to say about {subjects} yet.",
+  "adviceCaveatsTitle": "What this measurement is worth"
 }

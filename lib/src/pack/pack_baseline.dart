@@ -255,6 +255,43 @@ class BaselineComparison {
     return worst.driftVolts <= -driftFloorVolts ? worst : null;
   }
 
+  /// Below this a cell's resistance has not moved: it is the BMS's own
+  /// measurement noise, and the natural spread between cells sitting on top
+  /// of it.
+  ///
+  /// Not measured but derived, and worth saying which. There is no second
+  /// baseline of the same pack to measure reading-to-reading noise from, so
+  /// this comes from the spread *within* one reading: twenty cells of a real
+  /// pack came in between 344 and 361 mOhm, about 2.4% either side of the
+  /// median. Five percent sits clear of that. Revisit it once a pack has two
+  /// baselines far enough apart to measure the noise properly.
+  static const double resistanceRiseFloor = 0.05;
+
+  /// The cell whose resistance has climbed furthest since day one, or null
+  /// when nobody has moved enough to be worth naming.
+  ///
+  /// This replaces a figure that reported how far the worst cell sat above the
+  /// median *today*. On a real pack that read +2% against a warning threshold
+  /// of +40%, and it would have read +2% for ever: cells differ a little, and
+  /// that they differ is not news.
+  ///
+  /// A rise is. The absolute numbers the BMS reports here are not credible as
+  /// internal resistance -- 354 mOhm is a hundred times a real cell's -- but
+  /// whatever they measure, one cell's figure climbing away from where it
+  /// started is a cell doing something the others are not.
+  ///
+  /// [cells] is ordered by voltage drift, so this scans rather than taking the
+  /// first.
+  CellSince? get worstResistanceRise {
+    CellSince? worst;
+    for (final cell in cells) {
+      final rise = cell.resistanceRise;
+      if (rise == null || rise < resistanceRiseFloor) continue;
+      if (worst == null || rise > worst.resistanceRise!) worst = cell;
+    }
+    return worst;
+  }
+
   /// Cycles the BMS counted between the two readings, when it counted any.
   int? get cyclesSince {
     final was = thenCycleCount;

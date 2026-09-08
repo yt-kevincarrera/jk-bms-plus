@@ -532,7 +532,15 @@ class AdviceEngine {
     // official app, so they are claims, not measurements. The equivalent
     // cycle count comes from amp-hours that actually flowed, which nobody can
     // edit.
-    final inflation = report.cycleInflation;
+    // Not on a young pack, whatever the ratio says. The BMS counts whole
+    // cycles while the equivalent count runs in decimals, so on a pack with a
+    // handful on it the two differ by rounding: one real pack read 0.53, 0.91,
+    // 0.83, 0.70 and 0.96 on consecutive days off three counted cycles. None
+    // of those would trip the threshold, but 4 counted against 2.4 equivalent
+    // would, and it would mean nothing.
+    final inflation = report.bmsCycleCountWorthQuoting == null
+        ? null
+        : report.cycleInflation;
     if (inflation != null && inflation > th.cycleInflation) {
       advice.add(
         Advice(
