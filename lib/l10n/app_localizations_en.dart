@@ -4337,4 +4337,13 @@ class AppL10nEn extends AppL10n {
   @override
   String get tripRemeasureFailed =>
       'Not enough readings are left to measure this ride. Its consumption no longer counts towards range.';
+
+  @override
+  String get tripUphill => 'Uphill';
+
+  @override
+  String get tripFlat => 'Flat';
+
+  @override
+  String get tripDownhill => 'Downhill';
 }

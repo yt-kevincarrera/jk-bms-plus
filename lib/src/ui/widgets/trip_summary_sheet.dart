@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../bms_service.dart';
+import '../../data/database.dart';
 import '../theme.dart';
 import 'common.dart';
 import 'representative_question.dart';
+import 'trip_grade_rows.dart';
 import 'trip_learned_section.dart';
 import 'trip_summary_view.dart';
 
@@ -32,7 +34,7 @@ Future<void> showTripSummarySheet({
 /// exists in the instant the stop button is pressed. It takes a
 /// [TripSummaryView] now so a ride that closed itself in a pocket gets the
 /// same sheet, not a lesser one built by hand from a stored row.
-class TripSummarySheet extends StatelessWidget {
+class TripSummarySheet extends StatefulWidget {
   const TripSummarySheet({
     required this.view,
     required this.service,
@@ -47,6 +49,21 @@ class TripSummarySheet extends StatelessWidget {
   final BmsService service;
 
   final AppL10n t;
+
+  @override
+  State<TripSummarySheet> createState() => _TripSummarySheetState();
+}
+
+class _TripSummarySheetState extends State<TripSummarySheet> {
+  TripSummaryView get view => widget.view;
+  BmsService get service => widget.service;
+  AppL10n get t => widget.t;
+
+  /// Read once. A future built inside `build` would start a fresh query on
+  /// every rebuild and blank the figures each time.
+  late final Future<List<TripPoint>>? _points = view.tripId == null
+      ? null
+      : service.repository?.pointsFor(view.tripId!);
 
   @override
   Widget build(BuildContext context) {
@@ -110,12 +127,9 @@ class TripSummarySheet extends StatelessWidget {
                 t.tripAvgSpeed,
                 '${view.averageSpeedKmh.toStringAsFixed(0)} km/h',
               ),
-              InfoRow(t.tripClimb, '${view.climbM.toStringAsFixed(0)} m'),
-              InfoRow(
-                t.tripDescent,
-                '${view.descentM.toStringAsFixed(0)} m',
-                last: true,
-              ),
+              // The track is on disk by the time this sheet opens: finishTrip
+              // writes the points before anything shows a summary.
+              TripGradeRows(points: _points, t: t, last: true),
             ],
           ),
           Section(

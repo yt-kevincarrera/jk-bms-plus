@@ -4359,4 +4359,13 @@ class AppL10nEs extends AppL10n {
   @override
   String get tripRemeasureFailed =>
       'No quedan lecturas suficientes para medir este viaje. Su consumo deja de contar para la autonomía.';
+
+  @override
+  String get tripUphill => 'Cuesta arriba';
+
+  @override
+  String get tripFlat => 'Llano';
+
+  @override
+  String get tripDownhill => 'Cuesta abajo';
 }

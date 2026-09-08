@@ -9,6 +9,7 @@ import '../metrics/trip_recorder.dart';
 import 'theme.dart';
 import 'widgets/common.dart';
 import 'widgets/representative_question.dart';
+import 'widgets/trip_grade_rows.dart';
 import 'widgets/trip_learned_section.dart';
 import 'widgets/trip_summary_view.dart';
 
@@ -59,6 +60,13 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
   BmsService get service => widget.service;
 
   bool _remeasuring = false;
+
+  /// The track, read once. Both the profile chart and the uphill/downhill
+  /// figures are built from it, and each doing its own query would read a
+  /// thousand rows twice to answer the same question.
+  late final Future<List<TripPoint>> _points = repository.pointsFor(
+    widget.trip.id,
+  );
 
   /// Re-reads the row after something rewrites it.
   Future<void> _reload() async {
@@ -168,11 +176,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                 ],
               ),
             ),
-            _ProfileSection(
-              tripId: trip.id,
-              repository: repository,
-              t: t,
-            ),
+            _ProfileSection(points: _points, t: t),
             // What the app concluded when this ride ended, as it was then. It
             // used to be shown once in a sheet and then be unreachable, which
             // made the most interesting part of recording a ride the part you
@@ -212,12 +216,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                       ? '--'
                       : '${(trip.distanceKm / (trip.movingSeconds / 3600)).toStringAsFixed(0)} km/h',
                 ),
-                InfoRow(t.tripClimb, '${trip.climbM.toStringAsFixed(0)} m'),
-                InfoRow(
-                  t.tripDescent,
-                  '${trip.descentM.toStringAsFixed(0)} m',
-                  last: true,
-                ),
+                TripGradeRows(points: _points, t: t, last: true),
               ],
             ),
             Section(
@@ -305,20 +304,16 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
 }
 
 class _ProfileSection extends StatelessWidget {
-  const _ProfileSection({
-    required this.tripId,
-    required this.repository,
-    required this.t,
-  });
+  const _ProfileSection({required this.points, required this.t});
 
-  final int tripId;
-  final BmsRepository repository;
+  /// Shared with the uphill/downhill figures, so the track is read once.
+  final Future<List<TripPoint>> points;
   final AppL10n t;
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<TripPoint>>(
-      future: repository.pointsFor(tripId),
+      future: points,
       builder: (context, snapshot) {
         final points = snapshot.data;
         if (points == null) {

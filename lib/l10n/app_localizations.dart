@@ -7429,6 +7429,24 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'No quedan lecturas suficientes para medir este viaje. Su consumo deja de contar para la autonomía.'**
   String get tripRemeasureFailed;
+
+  /// No description provided for @tripUphill.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuesta arriba'**
+  String get tripUphill;
+
+  /// No description provided for @tripFlat.
+  ///
+  /// In es, this message translates to:
+  /// **'Llano'**
+  String get tripFlat;
+
+  /// No description provided for @tripDownhill.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuesta abajo'**
+  String get tripDownhill;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

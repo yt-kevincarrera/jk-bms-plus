@@ -2766,5 +2766,8 @@
     }
   },
   "tripRemeasureSame": "It was already measured properly. Nothing to change.",
-  "tripRemeasureFailed": "Not enough readings are left to measure this ride. Its consumption no longer counts towards range."
+  "tripRemeasureFailed": "Not enough readings are left to measure this ride. Its consumption no longer counts towards range.",
+  "tripUphill": "Uphill",
+  "tripFlat": "Flat",
+  "tripDownhill": "Downhill"
 }
