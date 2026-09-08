@@ -1,0 +1,13 @@
+# Line endings for the files that kept flip-flopping.
+#
+# The translation files are rewritten wholesale by anything that touches them:
+# `flutter gen-l10n`, a JSON round-trip, a shell heredoc. Each tool picks its
+# own line ending, and with no rule here the result was a 5,800-line diff every
+# time one string changed -- which is exactly how an unrelated feature and a
+# whole-file reformat once rode into a commit meant to change three cards.
+#
+# Pinned to what they are currently committed as, so this adds no churn of its
+# own. The rest of the repository is deliberately left alone: it is a mix of
+# both endings, and normalising all of it is a bigger decision than this file
+# is trying to make.
+*.arb text eol=lf
