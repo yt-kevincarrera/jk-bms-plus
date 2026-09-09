@@ -233,6 +233,10 @@ void main() {
         () async {
       await addPack('AA:BB');
       final repo = BmsRepository(database: db);
+      // Stops the five second flush timer, which would otherwise outlive this
+      // test, fire after the database is closed, and surface as an unhandled
+      // async error blamed on some later, unrelated test.
+      addTearDown(repo.dispose);
 
       expect(await repo.adoptDeviceCatalogueFromBms('AA:BB', 35), isTrue);
 
@@ -248,6 +252,7 @@ void main() {
       // report the pack as perfectly healthy.
       await addPack('AA:BB');
       final repo = BmsRepository(database: db);
+      addTearDown(repo.dispose);
       await repo.setDeviceCatalogue('AA:BB', 45);
 
       expect(await repo.adoptDeviceCatalogueFromBms('AA:BB', 40), isFalse);
@@ -259,6 +264,7 @@ void main() {
     test('a stated figure outranks an adopted one, permanently', () async {
       await addPack('AA:BB');
       final repo = BmsRepository(database: db);
+      addTearDown(repo.dispose);
       await repo.adoptDeviceCatalogueFromBms('AA:BB', 35);
       await repo.setDeviceCatalogue('AA:BB', 40);
 
@@ -270,6 +276,7 @@ void main() {
     test('an adopted figure can be updated by the BMS changing', () async {
       await addPack('AA:BB');
       final repo = BmsRepository(database: db);
+      addTearDown(repo.dispose);
       await repo.adoptDeviceCatalogueFromBms('AA:BB', 35);
 
       expect(await repo.adoptDeviceCatalogueFromBms('AA:BB', 38), isTrue);
@@ -279,6 +286,7 @@ void main() {
     test('refuses a nonsense figure rather than storing it', () async {
       await addPack('AA:BB');
       final repo = BmsRepository(database: db);
+      addTearDown(repo.dispose);
       expect(await repo.adoptDeviceCatalogueFromBms('AA:BB', 0), isFalse);
       expect(await repo.adoptDeviceCatalogueFromBms('AA:BB', 9999), isFalse);
       expect((await db.device('AA:BB'))!.catalogueCapacityAh, isNull);

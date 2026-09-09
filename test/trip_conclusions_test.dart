@@ -140,7 +140,14 @@ void main() {
       repo.activeDeviceId = 'AA:BB';
     });
 
-    tearDown(() async => db.close());
+    tearDown(() async {
+      // The repository owns a five second flush timer. Left running it fires
+      // after the database below is closed, and the write lands as an
+      // unhandled async error blamed on whichever test happens to be running
+      // by then, in a file that has nothing to do with it.
+      await repo.dispose();
+      await db.close();
+    });
 
     test('a finished ride carries them', () async {
       final id = await repo.beginTrip(DateTime.utc(2026, 9, 1, 8));

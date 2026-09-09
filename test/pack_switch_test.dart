@@ -85,13 +85,15 @@ class StuckRepairRepository extends BmsRepository {
 void main() {
   late AppDatabase db;
   late FakeLink link;
+  late BmsRepository repo;
   late BmsService service;
 
   setUp(() {
     db = AppDatabase.forTesting(NativeDatabase.memory());
     link = FakeLink();
+    repo = BmsRepository(database: db);
     service = BmsService(transport: link)
-      ..repository = BmsRepository(database: db)
+      ..repository = repo
       ..widgetStrings = PackWidgetStrings(
         justNow: 'just now',
         minutesAgo: (n) => '$n min',
@@ -102,6 +104,11 @@ void main() {
 
   tearDown(() async {
     await service.dispose();
+    // The repository owns a five second flush timer. Left running it fires
+    // after the database below is closed, and the write lands as an
+    // unhandled async error blamed on whichever test happens to be running
+    // by then, in a file that has nothing to do with it.
+    await repo.dispose();
     await db.close();
   });
 
@@ -213,6 +220,10 @@ void main() {
     await service.dispose();
     link = FakeLink();
     final stuck = StuckRepairRepository(database: db);
+    // This one replaces the repository from setUp, so it needs its own
+    // cleanup: the flush timer of a repository nothing holds any more still
+    // fires, and still writes to a database that is about to be closed.
+    addTearDown(stuck.dispose);
     service = BmsService(transport: link)..repository = stuck;
 
     final snapshots = <double>[];

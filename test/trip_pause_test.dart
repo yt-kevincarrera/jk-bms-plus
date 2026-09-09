@@ -111,6 +111,7 @@ void main() {
   late FakeLink link;
   late CountingLocation gps;
   late AppDatabase db;
+  late BmsRepository repo;
   late BmsService service;
 
   /// One decoded reading. This fixture carries a current of zero, which is a
@@ -125,8 +126,9 @@ void main() {
     link = FakeLink();
     gps = CountingLocation();
     db = AppDatabase.forTesting(NativeDatabase.memory());
+    repo = BmsRepository(database: db);
     service = BmsService(transport: link, locationFactory: () => gps)
-      ..repository = BmsRepository(database: db);
+      ..repository = repo;
     // A pack on record is a precondition for any of the watchers to run: with
     // nothing connected the app deliberately records nothing at all.
     await service.connect('AA:BB', name: 'KevinJK');
@@ -137,6 +139,11 @@ void main() {
 
   tearDown(() async {
     await service.dispose();
+    // The repository owns a five second flush timer. Left running it fires
+    // after the database below is closed, and the write lands as an
+    // unhandled async error blamed on whichever test happens to be running
+    // by then, in a file that has nothing to do with it.
+    await repo.dispose();
     await db.close();
   });
 

@@ -11,6 +11,7 @@ import 'support/fakes.dart';
 void main() {
   late FakeLink link;
   late AppDatabase db;
+  late BmsRepository repo;
   late BmsService service;
 
   Future<void> feedReading() async {
@@ -21,10 +22,11 @@ void main() {
   setUp(() async {
     link = FakeLink();
     db = AppDatabase.forTesting(NativeDatabase.memory());
+    repo = BmsRepository(database: db);
     service = BmsService(
       transport: link,
       locationFactory: StubLocation.new,
-    )..repository = BmsRepository(database: db);
+    )..repository = repo;
     await service.connect('AA:BB', name: 'KevinJK');
     await link.deliver(deviceInfoFrames[1]);
     await feedReading();
@@ -32,6 +34,11 @@ void main() {
 
   tearDown(() async {
     await service.dispose();
+    // The repository owns a five second flush timer. Left running it fires
+    // after the database below is closed, and the write lands as an
+    // unhandled async error blamed on whichever test happens to be running
+    // by then, in a file that has nothing to do with it.
+    await repo.dispose();
     await db.close();
   });
 
