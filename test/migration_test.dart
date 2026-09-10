@@ -407,12 +407,17 @@ void main() {
 
     test('a blank pack can then be filled from the BMS', () async {
       final repo = BmsRepository(database: db);
+      // Stops the five second flush timer, which would otherwise outlive this
+      // test, fire after the database is closed, and surface as an unhandled
+      // async error blamed on some later, unrelated test.
+      addTearDown(repo.dispose);
       expect(await repo.adoptDeviceCatalogueFromBms('CC:DD', 35), isTrue);
       expect((await db.device('CC:DD'))!.catalogueCapacityAh, 35);
     });
 
     test('and a stated one is still protected from it', () async {
       final repo = BmsRepository(database: db);
+      addTearDown(repo.dispose);
       expect(await repo.adoptDeviceCatalogueFromBms('AA:BB', 40), isFalse);
       expect((await db.device('AA:BB'))!.catalogueCapacityAh, 45);
     });
