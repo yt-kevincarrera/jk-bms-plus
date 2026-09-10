@@ -2941,5 +2941,14 @@
     }
   },
   "adviceCaveatsTitle": "Cuánto vale esta medición",
-  "chargeWatchRedundant": "Con el ajuste de arriba encendido esto ya está cubierto: la conexión se mantiene igual. Solo hace falta si apagas el de arriba y aun así quieres que los avisos de carga lleguen de noche."
+  "chargeWatchRedundant": "Con el ajuste de arriba encendido esto ya está cubierto: la conexión se mantiene igual. Solo hace falta si apagas el de arriba y aun así quieres que los avisos de carga lleguen de noche.",
+  "alertGroupSpread": "Celdas separadas",
+  "alertGroupHeat": "Temperatura",
+  "alertGroupRunningOut": "Te estás quedando sin carga",
+  "alertGroupChargeDone": "La carga terminó",
+  "alertGroupFaults": "Fallos y límites",
+  "alertWhenRiding": "Rodando",
+  "alertWhenCharging": "Cargando",
+  "alertWhenTopOfCharge": "Al final de la carga",
+  "alertTargetReachedShort": "Llegó al objetivo que pusiste"
 }

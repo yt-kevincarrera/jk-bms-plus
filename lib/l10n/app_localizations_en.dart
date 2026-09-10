@@ -4404,4 +4404,31 @@ class AppL10nEn extends AppL10n {
   @override
   String get chargeWatchRedundant =>
       'With the setting above on this is already covered: the link stays open anyway. You only need it if you turn that one off and still want charge alerts overnight.';
+
+  @override
+  String get alertGroupSpread => 'Cells apart';
+
+  @override
+  String get alertGroupHeat => 'Temperature';
+
+  @override
+  String get alertGroupRunningOut => 'Running out of charge';
+
+  @override
+  String get alertGroupChargeDone => 'Charging finished';
+
+  @override
+  String get alertGroupFaults => 'Faults and limits';
+
+  @override
+  String get alertWhenRiding => 'While riding';
+
+  @override
+  String get alertWhenCharging => 'While charging';
+
+  @override
+  String get alertWhenTopOfCharge => 'At the top of the charge';
+
+  @override
+  String get alertTargetReachedShort => 'Reached the level you set';
 }

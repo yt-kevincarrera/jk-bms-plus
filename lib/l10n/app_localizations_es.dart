@@ -4426,4 +4426,31 @@ class AppL10nEs extends AppL10n {
   @override
   String get chargeWatchRedundant =>
       'Con el ajuste de arriba encendido esto ya está cubierto: la conexión se mantiene igual. Solo hace falta si apagas el de arriba y aun así quieres que los avisos de carga lleguen de noche.';
+
+  @override
+  String get alertGroupSpread => 'Celdas separadas';
+
+  @override
+  String get alertGroupHeat => 'Temperatura';
+
+  @override
+  String get alertGroupRunningOut => 'Te estás quedando sin carga';
+
+  @override
+  String get alertGroupChargeDone => 'La carga terminó';
+
+  @override
+  String get alertGroupFaults => 'Fallos y límites';
+
+  @override
+  String get alertWhenRiding => 'Rodando';
+
+  @override
+  String get alertWhenCharging => 'Cargando';
+
+  @override
+  String get alertWhenTopOfCharge => 'Al final de la carga';
+
+  @override
+  String get alertTargetReachedShort => 'Llegó al objetivo que pusiste';
 }

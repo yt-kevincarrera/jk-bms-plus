@@ -2801,5 +2801,14 @@
   "adviceCheckedSomeFine": "Checked {subjects}: fine.",
   "adviceNotChecked": "Nothing to say about {subjects} yet.",
   "adviceCaveatsTitle": "What this measurement is worth",
-  "chargeWatchRedundant": "With the setting above on this is already covered: the link stays open anyway. You only need it if you turn that one off and still want charge alerts overnight."
+  "chargeWatchRedundant": "With the setting above on this is already covered: the link stays open anyway. You only need it if you turn that one off and still want charge alerts overnight.",
+  "alertGroupSpread": "Cells apart",
+  "alertGroupHeat": "Temperature",
+  "alertGroupRunningOut": "Running out of charge",
+  "alertGroupChargeDone": "Charging finished",
+  "alertGroupFaults": "Faults and limits",
+  "alertWhenRiding": "While riding",
+  "alertWhenCharging": "While charging",
+  "alertWhenTopOfCharge": "At the top of the charge",
+  "alertTargetReachedShort": "Reached the level you set"
 }
