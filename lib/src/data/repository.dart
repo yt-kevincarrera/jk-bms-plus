@@ -12,6 +12,7 @@ import '../metrics/trip_recorder.dart';
 import '../model/bms_snapshot.dart';
 import '../protocol/jk_frame.dart';
 import 'database.dart';
+import 'link_event.dart';
 
 /// Everything that writes to disk.
 ///
@@ -514,6 +515,40 @@ class BmsRepository {
           ..sort((a, b) => a.startedAt.compareTo(b.startedAt));
     return usable;
   }
+
+  /// Notes something the app decided, for explaining a ride afterwards.
+  ///
+  /// Fire and forget on purpose, and it swallows its own failures. This is the
+  /// diagnostic log: it exists to explain a problem, and a log that can itself
+  /// break the ride it is recording would be worse than no log. Nothing in the
+  /// app waits on it or reads it back during a ride.
+  ///
+  /// Not batched through [flush] like readings are. A log's whole value is
+  /// that the last row before a crash survived, and a buffer is exactly what
+  /// loses that row.
+  Future<void> note(
+    LinkEventKind kind, {
+    String detail = '',
+    String? deviceId,
+  }) async {
+    try {
+      await db.insertLinkEvent(
+        LinkEventsCompanion.insert(
+          at: DateTime.now().toUtc(),
+          kind: kind.name,
+          detail: Value(detail),
+          deviceId: Value(deviceId),
+        ),
+      );
+    } catch (_) {
+      // Deliberately silent. See above.
+    }
+  }
+
+  Future<List<LinkEvent>> recentLinkEvents({int limit = 2000}) =>
+      db.recentLinkEvents(limit: limit);
+
+  Future<int> pruneLinkEvents() => db.pruneLinkEvents();
 
   Future<void> setTripRepresentative(int tripId, bool? value) =>
       db.setTripRepresentative(tripId, value);

@@ -364,6 +364,41 @@ class Baselines extends Table {
   Set<Column<Object>> get primaryKey => {deviceId};
 }
 
+/// What the app decided, and when, so a ride can be explained afterwards.
+///
+/// Every problem worth chasing in this app happens on a moving motorcycle
+/// with the phone in a pocket, which is the one place a debugger cannot go.
+/// Three of them were open at once with nothing to go on: a ride that never
+/// started itself, a link that dropped and never came back, and a phone that
+/// sometimes had to be restarted before it would connect at all. Each was
+/// argued about from the source, and the first confident answer, a missing
+/// location permission, turned out to be wrong.
+///
+/// So the app records its own decisions. One row per thing that happened,
+/// exported with the backup, which is a file the rider can already share.
+/// One ride then answers all three questions instead of none.
+///
+/// Deliberately decisions and transitions, not a firehose: readings already
+/// live in [Snapshots] and frames in [RawFrames]. What was missing was *why*
+/// the app did what it did, which is the part no amount of data recovers.
+class LinkEvents extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  DateTimeColumn get at => dateTime()();
+
+  /// The pack it happened on, or null for anything decided before one was
+  /// known, which includes most of what goes wrong while connecting.
+  TextColumn get deviceId => text().nullable()();
+
+  /// One of [LinkEventKind], by name. Stored as text rather than an index so
+  /// a reordered enum cannot silently relabel a history somebody is reading
+  /// to work out what went wrong.
+  TextColumn get kind => text()();
+
+  /// The number or short phrase that makes the row worth having: how many
+  /// failures, how long the gap was, which threshold was not met.
+  TextColumn get detail => text().withDefault(const Constant(''))();
+}
+
 @DriftDatabase(
   tables: [
     Devices,
@@ -375,6 +410,7 @@ class Baselines extends Table {
     MaintenanceEvents,
     Inspections,
     Baselines,
+    LinkEvents,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -382,7 +418,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -492,6 +528,12 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(trips, trips.representative);
         await m.addColumn(trips, trips.summarySeen);
         await customStatement('UPDATE trips SET summary_seen = 1');
+      }
+      if (from < 14) {
+        // A new table, so nothing to backfill: the log starts the day the
+        // rider updates, which is the honest starting point for a record of
+        // decisions the app had not been making a note of.
+        await m.createTable(linkEvents);
       }
     },
   );
@@ -691,6 +733,7 @@ class AppDatabase extends _$AppDatabase {
     await delete(maintenanceEvents).go();
     await delete(inspections).go();
     await delete(baselines).go();
+    await delete(linkEvents).go();
     await delete(devices).go();
   }
 
@@ -889,6 +932,38 @@ class AppDatabase extends _$AppDatabase {
 
   /// Drops frames older than [keep]. Roughly 25 MB a day of active use, so
   /// without rotation this would fill the phone in a couple of months.
+  Future<int> insertLinkEvent(LinkEventsCompanion event) =>
+      into(linkEvents).insert(event);
+
+  /// The log, newest first.
+  ///
+  /// Ordered by id as well as time, and that second term is not decoration:
+  /// drift stores a timestamp as whole seconds, and this log records decisions
+  /// that arrive two or three a second. Without it, everything written inside
+  /// the same second comes back in an order sqlite never promised, which for a
+  /// record whose whole purpose is "what happened just before it broke" is the
+  /// one thing it must not do.
+  Future<List<LinkEvent>> recentLinkEvents({int limit = 2000}) =>
+      (select(linkEvents)
+            ..orderBy([
+              (e) => OrderingTerm.desc(e.at),
+              (e) => OrderingTerm.desc(e.id),
+            ])
+            ..limit(limit))
+          .get();
+
+  /// Drops log rows past their window.
+  ///
+  /// Shorter than the raw frames' month: this is for explaining the ride that
+  /// just went wrong, and a log nobody has looked at in a fortnight has been
+  /// superseded by the next one.
+  Future<int> pruneLinkEvents({Duration keep = const Duration(days: 14)}) {
+    final cutoff = DateTime.now().toUtc().subtract(keep);
+    return (delete(
+      linkEvents,
+    )..where((e) => e.at.isSmallerThanValue(cutoff))).go();
+  }
+
   Future<int> pruneRawFrames({Duration keep = const Duration(days: 30)}) {
     final cutoff = DateTime.now().toUtc().subtract(keep);
     return (delete(

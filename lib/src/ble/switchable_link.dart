@@ -64,6 +64,9 @@ class SwitchableLink implements BmsLink {
   Future<void> retryNow() => _active.retryNow();
 
   @override
+  set persistRetries(bool value) => _active.persistRetries = value;
+
+  @override
   Future<void> disconnect() => _active.disconnect();
 
   /// Switches to the simulated pack. Any real connection is dropped first: the
@@ -130,6 +133,9 @@ class _Uninitialised implements BmsLink {
   LinkRetryState get retry => LinkRetryState.none;
   @override
   Future<void> retryNow() async {}
+
+  @override
+  set persistRetries(bool value) {}
   @override
   Stream<List<DiscoveredBms>> scan() => const Stream.empty();
   @override

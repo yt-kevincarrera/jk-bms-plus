@@ -83,6 +83,9 @@ class _JkBmsAppState extends State<JkBmsApp> {
     // Cheap, and better done at every start than when the phone is already
     // full: raw frames are the biggest thing this app writes.
     _repository.pruneRawFrames();
+    // The decision log too. Kept a fortnight: it is for explaining the ride
+    // that just went wrong, and an older one has been superseded.
+    _repository.pruneLinkEvents();
     _repository.compactSnapshots();
     // Every pack, at startup, because the saved-pack screen reads history with
     // no radio involved and was showing figures the app already knew how to

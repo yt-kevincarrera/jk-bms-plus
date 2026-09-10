@@ -79,6 +79,15 @@ abstract interface class BmsLink {
   /// transport with no loop has nothing to do here.
   Future<void> retryNow() async {}
 
+  /// Whether the reconnect loop should refuse to give up.
+  ///
+  /// Set while a ride is being recorded. Giving up is right when the app is in
+  /// somebody's hand and they can read the screen say so; it is wrong with the
+  /// phone in a pocket, where the loop stopping means the rest of the ride
+  /// records nothing and its watt-hours end at the drop. A transport with no
+  /// loop has nothing to do here.
+  set persistRetries(bool value) {}
+
   Stream<List<DiscoveredBms>> scan();
 
   Future<void> connect(String deviceId);

@@ -34,6 +34,9 @@ class FakeLink implements BmsLink {
   Future<void> retryNow() async {}
 
   @override
+  set persistRetries(bool value) {}
+
+  @override
   Stream<List<DiscoveredBms>> scan() => const Stream.empty();
   @override
   Future<void> connect(String deviceId) async {}

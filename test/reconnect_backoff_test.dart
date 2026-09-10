@@ -136,4 +136,74 @@ void main() {
       expect(backoff.nextDelay(), const Duration(milliseconds: 400));
     });
   });
+group('while a ride is being recorded', () {
+    // The rider's report, and the reason this mode exists: the link drops
+    // mid-ride, six minutes of retries fail with the phone in a pocket, and
+    // the loop then stops for good. Nothing revives it but a tap on a screen
+    // nobody is looking at, so the rest of the ride records nothing and the
+    // ride's watt-hours are truncated at the drop.
+    //
+    // Giving up is the right answer when the app is in somebody's hand and
+    // they can see it say so. It is the wrong answer when a ride is open.
+
+    test('the loop never stops for good', () {
+      final backoff = ReconnectBackoff()..persist = true;
+      for (var i = 0; i < backoff.giveUpAfter * 4; i++) {
+        backoff.recordFailure();
+      }
+      expect(backoff.hasGivenUp, isFalse);
+      expect(backoff.nextDelay(), isNotNull);
+    });
+
+    test('but it slows to one attempt a minute rather than hammering', () {
+      // The cost of asking has to stay bounded. One a minute recovers within a
+      // minute of walking back into range, and asks five times less often than
+      // the forty second ceiling the give-up schedule ends on.
+      final backoff = ReconnectBackoff()..persist = true;
+      for (var i = 0; i < backoff.giveUpAfter; i++) {
+        backoff.recordFailure();
+      }
+      expect(backoff.nextDelay(), backoff.persistDelay);
+      expect(backoff.persistDelay, const Duration(minutes: 1));
+    });
+
+    test('a quick first retry is not sacrificed to it', () {
+      // A link that merely dropped comes back at once. Persisting must not
+      // turn a two second hole in the recording into a sixty second one.
+      final backoff = ReconnectBackoff()..persist = true;
+      expect(backoff.nextDelay(), const Duration(milliseconds: 400));
+    });
+
+    test('and the early schedule is untouched', () {
+      final persisting = ReconnectBackoff()..persist = true;
+      final plain = ReconnectBackoff();
+      for (var i = 0; i < 4; i++) {
+        persisting.recordFailure();
+        plain.recordFailure();
+      }
+      expect(persisting.nextDelay(), plain.nextDelay());
+    });
+
+    test('the ride ending hands the decision back', () {
+      // Off the bike the old answer is the right one again: stop, say so, and
+      // let the rider decide.
+      final backoff = ReconnectBackoff()..persist = true;
+      for (var i = 0; i < backoff.giveUpAfter; i++) {
+        backoff.recordFailure();
+      }
+      backoff.persist = false;
+      expect(backoff.hasGivenUp, isTrue);
+      expect(backoff.nextDelay(), isNull);
+    });
+
+    test('the pack answering clears the ledger as always', () {
+      final backoff = ReconnectBackoff()..persist = true;
+      for (var i = 0; i < backoff.giveUpAfter; i++) {
+        backoff.recordFailure();
+      }
+      backoff.recordSuccess();
+      expect(backoff.failures, 0);
+      expect(backoff.nextDelay(), const Duration(milliseconds: 400));
+    });
+  });
 }

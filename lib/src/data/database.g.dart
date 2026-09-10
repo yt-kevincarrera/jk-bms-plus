@@ -6620,6 +6620,352 @@ class BaselinesCompanion extends UpdateCompanion<Baseline> {
   }
 }
 
+class $LinkEventsTable extends LinkEvents
+    with TableInfo<$LinkEventsTable, LinkEvent> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LinkEventsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _atMeta = const VerificationMeta('at');
+  @override
+  late final GeneratedColumn<DateTime> at = GeneratedColumn<DateTime>(
+    'at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _detailMeta = const VerificationMeta('detail');
+  @override
+  late final GeneratedColumn<String> detail = GeneratedColumn<String>(
+    'detail',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, at, deviceId, kind, detail];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'link_events';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LinkEvent> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('at')) {
+      context.handle(_atMeta, at.isAcceptableOrUnknown(data['at']!, _atMeta));
+    } else if (isInserting) {
+      context.missing(_atMeta);
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
+      );
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('detail')) {
+      context.handle(
+        _detailMeta,
+        detail.isAcceptableOrUnknown(data['detail']!, _detailMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LinkEvent map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LinkEvent(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      at: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}at'],
+      )!,
+      deviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_id'],
+      ),
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      detail: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}detail'],
+      )!,
+    );
+  }
+
+  @override
+  $LinkEventsTable createAlias(String alias) {
+    return $LinkEventsTable(attachedDatabase, alias);
+  }
+}
+
+class LinkEvent extends DataClass implements Insertable<LinkEvent> {
+  final int id;
+  final DateTime at;
+
+  /// The pack it happened on, or null for anything decided before one was
+  /// known, which includes most of what goes wrong while connecting.
+  final String? deviceId;
+
+  /// One of [LinkEventKind], by name. Stored as text rather than an index so
+  /// a reordered enum cannot silently relabel a history somebody is reading
+  /// to work out what went wrong.
+  final String kind;
+
+  /// The number or short phrase that makes the row worth having: how many
+  /// failures, how long the gap was, which threshold was not met.
+  final String detail;
+  const LinkEvent({
+    required this.id,
+    required this.at,
+    this.deviceId,
+    required this.kind,
+    required this.detail,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['at'] = Variable<DateTime>(at);
+    if (!nullToAbsent || deviceId != null) {
+      map['device_id'] = Variable<String>(deviceId);
+    }
+    map['kind'] = Variable<String>(kind);
+    map['detail'] = Variable<String>(detail);
+    return map;
+  }
+
+  LinkEventsCompanion toCompanion(bool nullToAbsent) {
+    return LinkEventsCompanion(
+      id: Value(id),
+      at: Value(at),
+      deviceId: deviceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deviceId),
+      kind: Value(kind),
+      detail: Value(detail),
+    );
+  }
+
+  factory LinkEvent.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LinkEvent(
+      id: serializer.fromJson<int>(json['id']),
+      at: serializer.fromJson<DateTime>(json['at']),
+      deviceId: serializer.fromJson<String?>(json['deviceId']),
+      kind: serializer.fromJson<String>(json['kind']),
+      detail: serializer.fromJson<String>(json['detail']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'at': serializer.toJson<DateTime>(at),
+      'deviceId': serializer.toJson<String?>(deviceId),
+      'kind': serializer.toJson<String>(kind),
+      'detail': serializer.toJson<String>(detail),
+    };
+  }
+
+  LinkEvent copyWith({
+    int? id,
+    DateTime? at,
+    Value<String?> deviceId = const Value.absent(),
+    String? kind,
+    String? detail,
+  }) => LinkEvent(
+    id: id ?? this.id,
+    at: at ?? this.at,
+    deviceId: deviceId.present ? deviceId.value : this.deviceId,
+    kind: kind ?? this.kind,
+    detail: detail ?? this.detail,
+  );
+  LinkEvent copyWithCompanion(LinkEventsCompanion data) {
+    return LinkEvent(
+      id: data.id.present ? data.id.value : this.id,
+      at: data.at.present ? data.at.value : this.at,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      detail: data.detail.present ? data.detail.value : this.detail,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LinkEvent(')
+          ..write('id: $id, ')
+          ..write('at: $at, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('kind: $kind, ')
+          ..write('detail: $detail')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, at, deviceId, kind, detail);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LinkEvent &&
+          other.id == this.id &&
+          other.at == this.at &&
+          other.deviceId == this.deviceId &&
+          other.kind == this.kind &&
+          other.detail == this.detail);
+}
+
+class LinkEventsCompanion extends UpdateCompanion<LinkEvent> {
+  final Value<int> id;
+  final Value<DateTime> at;
+  final Value<String?> deviceId;
+  final Value<String> kind;
+  final Value<String> detail;
+  const LinkEventsCompanion({
+    this.id = const Value.absent(),
+    this.at = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.detail = const Value.absent(),
+  });
+  LinkEventsCompanion.insert({
+    this.id = const Value.absent(),
+    required DateTime at,
+    this.deviceId = const Value.absent(),
+    required String kind,
+    this.detail = const Value.absent(),
+  }) : at = Value(at),
+       kind = Value(kind);
+  static Insertable<LinkEvent> custom({
+    Expression<int>? id,
+    Expression<DateTime>? at,
+    Expression<String>? deviceId,
+    Expression<String>? kind,
+    Expression<String>? detail,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (at != null) 'at': at,
+      if (deviceId != null) 'device_id': deviceId,
+      if (kind != null) 'kind': kind,
+      if (detail != null) 'detail': detail,
+    });
+  }
+
+  LinkEventsCompanion copyWith({
+    Value<int>? id,
+    Value<DateTime>? at,
+    Value<String?>? deviceId,
+    Value<String>? kind,
+    Value<String>? detail,
+  }) {
+    return LinkEventsCompanion(
+      id: id ?? this.id,
+      at: at ?? this.at,
+      deviceId: deviceId ?? this.deviceId,
+      kind: kind ?? this.kind,
+      detail: detail ?? this.detail,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (at.present) {
+      map['at'] = Variable<DateTime>(at.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (detail.present) {
+      map['detail'] = Variable<String>(detail.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LinkEventsCompanion(')
+          ..write('id: $id, ')
+          ..write('at: $at, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('kind: $kind, ')
+          ..write('detail: $detail')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -6633,6 +6979,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $MaintenanceEventsTable(this);
   late final $InspectionsTable inspections = $InspectionsTable(this);
   late final $BaselinesTable baselines = $BaselinesTable(this);
+  late final $LinkEventsTable linkEvents = $LinkEventsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -6647,6 +6994,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     maintenanceEvents,
     inspections,
     baselines,
+    linkEvents,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -9926,6 +10274,197 @@ typedef $$BaselinesTableProcessedTableManager =
       Baseline,
       PrefetchHooks Function()
     >;
+typedef $$LinkEventsTableCreateCompanionBuilder =
+    LinkEventsCompanion Function({
+      Value<int> id,
+      required DateTime at,
+      Value<String?> deviceId,
+      required String kind,
+      Value<String> detail,
+    });
+typedef $$LinkEventsTableUpdateCompanionBuilder =
+    LinkEventsCompanion Function({
+      Value<int> id,
+      Value<DateTime> at,
+      Value<String?> deviceId,
+      Value<String> kind,
+      Value<String> detail,
+    });
+
+class $$LinkEventsTableFilterComposer
+    extends Composer<_$AppDatabase, $LinkEventsTable> {
+  $$LinkEventsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get at => $composableBuilder(
+    column: $table.at,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get detail => $composableBuilder(
+    column: $table.detail,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LinkEventsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LinkEventsTable> {
+  $$LinkEventsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get at => $composableBuilder(
+    column: $table.at,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get detail => $composableBuilder(
+    column: $table.detail,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LinkEventsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LinkEventsTable> {
+  $$LinkEventsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get at =>
+      $composableBuilder(column: $table.at, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get detail =>
+      $composableBuilder(column: $table.detail, builder: (column) => column);
+}
+
+class $$LinkEventsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LinkEventsTable,
+          LinkEvent,
+          $$LinkEventsTableFilterComposer,
+          $$LinkEventsTableOrderingComposer,
+          $$LinkEventsTableAnnotationComposer,
+          $$LinkEventsTableCreateCompanionBuilder,
+          $$LinkEventsTableUpdateCompanionBuilder,
+          (
+            LinkEvent,
+            BaseReferences<_$AppDatabase, $LinkEventsTable, LinkEvent>,
+          ),
+          LinkEvent,
+          PrefetchHooks Function()
+        > {
+  $$LinkEventsTableTableManager(_$AppDatabase db, $LinkEventsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LinkEventsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LinkEventsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LinkEventsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<DateTime> at = const Value.absent(),
+                Value<String?> deviceId = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> detail = const Value.absent(),
+              }) => LinkEventsCompanion(
+                id: id,
+                at: at,
+                deviceId: deviceId,
+                kind: kind,
+                detail: detail,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required DateTime at,
+                Value<String?> deviceId = const Value.absent(),
+                required String kind,
+                Value<String> detail = const Value.absent(),
+              }) => LinkEventsCompanion.insert(
+                id: id,
+                at: at,
+                deviceId: deviceId,
+                kind: kind,
+                detail: detail,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LinkEventsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LinkEventsTable,
+      LinkEvent,
+      $$LinkEventsTableFilterComposer,
+      $$LinkEventsTableOrderingComposer,
+      $$LinkEventsTableAnnotationComposer,
+      $$LinkEventsTableCreateCompanionBuilder,
+      $$LinkEventsTableUpdateCompanionBuilder,
+      (LinkEvent, BaseReferences<_$AppDatabase, $LinkEventsTable, LinkEvent>),
+      LinkEvent,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -9948,4 +10487,6 @@ class $AppDatabaseManager {
       $$InspectionsTableTableManager(_db, _db.inspections);
   $$BaselinesTableTableManager get baselines =>
       $$BaselinesTableTableManager(_db, _db.baselines);
+  $$LinkEventsTableTableManager get linkEvents =>
+      $$LinkEventsTableTableManager(_db, _db.linkEvents);
 }
