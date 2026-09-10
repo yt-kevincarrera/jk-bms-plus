@@ -7,6 +7,7 @@ import 'ble/simulator/simulated_pack.dart';
 import 'ble/switchable_link.dart';
 import 'data/database.dart';
 import 'data/repository.dart';
+import 'data/link_event.dart';
 import 'gps/location_source.dart';
 import 'gps/simulated_location_source.dart';
 import 'platform/alert_notifications.dart';
@@ -904,6 +905,13 @@ class BmsService {
     if (problem != null) return problem;
     _segments.reset();
     trip.start();
+    // From here the loop is not allowed to stop trying. Off the bike, giving
+    // up after six minutes is right: the screen says so and offers a retry.
+    // With the phone in a pocket it meant the rest of the ride recorded
+    // nothing and its watt-hours ended at the drop, because the only thing
+    // that revives the loop is a tap nobody is there to make.
+    _transport.persistRetries = true;
+    unawaited(repository?.note(LinkEventKind.reconnectPersisting) ?? Future.value());
     // The row is opened now rather than at the end, so readings taken during
     // the ride can be attributed to it and so a ride that ends badly still
     // leaves something behind.
@@ -966,6 +974,9 @@ class BmsService {
     final points = trip.points;
     final summary = trip.stop();
     _segments.reset();
+    // Off the bike the old answer is the right one again.
+    _transport.persistRetries = false;
+    unawaited(repository?.note(LinkEventKind.reconnectRelaxed) ?? Future.value());
     await _stopLocation();
 
     final id = _currentTripId;
@@ -1081,6 +1092,20 @@ class BmsService {
         trip.addFix(fix);
       } else {
         _lastAutoSpeedKmh = fix.speedKmh;
+        final moving = fix.speedKmh >= tripAutoStart.minSpeedKmh;
+        if (moving && !_noticedSpeed) {
+          _noticedSpeed = true;
+          unawaited(
+            repository?.note(
+                  LinkEventKind.idleSpeedSeen,
+                  detail: fix.speedKmh.toStringAsFixed(1),
+                  deviceId: activeDeviceId,
+                ) ??
+                Future.value(),
+          );
+        } else if (!moving) {
+          _noticedSpeed = false;
+        }
       }
     });
     return null;
@@ -1601,6 +1626,9 @@ class BmsService {
   /// When the link went down, or null while it is up.
   DateTime? _linkDownSince;
 
+  /// When the link last came up, so a drop can say how long it had held.
+  DateTime? _linkUpSince;
+
   /// Whether this outage has already been reported. One outage, one
   /// notification, however many times the transport cycles through
   /// reconnecting and failed while it retries.
@@ -1624,12 +1652,44 @@ class BmsService {
     if (_disconnectRequested) return;
     if (_linkDownSince != null) return;
     _linkDownSince = DateTime.now();
+    // How long it had been up, which is what separates a pack dropping every
+    // few seconds from one that ran half an hour and then went. And whether a
+    // ride was open, because that is the case that used to lose a whole trip.
+    final up = _linkUpSince;
+    final retry = _transport.retry;
+    unawaited(
+      repository?.note(
+            LinkEventKind.linkDropped,
+            detail: [
+              if (up != null) '${DateTime.now().difference(up).inSeconds}s up',
+              'recording: ${trip.isRecording}',
+              'failures: ${retry.failures}',
+            ].join(', '),
+            deviceId: activeDeviceId,
+          ) ??
+          Future.value(),
+    );
     _linkLostTimer?.cancel();
     _linkLostTimer = Timer(linkLostAlarm.graceBefore, _noteLinkLost);
   }
 
   /// The link came back. Whatever was said about it being gone is over.
   void _onLinkUp() {
+    // The gap, which is the number that says whether a recovery worked or the
+    // ride simply ended. A ride's worst measured gap was 169 seconds and it
+    // closed on its own; anything much longer is the failure being chased.
+    final downFor = _linkDownSince;
+    if (downFor != null) {
+      unawaited(
+        repository?.note(
+              LinkEventKind.readingsResumed,
+              detail: '${DateTime.now().difference(downFor).inSeconds}s down',
+              deviceId: activeDeviceId,
+            ) ??
+            Future.value(),
+      );
+    }
+    _linkUpSince = DateTime.now();
     _linkLostTimer?.cancel();
     _linkLostTimer = null;
     _linkDownSince = null;
@@ -1734,6 +1794,16 @@ class BmsService {
         // no track would poison the consumption figure with a divide by zero.
         // But saying nothing is worse than not recording: the rider goes on
         // believing the app is learning while it rejects every ride.
+        unawaited(
+          repository?.note(
+                problem == null
+                    ? LinkEventKind.autoTripStarted
+                    : LinkEventKind.autoTripBlocked,
+                detail: problem?.name ?? '',
+                deviceId: activeDeviceId,
+              ) ??
+              Future.value(),
+        );
         _autoTripController.add(
           problem == null ? AutoTripAction.start : AutoTripAction.blocked,
         );
@@ -1773,8 +1843,41 @@ class BmsService {
     if (trip.isActive) return;
 
     final drawing = snapshot.current <= -tripAutoStart.minCurrentAmps;
+    if (drawing && !_noticedCurrent) {
+      // Once per run of drawing, not per reading: at two or three readings a
+      // second a row each would bury the log and say nothing Snapshots does
+      // not already say. What matters is whether this ever happened at all.
+      _noticedCurrent = true;
+      unawaited(
+        repository?.note(
+              LinkEventKind.ridingCurrentSeen,
+              detail: snapshot.current.toStringAsFixed(1),
+              deviceId: activeDeviceId,
+            ) ??
+            Future.value(),
+      );
+    } else if (!drawing) {
+      _noticedCurrent = false;
+    }
     if (drawing && _location == null) {
-      await _ensureLocation();
+      unawaited(
+        repository?.note(
+              LinkEventKind.locationArmed,
+              deviceId: activeDeviceId,
+            ) ??
+            Future.value(),
+      );
+      final refused = await _ensureLocation();
+      if (refused != null) {
+        unawaited(
+          repository?.note(
+                LinkEventKind.locationRefused,
+                detail: refused.name,
+                deviceId: activeDeviceId,
+              ) ??
+              Future.value(),
+        );
+      }
     } else if (!drawing &&
         _location != null &&
         !tripAutoStart.looksLikeRiding) {
@@ -1786,6 +1889,13 @@ class BmsService {
   }
 
   /// Speed while no trip is open, so the detector has something to judge.
+  /// Whether the current has already been noted for this run of drawing, so
+  /// the log gets one row per run instead of one per reading.
+  bool _noticedCurrent = false;
+
+  /// The same, for the speed.
+  bool _noticedSpeed = false;
+
   double? _rawAutoSpeedKmh;
   DateTime? _autoSpeedAt;
 

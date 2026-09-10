@@ -147,6 +147,9 @@ class SimulatedLink implements BmsLink {
   Future<void> retryNow() async {}
 
   @override
+  set persistRetries(bool value) {}
+
+  @override
   Future<void> disconnect() async {
     _timer?.cancel();
     _timer = null;

@@ -49,6 +49,7 @@ class BackupCodec {
     final maintenance = await db.allMaintenanceForBackup();
     final inspections = await db.allInspectionsForBackup();
     final baselines = await db.allBaselines();
+    final events = await db.recentLinkEvents();
     final frames = includeRawFrames
         ? await db.allRawFramesForBackup()
         : const <RawFrame>[];
@@ -67,6 +68,12 @@ class BackupCodec {
       'maintenance': maintenance.map(_maintenance).toList(),
       'inspections': inspections.map(_inspection).toList(),
       'baselines': baselines.map(_baseline).toList(),
+      // The reason this table exists: the problems worth chasing only happen
+      // on a moving motorcycle, and a backup is the one file the rider can
+      // already share. Exported unconditionally, and not gated behind
+      // includeRawFrames, because it is a few hundred short rows and it is the
+      // half of a bug report that cannot be reconstructed from anything else.
+      'linkEvents': events.map(_linkEvent).toList(),
       'rawFrames': frames.map(_frame).toList(),
     };
 
@@ -129,6 +136,8 @@ class BackupCodec {
     final inspections = _list(decoded['inspections']);
     // Same for baselines.
     final baselines = _list(decoded['baselines']);
+    // And for the decision log, which older backups predate entirely.
+    final events = _list(decoded['linkEvents']);
 
     for (final d in devices) {
       await db.upsertDevice(
@@ -144,6 +153,24 @@ class BackupCodec {
           firstSeenAt: _time(d['firstSeenAt'])!,
           lastSeenAt: _time(d['lastSeenAt'])!,
           demo: Value(d['demo'] as bool? ?? false),
+        ),
+      );
+    }
+
+    for (final e in events) {
+      final at = _time(e['at']);
+      final kind = e['kind'] as String?;
+      if (at == null || kind == null) continue;
+      // The kind is not checked against the enum on purpose. A log restored
+      // from a newer build may name a decision this one has never made, and
+      // dropping those rows would quietly delete the most interesting half of
+      // somebody's bug report. It is text, and it stays text.
+      await db.insertLinkEvent(
+        LinkEventsCompanion.insert(
+          at: at,
+          kind: kind,
+          detail: Value(e['detail'] as String? ?? ''),
+          deviceId: Value(e['deviceId'] as String?),
         ),
       );
     }
@@ -258,6 +285,13 @@ class BackupCodec {
 
   /// A pack's day one. Carried because a history without the point it is
   /// measured from is a list of numbers.
+  static Map<String, Object?> _linkEvent(LinkEvent e) => {
+    'at': e.at.toIso8601String(),
+    'deviceId': e.deviceId,
+    'kind': e.kind,
+    'detail': e.detail,
+  };
+
   static Map<String, Object?> _baseline(Baseline b) => {
     'deviceId': b.deviceId,
     'capturedAt': b.capturedAt.toIso8601String(),

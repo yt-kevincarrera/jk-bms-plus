@@ -842,6 +842,16 @@ class BleTransport implements BmsLink {
   /// back to the bike or restarting Bluetooth is what makes the next attempt
   /// worth trying, and it is not the app's place to know which happened.
   @override
+  set persistRetries(bool value) {
+    if (_backoff.persist == value) return;
+    _backoff.persist = value;
+    // Turning it on while the loop had already stopped has to restart it:
+    // the ride began after the give-up, and the whole point is that a ride in
+    // progress outranks the decision to stop.
+    if (value && _wantConnection && !_disposed) _scheduleReconnect();
+  }
+
+  @override
   Future<void> retryNow() async {
     if (_device == null || _disposed) return;
     _wantConnection = true;

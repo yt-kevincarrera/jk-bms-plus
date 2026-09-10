@@ -7537,6 +7537,60 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Con el ajuste de arriba encendido esto ya está cubierto: la conexión se mantiene igual. Solo hace falta si apagas el de arriba y aun así quieres que los avisos de carga lleguen de noche.'**
   String get chargeWatchRedundant;
+
+  /// No description provided for @alertGroupSpread.
+  ///
+  /// In es, this message translates to:
+  /// **'Celdas separadas'**
+  String get alertGroupSpread;
+
+  /// No description provided for @alertGroupHeat.
+  ///
+  /// In es, this message translates to:
+  /// **'Temperatura'**
+  String get alertGroupHeat;
+
+  /// No description provided for @alertGroupRunningOut.
+  ///
+  /// In es, this message translates to:
+  /// **'Te estás quedando sin carga'**
+  String get alertGroupRunningOut;
+
+  /// No description provided for @alertGroupChargeDone.
+  ///
+  /// In es, this message translates to:
+  /// **'La carga terminó'**
+  String get alertGroupChargeDone;
+
+  /// No description provided for @alertGroupFaults.
+  ///
+  /// In es, this message translates to:
+  /// **'Fallos y límites'**
+  String get alertGroupFaults;
+
+  /// No description provided for @alertWhenRiding.
+  ///
+  /// In es, this message translates to:
+  /// **'Rodando'**
+  String get alertWhenRiding;
+
+  /// No description provided for @alertWhenCharging.
+  ///
+  /// In es, this message translates to:
+  /// **'Cargando'**
+  String get alertWhenCharging;
+
+  /// No description provided for @alertWhenTopOfCharge.
+  ///
+  /// In es, this message translates to:
+  /// **'Al final de la carga'**
+  String get alertWhenTopOfCharge;
+
+  /// No description provided for @alertTargetReachedShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegó al objetivo que pusiste'**
+  String get alertTargetReachedShort;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

@@ -163,7 +163,7 @@ void main() {
       () async {
         // Any query forces drift to open the database and run the upgrade.
         await db.allDevices();
-        expect(raw.userVersion, 13);
+        expect(raw.userVersion, 14);
       },
     );
 

@@ -19,6 +19,67 @@ import 'widgets/packs_card.dart';
 import 'widgets/common.dart';
 import 'widgets/update_card.dart';
 
+/// Every alert the app can raise, gathered by what it is about.
+///
+/// Twelve switches in one flat column read as twelve unrelated things, and
+/// several of them read as the same thing said twice: cells apart while
+/// riding next to cells apart at the top of a charge, the pack too hot next
+/// to too hot while charging. They are not duplicates, they are one subject
+/// in two situations, and the flat list was the only reason that was hard to
+/// see.
+///
+/// So the subject becomes the heading and the situation becomes the label.
+/// Five headings instead of twelve rows, and the repetition disappears
+/// because the repeated half is said once, at the top.
+List<({String heading, List<({String name, String label})> items})>
+alertGroups(AppL10n t) => [
+  (
+    heading: t.alertGroupSpread,
+    items: [
+      (name: RideAlert.cellSpread.name, label: t.alertWhenRiding),
+      (name: ChargeAlert.spreadAtTop.name, label: t.alertWhenTopOfCharge),
+    ],
+  ),
+  (
+    heading: t.alertGroupHeat,
+    items: [
+      (name: RideAlert.temperature.name, label: t.alertWhenRiding),
+      (name: ChargeAlert.hotWhileCharging.name, label: t.alertWhenCharging),
+    ],
+  ),
+  (
+    // Three thresholds on one road, so they belong together: the reader is
+    // choosing how early to be told, not picking three unrelated alarms.
+    heading: t.alertGroupRunningOut,
+    items: [
+      (name: RideAlert.lowCharge.name, label: t.alertLowCharge),
+      (name: RideAlert.criticalCharge.name, label: t.alertCriticalCharge),
+      (name: RideAlert.cellNearCutoff.name, label: t.alertCellNearCutoff),
+    ],
+  ),
+  (
+    heading: t.alertGroupChargeDone,
+    items: [
+      (
+        name: ChargeAlert.targetReached.name,
+        label: t.alertTargetReachedShort,
+      ),
+      (name: ChargeAlert.chargeComplete.name, label: t.chargeAlertComplete),
+    ],
+  ),
+  (
+    heading: t.alertGroupFaults,
+    items: [
+      (name: RideAlert.bmsFault.name, label: t.alertBmsFault),
+      (name: RideAlert.nearCurrentLimit.name, label: t.alertNearCurrentLimit),
+      // The app losing the pack belongs here rather than on its own: from
+      // the rider's side it is the same kind of news as the BMS raising a
+      // fault, something went wrong and the readings stopped being true.
+      (name: BmsService.linkLostAlertKey, label: t.alertLinkLost),
+    ],
+  ),
+];
+
 /// Settings that belong to the app rather than to any one battery.
 ///
 /// Reachable without a connection, which is the whole point: checking for a
@@ -292,21 +353,35 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               title: t.alertsSectionTitle,
               intro: t.alertsSectionHint,
               children: [
-                for (final a in _alertSwitches(t))
-                  SwitchListTile(
-                    value: !settings.isMuted(a.name),
-                    onChanged: (on) async {
-                      await settings.setAlertMuted(a.name, !on);
-                      widget.service.mutedAlerts = settings.mutedAlerts;
-                      if (mounted) setState(() {});
-                    },
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(
-                      a.label,
-                      style: const TextStyle(fontSize: 13.5),
+                for (final group in alertGroups(t)) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10, bottom: 2),
+                    child: Text(
+                      group.heading.toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                        color: AppTheme.textFaint,
+                      ),
                     ),
                   ),
+                  for (final a in group.items)
+                    SwitchListTile(
+                      value: !settings.isMuted(a.name),
+                      onChanged: (on) async {
+                        await settings.setAlertMuted(a.name, !on);
+                        widget.service.mutedAlerts = settings.mutedAlerts;
+                        if (mounted) setState(() {});
+                      },
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(
+                        a.label,
+                        style: const TextStyle(fontSize: 13.5),
+                      ),
+                    ),
+                ],
                 const SizedBox(height: 4),
               ],
             ),
@@ -572,24 +647,6 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
     );
   }
 
-  /// Every alert the app can raise, by the name it is stored under.
-  List<({String name, String label})> _alertSwitches(AppL10n t) => [
-    (
-      name: ChargeAlert.targetReached.name,
-      label: t.chargeAlertTargetReached('%'),
-    ),
-    (name: ChargeAlert.chargeComplete.name, label: t.chargeAlertComplete),
-    (name: ChargeAlert.hotWhileCharging.name, label: t.chargeAlertHot),
-    (name: ChargeAlert.spreadAtTop.name, label: t.chargeAlertSpread),
-    (name: RideAlert.bmsFault.name, label: t.alertBmsFault),
-    (name: RideAlert.cellSpread.name, label: t.alertCellSpread),
-    (name: RideAlert.temperature.name, label: t.alertTemperature),
-    (name: RideAlert.lowCharge.name, label: t.alertLowCharge),
-    (name: RideAlert.criticalCharge.name, label: t.alertCriticalCharge),
-    (name: RideAlert.cellNearCutoff.name, label: t.alertCellNearCutoff),
-    (name: RideAlert.nearCurrentLimit.name, label: t.alertNearCurrentLimit),
-    (name: BmsService.linkLostAlertKey, label: t.alertLinkLost),
-  ];
 
   Widget _localeChip(String label, LanguageChoice choice) => ChoiceChip(
     label: Text(label),

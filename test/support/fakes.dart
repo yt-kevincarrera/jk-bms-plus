@@ -34,6 +34,14 @@ class FakeLink implements BmsLink {
   @override
   Future<void> retryNow() async {}
 
+  /// Whether the service asked the loop to refuse to give up. Recorded rather
+  /// than ignored: it is the whole point of the ride-in-progress mode, and a
+  /// test that cannot see it can only assert that nothing crashed.
+  bool persisting = false;
+
+  @override
+  set persistRetries(bool value) => persisting = value;
+
   @override
   Stream<List<DiscoveredBms>> scan() => const Stream.empty();
   @override
