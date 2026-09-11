@@ -12,6 +12,7 @@ import 'package:jk_bms/src/protocol/jk_parser.dart';
 import 'package:jk_bms/src/protocol/protocol_variant.dart';
 
 import 'fixtures/captured_frames.dart';
+import 'fixtures/real_kevinjk_frames.dart';
 
 /// A transport that replays captured bytes instead of talking to a radio.
 class FakeLink implements BmsLink {
@@ -109,6 +110,72 @@ void main() {
     expect(snapshots, hasLength(1));
     expect(snapshots.single.packVoltage, closeTo(53.251, 1e-9));
     expect(service.stats.accepted, 1, reason: 'the frame itself was valid');
+  });
+
+  group("the rider's own pack, when its device info never arrives", () {
+    // The reported failure, reproduced from the pack's own frames. After a
+    // drop and a reconnect the BMS goes on streaming cell info but does not
+    // always answer the device-info request, so the version string never
+    // names the framing and the prober is all there is. It refused this pack
+    // (see variant_prober_test), which held every reading back for as long
+    // as the link lasted, and the connect screen then reported bytes that did
+    // not decode -- until the phone was restarted and a fresh session got its
+    // device info answered.
+
+    test('decodes from the first cell info frame', () async {
+      final snapshots = <BmsSnapshot>[];
+      final problems = <String>[];
+      service.snapshots.listen(snapshots.add);
+      service.problems.listen(problems.add);
+
+      await link.deliver(kevinJkCellInfo[0]);
+
+      expect(service.variant, JkProtocolVariant.jk02_32s);
+      expect(service.variantProved, isTrue);
+      expect(service.heldBackFrames, 0);
+      expect(snapshots, hasLength(1));
+      expect(snapshots.single.cellCount, 20);
+      expect(snapshots.single.packVoltage, closeTo(82.769, 1e-6));
+      expect(
+        problems.join(' '),
+        contains('kept the one that describes a real battery: jk02_32s'),
+      );
+    });
+
+    test('and keeps decoding every frame after it', () async {
+      final snapshots = <BmsSnapshot>[];
+      service.snapshots.listen(snapshots.add);
+
+      for (final f in kevinJkCellInfo) {
+        await link.deliver(f);
+      }
+
+      expect(snapshots, hasLength(kevinJkCellInfo.length));
+      expect(service.heldBackFrames, 0);
+      expect(service.decodeFailures, 0);
+    });
+
+    test('and, when device info does arrive, the framing is confirmed cleanly',
+        () async {
+      // The other half of the same rule. With device info the version string
+      // named JK02_32S, and the first reading was then checked against
+      // physics -- which called it impossible over the same two empty
+      // probe inputs, said so, and carried on showing the numbers. Right
+      // numbers under a notice saying they could not be right.
+      final problems = <String>[];
+      service.problems.listen(problems.add);
+
+      await link.deliver(kevinJkDeviceInfo[0]);
+      await link.deliver(kevinJkCellInfo[0]);
+
+      expect(service.variant, JkProtocolVariant.jk02_32s);
+      expect(service.variantProved, isTrue);
+      expect(service.snapshotsEmitted, 1);
+      expect(
+        problems.where((p) => p.contains('does not describe a battery')),
+        isEmpty,
+      );
+    });
   });
 
   test('a frame no framing can read is still held back', () async {

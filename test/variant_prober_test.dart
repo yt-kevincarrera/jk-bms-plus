@@ -8,6 +8,7 @@ import 'package:jk_bms/src/protocol/protocol_variant.dart';
 import 'package:jk_bms/src/protocol/variant_prober.dart';
 
 import 'fixtures/captured_frames.dart';
+import 'fixtures/real_kevinjk_frames.dart';
 
 /// A frame for [variant] carrying a pack that could exist.
 Uint8List sane(
@@ -210,6 +211,99 @@ void main() {
         JkProtocolVariant.jk02_24s,
       );
       expect(plausibility.reject(s), isEmpty);
+    });
+
+    test('a pack with probes that are not wired to anything', () {
+      // The rider's own pack. It has two temperature probes wired; the
+      // 32-cell framing carries five inputs, and the BMS reports the empty
+      // ones as -200 C. That is not a temperature, it is the sentinel for
+      // nothing connected, and the rest of the app already knows it as such
+      // (BmsSnapshot.isPlausibleTemperature). This rule did not, so it called
+      // the only framing that reads this pack impossible.
+      final s = parser.parseCellInfo(
+        frameOf(kevinJkCellInfo[0]),
+        JkProtocolVariant.jk02_32s,
+      );
+      expect(s.absentTemperatureProbes, [2, 3],
+          reason: 'the fixture really does carry the sentinel');
+      expect(plausibility.reject(s), isEmpty);
+    });
+
+    test('but a probe reading an impossible temperature is still caught', () {
+      // The rule keeps its teeth: a wrong offset landing on 300 C or -100 C
+      // is exactly what it is for. Only the sentinel is excused.
+      const builder = JkFrameBuilder();
+      for (final temps in [
+        [300.0, 20.0],
+        [20.0, -100.0],
+      ]) {
+        final frame = builder.cellInfo(
+          counter: 1,
+          cellVoltages: List<double>.filled(16, 3.30),
+          cellResistances: List<double>.filled(16, 0.2),
+          packVoltage: 16 * 3.30,
+          current: -5,
+          temperatures: temps,
+          mosfetTemp: 25,
+          soc: 40,
+          soh: 90,
+          remainingCapacityAh: 20,
+          nominalCapacityAh: 52,
+          cycleCount: 30,
+          cycleCapacityAh: 900,
+          balancingAction: 0,
+          balanceCurrent: 0,
+          chargeMosfetOn: true,
+          dischargeMosfetOn: false,
+          errorBitmask: 0,
+          totalRuntimeSeconds: 1000,
+        );
+        final s = parser.parseCellInfo(
+          frameOf(frame),
+          JkProtocolVariant.jk02_24s,
+        );
+        expect(plausibility.reject(s).join(' '), contains('a probe at'),
+            reason: '$temps');
+      }
+    });
+  });
+
+  group("the rider's own pack", () {
+    // Why this group exists. Every probe test above ran against frames the
+    // simulator built or a 24-cell capture from the reference. The real pack
+    // speaks JK02_32S, and nothing real in that framing had ever been through
+    // the prober. When its device-info frame did not arrive -- which is what
+    // happens after a link is dropped and picked up again -- the prober was
+    // the only way to a framing, and it refused, so every reading was held
+    // back and the connect screen said the pack was talking in a language the
+    // app did not understand. It was not. It was reporting two empty
+    // temperature inputs.
+
+    test('is read as 32-cell from any of its frames', () {
+      for (final f in kevinJkCellInfo) {
+        final result = probeVariant(frame: frameOf(f));
+        expect(result.decided, isTrue, reason: '${result.rejections}');
+        expect(result.variant, JkProtocolVariant.jk02_32s);
+      }
+    });
+
+    test('and the 24-cell framing is turned down for the right reason', () {
+      // Read as 24-cell, the pack voltage lands on a field holding 0.358 V
+      // under cells totalling 80-odd volts. That is the rejection that should
+      // carry the decision, and it is the one the notice should quote.
+      final result = probeVariant(frame: frameOf(kevinJkCellInfo[0]));
+      expect(
+        result.rejections[JkProtocolVariant.jk02_24s]!.join(' '),
+        contains('over cells totalling'),
+      );
+      expect(result.rejections[JkProtocolVariant.jk02_32s], isEmpty);
+    });
+
+    test('its version string agrees with what its frames say', () {
+      final info = parser.parseDeviceInfo(frameOf(kevinJkDeviceInfo[0]));
+      expect(info.softwareVersion, '20.20');
+      expect(info.variant, JkProtocolVariant.jk02_32s);
+      expect(info.detection.confident, isTrue);
     });
   });
 }

@@ -97,6 +97,17 @@ wrong. **Nothing is filtered on this field.** It is carried through raw as
 `BmsSnapshot.temperatureSensorMask`. Do not use it to hide readings until this
 is settled.
 
+What *is* settled, measured on the real pack (JK-BD6A20S6P, sw 20.20, two
+probes fitted): **an input with no probe on it reads raw `-2000`, i.e.
+-200.0 °C.** The JK02_32S framing carries five probe inputs, and on this pack
+inputs 3 and 4 always carry the sentinel (the fifth slot repeats the MOSFET
+temperature on this firmware, which is worth knowing before trusting it as a
+sixth sensor). It is named
+`BmsSnapshot.absentProbeCelsius` and recognised in two places: the screens
+hide it, and the plausibility rules behind variant probing ignore it. The
+second was missing until 2026-09-11 and the prober rejected the pack's own
+framing on every frame; see `test/fixtures/real_kevinjk_frames.dart`.
+
 ### 3. Bytes 168 and 169 on JK02_24S
 
 The reference reads byte 168 as "precharging" and 169 as "balancer working" for

@@ -81,6 +81,15 @@ class Plausibility {
       reasons.add('${s.soc.toStringAsFixed(0)} % charge');
     }
     for (final t in s.temperatures) {
+      // A probe input with nothing on it is reported as -200 C, and the
+      // 32-cell framing carries five inputs where most packs fit two. That is
+      // a fact about the wiring, not about the framing, so it must not count
+      // against a decode: it did, and the only framing that reads the rider's
+      // own pack was turned down on every frame. With device info answered
+      // the version string papered over it; without device info -- the
+      // ordinary case after a dropped link is picked up again -- nothing did,
+      // and every reading was held back for the life of the connection.
+      if (BmsSnapshot.isAbsentProbe(t)) continue;
       if (t < temperatureRange.$1 || t > temperatureRange.$2) {
         reasons.add('a probe at ${t.toStringAsFixed(1)} C');
         break;
