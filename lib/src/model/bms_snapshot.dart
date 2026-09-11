@@ -88,6 +88,18 @@ class BmsSnapshot {
   static bool isPlausibleTemperature(double c) =>
       c >= minPlausibleTemp && c <= maxPlausibleTemp;
 
+  /// What the BMS reports for a probe input with nothing wired to it.
+  ///
+  /// Measured on the rider's own pack, not assumed: a JK-BD6A20S6P with two
+  /// probes fitted reports its other inputs as raw -2000, which decodes to
+  /// -200.0 C. Kept as a named value because two different rules need to
+  /// recognise it -- the one that hides it from the screens, and the one that
+  /// judges whether a decode describes a battery at all. The second did not,
+  /// and called the real pack impossible.
+  static const double absentProbeCelsius = -200.0;
+
+  static bool isAbsentProbe(double c) => (c - absentProbeCelsius).abs() < 0.05;
+
   /// The probes that are actually wired up, with their position kept.
   ///
   /// Position matters: probe 3 reading nothing must not make probe 4 look like

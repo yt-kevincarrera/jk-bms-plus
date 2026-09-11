@@ -1055,9 +1055,24 @@ class _ConnectScreenState extends State<ConnectScreen> {
         final t = t0(context);
         // What the app saw, under "details": the headline says what happened,
         // this is the evidence, so a screenshot settles which failure it was.
+        //
+        // The decoder's own tally is part of it. "Bytes arrived and none
+        // decoded" covers three different failures -- checksums failing,
+        // frames of a kind the app has no decoder for, and frames decoding
+        // fine but held back because no framing was settled -- and the first
+        // report of this verdict took a week to trace to the third, because
+        // the line under it said how many bytes and nothing else.
+        final service = widget.service;
+        final stats = service.stats;
         final evidence =
-            '${contact.evidence(DateTime.now())} · MTU '
-            '${widget.service.negotiatedMtu ?? '?'}';
+            '${contact.evidence(DateTime.now())} · '
+            '${stats.accepted} frames ok · ${stats.badChecksum} bad checksum · '
+            '${service.deviceInfoFrames} device info · '
+            '${service.cellInfoFrames} cell info · '
+            '${service.heldBackFrames} held back · '
+            '${service.decodeFailures} undecodable · '
+            'variant ${service.variant?.name ?? '?'} · '
+            'MTU ${service.negotiatedMtu ?? '?'}';
         setState(() {
           switch (outcome) {
             case FirstContactOutcome.linkNeverCameUp:
