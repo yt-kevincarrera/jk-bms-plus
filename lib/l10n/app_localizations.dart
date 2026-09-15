@@ -3562,7 +3562,7 @@ abstract class AppL10n {
   /// No description provided for @connectTalkingUndecoded.
   ///
   /// In es, this message translates to:
-  /// **'Se conectó y están llegando bytes, pero ninguno se decodifica como un frame JK. Mira la consola de frames crudos en Ajustes: lo que aparezca ahí es lo que hace falta para añadir soporte.'**
+  /// **'Se conectó y están llegando bytes, pero ninguno se decodifica como un frame JK. Abre la consola con el icono de terminal de arriba: lo que aparezca ahí es lo que hace falta para añadir soporte.'**
   String get connectTalkingUndecoded;
 
   /// No description provided for @storedCount.
@@ -4201,6 +4201,18 @@ abstract class AppL10n {
   /// **'Última lectura hace {age}'**
   String linkReadingAge(String age);
 
+  /// No description provided for @linkStaleTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Conectado, pero sin lecturas'**
+  String get linkStaleTitle;
+
+  /// No description provided for @linkStaleBody.
+  ///
+  /// In es, this message translates to:
+  /// **'El enlace está arriba y la batería no manda nada que la app pueda leer. Lo que ves es la última lectura, no la actual. Si sigue así unos segundos más, la app suelta la conexión y vuelve a entrar.'**
+  String get linkStaleBody;
+
   /// No description provided for @linkBack.
   ///
   /// In es, this message translates to:
@@ -4264,7 +4276,7 @@ abstract class AppL10n {
   /// No description provided for @troublePackMute.
   ///
   /// In es, this message translates to:
-  /// **'La batería estuvo conectada pero muda: no mandó ni un byte en 20 segundos, pese a pedírselo varias veces. La app soltó la conexión a propósito y vuelve a entrar en unos segundos; es la única forma de que el módulo Bluetooth del BMS suelte la sesión que se le quedó colgada.'**
+  /// **'La batería estuvo conectada pero muda: en 20 segundos no mandó nada que la app pudiera leer, pese a pedírselo varias veces. La app soltó la conexión a propósito y vuelve a entrar en unos segundos; es la única forma de que el módulo Bluetooth del BMS suelte la sesión que se le quedó colgada. En Detalles dice cuántos bytes llegaron.'**
   String get troublePackMute;
 
   /// No description provided for @screenAwakeTitle.

@@ -38,6 +38,9 @@ class FakeLink implements BmsLink {
   Future<void> retryNow() async {}
 
   @override
+  void frameAccepted() {}
+
+  @override
   set persistRetries(bool value) {}
 
   @override

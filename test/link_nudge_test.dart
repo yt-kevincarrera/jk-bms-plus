@@ -76,4 +76,58 @@ void main() {
       );
     });
   });
+
+  group('when a reading on screen has gone stale', () {
+    // The rider's report: the link came back, the banner went away, and the
+    // cells sat frozen at the last reading with nothing on screen saying so.
+    // A connected link with no reading for this long is not "connected" in
+    // any sense the rider cares about, and the screen has to say it.
+
+    test('not while readings arrive at the pack\'s own pace', () {
+      expect(
+        readingIsStale(
+          lastReadingAt: t0,
+          now: t0.add(const Duration(milliseconds: 500)),
+        ),
+        isFalse,
+      );
+    });
+
+    test('not for a pause a healthy pack takes', () {
+      // A few seconds happens. Colouring the screen for that would teach the
+      // rider to ignore the banner.
+      expect(
+        readingIsStale(
+          lastReadingAt: t0,
+          now: t0.add(const Duration(seconds: 6)),
+        ),
+        isFalse,
+      );
+    });
+
+    test('yes, well before the transport lets go', () {
+      // The transport gives a mute link twenty seconds. The screen says so
+      // first, so the freeze is never mistaken for a live reading.
+      expect(
+        readingIsStale(
+          lastReadingAt: t0,
+          now: t0.add(const Duration(seconds: 11)),
+        ),
+        isTrue,
+      );
+      expect(staleReadingAfter, lessThan(const Duration(seconds: 20)));
+    });
+
+    test('never, before any reading has arrived', () {
+      // Nothing on screen can be stale. The connect screen owns that wait and
+      // says something more specific about it.
+      expect(
+        readingIsStale(
+          lastReadingAt: null,
+          now: t0.add(const Duration(minutes: 5)),
+        ),
+        isFalse,
+      );
+    });
+  });
 }

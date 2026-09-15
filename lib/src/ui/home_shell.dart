@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../ble/ble_transport.dart';
 import '../ble/bms_link.dart';
+import '../ble/link_quiet.dart';
 import '../ble/link_trouble.dart';
 import '../app_settings.dart';
 import '../ble/proximity_watcher.dart';
@@ -79,6 +80,9 @@ class _HomeShellState extends State<HomeShell> {
   void initState() {
     super.initState();
     _snapshot = widget.service.lastSnapshot;
+    // Dated from the reading itself, so a screen opened onto a reading that
+    // is already old says so rather than treating it as fresh.
+    _lastReadingAt = widget.service.lastSnapshot?.timestamp;
     _link = widget.service.lastLinkState;
     _subs.addAll([
       widget.service.snapshots.listen((s) {
@@ -107,10 +111,24 @@ class _HomeShellState extends State<HomeShell> {
     // Once every two seconds while something is wrong. Cheap, and it is what
     // turns "the connection is gone" into "the connection is gone and it has
     // been four minutes", which is the part that says whether to go back.
+    //
+    // And while the link is up but the reading is old, which is the tick that
+    // makes the stale banner appear at all: nothing else repaints a screen
+    // whose readings have stopped.
     _ageTick = Timer.periodic(const Duration(seconds: 2), (_) {
-      if (mounted && _link != BleLinkState.connected) setState(() {});
+      if (!mounted) return;
+      if (_link != BleLinkState.connected || _readingStale) setState(() {});
     });
   }
+
+  /// Whether the link is up and the reading on screen is old enough to be
+  /// called out. The rider's report: the banner went away after a reconnect,
+  /// the cells stayed frozen at the last reading, and nothing said they were
+  /// old, so the freeze looked like a live pack.
+  bool get _readingStale =>
+      !widget.service.isDemo &&
+      _link == BleLinkState.connected &&
+      readingIsStale(lastReadingAt: _lastReadingAt, now: DateTime.now());
 
   /// Asks the four profile questions the first time a battery is taken on.
   ///
@@ -161,13 +179,15 @@ class _HomeShellState extends State<HomeShell> {
     // The demo link never drops, and a warning about a simulated radio would
     // be a claim about a pack that does not exist.
     final down = !service.isDemo && _link != BleLinkState.connected;
+    final stale = _readingStale;
     final retry = service.linkRetry;
     return _appBarBottomFor(
       demo: service.isDemo,
       demoText: t.demoBanner,
-      linkBanner: down
+      linkBanner: down || stale
           ? _LinkBanner(
               state: _link,
+              stale: stale,
               trouble: _trouble,
               lastReadingAt: _lastReadingAt,
               retry: retry,
@@ -286,6 +306,7 @@ PreferredSizeWidget? _appBarBottomFor({
 class _LinkBanner extends StatelessWidget {
   const _LinkBanner({
     required this.state,
+    required this.stale,
     required this.trouble,
     required this.lastReadingAt,
     required this.retry,
@@ -293,6 +314,12 @@ class _LinkBanner extends StatelessWidget {
   });
 
   final BleLinkState state;
+
+  /// The link is up and the reading is old. A different sentence from the
+  /// link being down: nothing is being retried yet, the pack is simply not
+  /// saying anything the app can read, and the transport will let go soon.
+  final bool stale;
+
   final LinkTrouble? trouble;
   final DateTime? lastReadingAt;
 
@@ -317,6 +344,8 @@ class _LinkBanner extends StatelessWidget {
     final gaveUp = retry.gaveUp;
     final title = gaveUp
         ? t.linkGaveUpTitle
+        : stale
+        ? t.linkStaleTitle
         : switch (state) {
             BleLinkState.reconnecting => t.linkReconnectingTitle,
             BleLinkState.connecting ||
@@ -328,9 +357,11 @@ class _LinkBanner extends StatelessWidget {
     final why = gaveUp
         ? '${trouble == null ? t.linkLostBody : linkTroubleWording(t, trouble!)} '
               '${t.linkGaveUpBody('${retry.failures}')}'
-        : trouble == null
-        ? t.linkLostBody
-        : linkTroubleWording(t, trouble!);
+        : trouble != null
+        ? linkTroubleWording(t, trouble!)
+        : stale
+        ? t.linkStaleBody
+        : t.linkLostBody;
     final age = _age(t);
 
     return Container(

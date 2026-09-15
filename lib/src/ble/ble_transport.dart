@@ -251,6 +251,9 @@ class BleTransport implements BmsLink {
 
   /// Silence long enough to conclude the link is up and dead.
   ///
+  /// Silence means no frame the service could decode, not no bytes; see
+  /// [_lastFrameAt] for why that distinction cost a rider every reading.
+  ///
   /// Not the nudge threshold: by now three nudges have gone unanswered. A JK
   /// BMS that is connected and says nothing for this long is not slow, it is
   /// serving somebody else, or its Bluetooth module is still bound to a session
@@ -284,9 +287,23 @@ class BleTransport implements BmsLink {
   /// one thing that unblocks a stuck operation.
   final Duration attachTimeout;
 
-  /// When a cell-info frame last arrived, which is the only thing that proves
-  /// the pack is still talking.
-  DateTime? _lastCellInfoAt;
+  /// When a frame the service could decode last arrived, which is the only
+  /// thing that proves the pack is still talking.
+  ///
+  /// A frame, not a byte. This was refreshed by every notification payload,
+  /// and the rider's report is the case where that is wrong: a link that came
+  /// back after a drop, delivered bytes none of which ever assembled into a
+  /// JK frame, and was therefore never judged mute and never let go of. The
+  /// banner went away, and every value on screen stayed frozen at the last
+  /// reading for as long as the app was open. The service, which owns the
+  /// decoder, reports frames through [frameAccepted].
+  DateTime? _lastFrameAt;
+
+  /// Bytes delivered on the current link, for the mute report to quote. The
+  /// difference between "the pack sent nothing" and "the pack sent 3 kB that
+  /// never decoded" is the difference between a mute module and a broken
+  /// stream, and the report used to be unable to make it.
+  int _bytesThisLink = 0;
 
   /// When the current link came up, so a pack that has never spoken since
   /// connecting can be timed too.
@@ -505,7 +522,13 @@ class BleTransport implements BmsLink {
     _device = device;
 
     await _connectionSub?.cancel();
-    _connectionSub = device.connectionState.listen((s) {
+    // `skip(1)`: the plugin replays the device's current state to every new
+    // listener before any real transition, and the current state of a device
+    // that is about to be connected to is `disconnected`. Without the skip,
+    // every connect began with a phantom drop: `drops` counted one, the state
+    // flickered to `reconnecting` before the attempt had even started, and a
+    // retry was scheduled for a link that had not gone anywhere.
+    _connectionSub = device.connectionState.skip(1).listen((s) {
       if (s == BluetoothConnectionState.disconnected && _wantConnection) {
         _onDropped();
       }
@@ -578,17 +601,12 @@ class BleTransport implements BmsLink {
       await _notifySub?.cancel();
       _notifySub = characteristic.onValueReceived.listen(
         (bytes) {
-          // Any notification at all proves the pack is still talking, which is
-          // the only thing the nudge needs to know. The transport does not
-          // parse record types and should not have to.
-          _lastCellInfoAt = DateTime.now();
-          // And it is the only thing that disproves what the failures implied,
-          // which is why the ledger is cleared here and not on the link coming
-          // up. A pack that accepts the connection and then says nothing has
-          // proved nothing, and clearing the ledger there was what let the
-          // mute-link loop run for ever: connect, twenty seconds of silence,
-          // let go, reconnect, with the count back at zero every time.
-          _backoff.recordSuccess();
+          // Counted, not trusted. Whether these bytes are the pack talking is
+          // settled downstream, when the decoder either assembles a frame out
+          // of them and says so through [frameAccepted], or does not. Judging
+          // the link alive here, on the bytes alone, is what kept a link that
+          // delivered undecodable bytes open for ever.
+          _bytesThisLink += bytes.length;
           _bytesController.add(bytes);
         },
         onError: (Object e) =>
@@ -600,6 +618,7 @@ class BleTransport implements BmsLink {
       _setState(BleLinkState.connected);
       _connectedAt = DateTime.now();
       _nudgesThisLink = 0;
+      _bytesThisLink = 0;
       final since = _droppedAt;
       if (since != null) {
         timeDisconnected += DateTime.now().difference(since);
@@ -784,7 +803,7 @@ class BleTransport implements BmsLink {
     drops++;
     // Forgotten on a drop, so the first check after reconnecting nudges rather
     // than trusting a timestamp from before the link went away.
-    _lastCellInfoAt = null;
+    _lastFrameAt = null;
     _connectedAt = null;
     _droppedAt ??= DateTime.now();
     _pollTimer?.cancel();
@@ -859,6 +878,19 @@ class BleTransport implements BmsLink {
     _scheduleReconnect();
   }
 
+  /// The decoder assembled a frame out of this link's bytes. See [BmsLink].
+  @override
+  void frameAccepted() {
+    _lastFrameAt = DateTime.now();
+    // The one thing that disproves what the failures implied, which is why the
+    // ledger is cleared here and not on the link coming up, and not on bytes
+    // either. A pack that accepts the connection and then says nothing, or
+    // says something no decoder can read, has proved nothing; clearing the
+    // ledger on the link coming up was what let the mute-link loop run for
+    // ever, with the count back at zero every time.
+    _backoff.recordSuccess();
+  }
+
   /// Lets go of a link that is up and has said nothing for [muteBefore].
   ///
   /// Counted as a drop, because from the rider's side that is what it was: no
@@ -879,9 +911,14 @@ class BleTransport implements BmsLink {
     // Said before it is done, so the screen can name the reason while the
     // link is being re-established rather than showing a bare "lost".
     final now = DateTime.now();
-    final since = _lastCellInfoAt ?? _connectedAt ?? now;
+    final since = _lastFrameAt ?? _connectedAt ?? now;
+    // Bytes and frames separately, because they answer different questions.
+    // Zero bytes is a module that never spoke; thousands of bytes and no
+    // frame is a stream the app cannot read, and the two need different
+    // fixes.
     final detail = 'connected, ${now.difference(since).inSeconds} s without a '
-        'byte, $_nudgesThisLink nudge(s) unanswered, MTU ${negotiatedMtu ?? '?'}; '
+        'decodable frame, $_bytesThisLink byte(s) arrived on this link, '
+        '$_nudgesThisLink nudge(s) unanswered, MTU ${negotiatedMtu ?? '?'}; '
         'letting go, back in ${muteRetryDelay.inSeconds} s';
     _errorController.add(
       BleLinkError(
@@ -904,13 +941,13 @@ class BleTransport implements BmsLink {
   /// on the link altogether once it has been mute for [muteBefore].
   Future<void> _nudgeIfQuiet() async {
     final now = DateTime.now();
-    final lastSign = _lastCellInfoAt ?? _connectedAt;
+    final lastSign = _lastFrameAt ?? _connectedAt;
     if (lastSign != null && now.difference(lastSign) > muteBefore) {
       await _resetMuteLink();
       return;
     }
     if (!shouldNudge(
-      lastHeardAt: _lastCellInfoAt,
+      lastHeardAt: _lastFrameAt,
       now: now,
       quietBefore: quietBefore,
     )) {

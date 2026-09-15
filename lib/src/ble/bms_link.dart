@@ -79,6 +79,21 @@ abstract interface class BmsLink {
   /// transport with no loop has nothing to do here.
   Future<void> retryNow() async {}
 
+  /// A checksum-valid JK frame was assembled from this link's bytes.
+  ///
+  /// The transport cannot know this on its own: it emits notification
+  /// payloads and deliberately does not parse them. It used to judge the link
+  /// alive by those payloads instead, and any byte at all reset its silence
+  /// clock and its failure ledger. The rider's report was the case that
+  /// exposes the difference: a link that came back after a drop, delivered
+  /// bytes that never became a frame, and was therefore never let go of, so
+  /// the banner disappeared and every reading on screen stayed frozen for
+  /// good. A frame is proof the pack is talking. Bytes are not.
+  ///
+  /// Called by the service for every accepted frame, whatever its record
+  /// type. A transport that cannot go quiet has nothing to do here.
+  void frameAccepted() {}
+
   /// Whether the reconnect loop should refuse to give up.
   ///
   /// Set while a ride is being recorded. Giving up is right when the app is in

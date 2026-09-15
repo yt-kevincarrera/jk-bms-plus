@@ -28,11 +28,23 @@ class FakeLink implements BmsLink {
   @override
   LinkHealth get health => LinkHealth.unknown;
 
+  /// Settable, so a test can put the loop in the given-up state and check
+  /// what the service writes down about it.
   @override
-  LinkRetryState get retry => LinkRetryState.none;
+  LinkRetryState retry = LinkRetryState.none;
 
   @override
   Future<void> retryNow() async {}
+
+  /// Frames the service vouched for. The transport judges the link alive by
+  /// these now, not by bytes, so a test has to be able to count them.
+  int framesHeard = 0;
+
+  @override
+  void frameAccepted() => framesHeard++;
+
+  /// What the radio would report, said from the test.
+  void fail(BleLinkError error) => _errors.add(error);
 
   /// Whether the service asked the loop to refuse to give up. Recorded rather
   /// than ignored: it is the whole point of the ride-in-progress mode, and a

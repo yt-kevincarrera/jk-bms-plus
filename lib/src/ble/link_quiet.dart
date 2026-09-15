@@ -23,3 +23,29 @@ bool shouldNudge({
   if (lastHeardAt == null) return true;
   return now.difference(lastHeardAt) > quietBefore;
 }
+
+/// How long a connected link may go without a reading before the screen says
+/// so.
+///
+/// Well under the twenty seconds the transport gives a mute link before
+/// letting go, and well over the two or three seconds a healthy pack may pause
+/// for. The rider's report was a link that came back, a banner that went
+/// away, and cells frozen at the last reading with nothing on screen saying
+/// they were old; ten seconds is early enough that the freeze is never taken
+/// for a live reading, and late enough that ordinary jitter never colours the
+/// screen.
+const Duration staleReadingAfter = Duration(seconds: 10);
+
+/// Whether the reading on screen is old enough to be called out.
+///
+/// Null means no reading has ever arrived, and nothing on screen can be stale.
+/// That wait belongs to the connect screen, which says something more specific
+/// about it.
+bool readingIsStale({
+  required DateTime? lastReadingAt,
+  required DateTime now,
+  Duration after = staleReadingAfter,
+}) {
+  if (lastReadingAt == null) return false;
+  return now.difference(lastReadingAt) > after;
+}
