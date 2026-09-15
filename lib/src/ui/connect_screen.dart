@@ -25,6 +25,7 @@ import '../update/update_service.dart';
 import '../license/entitlements.dart';
 import 'inspection/inspection_screen.dart';
 import 'license_scope.dart';
+import 'live_console_screen.dart';
 import 'widgets/pro_gate.dart';
 import 'widgets/trip_summary_sheet.dart';
 import 'widgets/trip_summary_view.dart';
@@ -1258,6 +1259,22 @@ class _ConnectScreenState extends State<ConnectScreen> {
       appBar: AppBar(
         title: Text(t.appTitle),
         actions: [
+          // Reachable with nothing connected, which is when it is needed. It
+          // lived behind the System tab, and the System tab is behind a
+          // proven connection, so the one screen that could explain "bytes
+          // arrived and none decoded" was locked away by that very failure.
+          IconButton(
+            tooltip: t.systemRawConsole,
+            icon: const Icon(Icons.terminal),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => LiveConsoleScreen(
+                  service: widget.service,
+                  deviceName: t.consoleTitle,
+                ),
+              ),
+            ),
+          ),
           IconButton(
             tooltip: t.appSettingsTitle,
             icon: const Icon(Icons.tune),

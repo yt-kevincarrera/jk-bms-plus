@@ -31,8 +31,10 @@ enum LinkTroubleKind {
   /// The device connected and has no JK service on it: the wrong device.
   notJkBms,
 
-  /// The pack was connected and sent nothing for long enough that the
-  /// transport let go on purpose, to make its module drop a stuck session.
+  /// The pack was connected and sent nothing the app could decode for long
+  /// enough that the transport let go on purpose, to make its module drop a
+  /// stuck session. The detail says how many bytes did arrive, which is how a
+  /// silent module is told apart from a stream the app cannot read.
   packMute,
 
   /// Something else. The detail is all there is to go on.

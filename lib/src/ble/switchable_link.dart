@@ -64,6 +64,9 @@ class SwitchableLink implements BmsLink {
   Future<void> retryNow() => _active.retryNow();
 
   @override
+  void frameAccepted() => _active.frameAccepted();
+
+  @override
   set persistRetries(bool value) => _active.persistRetries = value;
 
   @override
@@ -133,6 +136,8 @@ class _Uninitialised implements BmsLink {
   LinkRetryState get retry => LinkRetryState.none;
   @override
   Future<void> retryNow() async {}
+  @override
+  void frameAccepted() {}
 
   @override
   set persistRetries(bool value) {}

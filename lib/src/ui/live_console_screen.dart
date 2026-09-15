@@ -42,7 +42,7 @@ class _LiveConsoleScreenState extends State<LiveConsoleScreen> {
   BmsSnapshot? _snapshot;
   JkDeviceInfo? _deviceInfo;
   FrameStats? _stats;
-  BleLinkState _link = BleLinkState.connecting;
+  late BleLinkState _link;
   DateTime? _lastSnapshotAt;
   bool _follow = true;
 
@@ -50,6 +50,20 @@ class _LiveConsoleScreenState extends State<LiveConsoleScreen> {
   void initState() {
     super.initState();
     final s = widget.service;
+
+    // What is already known, before anything new arrives. This screen used to
+    // start blank and show only what happened after it was opened, which made
+    // it useless for the one job it is opened for: reading what went wrong a
+    // moment ago, from the connect screen, with nothing connected.
+    _link = s.lastLinkState;
+    _stats = s.stats;
+    _deviceInfo = s.lastDeviceInfo;
+    _snapshot = s.lastSnapshot;
+    _lastSnapshotAt = s.lastSnapshot?.timestamp;
+    for (final n in s.recentNotices.reversed) {
+      _log.add('${_clock(n.at)} !! ${n.text}');
+    }
+    if (_log.isNotEmpty) _log.add('--- live from here ---');
 
     _subs.add(s.linkState.listen((v) => setState(() => _link = v)));
     _subs.add(s.frameStats.listen((v) => setState(() => _stats = v)));
@@ -90,6 +104,12 @@ class _LiveConsoleScreenState extends State<LiveConsoleScreen> {
 
   void _append(String label, Map<String, Object?> json) {
     _appendLine('--- $label ---\n${_encoder.convert(json)}');
+  }
+
+  static String _clock(DateTime at) {
+    final t = at.toLocal();
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${two(t.hour)}:${two(t.minute)}:${two(t.second)}';
   }
 
   void _appendLine(String line) {

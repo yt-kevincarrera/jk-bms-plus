@@ -3,6 +3,7 @@ import 'dart:async';
 import 'ble/ble_transport.dart';
 import 'ble/bms_link.dart';
 import 'ble/link_lost_alarm.dart';
+import 'ble/link_trouble.dart';
 import 'ble/simulator/simulated_pack.dart';
 import 'ble/switchable_link.dart';
 import 'data/database.dart';
@@ -96,12 +97,91 @@ class BmsService {
       } else if (s == BleLinkState.connected) {
         _onLinkUp();
       }
+      _noteRetry(s);
       // Readings are what normally drive the service, and a dropped link stops
       // producing them, so the link state has to be able to stand it down
       // itself or the notification outlives the connection it describes.
       unawaited(_updateForegroundService());
     });
+    _errorSub = _transport.errors.listen(_onLinkError);
   }
+
+  /// What the radio said, kept and written down.
+  ///
+  /// Kept, so the console can show what happened before it was opened: it
+  /// used to show only what arrived after, and it could only be opened from
+  /// a screen a failed connect never reaches. Written down, so a backup can
+  /// say whether a reconnect ran and found silence, ran and failed, or never
+  /// ran. Those rows were defined for exactly that question and nothing fed
+  /// them.
+  void _onLinkError(BleLinkError e) {
+    _remember(e.message);
+    final trouble = e.trouble;
+    // A smaller packet size is a note about speed, not a failure.
+    if (trouble != null && !trouble.isNoteworthy) return;
+    if (_disconnectRequested) return;
+    if (trouble?.kind == LinkTroubleKind.packMute) {
+      // Said by the transport before it lets go, so the link is still up
+      // from here; this must not wait for the drop.
+      unawaited(
+        repository?.note(
+              LinkEventKind.muteLinkReleased,
+              detail: trouble!.detail,
+              deviceId: activeDeviceId,
+            ) ??
+            Future.value(),
+      );
+      return;
+    }
+    if (_linkDownSince == null) return;
+    unawaited(
+      repository?.note(
+            LinkEventKind.reconnectFailed,
+            detail: e.message,
+            deviceId: activeDeviceId,
+          ) ??
+          Future.value(),
+    );
+  }
+
+  /// Writes down what the reconnect loop is doing, from its state changes.
+  ///
+  /// Only while an outage is open: the first connect is not a reconnect, and
+  /// a link the rider let go of is not one either.
+  void _noteRetry(BleLinkState s) {
+    if (_disconnectRequested || _linkDownSince == null) return;
+    final retry = _transport.retry;
+    switch (s) {
+      case BleLinkState.connecting:
+        unawaited(
+          repository?.note(
+                LinkEventKind.reconnectAttempted,
+                detail: 'attempt ${retry.failures + 1}',
+                deviceId: activeDeviceId,
+              ) ??
+              Future.value(),
+        );
+      case BleLinkState.failed:
+        // Once. The transport restates `failed` on the way out of every later
+        // call, and the decision to stop was made one time.
+        if (!retry.gaveUp || _gaveUpNoted) return;
+        _gaveUpNoted = true;
+        unawaited(
+          repository?.note(
+                LinkEventKind.reconnectGaveUp,
+                detail:
+                    'after ${retry.failures} failures, recording: ${trip.isRecording}',
+                deviceId: activeDeviceId,
+              ) ??
+              Future.value(),
+        );
+      default:
+        break;
+    }
+  }
+
+  /// Whether the loop giving up has been written down for this outage.
+  bool _gaveUpNoted = false;
 
   final BmsLink _transport;
   final JkParser _parser;
@@ -181,6 +261,7 @@ class BmsService {
 
   late final StreamSubscription<List<int>> _bytesSub;
   late final StreamSubscription<BleLinkState> _stateSub;
+  late final StreamSubscription<BleLinkError> _errorSub;
 
   /// Live pack readings, roughly 1 Hz.
   Stream<BmsSnapshot> get snapshots => _snapshotController.stream;
@@ -202,9 +283,23 @@ class BmsService {
   /// the one sentence that explained why it was waiting.
   final List<String> recentProblems = [];
 
+  /// Everything the app and the radio have said lately, newest first, with
+  /// the time it was said.
+  ///
+  /// Not cleared on connect, unlike [recentProblems]: the point is to read it
+  /// *after* a failed attempt, from a console that could not be opened while
+  /// the attempt was running. Forty is a couple of failed connects' worth.
+  final List<LinkNotice> recentNotices = [];
+
+  void _remember(String text) {
+    recentNotices.insert(0, LinkNotice(DateTime.now(), text));
+    if (recentNotices.length > 40) recentNotices.removeLast();
+  }
+
   void _problem(String message) {
     recentProblems.insert(0, message);
     if (recentProblems.length > 10) recentProblems.removeLast();
+    _remember(message);
     _problemController.add(message);
   }
 
@@ -618,6 +713,10 @@ class BmsService {
 
   void _onBytes(List<int> chunk) {
     for (final frame in _assembler.addChunk(chunk)) {
+      // The one proof the link has that the pack is talking. Every accepted
+      // frame, whatever its type: a record the app cannot decode is still the
+      // pack speaking JK, and not a reason for the link to let go.
+      _transport.frameAccepted();
       _dispatch(frame);
     }
     _statsController.add(_assembler.stats);
@@ -1693,6 +1792,7 @@ class BmsService {
     _linkLostTimer?.cancel();
     _linkLostTimer = null;
     _linkDownSince = null;
+    _gaveUpNoted = false;
     if (_linkLostWarned) {
       _linkLostWarned = false;
       unawaited(alertNotifications.clear(linkLostAlertKey));
@@ -2276,6 +2376,7 @@ class BmsService {
     await _stopLocation();
     await _bytesSub.cancel();
     await _stateSub.cancel();
+    await _errorSub.cancel();
     await _transport.dispose();
     await _snapshotController.close();
     await _deviceInfoController.close();
@@ -2286,6 +2387,15 @@ class BmsService {
     await _capacityController.close();
     await _chargeController.close();
   }
+}
+
+/// One thing the app or the radio said, and when. See
+/// [BmsService.recentNotices].
+class LinkNotice {
+  const LinkNotice(this.at, this.text);
+
+  final DateTime at;
+  final String text;
 }
 
 /// Accumulates measured energy and distance into range-estimator samples.

@@ -1969,7 +1969,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get connectTalkingUndecoded =>
-      'It connected and bytes are arriving, but none of them decode as a JK frame. Check the raw frame console in Settings: what shows up there is what is needed to add support.';
+      'It connected and bytes are arriving, but none of them decode as a JK frame. Open the console with the terminal icon at the top: what shows up there is what is needed to add support.';
 
   @override
   String storedCount(String count) {
@@ -2344,6 +2344,13 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
+  String get linkStaleTitle => 'Connected, but no readings';
+
+  @override
+  String get linkStaleBody =>
+      'The link is up and the pack is sending nothing this app can read. What is on screen is the last reading, not the current one. If this goes on a few seconds more, the app lets the connection go and goes back in.';
+
+  @override
   String get linkBack => 'Reading again';
 
   @override
@@ -2381,7 +2388,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get troublePackMute =>
-      'The pack was connected but mute: not one byte in 20 seconds, despite being asked several times. The app let the connection go on purpose and is going back in within seconds; that is the only way to make the BMS\'s Bluetooth module drop the session it got stuck on.';
+      'The pack was connected but mute: nothing this app could read in 20 seconds, despite being asked several times. The app let the connection go on purpose and is going back in within seconds; that is the only way to make the BMS\'s Bluetooth module drop the session it got stuck on. Details say how many bytes arrived.';
 
   @override
   String get screenAwakeTitle => 'Keep the screen on';
