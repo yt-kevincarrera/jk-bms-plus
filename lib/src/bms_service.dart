@@ -630,8 +630,6 @@ class BmsService {
         return;
       }
       if (isDemo || lastLinkState != BleLinkState.connected) return;
-      final real = _switchable?.real;
-      if (real == null) return;
       _cellInfoAsks++;
       if (_cellInfoAsks == 1 || _cellInfoAsks % 10 == 0) {
         _problem(
@@ -640,7 +638,7 @@ class BmsService {
           'no cell readings have.',
         );
       }
-      unawaited(real.requestCellInfo());
+      unawaited(_transport.askAgain());
     });
   }
 
@@ -721,7 +719,9 @@ class BmsService {
       // The one proof the link has that the pack is talking. Every accepted
       // frame, whatever its type: a record the app cannot decode is still the
       // pack speaking JK, and not a reason for the link to let go.
-      _transport.frameAccepted();
+      _transport.frameAccepted(
+        deviceInfo: frame.type == JkRecordType.deviceInfo,
+      );
       _dispatch(frame);
     }
     _statsController.add(_assembler.stats);

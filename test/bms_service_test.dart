@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:jk_bms/src/ble/ble_transport.dart';
 import 'package:jk_bms/src/ble/simulator/jk_frame_builder.dart';
 import 'package:jk_bms/src/ble/bms_link.dart';
+import 'package:jk_bms/src/ble/link_script.dart';
 import 'package:jk_bms/src/bms_service.dart';
 import 'package:jk_bms/src/model/bms_snapshot.dart';
 import 'package:jk_bms/src/protocol/bms_brand.dart';
@@ -46,7 +47,11 @@ class FakeLink implements BmsLink {
   Future<void> retryNow() async {}
 
   @override
-  void frameAccepted() {}
+  void frameAccepted({bool deviceInfo = false}) {}
+  @override
+  set script(LinkScript value) {}
+  @override
+  Future<void> askAgain() async {}
 
   @override
   set persistRetries(bool value) {}

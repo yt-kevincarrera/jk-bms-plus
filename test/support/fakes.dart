@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jk_bms/src/ble/ble_transport.dart';
 import 'package:jk_bms/src/ble/bms_link.dart';
+import 'package:jk_bms/src/ble/link_script.dart';
 import 'package:jk_bms/src/gps/location_source.dart';
 
 /// A [BmsLink] double any test can drive by hand: feed it frames, announce
@@ -40,8 +41,28 @@ class FakeLink implements BmsLink {
   /// these now, not by bytes, so a test has to be able to count them.
   int framesHeard = 0;
 
+  /// Of those, how many were the pack identifying itself, so a test can see
+  /// the service tell the transport so.
+  int deviceInfoHeard = 0;
+
   @override
-  void frameAccepted() => framesHeard++;
+  void frameAccepted({bool deviceInfo = false}) {
+    framesHeard++;
+    if (deviceInfo) deviceInfoHeard++;
+  }
+
+  /// The last script the service handed over, so a test can check the brand
+  /// it chose. Null until one is set.
+  LinkScript? scriptSet;
+
+  @override
+  set script(LinkScript value) => scriptSet = value;
+
+  /// Times the service asked the pack again.
+  int asks = 0;
+
+  @override
+  Future<void> askAgain() async => asks++;
 
   /// What the radio would report, said from the test.
   void fail(BleLinkError error) => _errors.add(error);

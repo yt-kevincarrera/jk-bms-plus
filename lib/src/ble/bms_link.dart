@@ -1,4 +1,5 @@
 import 'ble_transport.dart';
+import 'link_script.dart';
 
 /// How well the link has been behaving, for a screen to show.
 ///
@@ -79,7 +80,7 @@ abstract interface class BmsLink {
   /// transport with no loop has nothing to do here.
   Future<void> retryNow() async {}
 
-  /// A checksum-valid JK frame was assembled from this link's bytes.
+  /// A checksum-valid frame was assembled from this link's bytes.
   ///
   /// The transport cannot know this on its own: it emits notification
   /// payloads and deliberately does not parse them. It used to judge the link
@@ -92,7 +93,18 @@ abstract interface class BmsLink {
   ///
   /// Called by the service for every accepted frame, whatever its record
   /// type. A transport that cannot go quiet has nothing to do here.
-  void frameAccepted() {}
+  ///
+  /// [deviceInfo] says the frame was the pack identifying itself, so a script
+  /// that keeps asking until it hears that can stop.
+  void frameAccepted({bool deviceInfo = false}) {}
+
+  /// What to write and when, for the brand being spoken. A transport that
+  /// writes nothing (simulated, captured bytes) ignores it.
+  set script(LinkScript value) {}
+
+  /// Asks again now, with the script's own request. Nothing for a transport
+  /// that cannot be asked.
+  Future<void> askAgain() async {}
 
   /// Whether the reconnect loop should refuse to give up.
   ///

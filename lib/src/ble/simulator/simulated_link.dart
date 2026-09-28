@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import '../ble_transport.dart';
 import '../bms_link.dart';
+import '../link_script.dart';
 import 'jk_frame_builder.dart';
 import 'simulated_pack.dart';
 
@@ -147,7 +148,15 @@ class SimulatedLink implements BmsLink {
   Future<void> retryNow() async {}
 
   @override
-  void frameAccepted() {}
+  void frameAccepted({bool deviceInfo = false}) {}
+
+  /// The simulator speaks JK and writes nothing, so a script has nothing to
+  /// steer here.
+  @override
+  set script(LinkScript value) {}
+
+  @override
+  Future<void> askAgain() async {}
 
   @override
   set persistRetries(bool value) {}
