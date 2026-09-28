@@ -123,8 +123,8 @@ void main() {
 
     test('decodes cell resistances at 0.001 Ohm', () {
       // Byte 64: 0x9D 0x01 -> 413 -> 0.413 Ohm. Byte 66: 0x96 0x01 -> 0.406.
-      expect(snap.cellResistances[0], closeTo(0.413, 1e-9));
-      expect(snap.cellResistances[1], closeTo(0.406, 1e-9));
+      expect(snap.cellResistances![0], closeTo(0.413, 1e-9));
+      expect(snap.cellResistances![1], closeTo(0.406, 1e-9));
     });
 
     test('decodes pack voltage and current', () {

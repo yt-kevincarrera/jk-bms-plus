@@ -122,17 +122,20 @@ class ThermalTab extends StatelessWidget {
               t.thermalMosfetSensor,
               s.mosfetTemp == null ? t.notReported : t.reported,
             ),
-            InfoRow(
-              t.thermalSensorMask,
-              '0x${s.temperatureSensorMask.toRadixString(16).padLeft(4, '0')}',
-              hint: t.thermalMaskNote,
-            ),
-            InfoRow(t.thermalHeater, s.heatingOn ? t.on : t.off),
-            InfoRow(
-              t.thermalHeaterCurrent,
-              '${s.heatingCurrent.toStringAsFixed(2)} A',
-              last: true,
-            ),
+            if (s.temperatureSensorMask != null)
+              InfoRow(
+                t.thermalSensorMask,
+                '0x${s.temperatureSensorMask!.toRadixString(16).padLeft(4, '0')}',
+                hint: t.thermalMaskNote,
+              ),
+            if (s.heatingOn != null)
+              InfoRow(t.thermalHeater, s.heatingOn! ? t.on : t.off),
+            if (s.heatingCurrent != null)
+              InfoRow(
+                t.thermalHeaterCurrent,
+                '${s.heatingCurrent!.toStringAsFixed(2)} A',
+                last: true,
+              ),
           ],
         ),
       ],

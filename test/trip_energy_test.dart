@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:jk_bms/src/metrics/trip_recorder.dart';
 import 'package:jk_bms/src/model/bms_snapshot.dart';
 import 'package:jk_bms/src/model/bms_warning.dart';
+import 'package:jk_bms/src/protocol/bms_brand.dart';
 import 'package:jk_bms/src/protocol/protocol_variant.dart';
 
 /// One reading. [remainingAh] is the pack's own coulomb counter.
@@ -14,6 +15,7 @@ BmsSnapshot at(
 }) =>
     BmsSnapshot(
       timestamp: when,
+      brand: BmsBrand.jk,
       variant: JkProtocolVariant.jk02_24s,
       frameCounter: 1,
       cellVoltages: List.filled(20, packVoltage / 20),

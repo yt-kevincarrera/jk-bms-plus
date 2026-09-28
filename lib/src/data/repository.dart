@@ -74,7 +74,9 @@ class BmsRepository {
         soc: s.soc,
         soh: s.soh,
         remainingAh: s.remainingCapacityAh,
-        cycleCount: s.cycleCount.toDouble(),
+        // ANT reports no cycle count; the column predates nullable readings
+        // and nothing on screen reads it back (spec §11.5).
+        cycleCount: (s.cycleCount ?? 0).toDouble(),
         cycleCapacityAh: Value(s.cycleCapacityAh),
         deltaVolts: s.deltaCellVoltage,
         minCellVoltage: s.minCellVoltage,

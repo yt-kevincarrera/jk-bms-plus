@@ -105,7 +105,10 @@ class PackBaseline {
   }) => PackBaseline(
     capturedAt: at ?? DateTime.now().toUtc(),
     cellVoltages: List<double>.from(snapshot.cellVoltages),
-    cellResistances: List<double>.from(snapshot.cellResistances),
+    // ANT does not report a wire resistance; an empty list is already the
+    // baseline's own way of saying "not captured", see the isNotEmpty check
+    // below.
+    cellResistances: List<double>.from(snapshot.cellResistances ?? const []),
     wireResistances: settings == null
         ? const []
         : List<double>.from(settings.connectionWireResistances),
@@ -309,7 +312,9 @@ class BaselineComparison {
     baseline: baseline,
     at: now.timestamp,
     cells: now.cellVoltages,
-    cellResistances: now.cellResistances,
+    // ANT does not report a wire resistance; an empty list is already the
+    // baseline's own way of saying "not captured".
+    cellResistances: List<double>.from(now.cellResistances ?? const []),
     current: now.current,
     cycleCount: now.cycleCount,
     settings: settings,

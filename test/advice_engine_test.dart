@@ -5,6 +5,7 @@ import 'package:jk_bms/src/metrics/range_estimator.dart';
 import 'package:jk_bms/src/model/bms_snapshot.dart';
 import 'package:jk_bms/src/model/bms_warning.dart';
 import 'package:jk_bms/src/model/jk_settings.dart';
+import 'package:jk_bms/src/protocol/bms_brand.dart';
 import 'package:jk_bms/src/protocol/protocol_variant.dart';
 
 BmsSnapshot snap({
@@ -21,6 +22,7 @@ BmsSnapshot snap({
   final v = cells ?? List.filled(20, 3.90);
   return BmsSnapshot(
     timestamp: DateTime.utc(2026, 1, 1),
+    brand: BmsBrand.jk,
     variant: JkProtocolVariant.jk02_24s,
     frameCounter: 1,
     cellVoltages: v,
