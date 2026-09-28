@@ -23,6 +23,7 @@ import 'protocol/frame_assembler.dart';
 import 'protocol/jk_constants.dart';
 import 'protocol/jk_frame.dart';
 import 'protocol/jk_parser.dart';
+import 'protocol/raw_bms_frame.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -730,7 +731,7 @@ class BmsService {
   void _dispatch(JkFrame frame) {
     // Stored before decoding, and regardless of whether decoding succeeds: the
     // frames worth keeping most are the ones this app got wrong.
-    repository?.addRawFrame(frame);
+    repository?.addRawFrame(RawBmsFrame.jk(frame));
 
     final type = frame.type;
     if (type == null) {

@@ -7,6 +7,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jk_bms/src/data/backup.dart';
 import 'package:jk_bms/src/data/database.dart';
+import 'package:jk_bms/src/protocol/bms_brand.dart';
 
 void main() {
   late AppDatabase source;
@@ -288,6 +289,78 @@ void main() {
         () => BackupCodec(source).import(f),
         throwsA(isA<BackupFormatException>()),
       );
+    });
+  });
+
+  group('a pack\'s brand', () {
+    test('an ANT device and its frames keep the brand across a round trip',
+        () async {
+      final now = DateTime.utc(2026, 8, 1);
+      await source.upsertDevice(
+        DevicesCompanion.insert(
+          id: 'ANT:01',
+          name: const Value('ANT-BLE16ZMUB'),
+          firstSeenAt: now,
+          lastSeenAt: now,
+          brand: const Value('ant'),
+        ),
+      );
+      await source.insertRawFrames([
+        RawFramesCompanion.insert(
+          deviceId: const Value('ANT:01'),
+          timestamp: now,
+          recordType: 0x11,
+          bytes: Uint8List.fromList([0x7e, 0xa1, 0x11, 0, 0, 0]),
+          brand: const Value('ant'),
+        ),
+      ]);
+
+      final file = await BackupCodec(source).export(into: tmp);
+      final target = await restoreInto(file);
+      addTearDown(target.close);
+
+      final device = (await target.device('ANT:01'))!;
+      expect(device.brand, 'ant');
+      final frame = (await target.allRawFramesForBackup()).single;
+      expect(frame.brand, 'ant');
+      expect(BmsBrand.fromStored(frame.brand), BmsBrand.ant);
+    });
+
+    test('a format 1 file, which never mentioned brand, restores as JK',
+        () async {
+      final now = DateTime.utc(2026, 8, 1);
+      final file = File('${tmp.path}/v1.json')
+        ..writeAsStringSync(
+          jsonEncode({
+            'format': 1,
+            'devices': [
+              {
+                'id': 'AA:BB',
+                'name': 'Moto',
+                'firstSeenAt': now.toIso8601String(),
+                'lastSeenAt': now.toIso8601String(),
+              },
+            ],
+            'rawFrames': [
+              {
+                'deviceId': 'AA:BB',
+                'timestamp': now.toIso8601String(),
+                'recordType': 2,
+                'bytes': '55aa',
+              },
+            ],
+          }),
+        );
+
+      final target = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(target.close);
+      await BackupCodec(target).import(file);
+
+      final device = (await target.device('AA:BB'))!;
+      expect(device.brand, isNull);
+      expect(BmsBrand.fromStored(device.brand), BmsBrand.jk);
+      final frame = (await target.allRawFramesForBackup()).single;
+      expect(frame.brand, isNull);
     });
   });
 

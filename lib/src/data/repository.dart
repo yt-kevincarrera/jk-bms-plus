@@ -10,7 +10,8 @@ import '../metrics/capacity_cycle_detector.dart';
 import '../metrics/trip_energy_repair.dart';
 import '../metrics/trip_recorder.dart';
 import '../model/bms_snapshot.dart';
-import '../protocol/jk_frame.dart';
+import '../protocol/bms_brand.dart';
+import '../protocol/raw_bms_frame.dart';
 import 'database.dart';
 import 'link_event.dart';
 
@@ -93,16 +94,17 @@ class BmsRepository {
   }
 
   /// Queues one raw frame, exactly as it arrived.
-  void addRawFrame(JkFrame frame) {
+  void addRawFrame(RawBmsFrame frame) {
     if (!recordRawFrames) return;
     final device = activeDeviceId;
     if (device == null) return;
     _pendingFrames.add(
       RawFramesCompanion.insert(
         timestamp: frame.receivedAt,
-        recordType: frame.rawType,
+        recordType: frame.recordType,
         bytes: frameBytes(frame.bytes),
         deviceId: Value(device),
+        brand: Value(frame.brand.stored),
       ),
     );
   }
@@ -737,6 +739,7 @@ class BmsRepository {
     required bool demo,
     String serialNumber = '',
     String model = '',
+    BmsBrand? brand,
   }) async {
     final now = DateTime.now().toUtc();
     final existing = await db.device(id);
@@ -750,6 +753,7 @@ class BmsRepository {
           firstSeenAt: now,
           lastSeenAt: now,
           demo: Value(demo),
+          brand: Value(brand?.stored),
         ),
       );
     } else {
@@ -764,11 +768,16 @@ class BmsRepository {
               ? const Value.absent()
               : Value(serialNumber),
           model: model.isEmpty ? const Value.absent() : Value(model),
+          brand: brand == null ? const Value.absent() : Value(brand.stored),
         ),
       );
     }
     return (await db.device(id))!;
   }
+
+  /// Corrects the brand recorded for a pack, without touching anything else.
+  Future<void> setDeviceBrand(String id, BmsBrand brand) =>
+      db.updateDevice(id, DevicesCompanion(brand: Value(brand.stored)));
 
   Future<List<Device>> devices() => db.allDevices();
 

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import '../protocol/bms_brand.dart';
 import 'database.dart';
 import 'repository.dart';
 
@@ -151,8 +152,11 @@ class BmsExporter {
     final frames = await repository.db.rawFramesSince(deviceId, from);
 
     final out = StringBuffer()
-      ..writeln('# JK BMS raw frames, 300 bytes each, hex')
-      ..writeln('# timestamp,record_type,bytes');
+      ..writeln(
+        '# BMS raw frames, hex. JK frames are 300 bytes; ANT frames vary. '
+        'Type 0x00 on ANT is a rejected buffer.',
+      )
+      ..writeln('# timestamp,brand,record_type,bytes');
     for (final f in frames) {
       final hex = f.bytes
           .map((b) => b.toRadixString(16).padLeft(2, '0'))
@@ -160,6 +164,7 @@ class BmsExporter {
           .toUpperCase();
       out.writeln(
         '${f.timestamp.toIso8601String()},'
+        '${BmsBrand.fromStored(f.brand).stored},'
         '0x${f.recordType.toRadixString(16).padLeft(2, '0')},$hex',
       );
     }

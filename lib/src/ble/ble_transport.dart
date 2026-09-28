@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
+import '../protocol/bms_brand.dart';
 import '../protocol/jk_constants.dart';
 import 'bms_link.dart';
 import 'link_script.dart';
@@ -19,7 +20,7 @@ enum BleLinkState {
   failed,
 }
 
-/// A JK BMS advertising nearby.
+/// A BMS, or something that might be one, advertising nearby.
 class DiscoveredBms {
   const DiscoveredBms({
     required this.id,
@@ -27,6 +28,7 @@ class DiscoveredBms {
     required this.rssi,
     this.advertisesJkService = false,
     this.nameLooksLikeJk = false,
+    this.brandHint,
   });
 
   final String id;
@@ -41,14 +43,18 @@ class DiscoveredBms {
   /// setting, and a renamed pack stops matching.
   final bool nameLooksLikeJk;
 
+  /// From the advertised name; see [brandFromName].
+  final BmsBrand? brandHint;
+
   /// Whether this is probably the BMS rather than a headset or a TV.
   ///
-  /// Used to sort and to highlight, never to hide. A device that fails both
-  /// checks can still be the right one -- a JK BMS renamed in the official app
+  /// Used to sort and to highlight, never to hide. A device that fails every
+  /// check can still be the right one -- a JK BMS renamed in the official app
   /// to something personal advertises neither the service UUID nor the letters
   /// JK, and hiding it would leave a rider staring at an empty list with no
   /// way to tell an absent pack from a filtered one.
-  bool get likelyBms => advertisesJkService || nameLooksLikeJk;
+  bool get likelyBms =>
+      advertisesJkService || nameLooksLikeJk || brandHint == BmsBrand.ant;
 }
 
 /// Judges one advertisement, without deciding whether to show it.
@@ -70,6 +76,7 @@ DiscoveredBms classifyAdvertisement({
       advertisesJkService:
           serviceUuids.any((u) => u.toLowerCase().contains('ffe0')),
       nameLooksLikeJk: name.toUpperCase().contains('JK'),
+      brandHint: brandFromName(name),
     );
 
 /// Strongest signal of being the BMS first, then closest.
