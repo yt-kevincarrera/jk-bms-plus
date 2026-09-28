@@ -392,3 +392,47 @@ Casos:
 Leer ajustes ANT por registros; el protocolo ANT viejo; ANT en el simulador
 demo; conteo de ciclos ANT (la app ya calcula ciclos equivalentes desde los Ah);
 balanceo por celda en la UI; cualquier escritura al BMS.
+
+## 11. Enmiendas del plan
+
+Las siguientes precisiones refinan la especificación aprobada tras leer el código.
+
+1. **La decodificación JK permanece donde está.** El estado de variante y las
+   pruebas permanecen sin cambios en `BmsService`; no hay clase `JkProtocol`. La
+   costura está en los bytes (la ruta `_onBytes` por marca) y en la cola
+   (`_acceptSnapshot`). Mover 400 líneas de lógica de variante no aporta nada
+   para ANT y arriesga JK.
+
+2. **`LinkScript` reemplaza la mitad de comandos de `BmsProtocol`.** Los
+   comandos son datos; la decisión de tick (empujón, sondeo, liberar un enlace
+   silencioso) es una función pura, por lo que la garantía de solo lectura es
+   comprobable sin radio.
+
+3. **Una sonda de ANT a exactamente -40 °C está sin conectar.** La captura real
+   de 14S/4T lee 28, 28, -40, 28 con el MOSFET y el balanceador a 28: la
+   entrada -40 está vacía. `AntParser` asigna exactamente -40 a
+   `BmsSnapshot.absentProbeCelsius` (-200) para que esté oculta y nunca dispare
+   una alerta de frío.
+
+4. **Sin número de serie es `''`**, la convención existente
+   `Devices.serialNumber`, no nulo.
+
+5. **`Snapshots.cycleCount` permanece no nulo en la DB**; las filas de ANT
+   almacenan 0 allí (recrear la tabla más grande para hacerla nullable no vale
+   la pena). El `BmsSnapshot.cycleCount` activo es nulo para ANT y nada en
+   pantalla lee la columna almacenada.
+
+6. **El diagnóstico también va a `LinkEvents`.** Las tramas crudas solo se
+   guardan una vez que un pack está activo (primera lectura decodificada), por
+   lo que un ANT que nunca se decodifica no dejaría nada. Los búferes rechazados
+   y los fallos de decodificación también se escriben como filas `LinkEvents`
+   (deviceId puede ser nulo), que los backups exportan incondicionalmente,
+   limitados a 20 por conexión, con el hex en el detalle.
+
+7. **La detección pasiva necesita una trama válida completa, y solo antes de
+   que la marca elegida se pruebe a sí misma.** Hacer coincidir dos bytes
+   iniciales de una notificación podría activarse por casualidad dentro de un
+   flujo JK cada pocas horas e intercambiar un pack a mitad de camino. El
+   ensamblador de la otra marca se ejecuta al lado hasta que la marca elegida
+   decodifica su primer frame; solo un frame con suma de comprobación válida de
+   ella cambia.
