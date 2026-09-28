@@ -960,6 +960,14 @@ class BleTransport implements BmsLink {
 
   @override
   set script(LinkScript value) {
+    // A different brand starts its schedule from the beginning. The ticks and
+    // the device-info flag counted so far belong to the other brand's script,
+    // and an ANT that inherited them after a mid-link switch would wait for a
+    // tick number that already passed before asking who it is.
+    if (value.brand != _script.brand) {
+      _tick = 0;
+      _deviceInfoSeen = false;
+    }
     _script = value;
     // A brand learned mid-link takes effect on the next tick rather than the
     // next connection, because a pack that only speaks when asked would
