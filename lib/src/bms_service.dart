@@ -90,7 +90,7 @@ class BmsService {
   }) : _transport = transport ?? SwitchableLink(),
        _parser = parser,
        _locationFactory = locationFactory {
-    _assembler.onRejected = (_) => _statsController.add(_assembler.stats);
+    _assembler.onRejected = (_) => _statsController.add(stats);
     _antAssembler.onRejected = _onAntRejected;
     _bytesSub = _transport.bytes.listen(_onBytes);
     _stateSub = _transport.state.listen((s) {
@@ -440,9 +440,31 @@ class BmsService {
   /// speak JK and have not been converted to the brand-neutral type yet.
   JkDeviceInfo? get jkDeviceInfo => _lastDeviceInfo?.jk;
   JkSettings? get lastSettings => _lastSettings;
-  /// Link quality counters of the assembler the current brand is read with.
-  FrameStats get stats =>
-      _brand == BmsBrand.ant ? _antAssembler.stats : _assembler.stats;
+  /// Link quality counters: frame outcomes from the assembler the current
+  /// brand is read with, and bytes from the service's own total.
+  ///
+  /// The byte count cannot come from an assembler. Each one counts only what
+  /// reached it, for the life of the service, so after a JK session an ANT
+  /// connection started below the JK figure; the connect screen, which
+  /// measures bytes against the total it saw before connecting, then reported
+  /// "0 bytes received" while an ANT was sending frames that failed their CRC.
+  /// One object, updated in place, so a screen holding it stays current.
+  FrameStats get stats {
+    final from =
+        _brand == BmsBrand.ant ? _antAssembler.stats : _assembler.stats;
+    _linkStats
+      ..accepted = from.accepted
+      ..badChecksum = from.badChecksum
+      ..unsupportedType = from.unsupportedType
+      ..bytesReceived = _bytesReceived;
+    return _linkStats;
+  }
+
+  final FrameStats _linkStats = FrameStats();
+
+  /// Every byte the link delivered, whichever brand it was read as, counted
+  /// before detection so the chunk that triggers a switch is counted too.
+  int _bytesReceived = 0;
   int? get negotiatedMtu => _transport.negotiatedMtu;
 
   BmsSnapshot? _lastSnapshot;
@@ -867,11 +889,17 @@ class BmsService {
   }
 
   void _onBytes(List<int> chunk) {
+    // Counted before anything decides what the bytes are, so the evidence
+    // that a pack is talking never depends on which brand it was taken for.
+    _bytesReceived += chunk.length;
     // The chunk that completed the other brand's frame was that frame's last
     // piece, already consumed by the probe. Handing it on as well would give
     // the newly chosen assembler a fragment with no head, which it can only
     // reject and write down as if the pack had sent garbage.
-    if (_detectBrand(chunk)) return;
+    if (_detectBrand(chunk)) {
+      _statsController.add(stats);
+      return;
+    }
     if (_brand == BmsBrand.ant) {
       _onAntBytes(chunk);
       return;
@@ -886,7 +914,7 @@ class BmsService {
       );
       _dispatch(frame);
     }
-    _statsController.add(_assembler.stats);
+    _statsController.add(stats);
   }
 
   static bool _startsWith(List<int> c, List<int> p) {
@@ -998,7 +1026,7 @@ class BmsService {
         }
       }
     }
-    _statsController.add(_antAssembler.stats);
+    _statsController.add(stats);
   }
 
   /// A buffer the ANT assembler threw away.
@@ -1010,7 +1038,7 @@ class BmsService {
   void _onAntRejected(AntRejected r) {
     antRejectedFrames++;
     lastDecodeError = r.reason.name;
-    _statsController.add(_antAssembler.stats);
+    _statsController.add(stats);
     if (_rejectedRawKept < _rejectedRawCap) {
       _rejectedRawKept++;
       repository?.addRawFrame(

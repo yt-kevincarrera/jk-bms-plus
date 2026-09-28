@@ -194,6 +194,36 @@ void main() {
     expect(service.antRejectedFrames, 30);
   });
 
+  test('bytes from an ANT after a JK session still count as bytes', () async {
+    // The connect screen takes the byte total before connecting and judges
+    // "the pack is talking" by growth from there. A per-brand counter put an
+    // ANT after a JK below that baseline, so its failing frames read as
+    // silence.
+    await service.connect('JK1', name: 'KevinJK');
+    link.announce(BleLinkState.connected);
+    await link.deliver(deviceInfoFrames[1]);
+    await link.deliver(cellInfo24s[0]);
+    await pumpEventQueue();
+    final before = service.stats.bytesReceived;
+    await service.connect('ANT1', name: 'ANT-BLE16ZMUB');
+    link.announce(BleLinkState.connected);
+    final bad = Uint8List.fromList(antStatus16s)..[40] ^= 0xFF;
+    await link.deliver(bad);
+    await pumpEventQueue();
+    expect(service.stats.bytesReceived, before + bad.length);
+    expect(service.stats.badChecksum, greaterThan(0));
+  });
+
+  test('the chunk that switches the brand is counted', () async {
+    await service.connect('X', name: 'Moto', brand: BmsBrand.jk);
+    link.announce(BleLinkState.connected);
+    final before = service.stats.bytesReceived;
+    await link.deliver(antStatus16s);
+    await pumpEventQueue();
+    expect(service.brand, BmsBrand.ant);
+    expect(service.stats.bytesReceived, before + antStatus16s.length);
+  });
+
   test('an implausible ANT reading feeds nothing', () async {
     await service.connect('X', name: 'ANT-BLE16ZMUB');
     link.announce(BleLinkState.connected);
