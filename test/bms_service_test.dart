@@ -7,6 +7,7 @@ import 'package:jk_bms/src/ble/simulator/jk_frame_builder.dart';
 import 'package:jk_bms/src/ble/bms_link.dart';
 import 'package:jk_bms/src/bms_service.dart';
 import 'package:jk_bms/src/model/bms_snapshot.dart';
+import 'package:jk_bms/src/protocol/bms_brand.dart';
 import 'package:jk_bms/src/protocol/jk_frame.dart';
 import 'package:jk_bms/src/protocol/jk_parser.dart';
 import 'package:jk_bms/src/protocol/protocol_variant.dart';
@@ -221,6 +222,18 @@ void main() {
     expect(snapshots.single.cellCount, 16);
     expect(snapshots.single.packVoltage, closeTo(53.251, 1e-9));
     expect(service.lastSnapshot, same(snapshots.single));
+  });
+
+  test('device info is published brand-neutral, JK details still reachable',
+      () async {
+    final infoFuture = service.deviceInfo.first;
+    await link.deliver(deviceInfoFrames[1]); // JK-B2A24S15P, sw 10.07
+    final info = await infoFuture;
+
+    expect(info.brand, BmsBrand.jk);
+    expect(info.model, isNotEmpty);
+    expect(info.jk, isNotNull);
+    expect(service.jkDeviceInfo, same(info.jk));
   });
 
   test('a manual variant override wins over auto-detection', () async {

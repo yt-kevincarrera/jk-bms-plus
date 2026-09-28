@@ -15,6 +15,7 @@ import 'platform/alert_notifications.dart';
 import 'platform/live_notification.dart';
 import 'platform/pack_widget.dart';
 import 'platform/widget_publisher.dart';
+import 'model/bms_device_info.dart';
 import 'model/bms_snapshot.dart';
 import 'model/jk_device_info.dart';
 import 'model/jk_settings.dart';
@@ -254,7 +255,7 @@ class BmsService {
   static const Duration _silenceTimeout = Duration(seconds: 12);
 
   final _snapshotController = StreamController<BmsSnapshot>.broadcast();
-  final _deviceInfoController = StreamController<JkDeviceInfo>.broadcast();
+  final _deviceInfoController = StreamController<BmsDeviceInfo>.broadcast();
   final _settingsController = StreamController<JkSettings>.broadcast();
   final _statsController = StreamController<FrameStats>.broadcast();
   final _problemController = StreamController<String>.broadcast();
@@ -267,7 +268,7 @@ class BmsService {
   Stream<BmsSnapshot> get snapshots => _snapshotController.stream;
 
   /// Device identity, normally once per connection.
-  Stream<JkDeviceInfo> get deviceInfo => _deviceInfoController.stream;
+  Stream<BmsDeviceInfo> get deviceInfo => _deviceInfoController.stream;
 
   /// BMS configuration, read-only.
   Stream<JkSettings> get settings => _settingsController.stream;
@@ -350,13 +351,17 @@ class BmsService {
   Future<void> retryLink() => _transport.retryNow();
 
   BmsSnapshot? get lastSnapshot => _lastSnapshot;
-  JkDeviceInfo? get lastDeviceInfo => _lastDeviceInfo;
+  BmsDeviceInfo? get lastDeviceInfo => _lastDeviceInfo;
+
+  /// The JK-specific half of [lastDeviceInfo], for callers that only ever
+  /// speak JK and have not been converted to the brand-neutral type yet.
+  JkDeviceInfo? get jkDeviceInfo => _lastDeviceInfo?.jk;
   JkSettings? get lastSettings => _lastSettings;
   FrameStats get stats => _assembler.stats;
   int? get negotiatedMtu => _transport.negotiatedMtu;
 
   BmsSnapshot? _lastSnapshot;
-  JkDeviceInfo? _lastDeviceInfo;
+  BmsDeviceInfo? _lastDeviceInfo;
   JkSettings? _lastSettings;
 
   /// Which framing we are decoding with. Null until the device info frame
@@ -740,7 +745,9 @@ class BmsService {
       switch (type) {
         case JkRecordType.deviceInfo:
           deviceInfoFrames++;
-          _handleDeviceInfo(_parser.parseDeviceInfo(frame));
+          _handleDeviceInfo(
+            BmsDeviceInfo.fromJk(_parser.parseDeviceInfo(frame)),
+          );
         case JkRecordType.cellInfo:
           cellInfoFrames++;
           unawaited(_handleCellInfo(frame));
@@ -789,23 +796,28 @@ class BmsService {
     }
   }
 
-  void _handleDeviceInfo(JkDeviceInfo info) {
+  void _handleDeviceInfo(BmsDeviceInfo info) {
     _lastDeviceInfo = info;
     // The serial and model only arrive once a frame has been parsed, so the
     // stored row catches up here rather than at connect time.
     _recordDeviceDetails(info);
-    _variant = _override ?? info.variant;
     _deviceInfoController.add(info);
 
-    if (info.variant == null) {
+    // Variant detection is a JK concept: ANT has no framing to guess and no
+    // detection confidence to report. Everything below is skipped for a pack
+    // whose device info carries no JK payload.
+    final jk = info.jk;
+    if (jk == null) return;
+    _variant = _override ?? jk.variant;
+    if (jk.variant == null) {
       _problem(
         'Could not work out which JK protocol variant this BMS speaks. '
         'Pick one manually in the System tab; until '
         'then no readings will be decoded, because decoding with the wrong '
         'variant produces wrong numbers rather than an error.',
       );
-    } else if (!info.detection.confident && _override == null) {
-      _problem('Assuming ${info.variant!.name}.');
+    } else if (!jk.detection.confident && _override == null) {
+      _problem('Assuming ${jk.variant!.name}.');
     }
   }
 
@@ -2340,7 +2352,7 @@ class BmsService {
     return n;
   }
 
-  Future<void> _recordDeviceDetails(JkDeviceInfo info) async {
+  Future<void> _recordDeviceDetails(BmsDeviceInfo info) async {
     final id = activeDeviceId;
     final repo = repository;
     if (id == null || repo == null) return;

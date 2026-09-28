@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
+import '../model/bms_device_info.dart';
 import '../model/bms_snapshot.dart';
-import '../model/jk_device_info.dart';
 import '../model/jk_settings.dart';
 import 'pack_config.dart';
 
@@ -100,7 +100,7 @@ class PackBaseline {
   static PackBaseline capture({
     required BmsSnapshot snapshot,
     JkSettings? settings,
-    JkDeviceInfo? info,
+    BmsDeviceInfo? info,
     DateTime? at,
   }) => PackBaseline(
     capturedAt: at ?? DateTime.now().toUtc(),

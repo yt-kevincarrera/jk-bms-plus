@@ -6,8 +6,8 @@ import 'package:flutter/services.dart';
 
 import '../ble/ble_transport.dart';
 import '../bms_service.dart';
+import '../model/bms_device_info.dart';
 import '../model/bms_snapshot.dart';
-import '../model/jk_device_info.dart';
 import '../protocol/jk_frame.dart';
 
 /// Milestone 1 deliverable: prove the link decodes correctly, live, for as long
@@ -40,7 +40,7 @@ class _LiveConsoleScreenState extends State<LiveConsoleScreen> {
   final List<StreamSubscription<Object?>> _subs = [];
 
   BmsSnapshot? _snapshot;
-  JkDeviceInfo? _deviceInfo;
+  BmsDeviceInfo? _deviceInfo;
   FrameStats? _stats;
   late BleLinkState _link;
   DateTime? _lastSnapshotAt;
@@ -203,7 +203,7 @@ class _StatusStrip extends StatelessWidget {
 
   final BleLinkState link;
   final BmsSnapshot? snapshot;
-  final JkDeviceInfo? deviceInfo;
+  final BmsDeviceInfo? deviceInfo;
   final FrameStats? stats;
   final int? mtu;
   final DateTime? lastSnapshotAt;
@@ -235,7 +235,7 @@ class _StatusStrip extends StatelessWidget {
             Text(
               '${deviceInfo!.model}  hw ${deviceInfo!.hardwareVersion}  '
               'sw ${deviceInfo!.softwareVersion}  '
-              '-> ${deviceInfo!.variant?.name ?? "variant unknown"}',
+              '-> ${deviceInfo!.variant?.name ?? deviceInfo!.brand.name.toUpperCase()}',
               style: theme.textTheme.labelSmall,
             ),
           ],
