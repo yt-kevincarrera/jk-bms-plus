@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:jk_bms/src/pack/chemistry.dart';
 import 'package:jk_bms/src/protocol/protocol_variant.dart';
 import 'package:jk_bms/src/ui/widgets/common.dart';
 
@@ -44,6 +45,34 @@ void main() {
         mosfetTemp: 50,
       );
       expect(packStatusOf(s).reason, PackStatusReason.allClear);
+    });
+  });
+
+  group('the spread, by chemistry', () {
+    // 16 cells at the top of an LFP charge, 60 mV apart: normal up there,
+    // where a few millivolts of charge are tens of millivolts of voltage.
+    final top = [for (var i = 1; i <= 16; i++) i == 5 ? 3.42 : 3.48];
+
+    test('is not judged above the LFP knee on an LFP pack', () {
+      final s = buildSnapshot(cells: top, current: 5);
+      expect(
+        packStatusOf(s, chemistry: CellChemistry.lfp).reason,
+        PackStatusReason.allClear,
+      );
+    });
+
+    test('is judged as before when the chemistry is not LFP', () {
+      final s = buildSnapshot(cells: top, current: 5);
+      expect(packStatusOf(s).reason, PackStatusReason.cellSpread);
+    });
+
+    test('is judged on the LFP plateau, where it means something', () {
+      final mid = [for (var i = 1; i <= 16; i++) i == 5 ? 3.24 : 3.30];
+      final s = buildSnapshot(cells: mid, current: 0);
+      expect(
+        packStatusOf(s, chemistry: CellChemistry.lfp).reason,
+        PackStatusReason.cellSpread,
+      );
     });
   });
 }

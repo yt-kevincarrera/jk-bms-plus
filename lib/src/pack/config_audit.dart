@@ -103,6 +103,18 @@ class ConfigAudit {
             limit: ChemistryLimits.freezingChargeLimitCelsius,
           ),
         );
+      } else if (utp < ChemistryLimits.comfortableChargeMinCelsius) {
+        // Above freezing, but only just. It used to pass as fine while the
+        // advice for the frozen case said "2 degrees or more": the probe
+        // reads the outside of the pack, and the cells inside lag it.
+        out.add(
+          _advice(
+            AdviceCode.configColdCutoffMarginal,
+            AdviceLevel.watch,
+            value: utp,
+            limit: ChemistryLimits.comfortableChargeMinCelsius,
+          ),
+        );
       } else {
         out.add(
           _advice(AdviceCode.configColdCutoffOk, AdviceLevel.good, value: utp),

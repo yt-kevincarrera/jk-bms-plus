@@ -12,7 +12,6 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import '../../metrics/advice_engine.dart';
 import '../../metrics/advice_grouping.dart';
-import '../../metrics/snapshot_history.dart';
 import '../../pack/pack_baseline.dart';
 import '../../license/entitlements.dart';
 import '../widgets/advice_list.dart';
@@ -341,10 +340,15 @@ class _HealthTabState extends State<HealthTab> {
               report: report,
               estimator: estimator,
               settings: service.lastSettings,
-              restingDelta: service.history.restingDelta,
-              loadedDelta: service.history.loadedDelta,
-              weakCellCounts: service.history.weakCellCounts,
-              balancerEverSeen: service.history.balancerEverSeen,
+              // Since the pack connected, not over the reading buffer's
+              // twenty-odd minutes.
+              restingDelta: service.history.session.restingDelta,
+              loadedDelta: service.history.session.loadedDelta,
+              restingDeltaCell: service.history.session.restingDeltaCell,
+              loadedDeltaCell: service.history.session.loadedDeltaCell,
+              heavyLoadFrames: service.history.session.heavyLoadFrames,
+              weakCellCounts: service.history.session.weakCellCounts,
+              balancerEverSeen: service.history.session.balancerEverSeen,
               capacityTestCount: service.capacityTestCount,
               degradationMeasurable: lost != null,
               usableWh: usableWh,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../bms_service.dart';
+import '../../metrics/advice_engine.dart';
 import '../../model/bms_snapshot.dart';
 import '../../protocol/ant_constants.dart';
 import '../../protocol/bms_brand.dart';
@@ -32,6 +33,7 @@ class CellsTab extends StatelessWidget {
 
     final avg = s.averageCellVoltage;
     final hasResistances = s.cellResistances?.isNotEmpty ?? false;
+    final ranking = _ranking(t, service.history.session.weakCellCounts);
     // The BMS's own list where it gives one (an ANT does), the inference
     // from the cell voltages where it does not (a JK).
     final balancing = s.balancingCells;
@@ -189,7 +191,15 @@ class CellsTab extends StatelessWidget {
                   : t.balanceWhichCellsNoneReported,
               dim: reported == null || !reported.contains(true),
             ),
-            InfoRow(t.balanceRanking, t.needsDatabase, dim: true, last: true),
+            // Which cells were clearly the lowest since the pack connected,
+            // counted the way the weak-cell finding counts them. It read
+            // "needs more history" here for ever: nothing filled it.
+            InfoRow(
+              t.balanceRanking,
+              ranking ?? t.balanceRankingNeedsReadings,
+              dim: ranking == null,
+              last: true,
+            ),
           ],
         ),
         // An "estimated internal resistance" row used to sit here reading
@@ -236,6 +246,24 @@ class CellsTab extends StatelessWidget {
       ),
     ],
   );
+
+  /// The three cells most often clearly the lowest, with their share, or null
+  /// until there are as many readings as the weak-cell finding asks for.
+  static String? _ranking(AppL10n t, Map<int, int> counts) {
+    final total = counts.values.fold<int>(0, (a, b) => a + b);
+    if (total < VerdictThresholds.defaults.weakCellMinReadings) return null;
+    final ranked = counts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    return ranked
+        .take(3)
+        .map(
+          (e) => t.balanceRankingEntry(
+            '${e.key}',
+            (e.value / total * 100).toStringAsFixed(0),
+          ),
+        )
+        .join(',  ');
+  }
 
   /// Colour for the delta readout, where any value is a magnitude rather than a
   /// direction.

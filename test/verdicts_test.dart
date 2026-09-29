@@ -217,11 +217,30 @@ void main() {
   group('delta under load', () {
     test('a delta that does not open under load is said to be normal', () {
       final v = only(
-        engine.headlines(restingDelta: 0.012, loadedDelta: 0.030),
+        engine.headlines(
+          restingDelta: 0.012,
+          loadedDelta: 0.030,
+          heavyLoadFrames: 5,
+        ),
         AdviceCode.deltaUnderLoadNormal,
       );
       expect(v.level, AdviceLevel.good);
       expect(v.evidence, hasLength(2));
+    });
+
+    test('after only light loads it says only that', () {
+      // "Nothing resistive to chase" used to rest on a single 10 A reading.
+      // A bad connection only shows at a load that can open it.
+      final all = engine.headlines(
+        restingDelta: 0.012,
+        loadedDelta: 0.030,
+        heavyLoadFrames: 2,
+      );
+      expect(has(all, AdviceCode.deltaUnderLoadNormal), isFalse);
+      expect(
+        only(all, AdviceCode.deltaUnderLightLoadNormal).level,
+        AdviceLevel.good,
+      );
     });
 
     test('is not said about a session that never pulled current', () {
@@ -298,10 +317,11 @@ void main() {
         estimator: RangeEstimator(),
         restingDelta: 0.010,
         loadedDelta: 0.020,
+        heavyLoadFrames: 5,
       );
       expect(all.first.level, AdviceLevel.problem);
       expect(all.last.level, AdviceLevel.good);
-      expect(all.last.code, AdviceCode.deltaUnderLoadNormal);
+      expect(has(all, AdviceCode.deltaUnderLoadNormal), isTrue);
     });
 
     test('the live evaluation and the offline headlines agree', () {

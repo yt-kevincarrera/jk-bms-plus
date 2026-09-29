@@ -49,7 +49,7 @@ void main() {
       // repeat one idea: the numbers the BMS reports are claims, not
       // measurements. Together they argue it once.
       for (final code in [
-        AdviceCode.cycleCounterInflated,
+        AdviceCode.cycleCounterDisagrees,
         AdviceCode.healthFigureDecorative,
         AdviceCode.socCounterAhead,
         AdviceCode.socCounterBehind,

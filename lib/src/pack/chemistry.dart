@@ -183,6 +183,11 @@ class ChemistryLimits {
   /// single most common way a winter rider ruins a pack.
   static const double freezingChargeLimitCelsius = 0;
 
+  /// The cold cutoff the audit asks for: a margin above freezing, because
+  /// the probe reads the outside of the pack and the cells inside it lag
+  /// behind. A cutoff between the two stops above zero, but only just.
+  static const double comfortableChargeMinCelsius = 2;
+
   /// Above this, charging is doing damage.
   static const double hotChargeLimitCelsius = 45;
 

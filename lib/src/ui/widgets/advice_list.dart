@@ -572,10 +572,12 @@ String adviceTitle(AppL10n t, Advice advice) {
     AdviceCode.noCellDrifting => t.verdictNoCellDriftingTitle,
     AdviceCode.rangeNow => t.verdictRangeNowTitle(v.toStringAsFixed(0)),
     AdviceCode.deltaUnderLoadNormal => t.verdictDeltaNormalTitle,
+    AdviceCode.deltaUnderLightLoadNormal => t.verdictDeltaLightTitle,
     AdviceCode.imbalanceAtRest => t.adviceImbalanceAtRestTitle,
     AdviceCode.imbalanceUnderLoad => t.adviceImbalanceUnderLoadTitle,
     AdviceCode.weakCellDominant => t.adviceWeakCellTitle,
-    AdviceCode.cycleCounterInflated => t.adviceCycleInflatedTitle,
+    AdviceCode.cycleCounterDisagrees => t.adviceCycleMismatchTitle,
+    AdviceCode.bmsClaimsConsistent => t.adviceBmsClaimsOkTitle,
     AdviceCode.socCounterAhead => t.adviceSocCounterAheadTitle,
     AdviceCode.socCounterBehind => t.adviceSocCounterBehindTitle,
     AdviceCode.healthFigureDecorative => t.adviceHealthDecorativeTitle,
@@ -583,8 +585,10 @@ String adviceTitle(AppL10n t, Advice advice) {
     AdviceCode.noCapacityTestYet => t.adviceNoCapacityTestTitle,
     AdviceCode.runningHot => t.adviceRunningHotTitle,
     AdviceCode.bmsRunningHot => t.adviceBmsHotTitle,
+    AdviceCode.temperatureOk => t.adviceTemperatureOkTitle,
     AdviceCode.balancerNeverSeen => t.adviceBalancerNeverSeenTitle,
     AdviceCode.overvoltageSetHigh => t.adviceOvervoltageHighTitle,
+    AdviceCode.configNothingFlagged => t.adviceConfigNothingFlaggedTitle,
     AdviceCode.rangeStillLearning => t.adviceRangeLearningTitle,
     AdviceCode.imbalanceCostingRange => t.adviceImbalanceCostingTitle,
     AdviceCode.inspectionCellSagging => t.verdictInspCellSaggingTitle('$cell'),
@@ -622,6 +626,8 @@ String adviceTitle(AppL10n t, Advice advice) {
     AdviceCode.configUvpLow => t.verdictConfigUvpLowTitle,
     AdviceCode.configChargesWhenFrozen => t.verdictConfigChargesWhenFrozenTitle,
     AdviceCode.configColdCutoffOk => t.verdictConfigColdCutoffOkTitle,
+    AdviceCode.configColdCutoffMarginal =>
+      t.verdictConfigColdCutoffMarginalTitle,
     AdviceCode.configChargeHotLimit => t.verdictConfigChargeHotLimitTitle,
     AdviceCode.configDischargeHotLimit => t.verdictConfigDischargeHotLimitTitle,
     AdviceCode.configCapacityDisagrees => t.verdictConfigCapacityDisagreesTitle,
@@ -678,6 +684,10 @@ String adviceBody(AppL10n t, Advice advice) {
       f(EvidenceKind.loadedDelta, 3),
       f(EvidenceKind.restingDelta, 3),
     ),
+    AdviceCode.deltaUnderLightLoadNormal => t.verdictDeltaLightBody(
+      f(EvidenceKind.loadedDelta, 3),
+      f(EvidenceKind.restingDelta, 3),
+    ),
     AdviceCode.imbalanceAtRest => t.adviceImbalanceAtRestBody(
       v.toStringAsFixed(3),
       cell,
@@ -690,9 +700,11 @@ String adviceBody(AppL10n t, Advice advice) {
       cell,
       v.toStringAsFixed(0),
     ),
-    AdviceCode.cycleCounterInflated => t.adviceCycleInflatedBody(
-      v.toStringAsFixed(1),
+    AdviceCode.cycleCounterDisagrees => t.adviceCycleMismatchBody(
+      f(EvidenceKind.reportedCycles, 0),
+      f(EvidenceKind.equivalentCycles, 1),
     ),
+    AdviceCode.bmsClaimsConsistent => t.adviceBmsClaimsOkBody,
     AdviceCode.socCounterAhead => t.adviceSocCounterAheadBody(
       v.toStringAsFixed(2),
       f(EvidenceKind.reportedSoc, 0),
@@ -708,10 +720,14 @@ String adviceBody(AppL10n t, Advice advice) {
     AdviceCode.noCapacityTestYet => t.adviceNoCapacityTestBody,
     AdviceCode.runningHot => t.adviceRunningHotBody(v.toStringAsFixed(1)),
     AdviceCode.bmsRunningHot => t.adviceBmsHotBody(v.toStringAsFixed(1)),
+    AdviceCode.temperatureOk => t.adviceTemperatureOkBody(v.toStringAsFixed(0)),
     AdviceCode.balancerNeverSeen => t.adviceBalancerNeverSeenBody(
       v.toStringAsFixed(2),
     ),
     AdviceCode.overvoltageSetHigh => t.adviceOvervoltageHighBody(
+      v.toStringAsFixed(2),
+    ),
+    AdviceCode.configNothingFlagged => t.adviceConfigNothingFlaggedBody(
       v.toStringAsFixed(2),
     ),
     AdviceCode.rangeStillLearning => t.adviceRangeLearningBody(
@@ -786,6 +802,11 @@ String adviceBody(AppL10n t, Advice advice) {
     AdviceCode.configColdCutoffOk => t.verdictConfigColdCutoffOkBody(
       v.toStringAsFixed(0),
     ),
+    AdviceCode.configColdCutoffMarginal =>
+      t.verdictConfigColdCutoffMarginalBody(
+        v.toStringAsFixed(0),
+        f(EvidenceKind.safeLimit, 0),
+      ),
     AdviceCode.configChargeHotLimit => t.verdictConfigChargeHotLimitBody(
       v.toStringAsFixed(0),
       f(EvidenceKind.safeLimit, 0),

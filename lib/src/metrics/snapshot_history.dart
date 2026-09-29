@@ -32,6 +32,7 @@ class SnapshotHistory {
     final previous = latest;
     if (previous != null) _accumulateEnergy(previous, snapshot);
     if (isResting(snapshot)) _latestResting = snapshot;
+    session.add(snapshot);
     if (snapshot.cellVoltages.isNotEmpty &&
         snapshot.maxCellVoltage > (_maxCellVoltageSeen ?? 0)) {
       _maxCellVoltageSeen = snapshot.maxCellVoltage;
@@ -48,7 +49,11 @@ class SnapshotHistory {
     _maxCellVoltageSeen = null;
     _sessionOutWh = 0;
     _sessionInWh = 0;
+    session.clear();
   }
+
+  /// What the whole connection has shown, for the advice engine.
+  final SessionAggregates session = SessionAggregates();
 
   /// Whether a reading was taken with essentially nothing flowing, so its cell
   /// voltages say where the charge is.
@@ -163,50 +168,170 @@ class SnapshotHistory {
   static const double sagReferenceMaxSocPoints = 2;
 }
 
-/// Aggregates over the buffered session that the advice engine reads.
-extension SnapshotHistoryAnalysis on SnapshotHistory {
-  /// Widest cell delta seen with essentially no current flowing.
-  ///
-  /// Separating this from the loaded delta is what tells a genuinely mismatched
-  /// cell apart from a resistive connection: a cell that only falls behind when
-  /// current flows is a resistance problem, and resistance is usually a loose
-  /// busbar rather than a bad cell.
-  double? get restingDelta {
-    double? worst;
-    for (final s in all) {
-      if (s.current.abs() > 1.0) continue;
-      if (worst == null || s.deltaCellVoltage > worst) {
-        worst = s.deltaCellVoltage;
+/// One reading taken under load, as the loaded-delta figure keeps it.
+class LoadedFrame {
+  const LoadedFrame({
+    required this.delta,
+    required this.lowestCell,
+    required this.current,
+  });
+
+  final double delta;
+
+  /// 1-based cell that was lowest in this reading.
+  final int lowestCell;
+  final double current;
+}
+
+/// What the advice engine reads about the whole connection.
+///
+/// Accumulated in [SnapshotHistory.add] rather than scanned off the buffer.
+/// The buffer holds twenty-odd minutes, and the findings built on it were
+/// labelled "in this session" and "never all session" while describing the
+/// last twenty minutes. Frames the JK merely repeats (same cell voltages as
+/// the one before) count once: it resends a reading across consecutive
+/// frames, and counting each copy weighed a stuck moment as many.
+class SessionAggregates {
+  /// Discharge current from which a reading counts as under load.
+  static const double loadAmps = 10;
+
+  /// How many of the widest loaded readings the loaded delta is the median
+  /// of. One reading is not evidence: current and cell voltages in one frame
+  /// are not always the same instant, and a single mismatched frame used to
+  /// be the whole figure.
+  static const int loadedTopFrames = 5;
+
+  /// A weakest-cell reading only counts with the cells at least this far
+  /// apart. Below it, which cell is lowest is measurement noise: the finding
+  /// used to fire on a pack 2 mV apart.
+  static const double weakCellMinDelta = 0.010;
+
+  /// And only when the lowest cell is lowest by this much. A tie went to the
+  /// lowest-numbered cell, so cell 1 won every level reading.
+  static const double weakCellMinLead = 0.002;
+
+  double? _restingDelta;
+  int? _restingDeltaCell;
+  final List<LoadedFrame> _loadedTop = [];
+  int _loadedFrames = 0;
+  int _heavyFrames = 0;
+  double _peakLoadAmps = 0;
+  final Map<int, int> _weakCellCounts = {};
+  bool _balancerSeen = false;
+  List<double>? _previousCells;
+
+  void clear() {
+    _restingDelta = null;
+    _restingDeltaCell = null;
+    _loadedTop.clear();
+    _loadedFrames = 0;
+    _heavyFrames = 0;
+    _peakLoadAmps = 0;
+    _weakCellCounts.clear();
+    _balancerSeen = false;
+    _previousCells = null;
+  }
+
+  void add(BmsSnapshot s) {
+    if (s.balancerActive) _balancerSeen = true;
+    final cells = s.cellVoltages;
+    if (cells.length < 2) return;
+    final repeat = _sameAs(_previousCells, cells);
+    _previousCells = cells;
+    if (repeat) return;
+
+    final delta = s.deltaCellVoltage;
+    if (SnapshotHistory.isResting(s)) {
+      if (_restingDelta == null || delta > _restingDelta!) {
+        _restingDelta = delta;
+        _restingDeltaCell = s.minCellIndex;
       }
     }
-    return worst;
-  }
 
-  /// Widest cell delta seen while pulling meaningful current.
-  double? get loadedDelta {
-    double? worst;
-    for (final s in all) {
-      if (s.current > -10) continue;
-      if (worst == null || s.deltaCellVoltage > worst) {
-        worst = s.deltaCellVoltage;
+    if (s.current <= -loadAmps) {
+      _loadedFrames++;
+      final amps = -s.current;
+      if (amps > _peakLoadAmps) _peakLoadAmps = amps;
+      if (amps >= heavyLoadAmps(s.nominalCapacityAh)) _heavyFrames++;
+      _loadedTop.add(
+        LoadedFrame(delta: delta, lowestCell: s.minCellIndex, current: s.current),
+      );
+      _loadedTop.sort((a, b) => b.delta.compareTo(a.delta));
+      if (_loadedTop.length > loadedTopFrames) _loadedTop.removeLast();
+    }
+
+    if (delta >= weakCellMinDelta) {
+      final lowest = s.minCellVoltage;
+      var second = double.infinity;
+      var lowestSeen = false;
+      for (final v in cells) {
+        if (v == lowest && !lowestSeen) {
+          lowestSeen = true;
+          continue;
+        }
+        if (v < second) second = v;
+      }
+      if (second - lowest >= weakCellMinLead) {
+        final index = s.minCellIndex;
+        _weakCellCounts[index] = (_weakCellCounts[index] ?? 0) + 1;
       }
     }
-    return worst;
   }
 
-  /// How often each cell has been the lowest one, 1-based.
-  ///
-  /// A pack where the same cell wins this every time has a weakest cell; one
-  /// where it moves around does not, and the delta is just noise.
-  Map<int, int> get weakCellCounts {
-    final counts = <int, int>{};
-    for (final s in all) {
-      final index = s.minCellIndex;
-      if (index > 0) counts[index] = (counts[index] ?? 0) + 1;
+  /// Current from which a load is heavy enough to show a resistive fault: a
+  /// third of the pack's capacity per hour, or 15 A, whichever is lower. On
+  /// the 40 Ah pack this was measured on, 12 A.
+  static double heavyLoadAmps(double capacityAh) {
+    final cRate = capacityAh > 0 ? capacityAh * 0.3 : double.infinity;
+    return cRate < 15 ? cRate : 15;
+  }
+
+  static bool _sameAs(List<double>? a, List<double> b) {
+    if (a == null || a.length != b.length) return false;
+    for (var i = 0; i < b.length; i++) {
+      if (a[i] != b[i]) return false;
     }
-    return counts;
+    return true;
   }
 
-  /// Whether the balancer has been seen doing anything at all.
-  bool get balancerEverSeen => all.any((s) => s.balancerActive);
+  /// Widest cell delta seen at rest since the pack connected, charging
+  /// excluded: a charger tapering off holds the cells apart by more than
+  /// they sit.
+  ///
+  /// Separating this from the loaded delta is what tells a mismatched cell
+  /// apart from a resistive connection: a cell that only falls behind when
+  /// current flows is a resistance problem, and resistance is often a
+  /// connection rather than a bad cell.
+  double? get restingDelta => _restingDelta;
+
+  /// The cell that was lowest in that resting reading. Not the cell lowest
+  /// now, which under load or on the charger can be any of them.
+  int? get restingDeltaCell => _restingDeltaCell;
+
+  /// The delta under load that several readings reached: the median of the
+  /// [loadedTopFrames] widest. Null until that many distinct loaded readings
+  /// have been seen.
+  double? get loadedDelta => _loadedMedian?.delta;
+
+  /// The cell that was lowest in that median reading.
+  int? get loadedDeltaCell => _loadedMedian?.lowestCell;
+
+  LoadedFrame? get _loadedMedian =>
+      _loadedTop.length < loadedTopFrames ? null : _loadedTop[loadedTopFrames ~/ 2];
+
+  /// Distinct readings taken under load, and how many of those at a heavy
+  /// one (see [heavyLoadAmps]).
+  int get loadedFrames => _loadedFrames;
+  int get heavyLoadFrames => _heavyFrames;
+
+  /// The most current seen going out, in amps.
+  double get peakLoadAmps => _peakLoadAmps;
+
+  /// How often each cell has been clearly the lowest, 1-based, counting only
+  /// readings where the cells were apart and the lowest was not tied.
+  Map<int, int> get weakCellCounts => Map.unmodifiable(_weakCellCounts);
+
+  /// Whether the balancer has been seen doing anything since the pack
+  /// connected.
+  bool get balancerEverSeen => _balancerSeen;
 }

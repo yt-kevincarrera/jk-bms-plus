@@ -186,7 +186,7 @@ class _NowTabState extends State<NowTab> {
 
     final service = widget.service;
     final history = service.history;
-    final health = packHealthOf(s);
+    final health = packHealthOf(s, chemistry: service.cutoffChemistry);
     final power = history.smoothedPower;
     final current = history.smoothedCurrent;
     final estimator = service.rangeEstimator;
@@ -194,7 +194,7 @@ class _NowTabState extends State<NowTab> {
 
     final (low, high) = estimator.rangeBandKm(service.energyOf(s).usableWh);
 
-    final status = packStatusOf(s);
+    final status = packStatusOf(s, chemistry: service.cutoffChemistry);
 
     // Whether the charge percentage can be taken at face value. The gauge and
     // the charge ETA ask the same question of the same reading, so they are

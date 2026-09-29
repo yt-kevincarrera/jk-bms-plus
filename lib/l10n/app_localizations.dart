@@ -595,12 +595,6 @@ abstract class AppL10n {
   /// **'necesita un viaje activo'**
   String get needsGps;
 
-  /// No description provided for @needsDatabase.
-  ///
-  /// In es, this message translates to:
-  /// **'necesita más histórico'**
-  String get needsDatabase;
-
   /// No description provided for @packTitle.
   ///
   /// In es, this message translates to:
@@ -778,7 +772,7 @@ abstract class AppL10n {
   /// No description provided for @balanceRanking.
   ///
   /// In es, this message translates to:
-  /// **'Ranking de celda débil'**
+  /// **'Más veces la más baja'**
   String get balanceRanking;
 
   /// No description provided for @resistanceTitle.
@@ -2194,7 +2188,7 @@ abstract class AppL10n {
   /// No description provided for @adviceImbalanceAtRestBody.
   ///
   /// In es, this message translates to:
-  /// **'Con la moto quieta el delta llega a {delta} V. Sin corriente de por medio eso no es resistencia: son celdas que guardan cantidades distintas de carga. Déjala cargar hasta arriba y en reposo unas horas para que el balanceador trabaje; si en varias cargas no se cierra, la celda {cell} tiene menos capacidad que el resto.'**
+  /// **'Con la moto quieta el delta llega a {delta} V, y la más baja entonces era la celda {cell}. Sin corriente de por medio eso no es resistencia: son celdas que guardan cantidades distintas de carga. Déjala cargar hasta arriba y en reposo unas horas para que el balanceador trabaje; si en varias cargas no se cierra, esa celda tiene menos capacidad que el resto.'**
   String adviceImbalanceAtRestBody(String delta, int cell);
 
   /// No description provided for @adviceImbalanceUnderLoadTitle.
@@ -2206,7 +2200,7 @@ abstract class AppL10n {
   /// No description provided for @adviceImbalanceUnderLoadBody.
   ///
   /// In es, this message translates to:
-  /// **'En reposo las celdas están parejas, pero bajo carga se separan {delta} V más. Eso es resistencia, y nueve de cada diez veces es una conexión floja u oxidada, no una celda mala. Revisa el tornillo y la barra de la celda {cell} antes de pensar en cambiar nada.'**
+  /// **'En reposo las celdas están parejas, pero bajo carga se separan {delta} V más, en varias lecturas. Eso es resistencia: puede ser una conexión o una celda con más resistencia que las demás. Revisa primero la conexión de la celda {cell}, que era la más baja con esa carga: es lo más barato de descartar.'**
   String adviceImbalanceUnderLoadBody(String delta, int cell);
 
   /// No description provided for @adviceWeakCellTitle.
@@ -2218,20 +2212,8 @@ abstract class AppL10n {
   /// No description provided for @adviceWeakCellBody.
   ///
   /// In es, this message translates to:
-  /// **'La celda {cell} fue la más baja en el {percent}% de las lecturas. No es ruido: esa celda es la que define tu autonomía real y la que llega primero al corte.'**
+  /// **'La celda {cell} fue claramente la más baja en el {percent}% de las lecturas que cuentan: con las celdas separadas al menos 10 mV, sin empate y sin contar dos veces una lectura repetida. Esa celda es la que define tu autonomía real y la que llega primero al corte.'**
   String adviceWeakCellBody(int cell, String percent);
-
-  /// No description provided for @adviceCycleInflatedTitle.
-  ///
-  /// In es, this message translates to:
-  /// **'El contador de ciclos exagera'**
-  String get adviceCycleInflatedTitle;
-
-  /// No description provided for @adviceCycleInflatedBody.
-  ///
-  /// In es, this message translates to:
-  /// **'El BMS informa {factor} veces más ciclos de los que justifica la carga que realmente pasó por el pack. Suma cargas parciales como si fueran completas. Si vas a comprar o vender un pack, el número honesto es el de ciclos equivalentes.'**
-  String adviceCycleInflatedBody(String factor);
 
   /// No description provided for @adviceSocCounterAheadTitle.
   ///
@@ -2314,7 +2296,7 @@ abstract class AppL10n {
   /// No description provided for @adviceBalancerNeverSeenBody.
   ///
   /// In es, this message translates to:
-  /// **'Las celdas están desparejas pero el balanceador no trabajó en toda la sesión. O está apagado, o su voltaje de arranque ({voltage} V) está por encima de donde llegan tus celdas. Se revisa en los ajustes del BMS con la app oficial: esta app no escribe nada.'**
+  /// **'Las celdas están desparejas en reposo pero el balanceador no ha trabajado desde que se conectó el pack. O está apagado, o su voltaje de arranque ({voltage} V) está por encima de donde llegan tus celdas. Se revisa en los ajustes del BMS con su app oficial: esta app no cambia nada en el BMS.'**
   String adviceBalancerNeverSeenBody(String voltage);
 
   /// No description provided for @adviceOvervoltageHighTitle.
@@ -5170,19 +5152,19 @@ abstract class AppL10n {
   /// No description provided for @verdictDeltaNormalBody.
   ///
   /// In es, this message translates to:
-  /// **'Con corriente el delta llega a {loaded} V, contra {rest} V en reposo. No hay nada resistivo que perseguir. Nada que hacer.'**
+  /// **'Con carga fuerte el delta llega a {loaded} V, contra {rest} V en reposo. No hay nada resistivo que perseguir. Nada que hacer.'**
   String verdictDeltaNormalBody(String loaded, String rest);
 
   /// No description provided for @evidenceRestingDelta.
   ///
   /// In es, this message translates to:
-  /// **'Delta en reposo (máximo en la sesión)'**
+  /// **'Delta en reposo (el más alto desde que se conectó)'**
   String get evidenceRestingDelta;
 
   /// No description provided for @evidenceLoadedDelta.
   ///
   /// In es, this message translates to:
-  /// **'Delta bajo carga (máximo en la sesión)'**
+  /// **'Delta bajo carga (el que alcanzaron varias lecturas desde que se conectó)'**
   String get evidenceLoadedDelta;
 
   /// No description provided for @evidenceWeakCellShare.
@@ -5194,7 +5176,7 @@ abstract class AppL10n {
   /// No description provided for @evidenceReadingsInSession.
   ///
   /// In es, this message translates to:
-  /// **'Lecturas en esta sesión'**
+  /// **'Lecturas que cuentan desde que se conectó'**
   String get evidenceReadingsInSession;
 
   /// No description provided for @evidenceReportedCycles.
@@ -7957,6 +7939,90 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'a otro nivel de carga, no comparable'**
   String get profileDriftOtherCharge;
+
+  /// No description provided for @adviceCycleMismatchTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'El contador de ciclos no cuadra'**
+  String get adviceCycleMismatchTitle;
+
+  /// No description provided for @adviceCycleMismatchBody.
+  ///
+  /// In es, this message translates to:
+  /// **'El BMS dice {bms} ciclos, y la carga que él mismo contó pasar por el pack da {equivalent} ciclos equivalentes. Cada firmware cuenta los ciclos a su manera y ese contador se puede editar, así que la diferencia puede ir para cualquier lado. Si vas a comprar o vender un pack, cita los dos.'**
+  String adviceCycleMismatchBody(String bms, String equivalent);
+
+  /// No description provided for @verdictDeltaLightTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Bajo carga ligera no se ve nada raro'**
+  String get verdictDeltaLightTitle;
+
+  /// No description provided for @verdictDeltaLightBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Con corriente el delta llega a {loaded} V, contra {rest} V en reposo. Pero no ha habido carga fuerte suficiente para que una mala conexión se note, así que esto todavía no descarta nada.'**
+  String verdictDeltaLightBody(String loaded, String rest);
+
+  /// No description provided for @adviceBmsClaimsOkTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que el BMS dice cuadra'**
+  String get adviceBmsClaimsOkTitle;
+
+  /// No description provided for @adviceBmsClaimsOkBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que se pudo comprobar de lo que el BMS dice de sí mismo coincide con lo que se mide: el contador de ciclos con la carga que pasó, o el porcentaje con las celdas en un extremo de la carga.'**
+  String get adviceBmsClaimsOkBody;
+
+  /// No description provided for @adviceTemperatureOkTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Temperatura normal'**
+  String get adviceTemperatureOkTitle;
+
+  /// No description provided for @adviceTemperatureOkBody.
+  ///
+  /// In es, this message translates to:
+  /// **'La sonda más caliente de la batería marca {temp} °C, y el BMS tampoco está caliente.'**
+  String adviceTemperatureOkBody(String temp);
+
+  /// No description provided for @adviceConfigNothingFlaggedTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Nada que objetar aquí'**
+  String get adviceConfigNothingFlaggedTitle;
+
+  /// No description provided for @adviceConfigNothingFlaggedBody.
+  ///
+  /// In es, this message translates to:
+  /// **'El límite de carga por celda está en {voltage} V, que no pasa de lo razonable. Esta pantalla solo mira eso; la revisión completa está en Auditar la configuración, en Sistema.'**
+  String adviceConfigNothingFlaggedBody(String voltage);
+
+  /// No description provided for @verdictConfigColdCutoffMarginalTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'El corte por frío tiene poco margen'**
+  String get verdictConfigColdCutoffMarginalTitle;
+
+  /// No description provided for @verdictConfigColdCutoffMarginalBody.
+  ///
+  /// In es, this message translates to:
+  /// **'El corte por frío está en {value} °C: por encima de cero, pero justo. La sonda mide el exterior del pack y las celdas por dentro tardan en calentarse. Súbelo a {limit} °C o más desde la app oficial del BMS.'**
+  String verdictConfigColdCutoffMarginalBody(String value, String limit);
+
+  /// No description provided for @balanceRankingEntry.
+  ///
+  /// In es, this message translates to:
+  /// **'celda {cell}: {pct} %'**
+  String balanceRankingEntry(String cell, String pct);
+
+  /// No description provided for @balanceRankingNeedsReadings.
+  ///
+  /// In es, this message translates to:
+  /// **'hacen falta más lecturas con las celdas separadas'**
+  String get balanceRankingNeedsReadings;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

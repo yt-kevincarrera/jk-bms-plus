@@ -137,6 +137,21 @@ void main() {
       );
     });
 
+    test('a cutoff just above zero is a watch, with the 2 degrees asked for', () {
+      // It used to pass as fine while the advice for the frozen case asked
+      // for 2 degrees or more. One line now, in code and in words.
+      final findings = run(changes: {ConfigField.chargeUtp: 1});
+      expect(has(findings, AdviceCode.configColdCutoffOk), isFalse);
+      final marginal = of(findings, AdviceCode.configColdCutoffMarginal);
+      expect(marginal.level, AdviceLevel.watch);
+      expect(
+        marginal.evidence
+            .firstWhere((e) => e.kind == EvidenceKind.safeLimit)
+            .value,
+        ChemistryLimits.comfortableChargeMinCelsius,
+      );
+    });
+
     test('a cutoff above zero earns a good word', () {
       final findings = run(changes: {ConfigField.chargeUtp: 3});
       expect(has(findings, AdviceCode.configColdCutoffOk), isTrue);

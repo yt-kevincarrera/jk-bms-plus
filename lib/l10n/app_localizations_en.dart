@@ -291,9 +291,6 @@ class AppL10nEn extends AppL10n {
   String get needsGps => 'needs an active trip';
 
   @override
-  String get needsDatabase => 'needs more history';
-
-  @override
   String get packTitle => 'Pack';
 
   @override
@@ -389,7 +386,7 @@ class AppL10nEn extends AppL10n {
   String get balanceWhichCellsValue => 'inferred, the BMS does not report it';
 
   @override
-  String get balanceRanking => 'Weak-cell ranking';
+  String get balanceRanking => 'Most often the lowest';
 
   @override
   String get resistanceTitle => 'Balance leads';
@@ -1230,7 +1227,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String adviceImbalanceAtRestBody(String delta, int cell) {
-    return 'With the bike still, the delta reaches $delta V. With no current involved that is not resistance: the cells simply hold different amounts of charge. Charge to full and leave it sitting for a few hours so the balancer can work; if several charges do not close it, cell $cell has less capacity than the rest.';
+    return 'With the bike standing still the delta reaches $delta V, and the lowest then was cell $cell. With no current flowing that is not resistance: the cells hold different amounts of charge. Let it charge to the top and rest for a few hours so the balancer can work; if several charges do not close it, that cell has less capacity than the rest.';
   }
 
   @override
@@ -1239,7 +1236,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String adviceImbalanceUnderLoadBody(String delta, int cell) {
-    return 'At rest the cells are even, but under load they spread $delta V further apart. That is resistance, and nine times out of ten it is a loose or corroded connection rather than a bad cell. Check the bolt and busbar on cell $cell before replacing anything.';
+    return 'At rest the cells sit together, but under load they spread $delta V further, over several readings. That is resistance: it can be a connection or a cell with more of it than the others. Check the connection of cell $cell first, the lowest at that load: it is the cheapest thing to rule out.';
   }
 
   @override
@@ -1247,15 +1244,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String adviceWeakCellBody(int cell, String percent) {
-    return 'Cell $cell has been the lowest in $percent% of readings. That is not noise: this is the cell that sets your real range and reaches cutoff first.';
-  }
-
-  @override
-  String get adviceCycleInflatedTitle => 'The cycle counter flatters the pack';
-
-  @override
-  String adviceCycleInflatedBody(String factor) {
-    return 'The BMS claims $factor times more cycles than the charge actually put through the pack justifies. It counts partial charges as whole ones. If you are buying or selling a pack, the honest number is the equivalent-cycle figure.';
+    return 'Cell $cell was clearly the lowest in $percent% of the readings that count: with the cells at least 10 mV apart, no tie, and a repeated reading counted once. That cell sets your real range and reaches cutoff first.';
   }
 
   @override
@@ -1311,7 +1300,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String adviceBalancerNeverSeenBody(String voltage) {
-    return 'The cells are uneven but the balancer has not worked all session. Either it is switched off, or its start voltage ($voltage V) sits above where your cells ever reach. Check it in the BMS settings with the official app: this app writes nothing.';
+    return 'The cells sit apart at rest but the balancer has not worked since the pack connected. Either it is switched off, or its start voltage ($voltage V) is above where your cells get to. Check it in the BMS settings with its official app: this app changes nothing on the BMS.';
   }
 
   @override
@@ -3014,14 +3003,16 @@ class AppL10nEn extends AppL10n {
 
   @override
   String verdictDeltaNormalBody(String loaded, String rest) {
-    return 'Under current the delta reaches $loaded V, against $rest V at rest. Nothing resistive to chase. Nothing to do.';
+    return 'Under a heavy load the delta reaches $loaded V, against $rest V at rest. Nothing resistive to chase. Nothing to do.';
   }
 
   @override
-  String get evidenceRestingDelta => 'Delta at rest (session maximum)';
+  String get evidenceRestingDelta =>
+      'Delta at rest (the highest since it connected)';
 
   @override
-  String get evidenceLoadedDelta => 'Delta under load (session maximum)';
+  String get evidenceLoadedDelta =>
+      'Delta under load (reached by several readings since it connected)';
 
   @override
   String evidenceWeakCellShare(String cell) {
@@ -3029,7 +3020,8 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String get evidenceReadingsInSession => 'Readings this session';
+  String get evidenceReadingsInSession =>
+      'Readings that count since it connected';
 
   @override
   String get evidenceReportedCycles => 'Cycles per the BMS (editable figure)';
@@ -4731,4 +4723,61 @@ class AppL10nEn extends AppL10n {
   @override
   String get profileDriftOtherCharge =>
       'at another charge level, not comparable';
+
+  @override
+  String get adviceCycleMismatchTitle => 'The cycle counter does not add up';
+
+  @override
+  String adviceCycleMismatchBody(String bms, String equivalent) {
+    return 'The BMS says $bms cycles, and the charge it counted through the pack itself comes to $equivalent equivalent cycles. Each firmware counts cycles its own way and the counter can be edited, so the gap can go either way. If you are buying or selling a pack, quote both.';
+  }
+
+  @override
+  String get verdictDeltaLightTitle => 'Nothing odd under a light load';
+
+  @override
+  String verdictDeltaLightBody(String loaded, String rest) {
+    return 'Under current the delta reaches $loaded V, against $rest V at rest. But there has not been a load heavy enough for a bad connection to show, so this rules nothing out yet.';
+  }
+
+  @override
+  String get adviceBmsClaimsOkTitle => 'What the BMS says adds up';
+
+  @override
+  String get adviceBmsClaimsOkBody =>
+      'What could be checked of what the BMS says about itself matches what is measured: the cycle counter against the charge that went through, or the percentage against the cells at an end of the range.';
+
+  @override
+  String get adviceTemperatureOkTitle => 'Temperature normal';
+
+  @override
+  String adviceTemperatureOkBody(String temp) {
+    return 'The battery\'s hottest probe reads $temp °C, and the BMS is not hot either.';
+  }
+
+  @override
+  String get adviceConfigNothingFlaggedTitle => 'Nothing to object to here';
+
+  @override
+  String adviceConfigNothingFlaggedBody(String voltage) {
+    return 'The charge limit per cell is $voltage V, which is not too high. This screen only looks at that; the full review is under Audit the configuration, in System.';
+  }
+
+  @override
+  String get verdictConfigColdCutoffMarginalTitle =>
+      'The cold cutoff has little margin';
+
+  @override
+  String verdictConfigColdCutoffMarginalBody(String value, String limit) {
+    return 'The cold cutoff is at $value °C: above freezing, but only just. The probe reads the outside of the pack and the cells inside lag behind. Raise it to $limit °C or more from the BMS\'s official app.';
+  }
+
+  @override
+  String balanceRankingEntry(String cell, String pct) {
+    return 'cell $cell: $pct %';
+  }
+
+  @override
+  String get balanceRankingNeedsReadings =>
+      'needs more readings with the cells apart';
 }
