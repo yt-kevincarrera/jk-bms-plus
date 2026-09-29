@@ -315,4 +315,79 @@ void main() {
       );
     });
   });
+
+  group('only while riding, what only means something riding', () {
+    test('hot and spread cells say nothing on the sofa', () {
+      // "Stop and let it cool" on a pack sitting in the kitchen.
+      final a = RideAlerts();
+      final raised = a.evaluate(
+        snap(t0, temp: 60, delta: 0.150, current: 0),
+        cutoffVoltagePerCell: cutoff,
+        riding: false,
+      );
+      expect(raised, isNot(contains(RideAlert.temperature)));
+      expect(raised, isNot(contains(RideAlert.cellSpread)));
+    });
+
+    test('running out says nothing on the charger', () {
+      final a = RideAlerts();
+      final raised = a.evaluate(
+        snap(t0, soc: 5, minCell: 3.05, current: 10),
+        cutoffVoltagePerCell: cutoff,
+        riding: false,
+        charging: true,
+      );
+      expect(raised, isNot(contains(RideAlert.criticalCharge)));
+      expect(raised, isNot(contains(RideAlert.cellNearCutoff)));
+    });
+
+    test('but low charge at rest is still worth knowing', () {
+      final a = RideAlerts();
+      expect(
+        a.evaluate(
+          snap(t0, soc: 12, current: 0),
+          cutoffVoltagePerCell: cutoff,
+          riding: false,
+        ),
+        contains(RideAlert.lowCharge),
+      );
+    });
+
+    test('the low threshold never sits under the critical one', () {
+      // The slider used to go down to 5, and low charge only trips above 7.
+      expect(
+        RideAlerts.minLowChargeWarn,
+        greaterThan(RideAlerts.defaultCriticalChargeWarn),
+      );
+    });
+  });
+
+  group('RidingGate', () {
+    BmsSnapshot at(int seconds, double amps) =>
+        snap(t0.add(Duration(seconds: seconds)), current: amps);
+
+    test('a recording trip is riding', () {
+      expect(RidingGate().update(at(0, 0), tripRecording: true), isTrue);
+    });
+
+    test('ten seconds of real load is riding, a wheel on a stand is not', () {
+      final g = RidingGate();
+      // 1.5 A, a wheel spinning on a stand, for a minute.
+      for (var i = 0; i < 60; i++) {
+        expect(g.update(at(i, -1.5)), isFalse);
+      }
+      expect(g.update(at(60, -12)), isFalse);
+      expect(g.update(at(66, -15)), isFalse);
+      expect(g.update(at(71, -9)), isTrue);
+    });
+
+    test('a traffic light does not end it, three idle minutes do', () {
+      final g = RidingGate();
+      g.update(at(0, -12));
+      g.update(at(11, -12));
+      expect(g.update(at(60, 0)), isTrue);
+      expect(g.update(at(11 + 170, -0.44)), isTrue);
+      expect(g.update(at(11 + 181, 0)), isFalse);
+    });
+  });
 }

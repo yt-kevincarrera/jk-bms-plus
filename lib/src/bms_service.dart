@@ -765,6 +765,8 @@ class BmsService {
     _lastDeviceInfo = null;
     _lastSettings = null;
     chargeAlerts.reset();
+    ridingGate.reset();
+    _riding = false;
     tripAutoStart.reset();
     // Without this, a ride's saved-summary text outlives the pack it was
     // measured on: it survived a switch to another pack, and it survived
@@ -1596,7 +1598,7 @@ class BmsService {
     // With the phone in a pocket it meant the rest of the ride recorded
     // nothing and its watt-hours ended at the drop, because the only thing
     // that revives the loop is a tap nobody is there to make.
-    _transport.persistRetries = true;
+    _syncRetryPersistence();
     unawaited(repository?.note(LinkEventKind.reconnectPersisting) ?? Future.value());
     // The row is opened now rather than at the end, so readings taken during
     // the ride can be attributed to it and so a ride that ends badly still
@@ -1660,8 +1662,9 @@ class BmsService {
     final points = trip.points;
     final summary = trip.stop();
     _segments.reset();
-    // Off the bike the old answer is the right one again.
-    _transport.persistRetries = false;
+    // Off the bike the old answer is the right one again, unless a charge
+    // is being watched.
+    _syncRetryPersistence();
     unawaited(repository?.note(LinkEventKind.reconnectRelaxed) ?? Future.value());
     await _stopLocation();
 
@@ -2016,13 +2019,41 @@ class BmsService {
     }
     // Never in demo mode: there is no radio to keep alive, and a permanent
     // notification about a simulated pack would be a claim about nothing.
+    //
+    // Held through a drop too, while the transport is still trying to get
+    // the link back. It used to go the moment the link did, and a real ride
+    // drops 26 times: each drop stood the service down, the backgrounded app
+    // lost its grip on the radio, and the reconnect it was attempting was
+    // the thing that needed the service. Let go once the transport gives up,
+    // or when a disconnect was asked for.
     if (linkWatchEnabled &&
         !isDemo &&
         activeDevice != null &&
-        lastLinkState == BleLinkState.connected) {
+        (lastLinkState == BleLinkState.connected || _reconnectingAfterDrop)) {
       return ServiceClaim.link;
     }
     return null;
+  }
+
+  /// The link went down by itself and the transport has not given up on it.
+  bool get _reconnectingAfterDrop =>
+      _linkDownSince != null &&
+      !_disconnectRequested &&
+      !_transport.retry.gaveUp &&
+      lastLinkState != BleLinkState.idle;
+
+  /// Whether the reconnect loop may give up. Not during a ride, whose
+  /// kilometres after a drop are lost for good, and not while a charge is
+  /// being watched: that is the Pro half of the watch, the part the link
+  /// watch alone cannot do. The link watch holds the service through a drop
+  /// but the loop still stops after about six minutes of failures; watching
+  /// a charge, it keeps knocking once a minute until the pack answers, which
+  /// is what a charge left overnight in another room needs.
+  bool get _retriesMustPersist =>
+      trip.isActive || (chargeWatchEnabled && chargeAlerts.isCharging);
+
+  void _syncRetryPersistence() {
+    _transport.persistRetries = _retriesMustPersist;
   }
 
   /// The current claim, for tests.
@@ -2107,6 +2138,7 @@ class BmsService {
   /// Safe to call as often as readings arrive. Starting is the only expensive
   /// part and it only happens when the owner actually changes.
   Future<void> _updateForegroundService() async {
+    _syncRetryPersistence();
     final wanted = _claim;
 
     if (wanted == null) {
@@ -2215,8 +2247,18 @@ class BmsService {
   /// scenario would set something off within seconds.
   bool hapticAlerts = true;
 
+  /// Whether the bike counts as ridden: a trip recording, or sustained
+  /// discharge. See [RidingGate].
+  final RidingGate ridingGate = RidingGate();
+
+  /// Read by the alert wording, so "find somewhere to stop" is only said to
+  /// somebody riding.
+  bool get isRiding => _riding;
+  bool _riding = false;
+
   void _checkAlerts(BmsSnapshot snapshot) {
     final settings = _lastSettings;
+    _riding = ridingGate.update(snapshot, tripRecording: trip.isRecording);
     final firing = alerts.evaluate(
       snapshot,
       cutoffVoltagePerCell: cutoffVoltagePerCell,
@@ -2227,6 +2269,12 @@ class BmsService {
       // Its own MOSFET protection, so the switch is warned about below the
       // point where this board cuts the power.
       mosfetOtpCelsius: settings?.mosfetOtp,
+      riding: _riding,
+      // The charge alerts run after this on the same reading, so their state
+      // is one reading old; the current covers the reading that starts it.
+      charging:
+          chargeAlerts.isCharging ||
+          snapshot.current > chargeAlerts.chargingCurrent,
     );
     for (final alert in firing) {
       if (mutedAlerts.contains(alert.name)) continue;
@@ -2262,19 +2310,24 @@ class BmsService {
         title: words.$1,
         body: words.$2,
         critical: critical,
+        // The notification is what vibrates a pocketed phone: the in-app
+        // haptic needs a visible view and does nothing with the screen off.
+        vibrate: hapticAlerts,
       ),
     );
   }
 
-  /// Creates the alert channel and asks for permission. Called by the UI,
+  /// Creates the alert channels and asks for permission. Called by the UI,
   /// which owns the wording; until it is, nothing is posted.
   Future<bool> prepareAlertNotifications({
     required String channelName,
     required String channelDescription,
+    String? quietChannelName,
   }) async {
     final ready = await alertNotifications.ensureReady(
       channelName: channelName,
       channelDescription: channelDescription,
+      quietChannelName: quietChannelName,
     );
     notifyAlerts = ready;
     return ready;
@@ -2928,8 +2981,11 @@ class BmsService {
       );
     }
     if (alertLowChargeWarn != null) {
-      alerts.lowChargeWarn = alertLowChargeWarn;
-      alerts.lowChargeClear = alertLowChargeWarn + 5;
+      // A value saved when the slider still went down to 5 would sit under
+      // the critical level, where low charge can never trip.
+      final low = math.max(alertLowChargeWarn, RideAlerts.minLowChargeWarn);
+      alerts.lowChargeWarn = low;
+      alerts.lowChargeClear = low + 5;
     }
   }
 

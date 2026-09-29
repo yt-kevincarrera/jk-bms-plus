@@ -1694,7 +1694,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get settingsHapticsHint =>
-      'Nobody looks at the screen while riding. This makes the phone speak up from a pocket.';
+      'Nobody looks at the screen while riding. With the app in view the phone itself buzzes; with the screen off or the phone in a pocket it is the alert notification that vibrates, so the notification-shade alerts need to be on for that.';
 
   @override
   String get settingsRawFrames => 'Keep raw frames';
@@ -2345,7 +2345,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get chargeWatchHint =>
-      'While the app is in the background Android cuts the Bluetooth link within minutes. With this on, it raises a foreground service as soon as charging starts and holds the link, which is what the alerts need to reach you overnight. It costs phone battery while it runs.';
+      'While the app is in the background Android cuts the Bluetooth link within minutes. With this on, it raises a foreground service as soon as charging starts and holds the link, and if the link drops it keeps trying to reconnect until the charge ends, which is what the alerts need to reach you overnight. It does not work if you swipe the app away. It costs phone battery while it runs.';
 
   @override
   String get chargeWatchNotifTitle => 'Charging';
@@ -2577,7 +2577,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get linkWatchHint =>
-      'Android stops handing an app Bluetooth readings shortly after the screen goes dark, unless the app holds a foreground service. This holds one while the pack is connected, so the app behaves the same with the screen on or off. That is what the notification is for; it is not the app announcing itself.';
+      'Android stops handing an app Bluetooth readings shortly after the screen goes dark, unless the app holds a foreground service. This holds one while the pack is connected, and while it tries to get the link back after a drop, so the app behaves the same with the screen on or off. That is what the notification is for; it is not the app announcing itself. If you swipe the app away, it stops reading.';
 
   @override
   String get screenAwakeReason =>
@@ -4290,18 +4290,18 @@ class AppL10nEn extends AppL10n {
   String get alertLinkLost => 'Lost the connection to the battery';
 
   @override
-  String get alertsNotifyTitle => 'Alerts that arrive with the app closed';
+  String get alertsNotifyTitle => 'Alerts in the notification shade';
 
   @override
   String get alertsNotifyIntro =>
-      'Alerts land in the notification shade even when the app is in the background or closed. Without this, an alert at three in the morning with the phone in another room reaches nobody.';
+      'Alerts land in the notification shade with the app in the background or the screen off (not if you swipe the app away: then it stops reading the pack). Without this, an alert at three in the morning with the phone in another room reaches nobody.';
 
   @override
   String get alertsNotifyEnable => 'Post alerts to the notification shade';
 
   @override
   String get alertsNotifyDenied =>
-      'Android has not granted permission to notify. Alerts will still appear on screen and buzz, but they will not arrive with the app closed.';
+      'Android has not granted permission to notify. Alerts will still appear on screen and buzz while you are looking at the app, but they will not arrive with the app in the background or the screen off.';
 
   @override
   String get alertsNotifyOneConnection =>
@@ -4569,7 +4569,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get chargeWatchRedundant =>
-      'With the setting above on this is already covered: the link stays open anyway. You only need it if you turn that one off and still want charge alerts overnight.';
+      'With the setting above on, the link already stays open with the screen off, including while it recovers from a drop. This adds one thing: while charging, the app never stops trying to reconnect. Without it, it gives up after about six minutes with no answer from the pack.';
 
   @override
   String get alertGroupSpread => 'Cells apart';
@@ -4831,4 +4831,20 @@ class AppL10nEn extends AppL10n {
   String alertsDeltaWarnHint(String limit) {
     return 'Riding, it warns from here. At the end of a charge, from here or from $limit mV, whichever is lower: up there the curve is steep and that gap is already a mismatch.';
   }
+
+  @override
+  String alertNotificationBodyCriticalIdle(String value) {
+    return '$value % charge left. Charge it before you set off.';
+  }
+
+  @override
+  String get alertsNotifyQuietChannel => 'Alerts without vibration';
+
+  @override
+  String get alertLinkLostNeedsWatch =>
+      'Only speaks with \"Keep reading with the screen off\" or \"Watch the charge\" on: without them nothing is watching the link.';
+
+  @override
+  String get alertLinkLostRidingHint =>
+      'Silent while a ride is recording: riding, the link comes and goes, and the ride already shows on screen when it drops.';
 }

@@ -25,6 +25,16 @@ void main() {
       expect(service.chargeAlerts.spreadWarn, 0.030);
     });
 
+    test('a low-charge threshold saved under the critical level is lifted', () {
+      // The slider used to reach 5, where low charge can never trip.
+      service.applySettings(
+        haptics: false,
+        rawFrames: false,
+        alertLowChargeWarn: 5,
+      );
+      expect(service.alerts.lowChargeWarn, 8);
+    });
+
     test('higher never takes charging past its own limits', () {
       // They used to be fixed whatever the sliders said; they must not now
       // follow a rider who raised the riding threshold into charging hot.

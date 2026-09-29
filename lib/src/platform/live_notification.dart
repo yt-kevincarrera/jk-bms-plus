@@ -51,6 +51,14 @@ class LiveNotification {
         eventAction: ForegroundTaskEventAction.nothing(),
         allowWakeLock: true,
         allowWifiLock: false,
+        // Swiping the app away destroys the activity, and with it the one
+        // isolate that holds the radio, the recorder and the alerts; there is
+        // no task handler to carry on. Left unset, the plugin schedules the
+        // service to restart a second later (ForegroundService.onTaskRemoved),
+        // and it would sit in the shade showing a reading nothing updates, as
+        // though the app were still watching. So it goes with the app, and
+        // the texts say that a swiped-away app is not watching.
+        stopWithTask: true,
       ),
     );
     _initialised = true;

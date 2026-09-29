@@ -125,7 +125,9 @@ class _JkBmsAppState extends State<JkBmsApp> {
     _repository.dispose();
     _proximity.dispose();
     _settings.dispose();
-    _license.dispose();
+    _license
+      ..removeListener(_pushSettings)
+      ..dispose();
     _updates.dispose();
     _locale.dispose();
     unawaited(_autoTripSub?.cancel());
@@ -142,9 +144,22 @@ class _JkBmsAppState extends State<JkBmsApp> {
     await _license.load();
     await _settings.load();
     _updates.token = _settings.updateToken;
-    // Holding the link open for a closed app is Pro. The preference is kept
-    // as the rider set it, so it comes back the day a key is activated, but
-    // the service only hears about it when the licence covers it.
+    _pushSettings();
+    // The licence can change while the app runs: a key activated, or one
+    // found not to cover this phone. The watch was only gated at launch, so
+    // a key activated mid-session did nothing until a restart, and one that
+    // stopped covering the phone kept the watch running until then.
+    _license.addListener(_pushSettings);
+
+    if (mounted) setState(() {});
+  }
+
+  /// Pushes the settings into the service, with the charge watch gated on
+  /// what the licence covers right now.
+  void _pushSettings() {
+    // Watching a charge through the night is Pro. The preference is kept as
+    // the rider set it, so it comes back the day a key is activated, but the
+    // service only hears about it when the licence covers it.
     final watchCharge =
         _settings.chargeWatchEnabled &&
         _license.entitlements.allows(Feature.backgroundAlerts);
@@ -160,8 +175,6 @@ class _JkBmsAppState extends State<JkBmsApp> {
       alertTempWarn: _settings.alertTempWarn,
       alertLowChargeWarn: _settings.alertLowChargeWarn,
     );
-
-    if (mounted) setState(() {});
   }
 
   @override
@@ -288,11 +301,17 @@ class _JkBmsAppState extends State<JkBmsApp> {
                     (snapshot?.soc ?? 0).toStringAsFixed(0),
                   ),
                 ),
+                // "Find somewhere to stop" only to somebody riding. At rest
+                // the same alert says to charge before setting off.
                 RideAlert.criticalCharge => (
                   t.alertCriticalCharge,
-                  t.alertNotificationBodyCritical(
-                    (snapshot?.soc ?? 0).toStringAsFixed(0),
-                  ),
+                  _service.isRiding
+                      ? t.alertNotificationBodyCritical(
+                          (snapshot?.soc ?? 0).toStringAsFixed(0),
+                        )
+                      : t.alertNotificationBodyCriticalIdle(
+                          (snapshot?.soc ?? 0).toStringAsFixed(0),
+                        ),
                 ),
                 // "Close to the BMS cutoff" only when the BMS said where that
                 // is. Otherwise the cutoff is the usual one for the chemistry,
@@ -360,6 +379,7 @@ class _JkBmsAppState extends State<JkBmsApp> {
                   _service.prepareAlertNotifications(
                     channelName: t.alertsNotifyTitle,
                     channelDescription: t.alertsNotifyIntro,
+                    quietChannelName: t.alertsNotifyQuietChannel,
                   ),
                 );
               }

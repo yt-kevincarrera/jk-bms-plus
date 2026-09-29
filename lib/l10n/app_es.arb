@@ -907,7 +907,7 @@
     }
   },
   "settingsHaptics": "Vibrar con los avisos",
-  "settingsHapticsHint": "Rodando nadie mira la pantalla. Con esto el teléfono avisa aunque esté en el bolsillo.",
+  "settingsHapticsHint": "Rodando nadie mira la pantalla. Con la app a la vista vibra el propio teléfono; con la pantalla apagada o el teléfono en el bolsillo vibra la notificación del aviso, así que para eso tienen que estar activados los avisos en la barra de notificaciones.",
   "settingsRawFrames": "Guardar frames crudos",
   "settingsRawFramesHint": "Déjalo encendido. Es lo que permite reinterpretar el histórico si aparece que un offset del protocolo estaba mal leído.",
   "settingsSave": "Guardar",
@@ -1322,7 +1322,7 @@
   },
   "trendsMaintMarks": "Las líneas de puntos son cosas que anotaste en el mantenimiento.",
   "chargeWatchTitle": "Vigilar la carga",
-  "chargeWatchHint": "Mientras la app está en segundo plano Android corta la conexión Bluetooth a los pocos minutos. Con esto activado, en cuanto detecta que estás cargando levanta un servicio en primer plano y mantiene la conexión, que es lo que hace falta para que los avisos lleguen de noche. Cuesta batería del teléfono mientras dura.",
+  "chargeWatchHint": "Mientras la app está en segundo plano Android corta la conexión Bluetooth a los pocos minutos. Con esto activado, en cuanto detecta que estás cargando levanta un servicio en primer plano y mantiene la conexión, y si se corta sigue intentando reconectar hasta que la carga termina, que es lo que hace falta para que los avisos lleguen de noche. No funciona si cierras la app deslizándola. Cuesta batería del teléfono mientras dura.",
   "chargeWatchNotifTitle": "Cargando",
   "chargeWatchNotifText": "{soc} % · {volts} V · {amps} A",
   "@chargeWatchNotifText": {
@@ -1458,7 +1458,7 @@
     }
   },
   "linkWatchTitle": "Seguir leyendo con la pantalla apagada",
-  "linkWatchHint": "Android deja de entregarle lecturas Bluetooth a una app poco después de que la pantalla se apaga, a menos que la app mantenga un servicio en primer plano. Esto lo mantiene mientras la batería está conectada, para que la app funcione igual con la pantalla encendida o apagada. Para eso es la notificación; no es la app anunciándose.",
+  "linkWatchHint": "Android deja de entregarle lecturas Bluetooth a una app poco después de que la pantalla se apaga, a menos que la app mantenga un servicio en primer plano. Esto lo mantiene mientras la batería está conectada, y también mientras intenta recuperar la conexión si se corta, para que la app funcione igual con la pantalla encendida o apagada. Para eso es la notificación; no es la app anunciándose. Si cierras la app deslizándola, deja de leer.",
   "screenAwakeReason": "Con el ajuste de arriba encendido, la pantalla puede apagarse sin que las lecturas se detengan.",
   "backupScope": "Todas las baterías, no solo la conectada: {packs} baterías, {trips} viajes, {readings} lecturas.",
   "@backupScope": {
@@ -2742,10 +2742,10 @@
   "configAuditNeedsProfile": "Completar el perfil",
   "alertNearCurrentLimit": "Corriente cerca del límite del BMS",
   "alertLinkLost": "Se perdió la conexión con la batería",
-  "alertsNotifyTitle": "Avisos que llegan con la app cerrada",
-  "alertsNotifyIntro": "Los avisos suenan en la barra de notificaciones aunque la app esté en segundo plano o cerrada. Sin esto, un aviso a las tres de la mañana con el móvil en otra habitación no lo ve nadie.",
+  "alertsNotifyTitle": "Avisos en la barra de notificaciones",
+  "alertsNotifyIntro": "Los avisos suenan en la barra de notificaciones con la app en segundo plano o la pantalla apagada (no si cierras la app deslizándola: entonces deja de leer la batería). Sin esto, un aviso a las tres de la mañana con el móvil en otra habitación no lo ve nadie.",
   "alertsNotifyEnable": "Avisar en la barra de notificaciones",
-  "alertsNotifyDenied": "Android no ha dado permiso para notificar. Los avisos seguirán saliendo en pantalla y con vibración, pero no llegarán con la app cerrada.",
+  "alertsNotifyDenied": "Android no ha dado permiso para notificar. Los avisos seguirán saliendo en pantalla y con vibración mientras mires la app, pero no llegarán con la app en segundo plano ni con la pantalla apagada.",
   "alertsNotifyOneConnection": "Recuerda: el BMS acepta una sola conexión Bluetooth. Mientras el móvil esté conectado en segundo plano, la app oficial de tu BMS no podrá conectarse, y al revés.",
   "alertsThresholdsTitle": "A partir de cuándo avisar",
   "alertsThresholdsIntro": "Los valores por defecto son conservadores. Súbelos si tu batería vive en un rango distinto al típico y te avisa de más.",
@@ -3027,7 +3027,7 @@
     }
   },
   "adviceCaveatsTitle": "Cuánto vale esta medición",
-  "chargeWatchRedundant": "Con el ajuste de arriba encendido esto ya está cubierto: la conexión se mantiene igual. Solo hace falta si apagas el de arriba y aun así quieres que los avisos de carga lleguen de noche.",
+  "chargeWatchRedundant": "Con el ajuste de arriba encendido la conexión ya se mantiene con la pantalla apagada, también mientras se recupera de un corte. Esto añade una cosa: mientras carga, la app no deja nunca de intentar reconectar. Sin esto se rinde tras unos seis minutos sin respuesta de la batería.",
   "alertGroupSpread": "Celdas separadas",
   "alertGroupHeat": "Temperatura",
   "alertGroupRunningOut": "Te estás quedando sin carga",
@@ -3246,5 +3246,16 @@
         "type": "String"
       }
     }
-  }
+  },
+  "alertNotificationBodyCriticalIdle": "Queda {value} % de carga. Cárgala antes de salir.",
+  "@alertNotificationBodyCriticalIdle": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "alertsNotifyQuietChannel": "Avisos sin vibración",
+  "alertLinkLostNeedsWatch": "Solo avisa con «Seguir leyendo con la pantalla apagada» o «Vigilar la carga» encendidos: sin ellos no hay nada vigilando la conexión.",
+  "alertLinkLostRidingHint": "Mientras grabas un viaje no avisa: rodando la conexión va y viene, y el viaje ya muestra en pantalla cuándo se corta."
 }

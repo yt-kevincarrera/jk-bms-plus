@@ -118,6 +118,23 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
       widget.service.activeDevice != null &&
       widget.service.brand == BmsBrand.ant;
 
+  /// Whether the link-lost alert can fire at all: only while one of the two
+  /// watches holds the connection. See [BmsService._noteLinkLost].
+  bool get _linkLostCanFire =>
+      widget.settings.linkWatchEnabled || widget.service.chargeWatchEnabled;
+
+  /// The line under an alert's switch, when there is something it needs
+  /// saying about when it can fire.
+  String? _alertHint(AppL10n t, String name) {
+    if (_unavailableHere(name)) return t.alertNearLimitUnavailable;
+    if (name == BmsService.linkLostAlertKey) {
+      return _linkLostCanFire
+          ? t.alertLinkLostRidingHint
+          : t.alertLinkLostNeedsWatch;
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
@@ -379,11 +396,19 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                   for (final a in group.items)
                     SwitchListTile(
                       value: !settings.isMuted(a.name),
-                      onChanged: (on) async {
-                        await settings.setAlertMuted(a.name, !on);
-                        widget.service.mutedAlerts = settings.mutedAlerts;
-                        if (mounted) setState(() {});
-                      },
+                      // The link-lost alert only ever speaks while a watch
+                      // holds the connection: with both off the switch did
+                      // nothing, and looked as though it did.
+                      onChanged:
+                          a.name == BmsService.linkLostAlertKey &&
+                              !_linkLostCanFire
+                          ? null
+                          : (on) async {
+                              await settings.setAlertMuted(a.name, !on);
+                              widget.service.mutedAlerts =
+                                  settings.mutedAlerts;
+                              if (mounted) setState(() {});
+                            },
                       dense: true,
                       contentPadding: EdgeInsets.zero,
                       title: Text(
@@ -393,15 +418,16 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                       // An ANT reports no current limit, so this alert has
                       // nothing to compare against and can never fire. Said,
                       // rather than leaving a switch that looks like it works.
-                      subtitle: _unavailableHere(a.name)
-                          ? Text(
-                              t.alertNearLimitUnavailable,
+                      subtitle: _alertHint(t, a.name) == null
+                          ? null
+                          : Text(
+                              _alertHint(t, a.name)!,
                               style: const TextStyle(
                                 fontSize: 11.5,
+                                height: 1.4,
                                 color: AppTheme.textFaint,
                               ),
-                            )
-                          : null,
+                            ),
                     ),
                 ],
                 const SizedBox(height: 4),
@@ -437,12 +463,15 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                   format: (v) => '${v.toStringAsFixed(0)} °C',
                   onChanged: (v) => settings.setAlertThresholds(temperature: v),
                 ),
+                // From one above "nearly gone", because low charge only trips
+                // above that level: the slider used to go down to 5, and
+                // anything from 5 to 7 switched the alert off in silence.
                 _threshold(
                   label: t.alertsLowChargeWarn,
                   value: settings.alertLowChargeWarn,
-                  min: 5,
+                  min: RideAlerts.minLowChargeWarn,
                   max: 40,
-                  divisions: 35,
+                  divisions: (40 - RideAlerts.minLowChargeWarn).round(),
                   format: (v) => '${v.toStringAsFixed(0)} %',
                   onChanged: (v) => settings.setAlertThresholds(lowCharge: v),
                 ),
@@ -525,6 +554,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                       await widget.service.prepareAlertNotifications(
                         channelName: t.alertsNotifyTitle,
                         channelDescription: t.alertsNotifyIntro,
+                        quietChannelName: t.alertsNotifyQuietChannel,
                       );
                     } else {
                       widget.service.notifyAlerts = false;

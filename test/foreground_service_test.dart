@@ -1,11 +1,13 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jk_bms/src/ble/ble_transport.dart';
+import 'package:jk_bms/src/ble/bms_link.dart';
 import 'package:jk_bms/src/bms_service.dart';
 import 'package:jk_bms/src/data/database.dart';
 import 'package:jk_bms/src/data/repository.dart';
 
 import 'fixtures/captured_frames.dart';
+import 'fixtures/snapshot_builder.dart';
 import 'support/fakes.dart';
 
 void main() {
@@ -65,17 +67,52 @@ void main() {
       expect(service.claimForTest, ServiceClaim.link);
     });
 
-    test('and lets go the moment the link drops', () async {
+    test('holds on through a drop while the link is being recovered', () async {
+      // This used to let go the moment the link dropped. A real ride drops
+      // 26 times, and every drop stood the service down just when the
+      // reconnect needed it: a backgrounded app without one loses the radio.
       link.announce(BleLinkState.connected);
       await pumpEventQueue();
       expect(service.claimForTest, ServiceClaim.link);
 
+      link.announce(BleLinkState.reconnecting);
+      await pumpEventQueue();
+      expect(service.claimForTest, ServiceClaim.link);
+    });
+
+    test('and lets go once the transport gives up', () async {
       // Readings are what normally drive this, and a dropped link stops
       // producing them, so the state change has to be able to stand it down
       // itself or the notification outlives the connection it describes.
+      link.announce(BleLinkState.connected);
+      await pumpEventQueue();
       link.announce(BleLinkState.reconnecting);
       await pumpEventQueue();
+      link.retry = const LinkRetryState(failures: 12, gaveUp: true);
+      link.announce(BleLinkState.failed);
+      await pumpEventQueue();
       expect(service.claimForTest, isNull);
+    });
+
+    test('a charge being watched keeps the reconnect from giving up', () async {
+      // The Pro half of the watch, and the only part the link watch alone
+      // does not do: overnight, six minutes of failures is not a reason to
+      // stop knocking.
+      link.announce(BleLinkState.connected);
+      await pumpEventQueue();
+      service.chargeWatchEnabled = true;
+      // The charge the last reading showed, then the link going.
+      service.chargeAlerts.evaluate(buildSnapshot(soc: 60, current: 10));
+      expect(service.chargeAlerts.isCharging, isTrue);
+      link.announce(BleLinkState.reconnecting);
+      await pumpEventQueue();
+      expect(link.persisting, isTrue);
+
+      // Watch switched off: back to giving up in the end.
+      service.chargeWatchEnabled = false;
+      link.announce(BleLinkState.connecting);
+      await pumpEventQueue();
+      expect(link.persisting, isFalse);
     });
 
     test('turning it off releases it', () async {

@@ -58,7 +58,7 @@ class RideAlerts {
     this.tempClear = 50,
     this.lowChargeWarn = 15,
     this.lowChargeClear = 20,
-    this.criticalChargeWarn = 7,
+    this.criticalChargeWarn = defaultCriticalChargeWarn,
     this.criticalChargeClear = 12,
     this.cellCutoffMargin = 0.10,
     this.mosfetWarn = BmsSnapshot.mosfetHotCelsius,
@@ -68,6 +68,14 @@ class RideAlerts {
     this.nearLimitClearFraction = 0.85,
     this.minimumGap = const Duration(minutes: 2),
   });
+
+  /// Where "nearly gone" starts. The low-charge threshold has to sit above
+  /// it: low charge only trips above this, so a low threshold at or under it
+  /// never fired at all, and the settings slider went down to 5.
+  static const double defaultCriticalChargeWarn = 7;
+
+  /// The lowest the low-charge threshold can usefully be.
+  static const double minLowChargeWarn = defaultCriticalChargeWarn + 1;
 
   // Not final: the rider can move these from settings, and rebuilding the
   // detector to change one would throw away which alerts are standing and
@@ -127,12 +135,23 @@ class RideAlerts {
   /// a number picked here. Where the BMS has not stated one (an ANT never
   /// does) the caller passes the usual cutoff for the chemistry, and the
   /// wording of the alert says it is assumed.
+  ///
+  /// [riding] and [charging] say what the pack is doing ([RidingGate]).
+  /// These alerts used to fire whenever a reading arrived, so "stop and let
+  /// it cool" and "find somewhere to stop" came up on the charger and on the
+  /// sofa, under a heading that says "riding". Now the cells spreading and
+  /// the pack running hot only trip while riding (charging has its own
+  /// alerts for both), and running out of charge never trips while charging.
+  /// Low charge still trips at rest, which is worth knowing before setting
+  /// off; its words then leave the stopping out.
   List<RideAlert> evaluate(
     BmsSnapshot s, {
     required double cutoffVoltagePerCell,
     double? dischargeLimitAmps,
     double? chargeLimitAmps,
     double? mosfetOtpCelsius,
+    bool riding = true,
+    bool charging = false,
   }) {
     final firing = <RideAlert>[];
 
@@ -160,12 +179,12 @@ class RideAlerts {
     check(RideAlert.bmsFault, s.warnings.hasFault, !s.warnings.hasFault);
     check(
       RideAlert.cellSpread,
-      s.deltaCellVoltage > deltaWarn,
+      riding && s.deltaCellVoltage > deltaWarn,
       s.deltaCellVoltage < deltaClear,
     );
     check(
       RideAlert.temperature,
-      hottest != null && hottest > tempWarn,
+      riding && hottest != null && hottest > tempWarn,
       hottest == null || hottest < tempClear,
     );
     check(
@@ -175,12 +194,12 @@ class RideAlerts {
     );
     check(
       RideAlert.criticalCharge,
-      s.soc <= criticalChargeWarn,
+      !charging && s.soc <= criticalChargeWarn,
       s.soc >= criticalChargeClear,
     );
     check(
       RideAlert.lowCharge,
-      s.soc <= lowChargeWarn && s.soc > criticalChargeWarn,
+      !charging && s.soc <= lowChargeWarn && s.soc > criticalChargeWarn,
       s.soc >= lowChargeClear,
     );
     // Whichever limit applies to what the pack is doing right now. A pack
@@ -196,7 +215,7 @@ class RideAlerts {
 
     check(
       RideAlert.cellNearCutoff,
-      s.minCellVoltage <= cutoffVoltagePerCell + cellCutoffMargin,
+      !charging && s.minCellVoltage <= cutoffVoltagePerCell + cellCutoffMargin,
       s.minCellVoltage > cutoffVoltagePerCell + cellCutoffMargin * 2,
     );
 
@@ -206,5 +225,61 @@ class RideAlerts {
   void reset() {
     _active.clear();
     _lastFired.clear();
+  }
+}
+
+/// Whether the bike is being ridden, for the alerts that only mean something
+/// then.
+///
+/// A trip recording is the plain case. Without one, sustained discharge: the
+/// same bar the automatic trip start uses for "the bike doing work", 3 A for
+/// ten seconds, well clear of a wheel spun on a stand (about 1.5 A) and of
+/// the lights (0.44 A). It lets go only after three minutes with nothing over
+/// 1.5 A, because a traffic light is not the end of a ride.
+class RidingGate {
+  RidingGate({
+    this.loadAmps = 3.0,
+    this.holdFor = const Duration(seconds: 10),
+    this.idleAmps = 1.5,
+    this.releaseAfter = const Duration(minutes: 3),
+  });
+
+  final double loadAmps;
+  final Duration holdFor;
+  final double idleAmps;
+  final Duration releaseAfter;
+
+  DateTime? _loadSince;
+  DateTime? _lastWork;
+  bool _riding = false;
+
+  bool get isRiding => _riding;
+
+  /// Feeds a reading and returns whether the bike counts as ridden now.
+  bool update(BmsSnapshot s, {bool tripRecording = false}) {
+    final draw = -s.current;
+    if (draw >= loadAmps) {
+      _loadSince ??= s.timestamp;
+    } else {
+      _loadSince = null;
+    }
+    if (draw > idleAmps) _lastWork = s.timestamp;
+
+    final since = _loadSince;
+    if (since != null && s.timestamp.difference(since) >= holdFor) {
+      _riding = true;
+    }
+    final work = _lastWork;
+    if (_riding &&
+        (work == null || s.timestamp.difference(work) >= releaseAfter)) {
+      _riding = false;
+    }
+    return tripRecording || _riding;
+  }
+
+  void reset() {
+    _loadSince = null;
+    _lastWork = null;
+    _riding = false;
   }
 }

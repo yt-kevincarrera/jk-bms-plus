@@ -1699,7 +1699,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get settingsHapticsHint =>
-      'Rodando nadie mira la pantalla. Con esto el teléfono avisa aunque esté en el bolsillo.';
+      'Rodando nadie mira la pantalla. Con la app a la vista vibra el propio teléfono; con la pantalla apagada o el teléfono en el bolsillo vibra la notificación del aviso, así que para eso tienen que estar activados los avisos en la barra de notificaciones.';
 
   @override
   String get settingsRawFrames => 'Guardar frames crudos';
@@ -2354,7 +2354,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get chargeWatchHint =>
-      'Mientras la app está en segundo plano Android corta la conexión Bluetooth a los pocos minutos. Con esto activado, en cuanto detecta que estás cargando levanta un servicio en primer plano y mantiene la conexión, que es lo que hace falta para que los avisos lleguen de noche. Cuesta batería del teléfono mientras dura.';
+      'Mientras la app está en segundo plano Android corta la conexión Bluetooth a los pocos minutos. Con esto activado, en cuanto detecta que estás cargando levanta un servicio en primer plano y mantiene la conexión, y si se corta sigue intentando reconectar hasta que la carga termina, que es lo que hace falta para que los avisos lleguen de noche. No funciona si cierras la app deslizándola. Cuesta batería del teléfono mientras dura.';
 
   @override
   String get chargeWatchNotifTitle => 'Cargando';
@@ -2587,7 +2587,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get linkWatchHint =>
-      'Android deja de entregarle lecturas Bluetooth a una app poco después de que la pantalla se apaga, a menos que la app mantenga un servicio en primer plano. Esto lo mantiene mientras la batería está conectada, para que la app funcione igual con la pantalla encendida o apagada. Para eso es la notificación; no es la app anunciándose.';
+      'Android deja de entregarle lecturas Bluetooth a una app poco después de que la pantalla se apaga, a menos que la app mantenga un servicio en primer plano. Esto lo mantiene mientras la batería está conectada, y también mientras intenta recuperar la conexión si se corta, para que la app funcione igual con la pantalla encendida o apagada. Para eso es la notificación; no es la app anunciándose. Si cierras la app deslizándola, deja de leer.';
 
   @override
   String get screenAwakeReason =>
@@ -4312,18 +4312,18 @@ class AppL10nEs extends AppL10n {
   String get alertLinkLost => 'Se perdió la conexión con la batería';
 
   @override
-  String get alertsNotifyTitle => 'Avisos que llegan con la app cerrada';
+  String get alertsNotifyTitle => 'Avisos en la barra de notificaciones';
 
   @override
   String get alertsNotifyIntro =>
-      'Los avisos suenan en la barra de notificaciones aunque la app esté en segundo plano o cerrada. Sin esto, un aviso a las tres de la mañana con el móvil en otra habitación no lo ve nadie.';
+      'Los avisos suenan en la barra de notificaciones con la app en segundo plano o la pantalla apagada (no si cierras la app deslizándola: entonces deja de leer la batería). Sin esto, un aviso a las tres de la mañana con el móvil en otra habitación no lo ve nadie.';
 
   @override
   String get alertsNotifyEnable => 'Avisar en la barra de notificaciones';
 
   @override
   String get alertsNotifyDenied =>
-      'Android no ha dado permiso para notificar. Los avisos seguirán saliendo en pantalla y con vibración, pero no llegarán con la app cerrada.';
+      'Android no ha dado permiso para notificar. Los avisos seguirán saliendo en pantalla y con vibración mientras mires la app, pero no llegarán con la app en segundo plano ni con la pantalla apagada.';
 
   @override
   String get alertsNotifyOneConnection =>
@@ -4591,7 +4591,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get chargeWatchRedundant =>
-      'Con el ajuste de arriba encendido esto ya está cubierto: la conexión se mantiene igual. Solo hace falta si apagas el de arriba y aun así quieres que los avisos de carga lleguen de noche.';
+      'Con el ajuste de arriba encendido la conexión ya se mantiene con la pantalla apagada, también mientras se recupera de un corte. Esto añade una cosa: mientras carga, la app no deja nunca de intentar reconectar. Sin esto se rinde tras unos seis minutos sin respuesta de la batería.';
 
   @override
   String get alertGroupSpread => 'Celdas separadas';
@@ -4852,4 +4852,20 @@ class AppL10nEs extends AppL10n {
   String alertsDeltaWarnHint(String limit) {
     return 'Rodando avisa desde aquí. Al final de la carga, desde aquí o desde $limit mV, lo que sea menor: arriba la curva es empinada y esa diferencia ya es un desbalance.';
   }
+
+  @override
+  String alertNotificationBodyCriticalIdle(String value) {
+    return 'Queda $value % de carga. Cárgala antes de salir.';
+  }
+
+  @override
+  String get alertsNotifyQuietChannel => 'Avisos sin vibración';
+
+  @override
+  String get alertLinkLostNeedsWatch =>
+      'Solo avisa con «Seguir leyendo con la pantalla apagada» o «Vigilar la carga» encendidos: sin ellos no hay nada vigilando la conexión.';
+
+  @override
+  String get alertLinkLostRidingHint =>
+      'Mientras grabas un viaje no avisa: rodando la conexión va y viene, y el viaje ya muestra en pantalla cuándo se corta.';
 }
