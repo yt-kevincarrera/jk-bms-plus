@@ -6,7 +6,10 @@ import 'package:jk_bms/src/model/bms_snapshot.dart';
 import 'package:jk_bms/src/protocol/frame_assembler.dart';
 import 'package:jk_bms/src/protocol/jk_checksum.dart';
 import 'package:jk_bms/src/protocol/jk_constants.dart';
+import 'package:jk_bms/src/protocol/jk_frame.dart';
+import 'package:jk_bms/src/protocol/jk_parser.dart';
 import 'package:jk_bms/src/protocol/protocol_variant.dart';
+import 'package:jk_bms/src/protocol/variant_prober.dart';
 
 void main() {
   const builder = JkFrameBuilder();
@@ -65,6 +68,49 @@ void main() {
       }
       expect(out, hasLength(1));
       expect(assembler.stats.badChecksum, 0);
+    });
+
+    test('a 32-cell frame reads like the real pack, not like zeros', () {
+      // The rider's JK02_32S reports empty probe inputs as -200 C and repeats
+      // the MOSFET in the fifth slot. The builder used to write zeros there,
+      // which decode as two probes at a plausible 0 C that no real pack has.
+      final frame = builder.cellInfo(
+        counter: 3,
+        cellVoltages: List.filled(20, 3.85),
+        cellResistances: List.filled(20, 0.0025),
+        packVoltage: 77.0,
+        current: -8,
+        temperatures: const [34.1, 34.2],
+        mosfetTemp: 36.0,
+        soc: 69,
+        soh: 100,
+        remainingCapacityAh: 27.7,
+        nominalCapacityAh: 40,
+        cycleCount: 1,
+        cycleCapacityAh: 40,
+        balancingAction: 0,
+        balanceCurrent: 0,
+        chargeMosfetOn: true,
+        dischargeMosfetOn: true,
+        errorBitmask: 0,
+        totalRuntimeSeconds: 14400,
+        variant: JkProtocolVariant.jk02_32s,
+      );
+      final s = const JkParser().parseCellInfo(
+        JkFrame(bytes: frame, receivedAt: DateTime.utc(2026)),
+        JkProtocolVariant.jk02_32s,
+      );
+
+      expect(s.temperatures, hasLength(5));
+      expect(BmsSnapshot.isAbsentProbe(s.temperatures[2]), isTrue);
+      expect(BmsSnapshot.isAbsentProbe(s.temperatures[3]), isTrue);
+      expect(s.temperatures[4], closeTo(36.0, 1e-9));
+      // So it reads as two battery probes and one MOSFET, as the real one does.
+      expect(s.mosfetMirrorSlot, 4);
+      expect(s.batteryTemperatures, [closeTo(34.1, 1e-9), closeTo(34.2, 1e-9)]);
+      expect(s.absentTemperatureProbes, [2, 3]);
+      // And it still passes the checks the prober runs on real frames.
+      expect(const Plausibility().reject(s), isEmpty);
     });
   });
 
@@ -152,6 +198,9 @@ void main() {
       expect(s.packVoltage, inInclusiveRange(60, 85));
       expect(s.soc, inInclusiveRange(0, 100));
       expect(s.temperatures, hasLength(2));
+      // The demo shows two battery probes and the MOSFET apart from them.
+      expect(s.batteryTemperatures, hasLength(2));
+      expect(s.mosfetMirrorSlot, isNull);
       expect(s.mosfetTemp, isNotNull);
       expect(service.stats.badChecksum, 0);
       expect(service.history.length, snapshots.length);
