@@ -42,6 +42,22 @@ import 'widgets/trip_summary_view.dart';
 BmsBrand? knownBrandFor({required String? stored, required BmsBrand? hint}) =>
     stored != null ? BmsBrand.fromStored(stored) : hint;
 
+/// Whether a connect attempt should stop and ask which BMS this is.
+///
+/// Never for a proximity-triggered reconnect: the watcher walks the rider
+/// straight into a pack nobody is necessarily looking at the phone for, and a
+/// modal sheet with no audience is a connect that never finishes -- the whole
+/// point of that feature is that it needs nobody to answer anything. A pack
+/// reached that way was proven once already (`remember` only runs after a
+/// proven connect), so the service's own stored-row-or-name resolution is
+/// exactly right for it. Only a rider's own tap on the list may ask, and only
+/// when neither a stored row nor the advertised name already says.
+bool shouldAskBrand({
+  required bool fromProximity,
+  required String? stored,
+  required BmsBrand? hint,
+}) => !fromProximity && knownBrandFor(stored: stored, hint: hint) == null;
+
 /// Scan, pick a BMS, or open demo mode.
 class ConnectScreen extends StatefulWidget {
   const ConnectScreen({
@@ -162,7 +178,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
       // sequence this whole change exists to stop.
       if (!mounted || _connecting || _inspecting || _connected != null) return;
       _connecting = true;
-      _connect(device);
+      _connect(device, fromProximity: true);
     });
 
     _errorSub = widget.service.linkErrors.listen((e) {
@@ -1110,23 +1126,25 @@ class _ConnectScreenState extends State<ConnectScreen> {
     ),
   );
 
-  Future<void> _connect(DiscoveredBms device) async {
+  Future<void> _connect(DiscoveredBms device, {bool fromProximity = false}) async {
     await _cancelScan();
     _troubleDuringAttempt = false;
 
-    // Stored, then the advertised name, and only then is a rider actually
-    // asked. Ruling: the service resolves stored rows and name hints on its
-    // own from `connect()`'s brand-less path, so this screen only ever hands
-    // it a brand when the sheet is the one that produced it -- an explicit
-    // brand with no stored row is exactly what the service reads as "the
-    // rider said so", which drives the silence notice's wording.
-    final known = knownBrandFor(
-      stored: _storedDevice(device.id)?.brand,
-      hint: device.brandHint,
-    );
+    // Stored, then the advertised name, and only then -- and only for a
+    // rider's own tap -- is anybody actually asked. Ruling: the service
+    // resolves stored rows and name hints on its own from `connect()`'s
+    // brand-less path, so this screen only ever hands it a brand when the
+    // sheet is the one that produced it -- an explicit brand with no stored
+    // row is exactly what the service reads as "the rider said so", which
+    // drives the silence notice's wording.
+    final storedBrand = _storedDevice(device.id)?.brand;
     var chosenBySheet = false;
-    var brand = known;
-    if (brand == null) {
+    var brand = knownBrandFor(stored: storedBrand, hint: device.brandHint);
+    if (shouldAskBrand(
+      fromProximity: fromProximity,
+      stored: storedBrand,
+      hint: device.brandHint,
+    )) {
       if (!mounted) return;
       brand = await _askBrand(t0(context));
       if (brand == null) return; // Dismissed: no attempt, nothing changed.
@@ -1274,6 +1292,14 @@ class _ConnectScreenState extends State<ConnectScreen> {
     // A reading arrived, so every failure the guard was holding against this
     // pack, and against the phone, is disproved.
     _guard.recordSuccess(deviceId: device.id);
+
+    // The brand the service just settled on -- inferred or rider-chosen --
+    // is persisted to the device row by now. Reloading here is what makes the
+    // next tap on this same pack find it: without this, `_stored` kept
+    // whatever this screen saw at launch, and a pack whose name gives no hint
+    // would be asked about again every single time it was tapped by hand,
+    // having never actually been forgotten.
+    await _loadStored();
 
     // Only now is it worth remembering: the proximity watcher exists to
     // reconnect to a BMS, and remembering whatever was tapped last would have
