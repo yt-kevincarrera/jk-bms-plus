@@ -6,6 +6,7 @@ import '../bms_service.dart';
 import '../data/database.dart';
 import '../metrics/advice_engine.dart';
 import '../metrics/cell_drift.dart';
+import '../metrics/capacity_endpoints.dart';
 import '../metrics/degradation.dart';
 import '../metrics/pack_energy.dart';
 import '../metrics/range_estimator.dart';
@@ -23,6 +24,7 @@ import 'theme.dart';
 import 'pack_trips_screen.dart';
 import 'trends_screen.dart';
 import 'widgets/advice_list.dart';
+import 'widgets/capacity_test_card.dart' show capacityTestTags;
 import 'widgets/common.dart';
 import 'widgets/representative_question.dart';
 import 'widgets/maintenance_card.dart';
@@ -228,14 +230,13 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
   /// the charge the last reading was taken at.
   static const Duration _restingReadingReach = Duration(minutes: 30);
 
-  /// The best capacity this pack has ever measured, ignoring tests with a hole
-  /// in the middle: those count low, and counting low here would understate
-  /// the pack for good.
+  /// The best capacity this pack has ever measured, by the one trust rule
+  /// every capacity figure uses ([CapacityTestTrust]): a test with a hole in
+  /// it counts low, one charged in the middle counts two discharges, and one
+  /// closed on the percentage counts the configuration back.
   static double? _bestMeasured(List<CapacityTest> tests) {
     double? best;
-    for (final test in tests) {
-      if (!test.completed || test.measuredAh <= 0) continue;
-      if (test.gapSeconds > 120) continue;
+    for (final test in tests.where((t) => t.isTrustworthy)) {
       if (best == null || test.measuredAh > best) best = test.measuredAh;
     }
     return best;
@@ -301,10 +302,12 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
     // The capacity the BMS's own coulomb counter implies: remaining divided by
     // the charge it reports. Only meaningful away from the extremes, where
     // dividing by a rounded percentage is noise rather than a figure.
-    final socFraction = last == null ? 0.0 : last.soc / 100.0;
-    final implied = last != null && socFraction >= 0.15 && socFraction <= 0.95
-        ? last.remainingAh / socFraction
-        : null;
+    final implied = last == null
+        ? null
+        : Degradation.configuredCapacityFrom(
+            soc: last.soc,
+            remainingAh: last.remainingAh,
+          );
 
     // Wear, measured, or nothing. It used to be the implied capacity over the
     // catalogue figure, which on this pack was 40 divided by 40: a guaranteed
@@ -335,11 +338,10 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
     }
 
     // The one figure here that is a measurement rather than arithmetic on what
-    // the BMS says about itself.
-    final measured = completed.map((x) => x.measuredAh).toList();
-    final bestMeasured = measured.isEmpty
-        ? null
-        : measured.reduce((a, b) => a > b ? a : b);
+    // the BMS says about itself. The same filter as the range above it: it
+    // used to take every finished test, so "best measured" could be a run
+    // the range had already refused.
+    final bestMeasured = _bestMeasured(_tests);
 
     return [
       Section(
@@ -406,7 +408,10 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
             implied == null ? '--' : '${implied.toStringAsFixed(1)} Ah',
             dim: implied == null,
             hint: implied == null
-                ? t.offlineImpliedUnusable
+                ? t.offlineImpliedUnusable(
+                    Degradation.configuredReadableMinSoc.toStringAsFixed(0),
+                    Degradation.configuredReadableMaxSoc.toStringAsFixed(0),
+                  )
                 : t.offlineImpliedHint,
           ),
           if (last != null) ...[
@@ -526,11 +531,16 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
             const SizedBox(height: 4),
             for (final test in completed.take(5))
               InfoRow(
-                _date(test.endedAt ?? test.startedAt),
-                test.catalogueAh == null
+                [
+                  _date(test.endedAt ?? test.startedAt),
+                  ...capacityTestTags(t, test),
+                ].join('  ·  '),
+                // A percentage only for a run that measured the whole pack.
+                test.catalogueAh == null || !test.isTrustworthy
                     ? '${test.measuredAh.toStringAsFixed(1)} Ah'
                     : '${test.measuredAh.toStringAsFixed(1)} Ah  ·  '
                           '${(test.measuredAh / test.catalogueAh! * 100).toStringAsFixed(0)} %',
+                dim: !test.isTrustworthy,
                 last: test == completed.last,
               ),
           ],
@@ -654,7 +664,9 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
         readingCount: _readingCount,
         historySince: _firstAt,
         whPerKm: _estimator?.hasLearned ?? false ? _estimator!.whPerKm : null,
-        capacityTests: _tests.where((t) => t.completed).length,
+        // Measurements of the pack, not every run that stopped: a sheet a
+        // buyer reads must not count a partial as a capacity test.
+        capacityTests: _tests.where((t) => t.isTrustworthy).length,
         appVersion: _appVersion,
         baseline: baseline,
         sinceDayOne: sinceDayOne,

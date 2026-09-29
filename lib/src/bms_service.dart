@@ -37,6 +37,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'metrics/capacity_cycle_detector.dart';
+import 'metrics/capacity_endpoints.dart';
 import 'metrics/capacity_test_runner.dart';
 import 'metrics/charge_alerts.dart';
 import 'metrics/charge_session.dart';
@@ -1848,11 +1849,11 @@ class BmsService {
     }
     final tests = await repo.capacityTests(device);
     double? best;
-    for (final t in tests) {
-      if (!t.completed || t.measuredAh <= 0) continue;
-      // A measurement with minutes missing from the middle counts low, and
-      // counting low here would understate the pack for good.
-      if (t.gapSeconds > 120) continue;
+    // The one trust rule every capacity figure uses: a measurement with
+    // minutes missing counts low, one charged in the middle counts two
+    // discharges, and one closed on the BMS's percentage counts the
+    // configured capacity back. See [CapacityTestTrust].
+    for (final t in tests.where((t) => t.isTrustworthy)) {
       if (best == null || t.measuredAh > best) best = t.measuredAh;
     }
     bestMeasuredCapacityAh = best;
@@ -2696,13 +2697,40 @@ class BmsService {
   Stream<CapacityTestState> get capacityTestState => _capacityController.stream;
 
   /// Why a run cannot start right now, or null when it can.
-  CapacityTestBlock? get capacityTestBlockedBy =>
-      capacityTest.blockedBy(_lastSnapshot);
+  CapacityTestBlock? get capacityTestBlockedBy {
+    capacityTest.endpoints = capacityEndpoints;
+    return capacityTest.blockedBy(_lastSnapshot);
+  }
+
+  /// Where a capacity run starts and stops on this pack: the cells at the
+  /// chemistry's full mark (or 30 mV under what the BMS requests charge to)
+  /// with the charge tapered, and the lowest cell at the cutoff.
+  CapacityEndpoints get capacityEndpoints =>
+      _endpointsFor(cutoffChemistry, cutoffVoltagePerCell);
+
+  CapacityEndpoints _endpointsFor(CellChemistry chemistry, double cutoff) =>
+      CapacityEndpoints.forPack(
+        chemistry: chemistry,
+        cutoffVoltagePerCell: cutoff,
+        requestChargeVolts: _lastSettings?.cellRequestChargeVoltage,
+        capacityAh: _taperCapacityAh,
+      );
+
+  /// The capacity a tapered charge is judged against: C/20 of what the BMS
+  /// counts in. Its own configuration first, since that is what the charger
+  /// is filling, then the catalogue, then whatever the status frame carries.
+  double? get _taperCapacityAh {
+    final nominal = _lastSnapshot?.nominalCapacityAh;
+    return configuredCapacityAh ??
+        catalogueCapacityAh ??
+        (nominal != null && nominal >= 1 && nominal <= 2000 ? nominal : null);
+  }
 
   Future<bool> startCapacityTest() async {
     final snapshot = _lastSnapshot;
     final repo = repository;
     if (snapshot == null || repo == null) return false;
+    capacityTest.endpoints = capacityEndpoints;
     if (capacityTest.blockedBy(snapshot) != null) return false;
 
     final id = await repo.beginCapacityTest(
@@ -2727,8 +2755,16 @@ class BmsService {
     _capacityController.add(capacityTest.state);
   }
 
-  Future<void> _finishCapacityTest() async {
+  /// Ends a run by hand before the cutoff. Kept, as a partial: what it
+  /// counted is real, but it is a slice of the pack, and nothing turns it
+  /// into a capacity. Cancelling is still there for a run not worth keeping.
+  Future<void> stopCapacityTestEarly() =>
+      _finishCapacityTest(reason: CapacityEndReason.stoppedEarly);
+
+  Future<void> _finishCapacityTest({CapacityEndReason? reason}) async {
     final id = capacityTest.rowId;
+    final closedBy =
+        reason ?? capacityTest.endReason ?? CapacityEndReason.stoppedEarly;
     if (id != null) {
       await repository?.finishCapacityTest(
         id,
@@ -2737,18 +2773,25 @@ class BmsService {
         endPackVoltage: capacityTest.endPackVoltage,
         measuredAh: capacityTest.measuredAh,
         measuredWh: capacityTest.measuredWh,
+        endReason: closedBy,
+        gapSeconds: capacityTest.gapSeconds,
+        chargedDuringRun: capacityTest.chargedDuringRun,
       );
       final device = activeDeviceId;
       capacityTestCount = device == null
           ? 0
           : await repository?.countCompletedCapacityTests(device) ?? 0;
+      await refreshMeasuredCapacity();
     }
-    capacityTest.finish();
+    capacityTest.finish(reason: closedBy);
     _capacityController.add(capacityTest.state);
   }
 
   void _updateCapacityTest(BmsSnapshot snapshot) {
     if (!capacityTest.isRunning) return;
+    // The endpoints can sharpen mid-run: the settings frame arrives with the
+    // cutoff the BMS actually uses.
+    capacityTest.endpoints = capacityEndpoints;
     final done = capacityTest.addSnapshot(snapshot);
 
     // Written on the way past rather than only at the end, so an app that is
@@ -2761,6 +2804,8 @@ class BmsService {
         measuredWh: capacityTest.measuredWh,
         endSoc: capacityTest.endSoc,
         endPackVoltage: capacityTest.endPackVoltage,
+        gapSeconds: capacityTest.gapSeconds,
+        chargedDuringRun: capacityTest.chargedDuringRun,
       );
     }
 
@@ -2839,17 +2884,46 @@ class BmsService {
     final unfinished = await repo.unfinishedCapacityTest(device);
     if (unfinished == null) return;
 
-    capacityTest.resume(
-      rowId: unfinished.id,
-      startedAt: unfinished.startedAt,
-      ah: unfinished.measuredAh,
-      wh: unfinished.measuredWh,
-      startSoc: unfinished.startSoc,
-      startPackVoltage: unfinished.startPackVoltage,
-      catalogueAh: unfinished.catalogueAh,
-    );
+    // This runs once readings are already flowing, so the run has missed
+    // everything from the last reading before the app closed up to now. The
+    // last reading stored before this connection is where it left off, and
+    // this connection's readings so far are replayed through it, so the
+    // counting picks up exactly where it stopped. The stretch between is
+    // bridged on the BMS's counter and counted as a gap.
+    final session = history.all;
+    final firstNew = session.isEmpty ? null : session.first;
+    final lastSeen = firstNew == null
+        ? await repo.db.lastSnapshotFor(device)
+        : await repo.db.lastSnapshotBefore(device, firstNew.timestamp);
+
+    capacityTest
+      ..endpoints = capacityEndpoints
+      ..resume(
+        rowId: unfinished.id,
+        startedAt: unfinished.startedAt,
+        ah: unfinished.measuredAh,
+        wh: unfinished.measuredWh,
+        startSoc: unfinished.startSoc,
+        startPackVoltage: unfinished.startPackVoltage,
+        catalogueAh: unfinished.catalogueAh,
+        gapSeconds: unfinished.gapSeconds,
+        chargedDuringRun: unfinished.chargedDuringRun,
+        lastSeen:
+            lastSeen == null || lastSeen.timestamp.isBefore(unfinished.startedAt)
+            ? null
+            : CapacityBridgePoint(
+                at: lastSeen.timestamp,
+                remainingAh: lastSeen.remainingAh,
+                packVoltage: lastSeen.packVoltage,
+                soc: lastSeen.soc,
+              ),
+      );
     capacityTestCount = await repo.countCompletedCapacityTests(device);
     _capacityController.add(capacityTest.state);
+    for (final s in session) {
+      if (!capacityTest.isRunning) break;
+      _updateCapacityTest(s);
+    }
   }
 
   /// Scans the stored readings for full discharges nobody asked it to record.
@@ -2866,7 +2940,26 @@ class BmsService {
     final readings = await repo.allSnapshots(device);
     if (readings.length < 20) return 0;
 
-    const detector = CapacityCycleDetector();
+    // The chemistry is judged on the stored history as well as this
+    // connection: at startup nothing may have been read yet, and a pack whose
+    // cells have ever been above 3.8 V is not LFP.
+    var highest = history.maxCellVoltageSeen ?? 0;
+    for (final r in readings) {
+      if (r.maxCellVoltage > highest) highest = r.maxCellVoltage;
+    }
+    final chemistry = PackEnergy.chemistryFor(
+      declared: activeDevice?.chemistry,
+      cellOvp: _lastSettings?.cellOvp,
+      highestCellVolts: highest > 0 ? highest : null,
+    );
+    final detector = CapacityCycleDetector(
+      endpoints: _endpointsFor(
+        chemistry,
+        _configuredCutoff ??
+            ChemistryLimits.of(chemistry)?.typicalCutoffVolts ??
+            ChemistryLimits.unknownCutoffVolts,
+      ),
+    );
     final found = detector.scan(readings);
 
     var added = 0;

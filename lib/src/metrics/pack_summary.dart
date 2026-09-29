@@ -1,4 +1,5 @@
 import '../data/database.dart';
+import 'capacity_endpoints.dart';
 import 'degradation.dart';
 import 'pack_energy.dart';
 import 'range_estimator.dart';
@@ -87,10 +88,12 @@ class PackSummary {
     // nothing else: it computes remaining amp-hours as charge times configured
     // capacity, so the division cancels. Only readable away from the extremes,
     // where the rounded percentage makes even that noisy.
-    final socFraction = last == null ? 0.0 : last.soc / 100.0;
-    final implied = last != null && socFraction >= 0.15 && socFraction <= 0.95
-        ? last.remainingAh / socFraction
-        : null;
+    final implied = last == null
+        ? null
+        : Degradation.configuredCapacityFrom(
+            soc: last.soc,
+            remainingAh: last.remainingAh,
+          );
 
     final catalogue = device.catalogueCapacityAh;
 
@@ -121,8 +124,12 @@ class PackSummary {
       estimator.addSegment(wh: t.energyOutWh - t.energyInWh, km: t.distanceKm);
     }
 
-    final completed = tests.where((x) => x.completed).toList();
-    final measured = completed.map((x) => x.measuredAh).toList();
+    // The same trust rule as the live screen, so a pack whose only "best"
+    // is a test with a hole in it does not win the comparison on it.
+    final measured = [
+      for (final x in tests)
+        if (x.isTrustworthy) x.measuredAh,
+    ];
 
     final deltas = readings.map((r) => r.deltaVolts).toList();
 

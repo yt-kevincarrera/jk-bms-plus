@@ -780,11 +780,11 @@
   "proximityFound": "BMS encontrado, conectando",
   "proximityScanning": "buscando",
   "capacityTitle": "Test de capacidad",
-  "capacityIntro": "La única medición real de la app. Todo lo demás son cuentas cruzadas sobre lo que el BMS dice de sí mismo; esto cuenta los amperios-hora que salen de verdad entre lleno y corte, y los compara con lo que te vendieron.",
+  "capacityIntro": "La única medición real de la app. Cuenta los amperios-hora que salen desde que la celda más alta está arriba, con el cargador ya soltando, hasta que la celda más baja llega al corte o el BMS corta. Los dos extremos los marcan las celdas, no el porcentaje del BMS: ese porcentaje se calcula contra la capacidad configurada, y medir con él solo devolvería esa configuración.",
   "capacityStart": "Empezar test",
   "capacityAbort": "Cancelar test",
   "capacityRunning": "midiendo",
-  "capacityNotFull": "Carga el pack al tope primero. Empezar a media carga solo mediría un pedazo, y el resultado saldría corto.",
+  "capacityNotFull": "Carga el pack al tope primero. El test arranca cuando la celda más alta está arriba y el cargador ya suelta poca corriente, no cuando el BMS dice 100 %. Empezar a media carga solo mediría un pedazo.",
   "capacityNoReadings": "Conecta el BMS primero.",
   "capacityDrawn": "Sacado hasta ahora",
   "capacityProgress": "Avance",
@@ -795,9 +795,9 @@
   "capacityCost": "Ojo: llevar el pack hasta el corte gasta ciclos. Vale la pena de vez en cuando para medir, no como costumbre.",
   "capacityNone": "Todavía no has medido la capacidad",
   "capacityHistory": "Mediciones",
-  "capacityAutoNote": "No hace falta que te acuerdes de nada: la app revisa las lecturas guardadas y toma como medición cualquier descarga completa que ya haya ocurrido. El botón es para hacerla a propósito y ver el avance en vivo.",
+  "capacityAutoNote": "No hace falta que te acuerdes de nada: la app revisa las lecturas guardadas y toma como medición cualquier descarga completa que ya haya ocurrido, de celdas arriba a celda en el corte, sin cargas ni huecos largos en medio. El botón es para hacerla a propósito y ver el avance en vivo.",
   "capacityAutoTag": "detectada",
-  "capacityGapWarning": "Con {minutes} min sin conexión, así que la cifra se queda corta.",
+  "capacityGapWarning": "{minutes} min sin ver la batería, así que no cuenta como medición de capacidad.",
   "@capacityGapWarning": {
     "placeholders": {
       "minutes": {
@@ -1110,7 +1110,17 @@
   "offlineMeasuredHealth": "Desgaste medido",
   "offlineImplied": "Capacidad configurada en el BMS",
   "offlineImpliedHint": "Es un ajuste dentro del BMS, no una medición de las celdas. Es contra lo que se escala cada porcentaje que reporta la batería, así que vale la pena verlo, y se queda igual por muy cansada que esté la batería.",
-  "offlineImpliedUnusable": "Solo se puede leer entre un 25 % y un 90 % de carga.",
+  "offlineImpliedUnusable": "Solo se puede leer entre un {min} % y un {max} % de carga.",
+  "@offlineImpliedUnusable": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
   "offlineSoh": "Salud que reporta el BMS",
   "offlineCycles": "Ciclos que cuenta el BMS",
   "offlineWeakest": "Celda más floja",
@@ -1503,7 +1513,7 @@
   "learnWhyNeedMore": "Aprende del primer viaje de más de 200 m que consuma energía. No hay nada más que hacer.",
   "trendsIntro": "Cuatro gráficas, y de cada una lo que sirve es la pendiente, no la altura. Un número que se queda quieto es una batería sana; uno que se va para un lado durante meses es la batería diciéndote algo.",
   "trendsConsumptionHint": "Un punto por viaje grabado, el más viejo a la izquierda. La altura es lo que costó ese viaje por kilómetro. La forma de manejar y el clima lo mueven mucho, así que ignora los puntos suertos y mira si la nube va subiendo con los meses: que la misma ruta cueste más significa que la batería está trabajando más para lograrlo.",
-  "trendsCapacityHint": "Un punto por descarga completa medida, la más vieja a la izquierda. La altura es los amperios-hora que la batería realmente tenía esa vez. Es la única medida real de desgaste que hay aquí, y la más lenta en llenarse: espera que baje un poco cada año, y desconfía de una caída de golpe.",
+  "trendsCapacityHint": "Un punto por descarga completa medida, la más vieja a la izquierda: de celdas arriba a celda en el corte, vigilada entera y sin carga en medio. La altura es los amperios-hora que salieron esa vez. Es la única medida real de desgaste que hay aquí, y la más lenta en llenarse: espera que baje un poco cada año, y desconfía de una caída de golpe.",
   "trendsAxisTime": "de izquierda a derecha: del más viejo al más nuevo",
   "trendsAxisCharge": "de izquierda a derecha: de vacía a llena",
   "learnWhyImplausible": "{n} dieron un consumo que ninguna moto puede producir, así que se rechazaron. Eso es un fallo de esta app y no algo del manejo, y quedó arreglado en esta versión: los viajes grabados de aquí en adelante deberían salir bien. Los viejos no se pueden reparar, porque las lecturas que hacían falta nunca se guardaron.",
@@ -1539,7 +1549,7 @@
   },
   "rangeFullUnknown": "Hace falta una capacidad medida para poder decir esto.",
   "rangeFullFromAdvert": "Sale de la capacidad que pusiste tú, no de una medida.",
-  "rangeFullFromMeasured": "Sale de una capacidad que esta batería midió de verdad.",
+  "rangeFullFromMeasured": "Sale de una descarga completa medida en esta batería, de celdas arriba a celda en el corte.",
   "rangeNoneLearned": "Todavía no ha aprendido nada, así que no hay distancia que valga la pena decir, a ninguna carga.",
   "offlineRangeAtLastSeen": "Con la carga de la última lectura",
   "offlineHealthNeedsTests": "Hacen falta dos descargas completas para poder medir desgaste. Una da una capacidad; hacen falta dos para ver una caída.",
@@ -3193,5 +3203,12 @@
       }
     }
   },
-  "balanceRankingNeedsReadings": "hacen falta más lecturas con las celdas separadas"
+  "balanceRankingNeedsReadings": "hacen falta más lecturas con las celdas separadas",
+  "capacityNoFullMark": "No se sabe dónde está lleno este pack: el BMS no ha dicho a cuánto carga y la química no se conoce. Indícala en los datos del pack para poder empezar el test.",
+  "capacityStopEarly": "Terminar aquí",
+  "capacityStopEarlyHint": "Si terminas antes del corte se guarda como parcial: lo contado es real, pero es un pedazo del pack y no se convierte en capacidad.",
+  "capacityPartialTag": "parcial",
+  "capacityLegacyTag": "antigua",
+  "capacityChargedTag": "cargada a mitad",
+  "capacityUntrustedNote": "Las marcadas no cuentan como capacidad. «parcial»: terminó antes del corte. «antigua»: se cerró con el porcentaje del BMS, que se calcula contra la capacidad configurada, así que devolvía esa configuración y no lo que tiene la batería. «cargada a mitad»: entró corriente por el camino."
 }

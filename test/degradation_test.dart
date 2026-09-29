@@ -2,7 +2,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:jk_bms/src/data/database.dart';
 import 'package:jk_bms/src/metrics/degradation.dart';
 
-CapacityTest measurement(DateTime at, double ah) => CapacityTest(
+CapacityTest measurement(
+  DateTime at,
+  double ah, {
+  int gapSeconds = 0,
+  bool charged = false,
+  String? endReason = 'cellCutoff',
+}) =>
+    CapacityTest(
       id: 0,
       deviceId: 'AA:BB',
       startedAt: at,
@@ -16,7 +23,9 @@ CapacityTest measurement(DateTime at, double ah) => CapacityTest(
       catalogueAh: null,
       completed: true,
       automatic: false,
-      gapSeconds: 0,
+      gapSeconds: gapSeconds,
+      endReason: endReason,
+      chargedDuringRun: charged,
       note: '',
     );
 
@@ -207,6 +216,27 @@ void main() {
       );
       expect(d.current!.source, CapacitySource.measured);
       expect(d.current!.ah, 36);
+    });
+
+    test('a test that is not a measurement of the pack is left out', () {
+      // Each of these used to be able to become the "current" figure and
+      // report wear that was only a hole in the count, a charge in the
+      // middle, a slice of the pack, or the configured capacity handed back.
+      for (final bad in [
+        measurement(y2, 30, gapSeconds: 1200),
+        measurement(y2, 30, charged: true),
+        measurement(y2, 30, endReason: 'stoppedEarly'),
+        measurement(y2, 30, endReason: 'legacy'),
+        measurement(y2, 30, endReason: null),
+      ]) {
+        final d = Degradation.from(
+          tests: [measurement(y1, 40), bad],
+          readings: const [],
+        );
+        expect(d.current!.ah, 40);
+        expect(d.observations, 1);
+        expect(d.lostFraction, isNull);
+      }
     });
 
     test('with nothing at all, it says nothing', () {

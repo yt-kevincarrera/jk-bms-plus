@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import '../data/database.dart';
+import 'capacity_endpoints.dart';
 
 /// One point on the consumption-over-time curve.
 class ConsumptionPoint {
@@ -116,11 +117,13 @@ class LongTermAnalysis {
     return points;
   }
 
-  /// Measured capacity over time, from completed capacity tests.
+  /// Measured capacity over time, from the capacity tests that measured the
+  /// pack: the same [CapacityTestTrust] rule as the range and the wear
+  /// figures, so the chart cannot show a drop the rest of the app threw out.
   List<CapacityPoint> capacityOverTime(List<CapacityTest> tests) {
     final points = <CapacityPoint>[];
     for (final t in tests) {
-      if (!t.completed || t.measuredAh <= 0) continue;
+      if (!t.isTrustworthy) continue;
       points.add(
         CapacityPoint(
           at: t.endedAt ?? t.startedAt,

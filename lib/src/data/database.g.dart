@@ -142,6 +142,17 @@ class $DevicesTable extends Devices with TableInfo<$DevicesTable, Device> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _lastChargeJsonMeta = const VerificationMeta(
+    'lastChargeJson',
+  );
+  @override
+  late final GeneratedColumn<String> lastChargeJson = GeneratedColumn<String>(
+    'last_charge_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -156,6 +167,7 @@ class $DevicesTable extends Devices with TableInfo<$DevicesTable, Device> {
     lastSeenAt,
     demo,
     brand,
+    lastChargeJson,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -259,6 +271,15 @@ class $DevicesTable extends Devices with TableInfo<$DevicesTable, Device> {
         brand.isAcceptableOrUnknown(data['brand']!, _brandMeta),
       );
     }
+    if (data.containsKey('last_charge_json')) {
+      context.handle(
+        _lastChargeJsonMeta,
+        lastChargeJson.isAcceptableOrUnknown(
+          data['last_charge_json']!,
+          _lastChargeJsonMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -315,6 +336,10 @@ class $DevicesTable extends Devices with TableInfo<$DevicesTable, Device> {
       brand: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}brand'],
+      ),
+      lastChargeJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_charge_json'],
       ),
     );
   }
@@ -378,6 +403,11 @@ class Device extends DataClass implements Insertable<Device> {
   /// Which maker's protocol this pack speaks, by [BmsBrand.stored]. Null for
   /// every row written before the app knew a second brand, all of them JK.
   final String? brand;
+
+  /// The last finished charge's report, as JSON, or null when none has been
+  /// recorded. It used to live only in memory, so after a restart the screen
+  /// said no charge had ever been recorded on a pack that had recorded many.
+  final String? lastChargeJson;
   const Device({
     required this.id,
     required this.name,
@@ -391,6 +421,7 @@ class Device extends DataClass implements Insertable<Device> {
     required this.lastSeenAt,
     required this.demo,
     this.brand,
+    this.lastChargeJson,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -412,6 +443,9 @@ class Device extends DataClass implements Insertable<Device> {
     map['demo'] = Variable<bool>(demo);
     if (!nullToAbsent || brand != null) {
       map['brand'] = Variable<String>(brand);
+    }
+    if (!nullToAbsent || lastChargeJson != null) {
+      map['last_charge_json'] = Variable<String>(lastChargeJson);
     }
     return map;
   }
@@ -436,6 +470,9 @@ class Device extends DataClass implements Insertable<Device> {
       brand: brand == null && nullToAbsent
           ? const Value.absent()
           : Value(brand),
+      lastChargeJson: lastChargeJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastChargeJson),
     );
   }
 
@@ -459,6 +496,7 @@ class Device extends DataClass implements Insertable<Device> {
       lastSeenAt: serializer.fromJson<DateTime>(json['lastSeenAt']),
       demo: serializer.fromJson<bool>(json['demo']),
       brand: serializer.fromJson<String?>(json['brand']),
+      lastChargeJson: serializer.fromJson<String?>(json['lastChargeJson']),
     );
   }
   @override
@@ -477,6 +515,7 @@ class Device extends DataClass implements Insertable<Device> {
       'lastSeenAt': serializer.toJson<DateTime>(lastSeenAt),
       'demo': serializer.toJson<bool>(demo),
       'brand': serializer.toJson<String?>(brand),
+      'lastChargeJson': serializer.toJson<String?>(lastChargeJson),
     };
   }
 
@@ -493,6 +532,7 @@ class Device extends DataClass implements Insertable<Device> {
     DateTime? lastSeenAt,
     bool? demo,
     Value<String?> brand = const Value.absent(),
+    Value<String?> lastChargeJson = const Value.absent(),
   }) => Device(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -508,6 +548,9 @@ class Device extends DataClass implements Insertable<Device> {
     lastSeenAt: lastSeenAt ?? this.lastSeenAt,
     demo: demo ?? this.demo,
     brand: brand.present ? brand.value : this.brand,
+    lastChargeJson: lastChargeJson.present
+        ? lastChargeJson.value
+        : this.lastChargeJson,
   );
   Device copyWithCompanion(DevicesCompanion data) {
     return Device(
@@ -535,6 +578,9 @@ class Device extends DataClass implements Insertable<Device> {
           : this.lastSeenAt,
       demo: data.demo.present ? data.demo.value : this.demo,
       brand: data.brand.present ? data.brand.value : this.brand,
+      lastChargeJson: data.lastChargeJson.present
+          ? data.lastChargeJson.value
+          : this.lastChargeJson,
     );
   }
 
@@ -552,7 +598,8 @@ class Device extends DataClass implements Insertable<Device> {
           ..write('firstSeenAt: $firstSeenAt, ')
           ..write('lastSeenAt: $lastSeenAt, ')
           ..write('demo: $demo, ')
-          ..write('brand: $brand')
+          ..write('brand: $brand, ')
+          ..write('lastChargeJson: $lastChargeJson')
           ..write(')'))
         .toString();
   }
@@ -571,6 +618,7 @@ class Device extends DataClass implements Insertable<Device> {
     lastSeenAt,
     demo,
     brand,
+    lastChargeJson,
   );
   @override
   bool operator ==(Object other) =>
@@ -587,7 +635,8 @@ class Device extends DataClass implements Insertable<Device> {
           other.firstSeenAt == this.firstSeenAt &&
           other.lastSeenAt == this.lastSeenAt &&
           other.demo == this.demo &&
-          other.brand == this.brand);
+          other.brand == this.brand &&
+          other.lastChargeJson == this.lastChargeJson);
 }
 
 class DevicesCompanion extends UpdateCompanion<Device> {
@@ -603,6 +652,7 @@ class DevicesCompanion extends UpdateCompanion<Device> {
   final Value<DateTime> lastSeenAt;
   final Value<bool> demo;
   final Value<String?> brand;
+  final Value<String?> lastChargeJson;
   final Value<int> rowid;
   const DevicesCompanion({
     this.id = const Value.absent(),
@@ -617,6 +667,7 @@ class DevicesCompanion extends UpdateCompanion<Device> {
     this.lastSeenAt = const Value.absent(),
     this.demo = const Value.absent(),
     this.brand = const Value.absent(),
+    this.lastChargeJson = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   DevicesCompanion.insert({
@@ -632,6 +683,7 @@ class DevicesCompanion extends UpdateCompanion<Device> {
     required DateTime lastSeenAt,
     this.demo = const Value.absent(),
     this.brand = const Value.absent(),
+    this.lastChargeJson = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        firstSeenAt = Value(firstSeenAt),
@@ -649,6 +701,7 @@ class DevicesCompanion extends UpdateCompanion<Device> {
     Expression<DateTime>? lastSeenAt,
     Expression<bool>? demo,
     Expression<String>? brand,
+    Expression<String>? lastChargeJson,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -665,6 +718,7 @@ class DevicesCompanion extends UpdateCompanion<Device> {
       if (lastSeenAt != null) 'last_seen_at': lastSeenAt,
       if (demo != null) 'demo': demo,
       if (brand != null) 'brand': brand,
+      if (lastChargeJson != null) 'last_charge_json': lastChargeJson,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -682,6 +736,7 @@ class DevicesCompanion extends UpdateCompanion<Device> {
     Value<DateTime>? lastSeenAt,
     Value<bool>? demo,
     Value<String?>? brand,
+    Value<String?>? lastChargeJson,
     Value<int>? rowid,
   }) {
     return DevicesCompanion(
@@ -697,6 +752,7 @@ class DevicesCompanion extends UpdateCompanion<Device> {
       lastSeenAt: lastSeenAt ?? this.lastSeenAt,
       demo: demo ?? this.demo,
       brand: brand ?? this.brand,
+      lastChargeJson: lastChargeJson ?? this.lastChargeJson,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -742,6 +798,9 @@ class DevicesCompanion extends UpdateCompanion<Device> {
     if (brand.present) {
       map['brand'] = Variable<String>(brand.value);
     }
+    if (lastChargeJson.present) {
+      map['last_charge_json'] = Variable<String>(lastChargeJson.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -763,6 +822,7 @@ class DevicesCompanion extends UpdateCompanion<Device> {
           ..write('lastSeenAt: $lastSeenAt, ')
           ..write('demo: $demo, ')
           ..write('brand: $brand, ')
+          ..write('lastChargeJson: $lastChargeJson, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4757,6 +4817,32 @@ class $CapacityTestsTable extends CapacityTests
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _endReasonMeta = const VerificationMeta(
+    'endReason',
+  );
+  @override
+  late final GeneratedColumn<String> endReason = GeneratedColumn<String>(
+    'end_reason',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _chargedDuringRunMeta = const VerificationMeta(
+    'chargedDuringRun',
+  );
+  @override
+  late final GeneratedColumn<bool> chargedDuringRun = GeneratedColumn<bool>(
+    'charged_during_run',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("charged_during_run" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _noteMeta = const VerificationMeta('note');
   @override
   late final GeneratedColumn<String> note = GeneratedColumn<String>(
@@ -4793,6 +4879,8 @@ class $CapacityTestsTable extends CapacityTests
     completed,
     automatic,
     gapSeconds,
+    endReason,
+    chargedDuringRun,
     note,
     deviceId,
   ];
@@ -4906,6 +4994,21 @@ class $CapacityTestsTable extends CapacityTests
         gapSeconds.isAcceptableOrUnknown(data['gap_seconds']!, _gapSecondsMeta),
       );
     }
+    if (data.containsKey('end_reason')) {
+      context.handle(
+        _endReasonMeta,
+        endReason.isAcceptableOrUnknown(data['end_reason']!, _endReasonMeta),
+      );
+    }
+    if (data.containsKey('charged_during_run')) {
+      context.handle(
+        _chargedDuringRunMeta,
+        chargedDuringRun.isAcceptableOrUnknown(
+          data['charged_during_run']!,
+          _chargedDuringRunMeta,
+        ),
+      );
+    }
     if (data.containsKey('note')) {
       context.handle(
         _noteMeta,
@@ -4979,6 +5082,14 @@ class $CapacityTestsTable extends CapacityTests
         DriftSqlType.int,
         data['${effectivePrefix}gap_seconds'],
       )!,
+      endReason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}end_reason'],
+      ),
+      chargedDuringRun: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}charged_during_run'],
+      )!,
       note: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}note'],
@@ -5023,6 +5134,16 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
 
   /// Seconds of the discharge that were not observed. Zero on a clean run.
   final int gapSeconds;
+
+  /// What closed the run, by [CapacityEndReason] name. Null while a run is
+  /// open. Every run finished before this was stored reads `legacy`: those
+  /// opened and closed on the BMS's own percentage, so what they counted was
+  /// the configured capacity handed back, not a measurement.
+  final String? endReason;
+
+  /// True when current went in part way through. The total then describes
+  /// nothing, and it is kept so it can be shown as that rather than lost.
+  final bool chargedDuringRun;
   final String note;
 
   /// Which pack this was recorded on. Null for rows written before the app
@@ -5042,6 +5163,8 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
     required this.completed,
     required this.automatic,
     required this.gapSeconds,
+    this.endReason,
+    required this.chargedDuringRun,
     required this.note,
     this.deviceId,
   });
@@ -5065,6 +5188,10 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
     map['completed'] = Variable<bool>(completed);
     map['automatic'] = Variable<bool>(automatic);
     map['gap_seconds'] = Variable<int>(gapSeconds);
+    if (!nullToAbsent || endReason != null) {
+      map['end_reason'] = Variable<String>(endReason);
+    }
+    map['charged_during_run'] = Variable<bool>(chargedDuringRun);
     map['note'] = Variable<String>(note);
     if (!nullToAbsent || deviceId != null) {
       map['device_id'] = Variable<String>(deviceId);
@@ -5091,6 +5218,10 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
       completed: Value(completed),
       automatic: Value(automatic),
       gapSeconds: Value(gapSeconds),
+      endReason: endReason == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endReason),
+      chargedDuringRun: Value(chargedDuringRun),
       note: Value(note),
       deviceId: deviceId == null && nullToAbsent
           ? const Value.absent()
@@ -5117,6 +5248,8 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
       completed: serializer.fromJson<bool>(json['completed']),
       automatic: serializer.fromJson<bool>(json['automatic']),
       gapSeconds: serializer.fromJson<int>(json['gapSeconds']),
+      endReason: serializer.fromJson<String?>(json['endReason']),
+      chargedDuringRun: serializer.fromJson<bool>(json['chargedDuringRun']),
       note: serializer.fromJson<String>(json['note']),
       deviceId: serializer.fromJson<String?>(json['deviceId']),
     );
@@ -5138,6 +5271,8 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
       'completed': serializer.toJson<bool>(completed),
       'automatic': serializer.toJson<bool>(automatic),
       'gapSeconds': serializer.toJson<int>(gapSeconds),
+      'endReason': serializer.toJson<String?>(endReason),
+      'chargedDuringRun': serializer.toJson<bool>(chargedDuringRun),
       'note': serializer.toJson<String>(note),
       'deviceId': serializer.toJson<String?>(deviceId),
     };
@@ -5157,6 +5292,8 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
     bool? completed,
     bool? automatic,
     int? gapSeconds,
+    Value<String?> endReason = const Value.absent(),
+    bool? chargedDuringRun,
     String? note,
     Value<String?> deviceId = const Value.absent(),
   }) => CapacityTest(
@@ -5173,6 +5310,8 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
     completed: completed ?? this.completed,
     automatic: automatic ?? this.automatic,
     gapSeconds: gapSeconds ?? this.gapSeconds,
+    endReason: endReason.present ? endReason.value : this.endReason,
+    chargedDuringRun: chargedDuringRun ?? this.chargedDuringRun,
     note: note ?? this.note,
     deviceId: deviceId.present ? deviceId.value : this.deviceId,
   );
@@ -5203,6 +5342,10 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
       gapSeconds: data.gapSeconds.present
           ? data.gapSeconds.value
           : this.gapSeconds,
+      endReason: data.endReason.present ? data.endReason.value : this.endReason,
+      chargedDuringRun: data.chargedDuringRun.present
+          ? data.chargedDuringRun.value
+          : this.chargedDuringRun,
       note: data.note.present ? data.note.value : this.note,
       deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
     );
@@ -5224,6 +5367,8 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
           ..write('completed: $completed, ')
           ..write('automatic: $automatic, ')
           ..write('gapSeconds: $gapSeconds, ')
+          ..write('endReason: $endReason, ')
+          ..write('chargedDuringRun: $chargedDuringRun, ')
           ..write('note: $note, ')
           ..write('deviceId: $deviceId')
           ..write(')'))
@@ -5245,6 +5390,8 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
     completed,
     automatic,
     gapSeconds,
+    endReason,
+    chargedDuringRun,
     note,
     deviceId,
   );
@@ -5265,6 +5412,8 @@ class CapacityTest extends DataClass implements Insertable<CapacityTest> {
           other.completed == this.completed &&
           other.automatic == this.automatic &&
           other.gapSeconds == this.gapSeconds &&
+          other.endReason == this.endReason &&
+          other.chargedDuringRun == this.chargedDuringRun &&
           other.note == this.note &&
           other.deviceId == this.deviceId);
 }
@@ -5283,6 +5432,8 @@ class CapacityTestsCompanion extends UpdateCompanion<CapacityTest> {
   final Value<bool> completed;
   final Value<bool> automatic;
   final Value<int> gapSeconds;
+  final Value<String?> endReason;
+  final Value<bool> chargedDuringRun;
   final Value<String> note;
   final Value<String?> deviceId;
   const CapacityTestsCompanion({
@@ -5299,6 +5450,8 @@ class CapacityTestsCompanion extends UpdateCompanion<CapacityTest> {
     this.completed = const Value.absent(),
     this.automatic = const Value.absent(),
     this.gapSeconds = const Value.absent(),
+    this.endReason = const Value.absent(),
+    this.chargedDuringRun = const Value.absent(),
     this.note = const Value.absent(),
     this.deviceId = const Value.absent(),
   });
@@ -5316,6 +5469,8 @@ class CapacityTestsCompanion extends UpdateCompanion<CapacityTest> {
     this.completed = const Value.absent(),
     this.automatic = const Value.absent(),
     this.gapSeconds = const Value.absent(),
+    this.endReason = const Value.absent(),
+    this.chargedDuringRun = const Value.absent(),
     this.note = const Value.absent(),
     this.deviceId = const Value.absent(),
   }) : startedAt = Value(startedAt),
@@ -5339,6 +5494,8 @@ class CapacityTestsCompanion extends UpdateCompanion<CapacityTest> {
     Expression<bool>? completed,
     Expression<bool>? automatic,
     Expression<int>? gapSeconds,
+    Expression<String>? endReason,
+    Expression<bool>? chargedDuringRun,
     Expression<String>? note,
     Expression<String>? deviceId,
   }) {
@@ -5356,6 +5513,8 @@ class CapacityTestsCompanion extends UpdateCompanion<CapacityTest> {
       if (completed != null) 'completed': completed,
       if (automatic != null) 'automatic': automatic,
       if (gapSeconds != null) 'gap_seconds': gapSeconds,
+      if (endReason != null) 'end_reason': endReason,
+      if (chargedDuringRun != null) 'charged_during_run': chargedDuringRun,
       if (note != null) 'note': note,
       if (deviceId != null) 'device_id': deviceId,
     });
@@ -5375,6 +5534,8 @@ class CapacityTestsCompanion extends UpdateCompanion<CapacityTest> {
     Value<bool>? completed,
     Value<bool>? automatic,
     Value<int>? gapSeconds,
+    Value<String?>? endReason,
+    Value<bool>? chargedDuringRun,
     Value<String>? note,
     Value<String?>? deviceId,
   }) {
@@ -5392,6 +5553,8 @@ class CapacityTestsCompanion extends UpdateCompanion<CapacityTest> {
       completed: completed ?? this.completed,
       automatic: automatic ?? this.automatic,
       gapSeconds: gapSeconds ?? this.gapSeconds,
+      endReason: endReason ?? this.endReason,
+      chargedDuringRun: chargedDuringRun ?? this.chargedDuringRun,
       note: note ?? this.note,
       deviceId: deviceId ?? this.deviceId,
     );
@@ -5439,6 +5602,12 @@ class CapacityTestsCompanion extends UpdateCompanion<CapacityTest> {
     if (gapSeconds.present) {
       map['gap_seconds'] = Variable<int>(gapSeconds.value);
     }
+    if (endReason.present) {
+      map['end_reason'] = Variable<String>(endReason.value);
+    }
+    if (chargedDuringRun.present) {
+      map['charged_during_run'] = Variable<bool>(chargedDuringRun.value);
+    }
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
@@ -5464,6 +5633,8 @@ class CapacityTestsCompanion extends UpdateCompanion<CapacityTest> {
           ..write('completed: $completed, ')
           ..write('automatic: $automatic, ')
           ..write('gapSeconds: $gapSeconds, ')
+          ..write('endReason: $endReason, ')
+          ..write('chargedDuringRun: $chargedDuringRun, ')
           ..write('note: $note, ')
           ..write('deviceId: $deviceId')
           ..write(')'))
@@ -7140,6 +7311,7 @@ typedef $$DevicesTableCreateCompanionBuilder =
       required DateTime lastSeenAt,
       Value<bool> demo,
       Value<String?> brand,
+      Value<String?> lastChargeJson,
       Value<int> rowid,
     });
 typedef $$DevicesTableUpdateCompanionBuilder =
@@ -7156,6 +7328,7 @@ typedef $$DevicesTableUpdateCompanionBuilder =
       Value<DateTime> lastSeenAt,
       Value<bool> demo,
       Value<String?> brand,
+      Value<String?> lastChargeJson,
       Value<int> rowid,
     });
 
@@ -7225,6 +7398,11 @@ class $$DevicesTableFilterComposer
 
   ColumnFilters<String> get brand => $composableBuilder(
     column: $table.brand,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastChargeJson => $composableBuilder(
+    column: $table.lastChargeJson,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -7297,6 +7475,11 @@ class $$DevicesTableOrderingComposer
     column: $table.brand,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get lastChargeJson => $composableBuilder(
+    column: $table.lastChargeJson,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$DevicesTableAnnotationComposer
@@ -7355,6 +7538,11 @@ class $$DevicesTableAnnotationComposer
 
   GeneratedColumn<String> get brand =>
       $composableBuilder(column: $table.brand, builder: (column) => column);
+
+  GeneratedColumn<String> get lastChargeJson => $composableBuilder(
+    column: $table.lastChargeJson,
+    builder: (column) => column,
+  );
 }
 
 class $$DevicesTableTableManager
@@ -7397,6 +7585,7 @@ class $$DevicesTableTableManager
                 Value<DateTime> lastSeenAt = const Value.absent(),
                 Value<bool> demo = const Value.absent(),
                 Value<String?> brand = const Value.absent(),
+                Value<String?> lastChargeJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DevicesCompanion(
                 id: id,
@@ -7411,6 +7600,7 @@ class $$DevicesTableTableManager
                 lastSeenAt: lastSeenAt,
                 demo: demo,
                 brand: brand,
+                lastChargeJson: lastChargeJson,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -7427,6 +7617,7 @@ class $$DevicesTableTableManager
                 required DateTime lastSeenAt,
                 Value<bool> demo = const Value.absent(),
                 Value<String?> brand = const Value.absent(),
+                Value<String?> lastChargeJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DevicesCompanion.insert(
                 id: id,
@@ -7441,6 +7632,7 @@ class $$DevicesTableTableManager
                 lastSeenAt: lastSeenAt,
                 demo: demo,
                 brand: brand,
+                lastChargeJson: lastChargeJson,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -9370,6 +9562,8 @@ typedef $$CapacityTestsTableCreateCompanionBuilder =
       Value<bool> completed,
       Value<bool> automatic,
       Value<int> gapSeconds,
+      Value<String?> endReason,
+      Value<bool> chargedDuringRun,
       Value<String> note,
       Value<String?> deviceId,
     });
@@ -9388,6 +9582,8 @@ typedef $$CapacityTestsTableUpdateCompanionBuilder =
       Value<bool> completed,
       Value<bool> automatic,
       Value<int> gapSeconds,
+      Value<String?> endReason,
+      Value<bool> chargedDuringRun,
       Value<String> note,
       Value<String?> deviceId,
     });
@@ -9463,6 +9659,16 @@ class $$CapacityTestsTableFilterComposer
 
   ColumnFilters<int> get gapSeconds => $composableBuilder(
     column: $table.gapSeconds,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get endReason => $composableBuilder(
+    column: $table.endReason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get chargedDuringRun => $composableBuilder(
+    column: $table.chargedDuringRun,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9551,6 +9757,16 @@ class $$CapacityTestsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get endReason => $composableBuilder(
+    column: $table.endReason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get chargedDuringRun => $composableBuilder(
+    column: $table.chargedDuringRun,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get note => $composableBuilder(
     column: $table.note,
     builder: (column) => ColumnOrderings(column),
@@ -9622,6 +9838,14 @@ class $$CapacityTestsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get endReason =>
+      $composableBuilder(column: $table.endReason, builder: (column) => column);
+
+  GeneratedColumn<bool> get chargedDuringRun => $composableBuilder(
+    column: $table.chargedDuringRun,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
 
@@ -9673,6 +9897,8 @@ class $$CapacityTestsTableTableManager
                 Value<bool> completed = const Value.absent(),
                 Value<bool> automatic = const Value.absent(),
                 Value<int> gapSeconds = const Value.absent(),
+                Value<String?> endReason = const Value.absent(),
+                Value<bool> chargedDuringRun = const Value.absent(),
                 Value<String> note = const Value.absent(),
                 Value<String?> deviceId = const Value.absent(),
               }) => CapacityTestsCompanion(
@@ -9689,6 +9915,8 @@ class $$CapacityTestsTableTableManager
                 completed: completed,
                 automatic: automatic,
                 gapSeconds: gapSeconds,
+                endReason: endReason,
+                chargedDuringRun: chargedDuringRun,
                 note: note,
                 deviceId: deviceId,
               ),
@@ -9707,6 +9935,8 @@ class $$CapacityTestsTableTableManager
                 Value<bool> completed = const Value.absent(),
                 Value<bool> automatic = const Value.absent(),
                 Value<int> gapSeconds = const Value.absent(),
+                Value<String?> endReason = const Value.absent(),
+                Value<bool> chargedDuringRun = const Value.absent(),
                 Value<String> note = const Value.absent(),
                 Value<String?> deviceId = const Value.absent(),
               }) => CapacityTestsCompanion.insert(
@@ -9723,6 +9953,8 @@ class $$CapacityTestsTableTableManager
                 completed: completed,
                 automatic: automatic,
                 gapSeconds: gapSeconds,
+                endReason: endReason,
+                chargedDuringRun: chargedDuringRun,
                 note: note,
                 deviceId: deviceId,
               ),

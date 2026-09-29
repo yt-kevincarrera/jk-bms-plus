@@ -780,11 +780,11 @@
   "proximityFound": "BMS found, connecting",
   "proximityScanning": "looking",
   "capacityTitle": "Capacity test",
-  "capacityIntro": "The one real measurement in this app. Everything else is arithmetic on what the BMS says about itself; this counts the amp-hours that actually come out between full and cutoff, and compares them with what you were sold.",
+  "capacityIntro": "The one real measurement in this app. It counts the amp-hours that come out from the highest cell at the top, with the charger already letting go, to the lowest cell at the cutoff or the BMS cutting. The cells mark both ends, not the BMS percentage: that percentage is worked out against the configured capacity, and measuring with it would only hand that setting back.",
   "capacityStart": "Start test",
   "capacityAbort": "Cancel test",
   "capacityRunning": "measuring",
-  "capacityNotFull": "Charge the pack to the top first. Starting half full would only measure part of it, and the result would come out short.",
+  "capacityNotFull": "Charge the pack to the top first. The test starts when the highest cell is at the top and the charger is down to a trickle, not when the BMS says 100 %. Starting half full would only measure part of it.",
   "capacityNoReadings": "Connect the BMS first.",
   "capacityDrawn": "Drawn so far",
   "capacityProgress": "Progress",
@@ -795,9 +795,9 @@
   "capacityCost": "Note: running the pack to cutoff costs cycles. Worth doing occasionally to measure, not as a habit.",
   "capacityNone": "You have not measured the capacity yet",
   "capacityHistory": "Measurements",
-  "capacityAutoNote": "You do not have to remember anything: the app reads back the stored readings and takes any complete discharge that already happened as a measurement. The button is for doing one deliberately, with live progress.",
+  "capacityAutoNote": "You do not have to remember anything: the app reads back the stored readings and takes any complete discharge that already happened as a measurement: cells at the top to a cell at the cutoff, with no charge and no long hole in the middle. The button is for doing one deliberately, with live progress.",
   "capacityAutoTag": "found",
-  "capacityGapWarning": "{minutes} min of it went unwatched, so the figure reads low.",
+  "capacityGapWarning": "{minutes} min of it went unwatched, so it does not count as a capacity measurement.",
   "@capacityGapWarning": {
     "placeholders": {
       "minutes": {
@@ -1110,7 +1110,17 @@
   "offlineMeasuredHealth": "Wear measured",
   "offlineImplied": "Capacity the BMS is set to",
   "offlineImpliedHint": "A setting inside the BMS, not a measurement of the cells. It is what every percentage the pack reports is scaled against, so it is worth seeing, and it stays the same however tired the battery gets.",
-  "offlineImpliedUnusable": "Only readable between about 25 % and 90 % charge.",
+  "offlineImpliedUnusable": "Only readable between {min} % and {max} % charge.",
+  "@offlineImpliedUnusable": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
   "offlineSoh": "Health the BMS claims",
   "offlineCycles": "Cycles the BMS counts",
   "offlineWeakest": "Weakest cell",
@@ -1439,7 +1449,7 @@
   "learnWhyNeedMore": "It learns from the first ride over 200 m that draws energy. Nothing else to do.",
   "trendsIntro": "Four charts, and the useful thing about each one is its slope, not its height. A number that sits still is a healthy pack; a number that drifts in one direction over months is the pack telling you something.",
   "trendsConsumptionHint": "One dot per recorded ride, oldest on the left. Height is what that ride cost per kilometre. Riding style and weather move it around a lot, so ignore single dots and look at whether the cloud is drifting upwards over months: the same route costing more means the pack is having to work harder for it.",
-  "trendsCapacityHint": "One dot per full discharge measured, oldest on the left. Height is the amp-hours the pack actually held that time. This is the only real measure of wear here, and it is the slowest to fill in: expect it to go down a little each year and be suspicious of a sudden drop.",
+  "trendsCapacityHint": "One dot per full discharge measured, oldest on the left: cells at the top to a cell at the cutoff, watched the whole way, with no charge in the middle. Height is the amp-hours that came out that time. This is the only real measure of wear here, and it is the slowest to fill in: expect it to go down a little each year and be suspicious of a sudden drop.",
   "trendsAxisTime": "left to right: oldest to newest",
   "trendsAxisCharge": "left to right: empty to full",
   "learnWhyImplausible": "{n} came out at a consumption no motorcycle could produce, so they were refused. That is a fault in this app rather than anything about the riding, and it was fixed in this version: rides recorded from here should read correctly. The old ones cannot be repaired, because the readings they needed were never stored.",
@@ -1451,7 +1461,7 @@
   "rangeFullBand": "about {low} to {high} km",
   "rangeFullUnknown": "Needs a measured capacity before this can be said.",
   "rangeFullFromAdvert": "From the capacity you entered, not a measured one.",
-  "rangeFullFromMeasured": "From a capacity this pack actually measured.",
+  "rangeFullFromMeasured": "From a full discharge measured on this pack, cells at the top to a cell at the cutoff.",
   "rangeNoneLearned": "Nothing learned yet, so no distance is worth quoting at any charge.",
   "offlineRangeAtLastSeen": "At the charge in the last reading",
   "offlineHealthNeedsTests": "Needs two full discharges before wear can be measured at all. One gives a capacity; it takes two to show a decline.",
@@ -3053,5 +3063,12 @@
       }
     }
   },
-  "balanceRankingNeedsReadings": "needs more readings with the cells apart"
+  "balanceRankingNeedsReadings": "needs more readings with the cells apart",
+  "capacityNoFullMark": "Where this pack is full is unknown: the BMS has not said what it charges to and the chemistry is not known. Set it in the pack details to be able to start the test.",
+  "capacityStopEarly": "Finish here",
+  "capacityStopEarlyHint": "Finishing before the cutoff keeps it as a partial: what it counted is real, but it is a slice of the pack and it is never turned into a capacity.",
+  "capacityPartialTag": "partial",
+  "capacityLegacyTag": "old",
+  "capacityChargedTag": "charged part way",
+  "capacityUntrustedNote": "The tagged ones do not count as a capacity. \"partial\": it ended before the cutoff. \"old\": it was closed on the BMS percentage, which is worked out against the configured capacity, so it handed that setting back rather than what the battery holds. \"charged part way\": current went in along the way."
 }

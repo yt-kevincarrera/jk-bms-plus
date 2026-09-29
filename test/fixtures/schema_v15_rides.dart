@@ -1,5 +1,5 @@
-/// The ride and reading tables exactly as versions 14 and 15 shipped them,
-/// with the hottest probe and the cycle count still NOT NULL.
+/// The ride, reading and capacity tables exactly as versions 14 and 15
+/// shipped them, with the hottest probe and the cycle count still NOT NULL.
 ///
 /// Shared by the migration tests of both versions: the from < 16 step
 /// rebuilds these, so any database a test upgrades past 15 has to have them.
@@ -73,6 +73,27 @@ const v15RideTables = [
     warnings_mask INTEGER NOT NULL,
     balancer_active INTEGER NOT NULL CHECK (balancer_active IN (0, 1)),
     cell_voltages_json TEXT NOT NULL,
+    device_id TEXT
+  )''',
+  // Unchanged from version 5 to 16. Here because the from < 17 step adds to
+  // it and marks its finished rows, so every database upgraded past 16 has
+  // to have it, as every real one does.
+  '''
+  CREATE TABLE capacity_tests (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    started_at INTEGER NOT NULL,
+    ended_at INTEGER,
+    start_soc REAL NOT NULL,
+    end_soc REAL NOT NULL,
+    start_pack_voltage REAL NOT NULL,
+    end_pack_voltage REAL NOT NULL,
+    measured_ah REAL NOT NULL,
+    measured_wh REAL NOT NULL,
+    catalogue_ah REAL,
+    completed INTEGER NOT NULL DEFAULT 0 CHECK (completed IN (0, 1)),
+    automatic INTEGER NOT NULL DEFAULT 0 CHECK (automatic IN (0, 1)),
+    gap_seconds INTEGER NOT NULL DEFAULT 0,
+    note TEXT NOT NULL DEFAULT '',
     device_id TEXT
   )''',
 ];

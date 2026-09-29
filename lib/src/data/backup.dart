@@ -160,6 +160,7 @@ class BackupCodec {
           // Absent from every backup made before a second brand existed,
           // which restores as null -- read back as JK by BmsBrand.fromStored.
           brand: Value(d['brand'] as String?),
+          lastChargeJson: Value(d['lastChargeJson'] as String?),
         ),
       );
     }
@@ -294,6 +295,7 @@ class BackupCodec {
     'lastSeenAt': d.lastSeenAt.toIso8601String(),
     'demo': d.demo,
     'brand': d.brand,
+    'lastChargeJson': d.lastChargeJson,
   };
 
   /// A pack's day one. Carried because a history without the point it is
@@ -397,6 +399,8 @@ class BackupCodec {
     'completed': t.completed,
     'automatic': t.automatic,
     'gapSeconds': t.gapSeconds,
+    'endReason': t.endReason,
+    'chargedDuringRun': t.chargedDuringRun,
     'note': t.note,
   };
 
@@ -550,6 +554,14 @@ class BackupCodec {
         completed: Value(t['completed'] as bool? ?? false),
         automatic: Value(t['automatic'] as bool? ?? false),
         gapSeconds: Value(_i(t['gapSeconds'])),
+        // A backup made before the app stored what closed a run carries none,
+        // and every run it finished was closed on the BMS percentage: the
+        // same marking the database migration gives them.
+        endReason: Value(
+          t['endReason'] as String? ??
+              ((t['completed'] as bool? ?? false) ? 'legacy' : null),
+        ),
+        chargedDuringRun: Value(t['chargedDuringRun'] as bool? ?? false),
         note: Value(t['note'] as String? ?? ''),
       );
 

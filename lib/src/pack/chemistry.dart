@@ -117,6 +117,7 @@ class ChemistryLimits {
     required this.comfortableMinVolts,
     required this.typicalBalanceStartVolts,
     required this.typicalCutoffVolts,
+    required this.fullChargeVolts,
   });
 
   /// Nothing is known, so the audit says nothing about voltages.
@@ -132,6 +133,7 @@ class ChemistryLimits {
     comfortableMinVolts: 2.80,
     typicalBalanceStartVolts: 3.40,
     typicalCutoffVolts: 2.80,
+    fullChargeVolts: 3.45,
   );
 
   static const ChemistryLimits nmc = ChemistryLimits(
@@ -142,6 +144,7 @@ class ChemistryLimits {
     comfortableMinVolts: 3.20,
     typicalBalanceStartVolts: 4.00,
     typicalCutoffVolts: 3.00,
+    fullChargeVolts: 4.15,
   );
 
   static ChemistryLimits? of(CellChemistry chemistry) => switch (chemistry) {
@@ -174,6 +177,49 @@ class ChemistryLimits {
   /// higher of the two, so on a pack of unknown chemistry the warning errs
   /// early (if it is LFP) rather than late (if it is NMC).
   static const double unknownCutoffVolts = 3.0;
+
+  /// The highest cell at or above which a charge has reached the top, while
+  /// the charger is still tapering or has just let go.
+  ///
+  /// A little under where a charger for this chemistry stops, so one that
+  /// ends a few millivolts short still counts, and well above anything a
+  /// half-charged cell reads. This is what the capacity test opens on and
+  /// what "charge finished" waits for, instead of the BMS's percentage: the
+  /// percentage is remaining amp-hours over the configured capacity, so a
+  /// test that started and stopped on it could only ever hand back the
+  /// configured capacity it was scaled against.
+  final double fullChargeVolts;
+
+  /// [fullChargeVolts] for this pack, allowing for how its BMS asks to be
+  /// charged.
+  ///
+  /// A pack whose BMS requests charge to 4.10 V a cell is full at 4.10 and
+  /// would never reach 4.15. So a configured request voltage can lower the
+  /// mark to 30 mV under itself, but only by up to 0.10 V: a request set far
+  /// below the chemistry's top is a typo or a storage setting, and taking it
+  /// at its word would call a half-charged pack full. It never raises it.
+  /// With the chemistry unknown the request alone decides, when it is a
+  /// plausible lithium figure; with neither there is no mark, and callers
+  /// say less rather than guess one.
+  static double? fullCellVoltsFor(
+    CellChemistry chemistry, {
+    double? requestChargeVolts,
+  }) {
+    final base = of(chemistry)?.fullChargeVolts;
+    final request = requestChargeVolts;
+    final fromSetting = request == null || request <= 0 ? null : request - 0.03;
+    if (base == null) {
+      return fromSetting != null && fromSetting >= 3.3 && fromSetting <= 4.35
+          ? fromSetting
+          : null;
+    }
+    if (fromSetting != null &&
+        fromSetting < base &&
+        fromSetting >= base - 0.10) {
+      return fromSetting;
+    }
+    return base;
+  }
 
   /// Temperature limits are the same for both, because they are about
   /// lithium plating and electrolyte breakdown rather than about the cathode.

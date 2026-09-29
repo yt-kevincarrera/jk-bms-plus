@@ -2572,7 +2572,7 @@ abstract class AppL10n {
   /// No description provided for @capacityIntro.
   ///
   /// In es, this message translates to:
-  /// **'La única medición real de la app. Todo lo demás son cuentas cruzadas sobre lo que el BMS dice de sí mismo; esto cuenta los amperios-hora que salen de verdad entre lleno y corte, y los compara con lo que te vendieron.'**
+  /// **'La única medición real de la app. Cuenta los amperios-hora que salen desde que la celda más alta está arriba, con el cargador ya soltando, hasta que la celda más baja llega al corte o el BMS corta. Los dos extremos los marcan las celdas, no el porcentaje del BMS: ese porcentaje se calcula contra la capacidad configurada, y medir con él solo devolvería esa configuración.'**
   String get capacityIntro;
 
   /// No description provided for @capacityStart.
@@ -2596,7 +2596,7 @@ abstract class AppL10n {
   /// No description provided for @capacityNotFull.
   ///
   /// In es, this message translates to:
-  /// **'Carga el pack al tope primero. Empezar a media carga solo mediría un pedazo, y el resultado saldría corto.'**
+  /// **'Carga el pack al tope primero. El test arranca cuando la celda más alta está arriba y el cargador ya suelta poca corriente, no cuando el BMS dice 100 %. Empezar a media carga solo mediría un pedazo.'**
   String get capacityNotFull;
 
   /// No description provided for @capacityNoReadings.
@@ -2662,7 +2662,7 @@ abstract class AppL10n {
   /// No description provided for @capacityAutoNote.
   ///
   /// In es, this message translates to:
-  /// **'No hace falta que te acuerdes de nada: la app revisa las lecturas guardadas y toma como medición cualquier descarga completa que ya haya ocurrido. El botón es para hacerla a propósito y ver el avance en vivo.'**
+  /// **'No hace falta que te acuerdes de nada: la app revisa las lecturas guardadas y toma como medición cualquier descarga completa que ya haya ocurrido, de celdas arriba a celda en el corte, sin cargas ni huecos largos en medio. El botón es para hacerla a propósito y ver el avance en vivo.'**
   String get capacityAutoNote;
 
   /// No description provided for @capacityAutoTag.
@@ -2674,7 +2674,7 @@ abstract class AppL10n {
   /// No description provided for @capacityGapWarning.
   ///
   /// In es, this message translates to:
-  /// **'Con {minutes} min sin conexión, así que la cifra se queda corta.'**
+  /// **'{minutes} min sin ver la batería, así que no cuenta como medición de capacidad.'**
   String capacityGapWarning(String minutes);
 
   /// No description provided for @chargeReportTitle.
@@ -3616,8 +3616,8 @@ abstract class AppL10n {
   /// No description provided for @offlineImpliedUnusable.
   ///
   /// In es, this message translates to:
-  /// **'Solo se puede leer entre un 25 % y un 90 % de carga.'**
-  String get offlineImpliedUnusable;
+  /// **'Solo se puede leer entre un {min} % y un {max} % de carga.'**
+  String offlineImpliedUnusable(String min, String max);
 
   /// No description provided for @offlineSoh.
   ///
@@ -4558,7 +4558,7 @@ abstract class AppL10n {
   /// No description provided for @trendsCapacityHint.
   ///
   /// In es, this message translates to:
-  /// **'Un punto por descarga completa medida, la más vieja a la izquierda. La altura es los amperios-hora que la batería realmente tenía esa vez. Es la única medida real de desgaste que hay aquí, y la más lenta en llenarse: espera que baje un poco cada año, y desconfía de una caída de golpe.'**
+  /// **'Un punto por descarga completa medida, la más vieja a la izquierda: de celdas arriba a celda en el corte, vigilada entera y sin carga en medio. La altura es los amperios-hora que salieron esa vez. Es la única medida real de desgaste que hay aquí, y la más lenta en llenarse: espera que baje un poco cada año, y desconfía de una caída de golpe.'**
   String get trendsCapacityHint;
 
   /// No description provided for @trendsAxisTime.
@@ -4630,7 +4630,7 @@ abstract class AppL10n {
   /// No description provided for @rangeFullFromMeasured.
   ///
   /// In es, this message translates to:
-  /// **'Sale de una capacidad que esta batería midió de verdad.'**
+  /// **'Sale de una descarga completa medida en esta batería, de celdas arriba a celda en el corte.'**
   String get rangeFullFromMeasured;
 
   /// No description provided for @rangeNoneLearned.
@@ -8023,6 +8023,48 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'hacen falta más lecturas con las celdas separadas'**
   String get balanceRankingNeedsReadings;
+
+  /// No description provided for @capacityNoFullMark.
+  ///
+  /// In es, this message translates to:
+  /// **'No se sabe dónde está lleno este pack: el BMS no ha dicho a cuánto carga y la química no se conoce. Indícala en los datos del pack para poder empezar el test.'**
+  String get capacityNoFullMark;
+
+  /// No description provided for @capacityStopEarly.
+  ///
+  /// In es, this message translates to:
+  /// **'Terminar aquí'**
+  String get capacityStopEarly;
+
+  /// No description provided for @capacityStopEarlyHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Si terminas antes del corte se guarda como parcial: lo contado es real, pero es un pedazo del pack y no se convierte en capacidad.'**
+  String get capacityStopEarlyHint;
+
+  /// No description provided for @capacityPartialTag.
+  ///
+  /// In es, this message translates to:
+  /// **'parcial'**
+  String get capacityPartialTag;
+
+  /// No description provided for @capacityLegacyTag.
+  ///
+  /// In es, this message translates to:
+  /// **'antigua'**
+  String get capacityLegacyTag;
+
+  /// No description provided for @capacityChargedTag.
+  ///
+  /// In es, this message translates to:
+  /// **'cargada a mitad'**
+  String get capacityChargedTag;
+
+  /// No description provided for @capacityUntrustedNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Las marcadas no cuentan como capacidad. «parcial»: terminó antes del corte. «antigua»: se cerró con el porcentaje del BMS, que se calcula contra la capacidad configurada, así que devolvía esa configuración y no lo que tiene la batería. «cargada a mitad»: entró corriente por el camino.'**
+  String get capacityUntrustedNote;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

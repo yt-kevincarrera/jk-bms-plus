@@ -125,13 +125,15 @@ class _ComparePacksScreenState extends State<ComparePacksScreen> {
         best: (p) => p.healthPercent,
         higherIsBetter: true,
       ),
+      // No winner. This is what each BMS was told to hold, not what either
+      // pack holds: a pack configured for 50 Ah "beating" one configured for
+      // 40 is a comparison of two settings, and marking it green read as a
+      // verdict on the batteries.
       _Row(
         t.offlineImplied,
         (p) => p.impliedCapacityAh == null
             ? null
             : '${p.impliedCapacityAh!.toStringAsFixed(1)} Ah',
-        best: (p) => p.impliedCapacityAh,
-        higherIsBetter: true,
       ),
       _Row(
         t.settingsCatalogue,

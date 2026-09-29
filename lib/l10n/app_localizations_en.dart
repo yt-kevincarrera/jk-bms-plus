@@ -1479,7 +1479,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get capacityIntro =>
-      'The one real measurement in this app. Everything else is arithmetic on what the BMS says about itself; this counts the amp-hours that actually come out between full and cutoff, and compares them with what you were sold.';
+      'The one real measurement in this app. It counts the amp-hours that come out from the highest cell at the top, with the charger already letting go, to the lowest cell at the cutoff or the BMS cutting. The cells mark both ends, not the BMS percentage: that percentage is worked out against the configured capacity, and measuring with it would only hand that setting back.';
 
   @override
   String get capacityStart => 'Start test';
@@ -1492,7 +1492,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get capacityNotFull =>
-      'Charge the pack to the top first. Starting half full would only measure part of it, and the result would come out short.';
+      'Charge the pack to the top first. The test starts when the highest cell is at the top and the charger is down to a trickle, not when the BMS says 100 %. Starting half full would only measure part of it.';
 
   @override
   String get capacityNoReadings => 'Connect the BMS first.';
@@ -1528,14 +1528,14 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get capacityAutoNote =>
-      'You do not have to remember anything: the app reads back the stored readings and takes any complete discharge that already happened as a measurement. The button is for doing one deliberately, with live progress.';
+      'You do not have to remember anything: the app reads back the stored readings and takes any complete discharge that already happened as a measurement: cells at the top to a cell at the cutoff, with no charge and no long hole in the middle. The button is for doing one deliberately, with live progress.';
 
   @override
   String get capacityAutoTag => 'found';
 
   @override
   String capacityGapWarning(String minutes) {
-    return '$minutes min of it went unwatched, so the figure reads low.';
+    return '$minutes min of it went unwatched, so it does not count as a capacity measurement.';
   }
 
   @override
@@ -2066,8 +2066,9 @@ class AppL10nEn extends AppL10n {
       'A setting inside the BMS, not a measurement of the cells. It is what every percentage the pack reports is scaled against, so it is worth seeing, and it stays the same however tired the battery gets.';
 
   @override
-  String get offlineImpliedUnusable =>
-      'Only readable between about 25 % and 90 % charge.';
+  String offlineImpliedUnusable(String min, String max) {
+    return 'Only readable between $min % and $max % charge.';
+  }
 
   @override
   String get offlineSoh => 'Health the BMS claims';
@@ -2633,7 +2634,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get trendsCapacityHint =>
-      'One dot per full discharge measured, oldest on the left. Height is the amp-hours the pack actually held that time. This is the only real measure of wear here, and it is the slowest to fill in: expect it to go down a little each year and be suspicious of a sudden drop.';
+      'One dot per full discharge measured, oldest on the left: cells at the top to a cell at the cutoff, watched the whole way, with no charge in the middle. Height is the amp-hours that came out that time. This is the only real measure of wear here, and it is the slowest to fill in: expect it to go down a little each year and be suspicious of a sudden drop.';
 
   @override
   String get trendsAxisTime => 'left to right: oldest to newest';
@@ -2679,7 +2680,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get rangeFullFromMeasured =>
-      'From a capacity this pack actually measured.';
+      'From a full discharge measured on this pack, cells at the top to a cell at the cutoff.';
 
   @override
   String get rangeNoneLearned =>
@@ -4780,4 +4781,28 @@ class AppL10nEn extends AppL10n {
   @override
   String get balanceRankingNeedsReadings =>
       'needs more readings with the cells apart';
+
+  @override
+  String get capacityNoFullMark =>
+      'Where this pack is full is unknown: the BMS has not said what it charges to and the chemistry is not known. Set it in the pack details to be able to start the test.';
+
+  @override
+  String get capacityStopEarly => 'Finish here';
+
+  @override
+  String get capacityStopEarlyHint =>
+      'Finishing before the cutoff keeps it as a partial: what it counted is real, but it is a slice of the pack and it is never turned into a capacity.';
+
+  @override
+  String get capacityPartialTag => 'partial';
+
+  @override
+  String get capacityLegacyTag => 'old';
+
+  @override
+  String get capacityChargedTag => 'charged part way';
+
+  @override
+  String get capacityUntrustedNote =>
+      'The tagged ones do not count as a capacity. \"partial\": it ended before the cutoff. \"old\": it was closed on the BMS percentage, which is worked out against the configured capacity, so it handed that setting back rather than what the battery holds. \"charged part way\": current went in along the way.';
 }

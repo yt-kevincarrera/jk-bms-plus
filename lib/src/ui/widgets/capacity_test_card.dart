@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../bms_service.dart';
 import '../../data/database.dart';
+import '../../metrics/capacity_endpoints.dart';
 import '../../metrics/capacity_test_runner.dart';
 import '../../metrics/deepest_discharge.dart';
 import '../theme.dart';
@@ -83,31 +84,40 @@ class _CapacityTestCardState extends State<CapacityTestCard> {
           for (final test in completed.take(5)) ...[
             InfoRow(
               // A measurement the app found says so, because it is a weaker
-              // claim than one someone stood over.
-              test.automatic
-                  ? '${_date(test.endedAt ?? test.startedAt)}  ·  '
-                      '${t.capacityAutoTag}'
-                  : _date(test.endedAt ?? test.startedAt),
+              // claim than one someone stood over. So does one that is not a
+              // measurement of the pack at all.
+              [
+                _date(test.endedAt ?? test.startedAt),
+                if (test.automatic) t.capacityAutoTag,
+                ...capacityTestTags(t, test),
+              ].join('  ·  '),
               // The amp-hours measured are the fact; the percentage is a
               // comparison against a claim, so it only appears when a claim
-              // exists.
+              // exists, and only for a run that measured the whole pack: a
+              // partial as a percentage of the pack reads as a verdict.
               //
               // Against a catalogue figure that was only the BMS's own
               // setting borrowed, the percentage is of the configuration,
               // said so, and not coloured as a verdict on what was sold.
-              test.catalogueAh == null
+              test.catalogueAh == null || !test.isTrustworthy
                   ? '${test.measuredAh.toStringAsFixed(1)} Ah'
                   : _againstConfigured(test)
                   ? '${test.measuredAh.toStringAsFixed(1)} Ah  ·  '
                         '${t.capacityOfConfigured((test.measuredAh / test.catalogueAh! * 100).toStringAsFixed(0))}'
                   : '${test.measuredAh.toStringAsFixed(1)} Ah  ·  '
                         '${(test.measuredAh / test.catalogueAh! * 100).toStringAsFixed(0)} %',
-              valueColor: test.catalogueAh == null || _againstConfigured(test)
+              valueColor:
+                  test.catalogueAh == null ||
+                      !test.isTrustworthy ||
+                      _againstConfigured(test)
                   ? null
                   : _resultTone(test.measuredAh / test.catalogueAh!),
-              last: test == completed.last && test.gapSeconds < 120,
+              dim: !test.isTrustworthy,
+              last:
+                  test == completed.last &&
+                  test.gapSeconds <= CapacityTestTrust.maxGapSeconds,
             ),
-            if (test.gapSeconds >= 120)
+            if (test.gapSeconds > CapacityTestTrust.maxGapSeconds)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
@@ -122,6 +132,18 @@ class _CapacityTestCardState extends State<CapacityTestCard> {
                 ),
               ),
           ],
+          if (completed.take(5).any((x) => capacityTestTags(t, x).isNotEmpty))
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                t.capacityUntrustedNote,
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  height: 1.4,
+                  color: AppTheme.textFaint,
+                ),
+              ),
+            ),
         ],
         const SizedBox(height: 8),
       ],
@@ -141,8 +163,21 @@ class _CapacityTestCardState extends State<CapacityTestCard> {
         InfoRow(
           t.capacityStartedAt,
           runner.startedAt == null ? '--' : _date(runner.startedAt!),
-          last: !runner.chargedDuringRun,
+          last: !runner.chargedDuringRun &&
+              runner.gapSeconds <= CapacityTestTrust.maxGapSeconds,
         ),
+        if (runner.gapSeconds > CapacityTestTrust.maxGapSeconds)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              t.capacityGapWarning((runner.gapSeconds / 60).round().toString()),
+              style: const TextStyle(
+                fontSize: 12,
+                height: 1.45,
+                color: AppTheme.watch,
+              ),
+            ),
+          ),
         if (runner.chargedDuringRun)
           Padding(
             padding: const EdgeInsets.only(top: 8),
@@ -156,14 +191,38 @@ class _CapacityTestCardState extends State<CapacityTestCard> {
             ),
           ),
         const SizedBox(height: 12),
-        OutlinedButton.icon(
-          onPressed: () async {
-            await widget.service.abortCapacityTest();
-            if (mounted) setState(() {});
-            await _load();
-          },
-          icon: const Icon(Icons.stop, size: 18),
-          label: Text(t.capacityAbort),
+        Text(
+          t.capacityStopEarlyHint,
+          style: const TextStyle(
+            fontSize: 11.5,
+            height: 1.4,
+            color: AppTheme.textFaint,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 6,
+          children: [
+            OutlinedButton.icon(
+              onPressed: () async {
+                await widget.service.stopCapacityTestEarly();
+                if (mounted) setState(() {});
+                await _load();
+              },
+              icon: const Icon(Icons.flag_outlined, size: 18),
+              label: Text(t.capacityStopEarly),
+            ),
+            OutlinedButton.icon(
+              onPressed: () async {
+                await widget.service.abortCapacityTest();
+                if (mounted) setState(() {});
+                await _load();
+              },
+              icon: const Icon(Icons.stop, size: 18),
+              label: Text(t.capacityAbort),
+            ),
+          ],
         ),
       ];
 
@@ -171,6 +230,7 @@ class _CapacityTestCardState extends State<CapacityTestCard> {
     final blocked = widget.service.capacityTestBlockedBy;
     final reason = switch (blocked) {
       CapacityTestBlock.notFull => t.capacityNotFull,
+      CapacityTestBlock.noFullMark => t.capacityNoFullMark,
       CapacityTestBlock.noReadings => t.capacityNoReadings,
       null => t.capacityCost,
     };
@@ -251,3 +311,15 @@ class _CapacityTestCardState extends State<CapacityTestCard> {
     return '${two(d.day)}/${two(d.month)}/${d.year}';
   }
 }
+
+/// The short words that say why a stored test is not a capacity: finished
+/// early, closed on the old percentage rule, or charged in the middle. Empty
+/// for a trustworthy one. The gap has its own sentence, with its minutes.
+List<String> capacityTestTags(AppL10n t, CapacityTest test) => [
+  switch (test.endReasonValue) {
+    CapacityEndReason.stoppedEarly => t.capacityPartialTag,
+    CapacityEndReason.legacy => t.capacityLegacyTag,
+    _ => null,
+  },
+  if (test.chargedDuringRun) t.capacityChargedTag,
+].whereType<String>().toList();

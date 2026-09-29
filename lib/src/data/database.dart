@@ -76,6 +76,11 @@ class Devices extends Table {
   /// every row written before the app knew a second brand, all of them JK.
   TextColumn get brand => text().nullable()();
 
+  /// The last finished charge's report, as JSON, or null when none has been
+  /// recorded. It used to live only in memory, so after a restart the screen
+  /// said no charge had ever been recorded on a pack that had recorded many.
+  TextColumn get lastChargeJson => text().nullable()();
+
   @override
   Set<Column<Object>> get primaryKey => {id};
 }
@@ -318,6 +323,17 @@ class CapacityTests extends Table {
 
   /// Seconds of the discharge that were not observed. Zero on a clean run.
   IntColumn get gapSeconds => integer().withDefault(const Constant(0))();
+
+  /// What closed the run, by [CapacityEndReason] name. Null while a run is
+  /// open. Every run finished before this was stored reads `legacy`: those
+  /// opened and closed on the BMS's own percentage, so what they counted was
+  /// the configured capacity handed back, not a measurement.
+  TextColumn get endReason => text().nullable()();
+
+  /// True when current went in part way through. The total then describes
+  /// nothing, and it is kept so it can be shown as that rather than lost.
+  BoolColumn get chargedDuringRun =>
+      boolean().withDefault(const Constant(false))();
   TextColumn get note => text().withDefault(const Constant(''))();
 
   /// Which pack this was recorded on. Null for rows written before the app
@@ -438,7 +454,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 17;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -485,10 +501,19 @@ class AppDatabase extends _$AppDatabase {
               devices.chemistry,
               devices.acquiredAt,
               devices.brand,
+              devices.lastChargeJson,
             ],
           ),
         );
-        await m.alterTable(TableMigration(capacityTests));
+        await m.alterTable(
+          TableMigration(
+            capacityTests,
+            newColumns: [
+              capacityTests.endReason,
+              capacityTests.chargedDuringRun,
+            ],
+          ),
+        );
         await customStatement(
           'UPDATE devices SET catalogue_capacity_ah = NULL',
         );
@@ -583,6 +608,26 @@ class AppDatabase extends _$AppDatabase {
           "(SELECT id FROM devices WHERE brand = 'ant')",
         );
       }
+      if (from < 17) {
+        // Anything older than 5 had capacity_tests and devices rebuilt from
+        // the current schema by the from < 5 step, which already carries
+        // these. Adding them again would fail with a duplicate column and
+        // stop the app opening.
+        if (from >= 5) {
+          await m.addColumn(capacityTests, capacityTests.endReason);
+          await m.addColumn(capacityTests, capacityTests.chargedDuringRun);
+          await m.addColumn(devices, devices.lastChargeJson);
+        }
+        // Every finished run so far opened at 97 % and closed at 3 % on the
+        // BMS's own percentage, which is remaining over the configured
+        // capacity: what it counted was that configured figure handed back.
+        // Kept, and marked, rather than deleted: the rows are the rider's
+        // history, and a detected one is replaced by a proper re-detection
+        // when its readings are still on file.
+        await customStatement(
+          "UPDATE capacity_tests SET end_reason = 'legacy' WHERE completed = 1",
+        );
+      }
     },
   );
 
@@ -651,6 +696,19 @@ class AppDatabase extends _$AppDatabase {
   Future<Snapshot?> lastSnapshotFor(String deviceId) =>
       (select(snapshots)
             ..where((s) => s.deviceId.equals(deviceId))
+            ..orderBy([(s) => OrderingTerm.desc(s.timestamp)])
+            ..limit(1))
+          .getSingleOrNull();
+
+  /// The newest reading for a pack taken before [before]: the last thing the
+  /// app saw before the current connection began.
+  Future<Snapshot?> lastSnapshotBefore(String deviceId, DateTime before) =>
+      (select(snapshots)
+            ..where(
+              (s) =>
+                  s.deviceId.equals(deviceId) &
+                  s.timestamp.isSmallerThanValue(before),
+            )
             ..orderBy([(s) => OrderingTerm.desc(s.timestamp)])
             ..limit(1))
           .getSingleOrNull();

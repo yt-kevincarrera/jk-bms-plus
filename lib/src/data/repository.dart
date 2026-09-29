@@ -7,6 +7,7 @@ import '../inspection/inspection_result.dart';
 import '../pack/pack_baseline.dart';
 import '../inspection/inspection_series.dart';
 import '../metrics/capacity_cycle_detector.dart';
+import '../metrics/capacity_endpoints.dart';
 import '../metrics/trip_energy_repair.dart';
 import '../metrics/trip_recorder.dart';
 import '../model/bms_snapshot.dart';
@@ -605,6 +606,10 @@ class BmsRepository {
 
   // --- Capacity tests ---
 
+  /// Filed under the pack connected now. It used to be filed under no pack
+  /// at all, so a manual run never appeared in that pack's history, was
+  /// never found again to be resumed, and counted as a row from before packs
+  /// were tracked.
   Future<int> beginCapacityTest({
     required DateTime startedAt,
     required double startSoc,
@@ -620,16 +625,23 @@ class BmsRepository {
       measuredAh: 0,
       measuredWh: 0,
       catalogueAh: Value(catalogueAh),
+      deviceId: Value(activeDeviceId),
     ),
   );
 
   /// Called as the run goes, so a closed app costs seconds rather than hours.
+  ///
+  /// The unwatched seconds and the charged flag go with it. Neither was ever
+  /// written, so every manual test read as gap-free and uncharged the moment
+  /// it finished, whatever had happened during it.
   Future<void> updateCapacityProgress(
     int id, {
     required double measuredAh,
     required double measuredWh,
     required double endSoc,
     required double endPackVoltage,
+    int gapSeconds = 0,
+    bool chargedDuringRun = false,
   }) => db.updateCapacityTest(
     id,
     CapacityTestsCompanion(
@@ -637,6 +649,8 @@ class BmsRepository {
       measuredWh: Value(measuredWh),
       endSoc: Value(endSoc),
       endPackVoltage: Value(endPackVoltage),
+      gapSeconds: Value(gapSeconds),
+      chargedDuringRun: Value(chargedDuringRun),
     ),
   );
 
@@ -647,6 +661,9 @@ class BmsRepository {
     required double endPackVoltage,
     required double measuredAh,
     required double measuredWh,
+    required CapacityEndReason endReason,
+    int gapSeconds = 0,
+    bool chargedDuringRun = false,
   }) => db.updateCapacityTest(
     id,
     CapacityTestsCompanion(
@@ -656,6 +673,9 @@ class BmsRepository {
       measuredAh: Value(measuredAh),
       measuredWh: Value(measuredWh),
       completed: const Value(true),
+      endReason: Value(endReason.name),
+      gapSeconds: Value(gapSeconds),
+      chargedDuringRun: Value(chargedDuringRun),
     ),
   );
 
@@ -664,9 +684,12 @@ class BmsRepository {
   Future<List<CapacityTest>> capacityTests(String deviceId) =>
       db.allCapacityTests(deviceId);
 
+  /// Tests that measured the pack: finished at the cutoff, watched, never
+  /// charged in the middle. A partial or a run closed on the percentage is
+  /// history, not a measurement, and must not stop the advice asking for one.
   Future<int> countCompletedCapacityTests(String deviceId) async {
     final all = await db.allCapacityTests(deviceId);
-    return all.where((t) => t.completed).length;
+    return all.where((t) => t.isTrustworthy).length;
   }
 
   /// A run that was interrupted, if there is one, so it can be picked back up.
@@ -688,30 +711,42 @@ class BmsRepository {
     final existing = await db.allCapacityTests(deviceId);
     // Matched on the start instant: the same discharge scanned twice must not
     // become two measurements.
-    if (cycleAlreadyRecorded(
-      cycle.startedAt,
-      existing.map((t) => t.startedAt),
-    )) {
-      return false;
+    final match = [
+      for (final t in existing)
+        if (cycleAlreadyRecorded(cycle.startedAt, [t.startedAt])) t,
+    ];
+    final values = CapacityTestsCompanion.insert(
+      startedAt: cycle.startedAt,
+      endedAt: Value(cycle.endedAt),
+      startSoc: cycle.startSoc,
+      endSoc: cycle.endSoc,
+      startPackVoltage: cycle.startPackVoltage,
+      endPackVoltage: cycle.endPackVoltage,
+      measuredAh: cycle.measuredAh,
+      measuredWh: cycle.measuredWh,
+      catalogueAh: Value(catalogueAh),
+      completed: const Value(true),
+      automatic: const Value(true),
+      gapSeconds: Value(cycle.gapSeconds),
+      endReason: Value(cycle.endReason.name),
+      deviceId: Value(deviceId),
+    );
+    if (match.isNotEmpty) {
+      // A cycle the old detector found, closed on the BMS's percentage, is
+      // re-measured from its own readings rather than left standing as the
+      // configured capacity handed back. Only the detector's own rows: a
+      // run somebody stood over is theirs, and is never rewritten.
+      final legacy = match.where(
+        (t) =>
+            t.automatic &&
+            CapacityEndReason.byName(t.endReason) == CapacityEndReason.legacy,
+      );
+      if (legacy.isEmpty) return false;
+      await db.updateCapacityTest(legacy.first.id, values);
+      return true;
     }
 
-    await db.insertCapacityTest(
-      CapacityTestsCompanion.insert(
-        startedAt: cycle.startedAt,
-        endedAt: Value(cycle.endedAt),
-        startSoc: cycle.startSoc,
-        endSoc: cycle.endSoc,
-        startPackVoltage: cycle.startPackVoltage,
-        endPackVoltage: cycle.endPackVoltage,
-        measuredAh: cycle.measuredAh,
-        measuredWh: cycle.measuredWh,
-        catalogueAh: Value(catalogueAh),
-        completed: const Value(true),
-        automatic: const Value(true),
-        gapSeconds: Value(cycle.gapSeconds),
-        deviceId: Value(deviceId),
-      ),
-    );
+    await db.insertCapacityTest(values);
     return true;
   }
 
