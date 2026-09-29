@@ -7,6 +7,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../app_settings.dart';
 import '../../ble/waiting_diagnosis.dart';
 import '../../bms_service.dart';
+import '../../protocol/bms_brand.dart';
 import '../../metrics/charge_eta.dart';
 import '../../metrics/range_estimator.dart';
 import '../../metrics/range_outlook.dart';
@@ -65,14 +66,29 @@ class _NowTabState extends State<NowTab> {
     final service = widget.service;
     final stats = service.stats;
     final link = service.lastLinkState;
-    final reason = diagnoseWaiting(
-      link: link,
-      framesAccepted: stats.accepted,
-      cellInfoFrames: service.cellInfoFrames,
-      heldBackFrames: service.heldBackFrames,
-      decodeFailures: service.decodeFailures,
-      variantKnown: service.variant != null,
-    );
+    final isAnt = service.brand == BmsBrand.ant;
+    // ANT's own counters, not the JK ones: cellInfoFrames and
+    // deviceInfoFrames never move for an ANT connection, and reusing them
+    // here would describe a pack that is actually talking as silent, or as
+    // "device info only" when its buffers are simply failing to frame.
+    final reason = isAnt
+        ? diagnoseWaiting(
+            link: link,
+            framesAccepted: stats.accepted,
+            cellInfoFrames: service.antStatusFrames,
+            heldBackFrames: 0,
+            decodeFailures: service.decodeFailures,
+            variantKnown: true,
+            rejectedFrames: service.antRejectedFrames,
+          )
+        : diagnoseWaiting(
+            link: link,
+            framesAccepted: stats.accepted,
+            cellInfoFrames: service.cellInfoFrames,
+            heldBackFrames: service.heldBackFrames,
+            decodeFailures: service.decodeFailures,
+            variantKnown: service.variant != null,
+          );
     final why = switch (reason) {
       WaitingReason.linkDown => t.waitingWhyLinkDown,
       WaitingReason.noFrames => t.waitingWhyNoFrames,
@@ -83,16 +99,19 @@ class _NowTabState extends State<NowTab> {
     };
     // Terse and the same in every language, like the exception text it sits
     // beside: what the app saw, so a screenshot settles which stage stalled.
-    final evidence =
-        'link ${link.name} · ${stats.bytesReceived} bytes · '
-        '${stats.accepted} frames ok · ${stats.badChecksum} bad checksum · '
-        '${service.deviceInfoFrames} device info · '
-        '${service.cellInfoFrames} cell info · '
-        '${service.heldBackFrames} held back · '
-        '${service.decodeFailures} undecodable · '
-        '${service.snapshotsEmitted} emitted · '
-        'variant ${service.variant?.name ?? '?'} · '
-        'MTU ${service.negotiatedMtu ?? '?'}';
+    final evidence = isAnt
+        ? 'link ${link.name} · ${stats.bytesReceived} bytes · '
+              '${t.antEvidence(service.antStatusFrames, service.antInfoFrames, service.antRejectedFrames)}'
+              '${service.lastDecodeError == null ? '' : ' · ${service.lastDecodeError}'}'
+        : 'link ${link.name} · ${stats.bytesReceived} bytes · '
+              '${stats.accepted} frames ok · ${stats.badChecksum} bad checksum · '
+              '${service.deviceInfoFrames} device info · '
+              '${service.cellInfoFrames} cell info · '
+              '${service.heldBackFrames} held back · '
+              '${service.decodeFailures} undecodable · '
+              '${service.snapshotsEmitted} emitted · '
+              'variant ${service.variant?.name ?? '?'} · '
+              'MTU ${service.negotiatedMtu ?? '?'}';
     final notices = service.recentProblems.take(3).toList();
 
     return [

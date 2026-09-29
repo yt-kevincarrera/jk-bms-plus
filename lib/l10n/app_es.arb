@@ -24,6 +24,10 @@
   "connectOtherDevicesHint": "La app no oculta nada. Si tu BMS tiene otro nombre, porque lo cambiaste en la app oficial o porque ese modelo no anuncia el suyo, va a salir en esta lista. Búscalo por la señal más fuerte y pruébalo.",
   "connectLikelyBms": "probable BMS",
   "connectByService": "anuncia el servicio JK",
+  "brandAskTitle": "¿Qué BMS es?",
+  "brandAskBody": "El nombre no lo dice. Elige la marca una vez; la app la recuerda.",
+  "brandJk": "JK (Jikong)",
+  "brandAnt": "ANT",
   "tapBusy": "Ya hay un intento en marcha. Espera a que termine: tocar otra vez no lo acelera y sí puede dejar otra conexión colgada en el teléfono.",
   "tapCooling": "Espera {seconds} s antes de reintentar con esta batería. La pausa no es un capricho: el BMS tarda unos segundos en soltar el enlace anterior, y cada intento dentro de esa ventana deja una conexión que el teléfono no cierra.",
   "@tapCooling": {
@@ -238,6 +242,7 @@
   "systemPowerOnCount": "Encendidos",
   "systemUptime": "Tiempo encendido",
   "systemDeviceInfoMissing": "todavía no llegó",
+  "systemBrand": "Marca",
   "systemVariantTitle": "Variante de protocolo",
   "systemVariantInUse": "En uso",
   "systemVariantUndecided": "sin decidir",
@@ -245,6 +250,12 @@
   "systemVariantWarning": "Cambia esto si los valores decodificados se ven mal. Elegir la variante equivocada no falla de forma ruidosa: decodifica en los offsets incorrectos y produce números creíbles pero falsos.",
   "systemVariantProved": "Comprobado contra una lectura real: los números que salen con este formato describen una batería posible.",
   "systemVariantCorrected": "La app cambió de formato por su cuenta. La versión del firmware apuntaba a otro, y con ese los números eran imposibles: este es el que cuadra con la lectura.",
+  "antStatusTitle": "Estado ANT",
+  "antBatteryState": "Estado de la batería",
+  "antChargeMosfet": "MOSFET de carga",
+  "antDischargeMosfet": "MOSFET de descarga",
+  "antBalancer": "Balanceador",
+  "antBalancerTemp": "Temperatura del balanceador",
   "systemConnectionTitle": "Conexión",
   "systemMtu": "MTU",
   "systemMtuValue": "{bytes} bytes",
@@ -262,6 +273,7 @@
   "systemAcceptRate": "Tasa de aceptación",
   "systemBytesReceived": "Bytes recibidos",
   "systemSettingsTitle": "Configuración del BMS (solo lectura)",
+  "settingsNotExposed": "Este BMS no expone su configuración a la app.",
   "systemNotices": "Avisos",
   "systemRawConsole": "Consola de frames crudos",
   "systemReadOnlyNote": "Esta app nunca escribe configuración al BMS. Todo lo de arriba es solo lectura.",
@@ -1082,8 +1094,22 @@
   "connectWaitingFirst": "Conectando y esperando la primera lectura...",
   "connectNotABms": "Se conectó, pero no llegó ninguna lectura de BMS. Casi seguro que ese dispositivo no es un BMS JK. Si crees que sí lo es, mira la consola de frames crudos en Ajustes.",
   "connectLinkNeverCameUp": "No se pudo levantar la conexión Bluetooth con la batería en 25 segundos, y la app lo intentó más de una vez. Comprueba que la batería esté encendida y cerca, y que la app oficial de JK esté cerrada del todo, no solo en segundo plano.",
-  "connectSilentJk": "Se conectó, pero la batería no dijo nada en 12 segundos. Se anuncia como JK, así que sí es un BMS JK: su única sesión de datos la tiene otro, o se quedó colgada. Lo primero a mirar es la app oficial de JK, que se reconecta sola desde el segundo plano: fuérzala a detenerse en los ajustes de Android, no solo la cierres. Si no hay nadie más, el módulo Bluetooth del BMS suelta la sesión colgada por sí solo al cabo de un rato, y apagar y encender el Bluetooth del teléfono no lo acelera; con el vigilante de proximidad activado la app vuelve a intentarlo sola. La consola de frames crudos en Ajustes muestra si llega algo.",
+  "connectSilent": "Conectó pero no llegaron lecturas. Si elegiste la marca, prueba con la otra.",
   "connectTalkingUndecoded": "Se conectó y están llegando bytes, pero ninguno se decodifica como un frame JK. Abre la consola con el icono de terminal de arriba: lo que aparezca ahí es lo que hace falta para añadir soporte.",
+  "antEvidence": "ANT: {status} de estado, {info} de info, {rejected} rechazadas",
+  "@antEvidence": {
+    "placeholders": {
+      "status": {
+        "type": "int"
+      },
+      "info": {
+        "type": "int"
+      },
+      "rejected": {
+        "type": "int"
+      }
+    }
+  },
   "storedCount": "{count} guardadas",
   "@storedCount": {
     "placeholders": {
@@ -1350,7 +1376,7 @@
   "troubleLocationOff": "La ubicación del teléfono está apagada. Android la necesita encendida para buscar dispositivos Bluetooth.",
   "troubleGeneric": "Problema de Bluetooth. Sigue reintentando solo.",
   "troubleSlowFrames": "El teléfono concedió un tamaño de paquete Bluetooth menor del pedido. Las lecturas llegan en más trozos, lo que es más lento pero igual de correcto.",
-  "troubleNotJkBms": "Ese dispositivo no tiene el servicio Bluetooth de JK. No es un BMS JK, o no uno con el que esta app pueda hablar.",
+  "troubleNotJkBms": "Ese dispositivo no tiene el servicio Bluetooth que usan los BMS compatibles. No es un BMS compatible, o no uno con el que esta app pueda hablar.",
   "troublePackMute": "La batería estuvo conectada pero muda: en 20 segundos no mandó nada que la app pudiera leer, pese a pedírselo varias veces. La app soltó la conexión a propósito y vuelve a entrar en unos segundos; es la única forma de que el módulo Bluetooth del BMS suelte la sesión que se le quedó colgada. En Detalles dice cuántos bytes llegaron.",
   "screenAwakeTitle": "Mantener la pantalla encendida",
   "screenAwakeHint": "Antes se quedaba encendida todo el tiempo que esta pantalla estuviera abierta, lo cual está bien en un soporte de moto y mal en el sofá.",

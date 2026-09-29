@@ -803,7 +803,7 @@ class BleTransport implements BmsLink {
     }
     throw NotABmsException(
       'This device does not expose a notifying $jkCharacteristicUuid16 '
-      'characteristic on service $jkServiceUuid16, so it is not a JK BMS '
+      'characteristic on service $jkServiceUuid16, so it is not a BMS '
       'this app can talk to.',
     );
   }

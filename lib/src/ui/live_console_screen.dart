@@ -8,6 +8,7 @@ import '../ble/ble_transport.dart';
 import '../bms_service.dart';
 import '../model/bms_device_info.dart';
 import '../model/bms_snapshot.dart';
+import '../protocol/bms_brand.dart';
 import '../protocol/jk_frame.dart';
 
 /// Milestone 1 deliverable: prove the link decodes correctly, live, for as long
@@ -162,6 +163,11 @@ class _LiveConsoleScreenState extends State<LiveConsoleScreen> {
             stats: _stats,
             mtu: widget.service.negotiatedMtu,
             lastSnapshotAt: _lastSnapshotAt,
+            brand: widget.service.brand,
+            antStatusFrames: widget.service.antStatusFrames,
+            antInfoFrames: widget.service.antInfoFrames,
+            antRejectedFrames: widget.service.antRejectedFrames,
+            lastDecodeError: widget.service.lastDecodeError,
           ),
           const Divider(height: 1),
           Expanded(
@@ -199,6 +205,11 @@ class _StatusStrip extends StatelessWidget {
     required this.stats,
     required this.mtu,
     required this.lastSnapshotAt,
+    required this.brand,
+    required this.antStatusFrames,
+    required this.antInfoFrames,
+    required this.antRejectedFrames,
+    required this.lastDecodeError,
   });
 
   final BleLinkState link;
@@ -207,6 +218,11 @@ class _StatusStrip extends StatelessWidget {
   final FrameStats? stats;
   final int? mtu;
   final DateTime? lastSnapshotAt;
+  final BmsBrand brand;
+  final int antStatusFrames;
+  final int antInfoFrames;
+  final int antRejectedFrames;
+  final String? lastDecodeError;
 
   @override
   Widget build(BuildContext context) {
@@ -264,6 +280,19 @@ class _StatusStrip extends StatelessWidget {
               'unsupported ${st.unsupportedType}  '
               'accept ${(st.acceptRate * 100).toStringAsFixed(1)}%'
               '${lastSnapshotAt == null ? "" : "  last ${_ago(lastSnapshotAt!)}"}',
+              style: theme.textTheme.labelSmall,
+            ),
+          ],
+          // The JK line above says nothing about an ANT: its cell-info and
+          // held-back counters never move for it. This is the diagnostic
+          // this console exists for, so ANT gets its own line rather than
+          // being read through JK's.
+          if (brand == BmsBrand.ant) ...[
+            const SizedBox(height: 4),
+            Text(
+              'ant status $antStatusFrames  info $antInfoFrames  '
+              'rejected $antRejectedFrames'
+              '${lastDecodeError == null ? "" : "  last error: $lastDecodeError"}',
               style: theme.textTheme.labelSmall,
             ),
           ],

@@ -24,6 +24,10 @@
   "connectOtherDevicesHint": "Nothing is hidden. If your BMS has a different name — renamed in the official app, or a model that does not advertise one — it is in this list. Look for the strongest signal and try it.",
   "connectLikelyBms": "likely BMS",
   "connectByService": "advertises the JK service",
+  "brandAskTitle": "Which BMS is this?",
+  "brandAskBody": "The name does not say. Pick the brand once; the app remembers it.",
+  "brandJk": "JK (Jikong)",
+  "brandAnt": "ANT",
   "tapBusy": "An attempt is already running. Let it finish: tapping again does not speed it up and can leave another connection stuck on the phone.",
   "tapCooling": "Wait {seconds} s before retrying this pack. The pause is not arbitrary: the BMS takes a few seconds to let go of the previous link, and every attempt inside that window leaves a connection the phone does not close.",
   "@tapCooling": {
@@ -238,6 +242,7 @@
   "systemPowerOnCount": "Power-on count",
   "systemUptime": "Uptime",
   "systemDeviceInfoMissing": "not received yet",
+  "systemBrand": "Brand",
   "systemVariantTitle": "Protocol variant",
   "systemVariantInUse": "In use",
   "systemVariantUndecided": "not decided",
@@ -245,6 +250,12 @@
   "systemVariantWarning": "Override this if the decoded values look wrong. Picking the wrong variant does not fail loudly: it decodes at the wrong offsets and produces plausible nonsense.",
   "systemVariantProved": "Checked against a real reading: the numbers this framing produces describe a battery that could exist.",
   "systemVariantCorrected": "The app switched framing on its own. The firmware version pointed at another one, and with that one the numbers were impossible; this is the one the reading agrees with.",
+  "antStatusTitle": "ANT status",
+  "antBatteryState": "Battery state",
+  "antChargeMosfet": "Charge MOSFET",
+  "antDischargeMosfet": "Discharge MOSFET",
+  "antBalancer": "Balancer",
+  "antBalancerTemp": "Balancer temperature",
   "systemConnectionTitle": "Connection",
   "systemMtu": "MTU",
   "systemMtuValue": "{bytes} bytes",
@@ -262,6 +273,7 @@
   "systemAcceptRate": "Accept rate",
   "systemBytesReceived": "Bytes received",
   "systemSettingsTitle": "BMS settings (read-only)",
+  "settingsNotExposed": "This BMS does not expose its configuration to the app.",
   "systemNotices": "Notices",
   "systemRawConsole": "Raw frame console",
   "systemReadOnlyNote": "This app never writes settings to the BMS. Everything above is read-only.",
@@ -1082,8 +1094,22 @@
   "connectWaitingFirst": "Connecting and waiting for the first reading...",
   "connectNotABms": "It connected, but no BMS reading arrived. That device is almost certainly not a JK BMS. If you believe it is, check the raw frame console in Settings.",
   "connectLinkNeverCameUp": "The Bluetooth link to the pack did not come up in 25 seconds, and the app tried more than once. Check that the pack is on and nearby, and that the official JK app is fully closed, not just in the background.",
-  "connectSilentJk": "It connected, but the pack said nothing for 12 seconds. It announces itself as JK, so it is a JK BMS: its one data session belongs to someone else, or is stuck. Look first at the official JK app, which reconnects on its own from the background: force-stop it in Android settings, do not just close it. If nobody else is there, the BMS's Bluetooth module lets a stuck session go by itself after a while, and switching the phone's Bluetooth off and on does not hurry it; with the proximity watcher on, the app retries on its own. The raw frame console in Settings shows whether anything arrives.",
+  "connectSilent": "Connected but no readings arrived. If you picked the brand, try the other one.",
   "connectTalkingUndecoded": "It connected and bytes are arriving, but none of them decode as a JK frame. Open the console with the terminal icon at the top: what shows up there is what is needed to add support.",
+  "antEvidence": "ANT: {status} status, {info} info, {rejected} rejected",
+  "@antEvidence": {
+    "placeholders": {
+      "status": {
+        "type": "int"
+      },
+      "info": {
+        "type": "int"
+      },
+      "rejected": {
+        "type": "int"
+      }
+    }
+  },
   "storedCount": "{count} stored",
   "@storedCount": {
     "placeholders": {
@@ -1343,7 +1369,7 @@
   "troubleLocationOff": "Location is off on the phone. Android needs it on to scan for Bluetooth devices.",
   "troubleGeneric": "Bluetooth trouble. Keeps trying on its own.",
   "troubleSlowFrames": "The phone granted a smaller Bluetooth packet size than asked for. Readings arrive in more pieces, which is slower but still correct.",
-  "troubleNotJkBms": "That device has no JK Bluetooth service on it. It is not a JK BMS, or not one this app can talk to.",
+  "troubleNotJkBms": "That device has none of the Bluetooth service the supported BMS brands use. It is not a supported BMS, or not one this app can talk to.",
   "troublePackMute": "The pack was connected but mute: nothing this app could read in 20 seconds, despite being asked several times. The app let the connection go on purpose and is going back in within seconds; that is the only way to make the BMS's Bluetooth module drop the session it got stuck on. Details say how many bytes arrived.",
   "screenAwakeTitle": "Keep the screen on",
   "screenAwakeHint": "It used to be held on for as long as this screen was open, which is right in a phone mount and wrong on the sofa.",

@@ -13,6 +13,7 @@ import '../ble/proximity_watcher.dart';
 import '../ble/simulator/simulated_pack.dart';
 import '../bms_service.dart';
 import '../model/bms_snapshot.dart';
+import '../protocol/bms_brand.dart';
 import 'home_shell.dart';
 import 'locale_controller.dart';
 import 'theme.dart';
@@ -29,6 +30,17 @@ import 'live_console_screen.dart';
 import 'widgets/pro_gate.dart';
 import 'widgets/trip_summary_sheet.dart';
 import 'widgets/trip_summary_view.dart';
+
+/// Which brand a pack is, from what the app already knows, or null when a
+/// rider has to be asked.
+///
+/// Stored wins over the advertised name: a rider who already answered once
+/// for this pack should never be asked again just because it was renamed or
+/// its name never said anything to begin with. The name hint is the fallback
+/// for a pack never seen before. Neither known is the only honest case left
+/// for the sheet.
+BmsBrand? knownBrandFor({required String? stored, required BmsBrand? hint}) =>
+    stored != null ? BmsBrand.fromStored(stored) : hint;
 
 /// Scan, pick a BMS, or open demo mode.
 class ConnectScreen extends StatefulWidget {
@@ -462,9 +474,25 @@ class _ConnectScreenState extends State<ConnectScreen> {
                         size: 20,
                         color: AppTheme.textSecondary,
                       ),
-                      title: Text(
-                        d.name.isEmpty ? d.id : d.name,
-                        style: const TextStyle(fontSize: 14),
+                      title: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              d.name.isEmpty ? d.id : d.name,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ),
+                          if (d.brand case final stored?)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 6),
+                              child: Pill(
+                                BmsBrand.fromStored(stored) == BmsBrand.ant
+                                    ? t.brandAnt
+                                    : t.brandJk,
+                                color: AppTheme.textFaint,
+                              ),
+                            ),
+                        ],
                       ),
                       subtitle: Text(
                         t.storedLastSeen(_shortDate(d.lastSeenAt)),
@@ -588,6 +616,31 @@ class _ConnectScreenState extends State<ConnectScreen> {
 
     await widget.service.repository?.deleteDevice(d.id);
     await _loadStored();
+  }
+
+  /// What to print on the tile's brand chip, or null to show none. A saved
+  /// row's own brand outranks the advertised name for the same reason it
+  /// outranks it when actually connecting: it is the answer a rider already
+  /// gave.
+  String? _brandLabel(AppL10n t, DiscoveredBms d) {
+    final brand = knownBrandFor(
+      stored: _storedDevice(d.id)?.brand,
+      hint: d.brandHint,
+    );
+    return switch (brand) {
+      BmsBrand.jk => t.brandJk,
+      BmsBrand.ant => t.brandAnt,
+      null => null,
+    };
+  }
+
+  /// The stored row for a device already on record, or null for one never
+  /// seen before. Used to answer the brand question without asking twice.
+  Device? _storedDevice(String id) {
+    for (final d in _stored) {
+      if (d.id == id) return d;
+    }
+    return null;
   }
 
   static String _shortDate(DateTime utc) {
@@ -796,11 +849,25 @@ class _ConnectScreenState extends State<ConnectScreen> {
             ? AppTheme.good
             : AppTheme.textFaint,
       ),
-      title: Text(
-        d.name.isEmpty ? d.id : d.name,
-        style: TextStyle(
-          color: likely || isConnected ? null : AppTheme.textSecondary,
-        ),
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(
+              d.name.isEmpty ? d.id : d.name,
+              style: TextStyle(
+                color: likely || isConnected ? null : AppTheme.textSecondary,
+              ),
+            ),
+          ),
+          // A brand this screen already knows, from a stored row or from the
+          // name itself, said up front. It is what tells a rider apart two
+          // packs that otherwise look like the same battery in the list.
+          if (_brandLabel(t, d) case final label?)
+            Padding(
+              padding: const EdgeInsets.only(left: 6),
+              child: Pill(label, color: AppTheme.textFaint),
+            ),
+        ],
       ),
       subtitle: Text(
         subtitle,
@@ -994,9 +1061,77 @@ class _ConnectScreenState extends State<ConnectScreen> {
     await _connect(device);
   }
 
+  /// Asks which BMS this is, when nothing already on hand says. Dismissing it
+  /// -- the scrim, the drag handle, anything but a tap on one of the two
+  /// rows -- answers null, and the caller reads that as "not now".
+  Future<BmsBrand?> _askBrand(AppL10n t) => showModalBottomSheet<BmsBrand>(
+    context: context,
+    builder: (context) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                t.brandAskTitle,
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                t.brandAskBody,
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  height: 1.4,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.battery_charging_full),
+            title: Text(t.brandJk),
+            onTap: () => Navigator.of(context).pop(BmsBrand.jk),
+          ),
+          ListTile(
+            leading: const Icon(Icons.battery_charging_full),
+            title: Text(t.brandAnt),
+            onTap: () => Navigator.of(context).pop(BmsBrand.ant),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    ),
+  );
+
   Future<void> _connect(DiscoveredBms device) async {
     await _cancelScan();
     _troubleDuringAttempt = false;
+
+    // Stored, then the advertised name, and only then is a rider actually
+    // asked. Ruling: the service resolves stored rows and name hints on its
+    // own from `connect()`'s brand-less path, so this screen only ever hands
+    // it a brand when the sheet is the one that produced it -- an explicit
+    // brand with no stored row is exactly what the service reads as "the
+    // rider said so", which drives the silence notice's wording.
+    final known = knownBrandFor(
+      stored: _storedDevice(device.id)?.brand,
+      hint: device.brandHint,
+    );
+    var chosenBySheet = false;
+    var brand = known;
+    if (brand == null) {
+      if (!mounted) return;
+      brand = await _askBrand(t0(context));
+      if (brand == null) return; // Dismissed: no attempt, nothing changed.
+      chosenBySheet = true;
+    }
     if (mounted) {
       setState(() {
         _connecting = true;
@@ -1038,6 +1173,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
         device.id,
         name: device.name,
         inspecting: _inspecting,
+        brand: chosenBySheet ? brand : null,
       ),
     );
 
@@ -1065,15 +1201,22 @@ class _ConnectScreenState extends State<ConnectScreen> {
         // the line under it said how many bytes and nothing else.
         final service = widget.service;
         final stats = service.stats;
-        final evidence =
-            '${contact.evidence(DateTime.now())} · '
-            '${stats.accepted} frames ok · ${stats.badChecksum} bad checksum · '
-            '${service.deviceInfoFrames} device info · '
-            '${service.cellInfoFrames} cell info · '
-            '${service.heldBackFrames} held back · '
-            '${service.decodeFailures} undecodable · '
-            'variant ${service.variant?.name ?? '?'} · '
-            'MTU ${service.negotiatedMtu ?? '?'}';
+        // ANT never touches the JK-only counters (cell info, held back), so
+        // its own tally is what actually says whether the pack was talking:
+        // reusing the JK line here would print zeroes for a pack that was
+        // sending frames the whole time.
+        final evidence = service.brand == BmsBrand.ant
+            ? '${contact.evidence(DateTime.now())} · '
+                  '${t.antEvidence(service.antStatusFrames, service.antInfoFrames, service.antRejectedFrames)}'
+                  '${service.lastDecodeError == null ? '' : ' · ${service.lastDecodeError}'}'
+            : '${contact.evidence(DateTime.now())} · '
+                  '${stats.accepted} frames ok · ${stats.badChecksum} bad checksum · '
+                  '${service.deviceInfoFrames} device info · '
+                  '${service.cellInfoFrames} cell info · '
+                  '${service.heldBackFrames} held back · '
+                  '${service.decodeFailures} undecodable · '
+                  'variant ${service.variant?.name ?? '?'} · '
+                  'MTU ${service.negotiatedMtu ?? '?'}';
         setState(() {
           switch (outcome) {
             case FirstContactOutcome.linkNeverCameUp:
@@ -1085,11 +1228,11 @@ class _ConnectScreenState extends State<ConnectScreen> {
                 _busyMessage = false;
               }
             case FirstContactOutcome.connectedButSilent:
-              // A device that announces itself as JK and then says nothing is
-              // a JK BMS with its attention elsewhere, not a pair of
-              // headphones, and the advice is different.
+              // A device that announces itself as a likely BMS and then says
+              // nothing is that BMS with its attention elsewhere, not a pair
+              // of headphones, and the advice is different.
               _message = device.likelyBms
-                  ? t.connectSilentJk
+                  ? t.connectSilent
                   : t.connectNotABms;
               _messageDetail = evidence;
               _busyMessage = false;

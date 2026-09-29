@@ -18,6 +18,9 @@ import '../../bms_service.dart';
 import '../../model/bms_snapshot.dart';
 import '../../model/bms_device_info.dart';
 import '../../model/jk_settings.dart';
+import '../../protocol/ant_constants.dart';
+import '../../protocol/ant_parser.dart';
+import '../../protocol/bms_brand.dart';
 import '../../protocol/jk_frame.dart';
 import '../../protocol/protocol_variant.dart';
 import '../live_console_screen.dart';
@@ -62,6 +65,7 @@ class _SystemTabState extends State<SystemTab> {
   BmsDeviceInfo? _info;
   JkSettings? _settings;
   FrameStats? _stats;
+  AntStatus? _antStatus;
 
   @override
   void initState() {
@@ -70,10 +74,12 @@ class _SystemTabState extends State<SystemTab> {
     _info = s.lastDeviceInfo;
     _settings = s.lastSettings;
     _stats = s.stats;
+    _antStatus = s.lastAntStatus;
     _subs.addAll([
       s.deviceInfo.listen((v) => setState(() => _info = v)),
       s.settings.listen((v) => setState(() => _settings = v)),
       s.frameStats.listen((v) => setState(() => _stats = v)),
+      s.antStatus.listen((v) => setState(() => _antStatus = v)),
       s.problems.listen(
         (v) => setState(() {
           _problems.insert(0, v);
@@ -105,7 +111,16 @@ class _SystemTabState extends State<SystemTab> {
         PackProfileCard(service: service),
         Section(
           title: t.systemDeviceTitle,
-          children: info == null
+          children: [
+            // First, because it decides how to read every row below it: a
+            // pack's own reported fields only mean what they say once you
+            // know which BMS filled them in.
+            InfoRow(
+              t.systemBrand,
+              service.brand.name.toUpperCase(),
+              last: info == null,
+            ),
+            ...info == null
               ? [
                   InfoRow(
                     t.systemDeviceTitle,
@@ -156,8 +171,11 @@ class _SystemTabState extends State<SystemTab> {
                     ),
                   ],
                 ],
+          ],
         ),
-        _variantSection(t),
+        // Variant detection is a JK concept: ANT has no framing to guess.
+        if (service.brand == BmsBrand.jk) _variantSection(t),
+        if (_antStatus case final st?) _antStatusSection(t, st),
         Section(
           title: t.systemConnectionTitle,
           trailing: Pill(
@@ -209,7 +227,15 @@ class _SystemTabState extends State<SystemTab> {
             ),
           ],
         ),
-        if (_settings != null) _bmsSettingsSection(t, _settings!),
+        if (_settings != null)
+          _bmsSettingsSection(t, _settings!)
+        else if (service.brand == BmsBrand.ant)
+          Section(
+            title: t.systemSettingsTitle,
+            children: [
+              InfoRow(t.systemSettingsTitle, t.settingsNotExposed, dim: true, last: true),
+            ],
+          ),
         if (service.repository != null)
           StorageSection(repository: service.repository!, t: t),
         _settingsSection(t),
@@ -403,6 +429,34 @@ class _SystemTabState extends State<SystemTab> {
       ],
     );
   }
+
+  /// What ANT reports that JK does not: MOSFET and balancer state in the
+  /// pack's own vocabulary, and the balancer's temperature. Rebuilt from
+  /// every status frame, not just the one the snapshot stream carried, so it
+  /// never lags a fast-moving MOSFET code behind what the pack just did.
+  Widget _antStatusSection(AppL10n t, AntStatus st) => Section(
+    title: t.antStatusTitle,
+    children: [
+      InfoRow(
+        t.antBatteryState,
+        antText(antBatteryStateText, st.batteryState),
+      ),
+      InfoRow(
+        t.antChargeMosfet,
+        antText(antChargeMosfetText, st.chargeMosfetCode),
+      ),
+      InfoRow(
+        t.antDischargeMosfet,
+        antText(antDischargeMosfetText, st.dischargeMosfetCode),
+      ),
+      InfoRow(t.antBalancer, antText(antBalancerText, st.balancerCode)),
+      InfoRow(
+        t.antBalancerTemp,
+        '${st.balancerTemp.toStringAsFixed(0)} °C',
+        last: true,
+      ),
+    ],
+  );
 
   Widget _proximitySection(AppL10n t) {
     final watcher = widget.proximity;

@@ -38,10 +38,22 @@ WaitingReason diagnoseWaiting({
   required int heldBackFrames,
   required int decodeFailures,
   required bool variantKnown,
+  // ANT has no framing to fail: a buffer that does not check out is thrown
+  // away before it ever becomes a frame, so it never reaches [cellInfoFrames]
+  // or [decodeFailures] the way a JK cell info frame does. Left at its
+  // default this changes nothing for JK, which never passes it.
+  int rejectedFrames = 0,
 }) {
   if (link != BleLinkState.connected) return WaitingReason.linkDown;
-  if (framesAccepted == 0) return WaitingReason.noFrames;
-  if (cellInfoFrames == 0) return WaitingReason.onlyDeviceInfo;
+  if (framesAccepted == 0 && rejectedFrames == 0) return WaitingReason.noFrames;
+  if (cellInfoFrames == 0) {
+    // Talking and not decoding is not the same story as talking only about
+    // itself: a pack whose bytes never survive framing must not read as
+    // "device info only" just because it never got as far as a reading.
+    return rejectedFrames > 0
+        ? WaitingReason.decodeFailing
+        : WaitingReason.onlyDeviceInfo;
+  }
   if (!variantKnown && heldBackFrames > 0) return WaitingReason.variantUnknown;
   if (decodeFailures > 0) return WaitingReason.decodeFailing;
   return WaitingReason.unexplained;

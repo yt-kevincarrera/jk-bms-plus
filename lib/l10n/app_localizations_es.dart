@@ -67,6 +67,19 @@ class AppL10nEs extends AppL10n {
   String get connectByService => 'anuncia el servicio JK';
 
   @override
+  String get brandAskTitle => '¿Qué BMS es?';
+
+  @override
+  String get brandAskBody =>
+      'El nombre no lo dice. Elige la marca una vez; la app la recuerda.';
+
+  @override
+  String get brandJk => 'JK (Jikong)';
+
+  @override
+  String get brandAnt => 'ANT';
+
+  @override
   String get tapBusy =>
       'Ya hay un intento en marcha. Espera a que termine: tocar otra vez no lo acelera y sí puede dejar otra conexión colgada en el teléfono.';
 
@@ -516,6 +529,9 @@ class AppL10nEs extends AppL10n {
   String get systemDeviceInfoMissing => 'todavía no llegó';
 
   @override
+  String get systemBrand => 'Marca';
+
+  @override
   String get systemVariantTitle => 'Variante de protocolo';
 
   @override
@@ -538,6 +554,24 @@ class AppL10nEs extends AppL10n {
   @override
   String get systemVariantCorrected =>
       'La app cambió de formato por su cuenta. La versión del firmware apuntaba a otro, y con ese los números eran imposibles: este es el que cuadra con la lectura.';
+
+  @override
+  String get antStatusTitle => 'Estado ANT';
+
+  @override
+  String get antBatteryState => 'Estado de la batería';
+
+  @override
+  String get antChargeMosfet => 'MOSFET de carga';
+
+  @override
+  String get antDischargeMosfet => 'MOSFET de descarga';
+
+  @override
+  String get antBalancer => 'Balanceador';
+
+  @override
+  String get antBalancerTemp => 'Temperatura del balanceador';
 
   @override
   String get systemConnectionTitle => 'Conexión';
@@ -570,6 +604,10 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get systemSettingsTitle => 'Configuración del BMS (solo lectura)';
+
+  @override
+  String get settingsNotExposed =>
+      'Este BMS no expone su configuración a la app.';
 
   @override
   String get systemNotices => 'Avisos';
@@ -1972,12 +2010,17 @@ class AppL10nEs extends AppL10n {
       'No se pudo levantar la conexión Bluetooth con la batería en 25 segundos, y la app lo intentó más de una vez. Comprueba que la batería esté encendida y cerca, y que la app oficial de JK esté cerrada del todo, no solo en segundo plano.';
 
   @override
-  String get connectSilentJk =>
-      'Se conectó, pero la batería no dijo nada en 12 segundos. Se anuncia como JK, así que sí es un BMS JK: su única sesión de datos la tiene otro, o se quedó colgada. Lo primero a mirar es la app oficial de JK, que se reconecta sola desde el segundo plano: fuérzala a detenerse en los ajustes de Android, no solo la cierres. Si no hay nadie más, el módulo Bluetooth del BMS suelta la sesión colgada por sí solo al cabo de un rato, y apagar y encender el Bluetooth del teléfono no lo acelera; con el vigilante de proximidad activado la app vuelve a intentarlo sola. La consola de frames crudos en Ajustes muestra si llega algo.';
+  String get connectSilent =>
+      'Conectó pero no llegaron lecturas. Si elegiste la marca, prueba con la otra.';
 
   @override
   String get connectTalkingUndecoded =>
       'Se conectó y están llegando bytes, pero ninguno se decodifica como un frame JK. Abre la consola con el icono de terminal de arriba: lo que aparezca ahí es lo que hace falta para añadir soporte.';
+
+  @override
+  String antEvidence(int status, int info, int rejected) {
+    return 'ANT: $status de estado, $info de info, $rejected rechazadas';
+  }
 
   @override
   String storedCount(String count) {
@@ -2394,7 +2437,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get troubleNotJkBms =>
-      'Ese dispositivo no tiene el servicio Bluetooth de JK. No es un BMS JK, o no uno con el que esta app pueda hablar.';
+      'Ese dispositivo no tiene el servicio Bluetooth que usan los BMS compatibles. No es un BMS compatible, o no uno con el que esta app pueda hablar.';
 
   @override
   String get troublePackMute =>

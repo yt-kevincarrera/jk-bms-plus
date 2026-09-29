@@ -151,7 +151,15 @@ class CellsTab extends StatelessWidget {
           title: t.resistanceTitle,
           children: [
             InfoRow(t.resistanceSource, t.resistanceSourceValue, dim: true),
-            InfoRow(t.resistanceEstimated, t.needsSteps, dim: true),
+            InfoRow(
+              t.resistanceEstimated,
+              t.needsSteps,
+              dim: true,
+              // ANT reports no wire-resistance warning mask, so the row below
+              // never appears for it, and this one has to close the section
+              // instead of leaving it with no last row at all.
+              last: s.wireResistanceWarningMask == null,
+            ),
             if (s.wireResistanceWarningMask != null)
               InfoRow(
                 t.resistanceWireWarnings,

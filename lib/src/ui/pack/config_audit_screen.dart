@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../bms_service.dart';
+import '../../protocol/bms_brand.dart';
 import '../../pack/chemistry.dart';
 import '../../pack/config_audit.dart';
 import '../../pack/pack_baseline.dart';
@@ -78,7 +79,9 @@ class _ConfigAuditScreenState extends State<ConfigAuditScreen> {
                 ),
               )
             : settings == null
-            ? _waiting(t)
+            ? (widget.service.brand == BmsBrand.ant
+                  ? _notExposed(t)
+                  : _waiting(t))
             : _body(t, PackConfig.from(settings)),
       ),
     );
@@ -89,6 +92,23 @@ class _ConfigAuditScreenState extends State<ConfigAuditScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Text(
         t.configAuditNoSettings,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          fontSize: 13.5,
+          height: 1.5,
+          color: AppTheme.textSecondary,
+        ),
+      ),
+    ),
+  );
+
+  /// ANT never sends a settings frame this app can read, so unlike a JK still
+  /// warming up, there is nothing to wait for here.
+  Widget _notExposed(AppL10n t) => Center(
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Text(
+        t.settingsNotExposed,
         textAlign: TextAlign.center,
         style: const TextStyle(
           fontSize: 13.5,
