@@ -276,7 +276,7 @@ class AppL10nEs extends AppL10n {
   String get sessionTitle => 'Esta sesión';
 
   @override
-  String get sessionEnergy => 'Energía por el pack';
+  String get sessionEnergy => 'Energía sacada del pack';
 
   @override
   String get sessionDistance => 'Distancia';
@@ -317,7 +317,7 @@ class AppL10nEs extends AppL10n {
   String get packSag => 'Caída bajo carga';
 
   @override
-  String get packSagNoBaseline => 'sin lectura en reposo aún';
+  String get packSagNoBaseline => 'sin reposo reciente con qué comparar';
 
   @override
   String get packMosfets => 'MOSFETs';
@@ -879,7 +879,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get healthImbalanceHint =>
-      'El pack se corta cuando la celda más baja llega al límite, no cuando llega el promedio. El delta actual se traduce a los Ah que quedan atrapados en el resto de las celdas.';
+      'El pack se corta cuando la celda más baja llega al límite, no cuando llega el promedio. Se mide con las celdas en reposo: el voltaje de la más baja y el de la media se pasan a nivel de carga con la curva típica de la química, y la diferencia se traduce a la energía que queda atrapada en las demás. Bajo carga o con el cargador puesto no se calcula, porque la caída o el empuje del cargador se confundirían con desequilibrio. En LFP, en la zona plana de la curva, el voltaje no dice cuánta carga hay, así que tampoco.';
 
   @override
   String get healthWeakestCell => 'Celda que manda';
@@ -963,7 +963,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get rangeUsableHint =>
-      'Descuenta lo que queda atrapado por la celda más baja: el pack se corta cuando esa celda llega al límite, no cuando llega el promedio.';
+      'La energía que queda son los Ah restantes que informa el BMS por el voltaje medio al que van a salir hasta el corte, leído de la curva típica de la química del pack. No por el voltaje de este momento, que sube con el cargador puesto y baja al acelerar. Después se descuenta lo que deja atrapado la celda más baja. Si no se sabe la química, se usa una cifra a la baja. Las curvas son las típicas de cada química, no medidas en este pack.';
 
   @override
   String get rangeNeedsGps =>
@@ -1358,7 +1358,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String adviceImbalanceCostingBody(String percent) {
-    return 'Un $percent% de la energía que el pack todavía guarda queda atrapada arriba del corte, porque la celda más baja llega antes que las demás. Cerrar el delta te devuelve esos kilómetros sin cambiar una sola celda.';
+    return 'Un $percent% de la energía que el pack todavía guarda queda atrapada arriba del corte, porque la celda más baja llega antes que las demás. Si el delta es de desequilibrio y no de capacidad, balancear lo recupera; si la celda tiene menos capacidad, no.';
   }
 
   @override
@@ -4706,4 +4706,20 @@ class AppL10nEs extends AppL10n {
   @override
   String get alertNearLimitUnavailable =>
       'No disponible en este BMS: no informa su límite de corriente.';
+
+  @override
+  String get sessionEnergyIn => 'Energía que entró al pack';
+
+  @override
+  String get sessionEnergyHint =>
+      'Desde que se conectó el pack. Solo cuenta los momentos en que llegaban lecturas.';
+
+  @override
+  String get healthWeakCellStrandsNeedsRest =>
+      'Hace falta una lectura en reposo, sin corriente. En LFP, además, fuera de la zona plana de la curva.';
+
+  @override
+  String healthWeakCellStrandsAge(String minutes) {
+    return 'De la última lectura en reposo, hace $minutes min.';
+  }
 }

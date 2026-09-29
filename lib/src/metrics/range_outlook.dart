@@ -55,9 +55,10 @@ class RangeOutlook {
 
   /// Builds both figures.
   ///
-  /// [usableWhNow] comes from [RangeEstimator.usableWh] against the live
-  /// reading. [fullCapacityAh] is the best figure available for what the pack
-  /// holds when full, and [fullPackVoltage] the voltage it sits at there.
+  /// [usableWhNow] is PackEnergy.usableWh for the live reading.
+  /// [fullCapacityAh] is the best figure available for what the pack holds
+  /// when full, and [fullPackVoltage] the mean voltage a full discharge is
+  /// delivered at (PackEnergy.fullPackVoltage), not the voltage at the top.
   ///
   /// The full-pack figure deliberately does *not* scale the current one by
   /// charge. Usable energy is not linear in percent near the cutoff, and the

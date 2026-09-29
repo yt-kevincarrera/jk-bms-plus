@@ -40,6 +40,7 @@ import 'metrics/capacity_cycle_detector.dart';
 import 'metrics/capacity_test_runner.dart';
 import 'metrics/charge_alerts.dart';
 import 'metrics/charge_session.dart';
+import 'metrics/pack_energy.dart';
 import 'metrics/range_estimator.dart';
 import 'metrics/range_outlook.dart';
 import 'metrics/sampling.dart';
@@ -350,16 +351,43 @@ class BmsService {
     return null;
   }
 
-  /// The chemistry an assumed cutoff is chosen for: what the rider declared
-  /// for this pack, else what the pack itself shows (a cell above 3.8 V is
-  /// not LFP), else unknown.
-  CellChemistry get cutoffChemistry {
-    final declared = CellChemistry.byName(activeDevice?.chemistry);
-    if (declared.isKnown) return declared;
-    return ChemistryHint.from(
-      cellOvp: _lastSettings?.cellOvp,
-      highestCellVolts: _lastSnapshot?.maxCellVoltage,
-    ).chemistry;
+  /// The chemistry an assumed cutoff is chosen for, and the one energy is
+  /// priced by: what the rider declared for this pack, else what the pack
+  /// itself shows (a cell seen above 3.8 V since it connected is not LFP),
+  /// else unknown.
+  CellChemistry get cutoffChemistry => PackEnergy.chemistryFor(
+    declared: activeDevice?.chemistry,
+    cellOvp: _lastSettings?.cellOvp,
+    highestCellVolts:
+        history.maxCellVoltageSeen ?? _lastSnapshot?.maxCellVoltage,
+  );
+
+  /// Energy left in the pack at [s], and how much of it the weakest cell
+  /// lets out.
+  ///
+  /// The one place every remaining-watt-hours and range figure comes from:
+  /// the health and live tabs, the widget, the range stored with a ride. The
+  /// imbalance is judged from the newest resting reading of this connection,
+  /// never from [s] itself when [s] is under load or on a charger. See
+  /// [PackEnergy].
+  PackEnergy energyOf(BmsSnapshot s) {
+    final rest = history.latestResting;
+    return PackEnergy.remaining(
+      remainingAh: s.remainingCapacityAh,
+      soc: s.soc,
+      cellCount: s.cellCount,
+      chemistry: cutoffChemistry,
+      cutoffVoltagePerCell: cutoffVoltagePerCell,
+      resting: rest == null || rest.cellVoltages.isEmpty
+          ? null
+          : RestingCells(
+              minCellVoltage: rest.minCellVoltage,
+              averageCellVoltage: rest.averageCellVoltage,
+              at: rest.timestamp,
+            ),
+      liveAverageCellVoltage:
+          s.cellVoltages.isEmpty ? null : s.averageCellVoltage,
+    );
   }
 
   /// Fires when the link is up but nothing decodable has arrived for a while.
@@ -1678,16 +1706,7 @@ class BmsService {
     }
 
     final snapshot = _lastSnapshot;
-    final usableWh = snapshot == null
-        ? 0.0
-        : RangeEstimator.usableWh(
-            remainingAh: snapshot.remainingCapacityAh,
-            packVoltage: snapshot.packVoltage,
-            cellCount: snapshot.cellCount,
-            minCellVoltage: snapshot.minCellVoltage,
-            averageCellVoltage: snapshot.averageCellVoltage,
-            cutoffVoltagePerCell: cutoffVoltagePerCell,
-          );
+    final usableWh = snapshot == null ? 0.0 : energyOf(snapshot).usableWh;
 
     final conclusions = TripConclusions(
       whPerKmBefore: hadLearnedBefore ? whPerKmBefore : null,
@@ -1783,14 +1802,7 @@ class BmsService {
     final s = _lastSnapshot;
     if (s == null) return RangeOutlook.unknown;
 
-    final usableNow = RangeEstimator.usableWh(
-      remainingAh: s.remainingCapacityAh,
-      packVoltage: s.packVoltage,
-      cellCount: s.cellCount,
-      minCellVoltage: s.minCellVoltage,
-      averageCellVoltage: s.averageCellVoltage,
-      cutoffVoltagePerCell: cutoffVoltagePerCell,
-    );
+    final energy = energyOf(s);
 
     // A measured capacity outranks the catalogue figure, which is a claim
     // about a purchase rather than a measurement of this battery.
@@ -1799,31 +1811,22 @@ class BmsService {
 
     return RangeOutlook.from(
       estimator: rangeEstimator,
-      usableWhNow: usableNow,
+      usableWhNow: energy.usableWh,
       fullCapacityAh: capacity,
-      // The voltage a full pack sits at, from the BMS's own per-cell limit
-      // where it has stated one. Not the voltage right now, which is whatever
-      // today's charge happens to be.
-      fullPackVoltage: capacity == null ? null : _fullPackVoltage(s),
+      // The mean voltage over a whole discharge for this chemistry, not the
+      // voltage right now, which is whatever today's charge happens to be.
+      // It used to be 3.7 V a cell whatever the cells, 14% high on LFP.
+      fullPackVoltage: capacity == null
+          ? null
+          : PackEnergy.fullPackVoltage(
+              cellCount: s.cellCount,
+              chemistry: cutoffChemistry,
+            ),
       // The same derating the remaining figure gets. A weak cell shortens a
       // full pack exactly as much as it shortens a half-empty one.
-      usableFraction: RangeEstimator.usableFractionOf(
-        minCellVoltage: s.minCellVoltage,
-        averageCellVoltage: s.averageCellVoltage,
-        cutoffVoltagePerCell: cutoffVoltagePerCell,
-      ),
+      usableFraction: energy.usableFraction ?? 1,
       capacityWasMeasured: measured != null,
     );
-  }
-
-  /// Pack voltage at full, for turning a capacity into watt-hours.
-  double? _fullPackVoltage(BmsSnapshot s) {
-    if (s.cellCount <= 0) return null;
-    // Mid-charge nominal rather than the peak: energy is capacity times the
-    // *average* voltage over a discharge, and quoting the fully-charged
-    // voltage would overstate a full pack by several percent.
-    const nominalPerCell = 3.7;
-    return s.cellCount * nominalPerCell;
   }
 
   /// The best capacity this pack has ever actually measured, if any.
@@ -2632,16 +2635,7 @@ class BmsService {
         // range quoted from the default consumption would look identical to
         // one it had earned.
         rangeKm: rangeEstimator.hasLearned
-            ? rangeEstimator.rangeKm(
-                RangeEstimator.usableWh(
-                  remainingAh: snapshot.remainingCapacityAh,
-                  packVoltage: snapshot.packVoltage,
-                  cellCount: snapshot.cellCount,
-                  minCellVoltage: snapshot.minCellVoltage,
-                  averageCellVoltage: snapshot.averageCellVoltage,
-                  cutoffVoltagePerCell: cutoffVoltagePerCell,
-                ),
-              )
+            ? rangeEstimator.rangeKm(energyOf(snapshot).usableWh)
             : null,
         strings: words,
       ),

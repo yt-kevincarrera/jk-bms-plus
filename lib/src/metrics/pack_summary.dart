@@ -1,5 +1,6 @@
 import '../data/database.dart';
 import 'degradation.dart';
+import 'pack_energy.dart';
 import 'range_estimator.dart';
 
 /// What can be said about one battery from what is on disk.
@@ -125,6 +126,24 @@ class PackSummary {
 
     final deltas = readings.map((r) => r.deltaVolts).toList();
 
+    // A full pack's energy at the mean voltage of a whole discharge for this
+    // chemistry, as on the live screen. It used to be the catalogue capacity
+    // times whatever the pack voltage happened to be at the last reading, so
+    // the same pack's full range moved with the charge it was left at.
+    var highestCell = 0.0;
+    for (final r in readings) {
+      if (r.maxCellVoltage > highestCell) highestCell = r.maxCellVoltage;
+    }
+    final fullVolts = last == null
+        ? null
+        : PackEnergy.fullPackVoltage(
+            cellCount: decodeCellVoltages(last.cellVoltagesJson).length,
+            chemistry: PackEnergy.chemistryFor(
+              declared: device.chemistry,
+              highestCellVolts: highestCell > 0 ? highestCell : null,
+            ),
+          );
+
     return PackSummary(
       device: device,
       rides: trips.length,
@@ -139,8 +158,8 @@ class PackSummary {
       reportedCycles: last?.cycleCount,
       honestCycles: honest != null && honest > 0 ? honest : null,
       whPerKm: estimator.hasLearned ? estimator.whPerKm : null,
-      rangeKm: estimator.hasLearned && catalogue != null && last != null
-          ? estimator.rangeKm(catalogue * last.packVoltage)
+      rangeKm: estimator.hasLearned && catalogue != null && fullVolts != null
+          ? estimator.rangeKm(catalogue * fullVolts)
           : null,
       bestMeasuredAh:
           measured.isEmpty ? null : measured.reduce((a, b) => a > b ? a : b),

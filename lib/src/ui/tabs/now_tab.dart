@@ -9,7 +9,6 @@ import '../../ble/waiting_diagnosis.dart';
 import '../../bms_service.dart';
 import '../../protocol/bms_brand.dart';
 import '../../metrics/charge_eta.dart';
-import '../../metrics/range_estimator.dart';
 import '../../metrics/range_outlook.dart';
 import '../../metrics/soc_trust.dart';
 import '../../model/bms_snapshot.dart';
@@ -193,15 +192,7 @@ class _NowTabState extends State<NowTab> {
     final estimator = service.rangeEstimator;
     final outlook = service.rangeOutlook;
 
-    final usableWh = RangeEstimator.usableWh(
-      remainingAh: s.remainingCapacityAh,
-      packVoltage: s.packVoltage,
-      cellCount: s.cellCount,
-      minCellVoltage: s.minCellVoltage,
-      averageCellVoltage: s.averageCellVoltage,
-      cutoffVoltagePerCell: service.cutoffVoltagePerCell,
-    );
-    final (low, high) = estimator.rangeBandKm(usableWh);
+    final (low, high) = estimator.rangeBandKm(service.energyOf(s).usableWh);
 
     final status = packStatusOf(s);
 
@@ -386,10 +377,20 @@ class _NowTabState extends State<NowTab> {
         Section(
           title: t.sessionTitle,
           children: [
+            // Out and in apart, since the pack connected. One net figure over the
+            // reading buffer let a charge cancel a ride, and forgot anything
+            // older than the buffer's twenty-odd minutes.
             InfoRow(
               t.sessionEnergy,
-              '${history.energyWh.abs().toStringAsFixed(1)} Wh',
+              '${history.sessionOutWh.toStringAsFixed(1)} Wh',
+              hint: history.sessionInWh >= 0.05 ? null : t.sessionEnergyHint,
             ),
+            if (history.sessionInWh >= 0.05)
+              InfoRow(
+                t.sessionEnergyIn,
+                '${history.sessionInWh.toStringAsFixed(1)} Wh',
+                hint: t.sessionEnergyHint,
+              ),
             InfoRow(
               t.sessionDistance,
               service.trip.isActive

@@ -568,7 +568,7 @@ abstract class AppL10n {
   /// No description provided for @sessionEnergy.
   ///
   /// In es, this message translates to:
-  /// **'Energía por el pack'**
+  /// **'Energía sacada del pack'**
   String get sessionEnergy;
 
   /// No description provided for @sessionDistance.
@@ -646,7 +646,7 @@ abstract class AppL10n {
   /// No description provided for @packSagNoBaseline.
   ///
   /// In es, this message translates to:
-  /// **'sin lectura en reposo aún'**
+  /// **'sin reposo reciente con qué comparar'**
   String get packSagNoBaseline;
 
   /// No description provided for @packMosfets.
@@ -1552,7 +1552,7 @@ abstract class AppL10n {
   /// No description provided for @healthImbalanceHint.
   ///
   /// In es, this message translates to:
-  /// **'El pack se corta cuando la celda más baja llega al límite, no cuando llega el promedio. El delta actual se traduce a los Ah que quedan atrapados en el resto de las celdas.'**
+  /// **'El pack se corta cuando la celda más baja llega al límite, no cuando llega el promedio. Se mide con las celdas en reposo: el voltaje de la más baja y el de la media se pasan a nivel de carga con la curva típica de la química, y la diferencia se traduce a la energía que queda atrapada en las demás. Bajo carga o con el cargador puesto no se calcula, porque la caída o el empuje del cargador se confundirían con desequilibrio. En LFP, en la zona plana de la curva, el voltaje no dice cuánta carga hay, así que tampoco.'**
   String get healthImbalanceHint;
 
   /// No description provided for @healthWeakestCell.
@@ -1696,7 +1696,7 @@ abstract class AppL10n {
   /// No description provided for @rangeUsableHint.
   ///
   /// In es, this message translates to:
-  /// **'Descuenta lo que queda atrapado por la celda más baja: el pack se corta cuando esa celda llega al límite, no cuando llega el promedio.'**
+  /// **'La energía que queda son los Ah restantes que informa el BMS por el voltaje medio al que van a salir hasta el corte, leído de la curva típica de la química del pack. No por el voltaje de este momento, que sube con el cargador puesto y baja al acelerar. Después se descuenta lo que deja atrapado la celda más baja. Si no se sabe la química, se usa una cifra a la baja. Las curvas son las típicas de cada química, no medidas en este pack.'**
   String get rangeUsableHint;
 
   /// No description provided for @rangeNeedsGps.
@@ -2386,7 +2386,7 @@ abstract class AppL10n {
   /// No description provided for @adviceImbalanceCostingBody.
   ///
   /// In es, this message translates to:
-  /// **'Un {percent}% de la energía que el pack todavía guarda queda atrapada arriba del corte, porque la celda más baja llega antes que las demás. Cerrar el delta te devuelve esos kilómetros sin cambiar una sola celda.'**
+  /// **'Un {percent}% de la energía que el pack todavía guarda queda atrapada arriba del corte, porque la celda más baja llega antes que las demás. Si el delta es de desequilibrio y no de capacidad, balancear lo recupera; si la celda tiene menos capacidad, no.'**
   String adviceImbalanceCostingBody(String percent);
 
   /// No description provided for @statusAllClear.
@@ -7891,6 +7891,30 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'No disponible en este BMS: no informa su límite de corriente.'**
   String get alertNearLimitUnavailable;
+
+  /// No description provided for @sessionEnergyIn.
+  ///
+  /// In es, this message translates to:
+  /// **'Energía que entró al pack'**
+  String get sessionEnergyIn;
+
+  /// No description provided for @sessionEnergyHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Desde que se conectó el pack. Solo cuenta los momentos en que llegaban lecturas.'**
+  String get sessionEnergyHint;
+
+  /// No description provided for @healthWeakCellStrandsNeedsRest.
+  ///
+  /// In es, this message translates to:
+  /// **'Hace falta una lectura en reposo, sin corriente. En LFP, además, fuera de la zona plana de la curva.'**
+  String get healthWeakCellStrandsNeedsRest;
+
+  /// No description provided for @healthWeakCellStrandsAge.
+  ///
+  /// In es, this message translates to:
+  /// **'De la última lectura en reposo, hace {minutes} min.'**
+  String healthWeakCellStrandsAge(String minutes);
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

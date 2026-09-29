@@ -16,7 +16,11 @@ class SnapshotHistory {
     this.smoothingWindow = 5,
   });
 
-  /// One hour at 1 Hz. Persistence, not memory, is what keeps the long history.
+  /// How many readings are kept. A JK sends two or three a second, so the
+  /// default holds some 20 to 30 minutes, not the hour it was once described
+  /// as. Anything meant to cover the whole connection is accumulated in
+  /// [add] instead of read off this buffer; persistence, not memory, is what
+  /// keeps the long history.
   final int capacity;
 
   /// How many samples the displayed current and power are averaged over.
@@ -25,13 +29,75 @@ class SnapshotHistory {
   final Queue<BmsSnapshot> _buffer = Queue<BmsSnapshot>();
 
   void add(BmsSnapshot snapshot) {
+    final previous = latest;
+    if (previous != null) _accumulateEnergy(previous, snapshot);
+    if (isResting(snapshot)) _latestResting = snapshot;
+    if (snapshot.cellVoltages.isNotEmpty &&
+        snapshot.maxCellVoltage > (_maxCellVoltageSeen ?? 0)) {
+      _maxCellVoltageSeen = snapshot.maxCellVoltage;
+    }
     _buffer.addLast(snapshot);
     while (_buffer.length > capacity) {
       _buffer.removeFirst();
     }
   }
 
-  void clear() => _buffer.clear();
+  void clear() {
+    _buffer.clear();
+    _latestResting = null;
+    _maxCellVoltageSeen = null;
+    _sessionOutWh = 0;
+    _sessionInWh = 0;
+  }
+
+  /// Whether a reading was taken with essentially nothing flowing, so its cell
+  /// voltages say where the charge is.
+  ///
+  /// Under an amp of discharge: the lights alone draw 0.44 A on the pack this
+  /// was measured on, and a wheel spinning on a stand 1.5 A. Nothing going
+  /// in: a charger tapering off at the end of a charge is under an amp too,
+  /// and it holds every cell above where it will settle.
+  static bool isResting(BmsSnapshot s) => s.current > -1.0 && !s.isCharging;
+
+  BmsSnapshot? _latestResting;
+
+  /// The newest resting reading since the pack connected, even if it has
+  /// since left the buffer.
+  BmsSnapshot? get latestResting => _latestResting;
+
+  double? _maxCellVoltageSeen;
+
+  /// The highest cell voltage seen since the pack connected. What settles an
+  /// unknown chemistry for the rest of the connection: a pack seen above
+  /// 3.8 V a cell is not LFP, whatever it reads now.
+  double? get maxCellVoltageSeen => _maxCellVoltageSeen;
+
+  double _sessionOutWh = 0;
+  double _sessionInWh = 0;
+
+  /// Energy taken out of the pack since it connected, in watt-hours.
+  ///
+  /// Kept apart from [sessionInWh] and accumulated reading by reading. The
+  /// figure this replaced was the net over the buffer, so a charge and a
+  /// discharge cancelled each other out, and anything older than the buffer
+  /// fell off the end of a row labelled as the whole session.
+  double get sessionOutWh => _sessionOutWh;
+
+  /// Energy put into the pack since it connected, in watt-hours.
+  double get sessionInWh => _sessionInWh;
+
+  void _accumulateEnergy(BmsSnapshot from, BmsSnapshot to) {
+    // Gaps are skipped as everywhere else: a dropped link is not ten seconds
+    // of current. See [usableInterval].
+    final dt = usableInterval(from.timestamp, to.timestamp);
+    if (dt == null) return;
+    final wh = (from.power + to.power) / 2 * hoursIn(dt);
+    if (wh >= 0) {
+      _sessionInWh += wh;
+    } else {
+      _sessionOutWh -= wh;
+    }
+  }
 
   bool get isEmpty => _buffer.isEmpty;
   int get length => _buffer.length;
@@ -74,42 +140,27 @@ class SnapshotHistory {
     return sum / i;
   }
 
-  /// Sag: how far the pack has dropped below its recent unloaded voltage.
+  /// Sag: how far the pack has dropped below its unloaded voltage.
   ///
-  /// Returns null until there is an idle reading to compare against, which is
-  /// honest — with no baseline there is no sag to report.
+  /// Only against a resting reading from the last minute and within two
+  /// points of charge of now. Against any resting reading in the buffer, as it
+  /// used to be, a ride with no stops compared the pack now with the pack
+  /// twenty minutes earlier, and quoted the charge used on the way as drop
+  /// under load. Null, honestly, when there is no such reference.
   double? get sagVolts {
     final last = latest;
-    if (last == null) return null;
-    double? restingVoltage;
-    for (final s in _buffer) {
-      if (s.current.abs() < 1.0) restingVoltage = s.packVoltage;
+    final resting = _latestResting;
+    if (last == null || resting == null) return null;
+    if (last.timestamp.difference(resting.timestamp) > sagReferenceMaxAge) {
+      return null;
     }
-    if (restingVoltage == null) return null;
-    final sag = restingVoltage - last.packVoltage;
+    if ((last.soc - resting.soc).abs() > sagReferenceMaxSocPoints) return null;
+    final sag = resting.packVoltage - last.packVoltage;
     return sag > 0 ? sag : 0;
   }
 
-  /// Energy through the pack over the buffered window, in watt-hours.
-  /// Positive means energy in.
-  double get energyWh {
-    if (_buffer.length < 2) return 0;
-    final list = _buffer.toList();
-    var wh = 0.0;
-    for (var i = 1; i < list.length; i++) {
-      // Ignore gaps: a dropped connection is not ten seconds of current.
-      // Milliseconds, because the readings are 300 to 500 ms apart and the old
-      // guard threw all of them away. See [usableInterval].
-      final dt = usableInterval(
-        list[i - 1].timestamp,
-        list[i].timestamp,
-      );
-      if (dt == null) continue;
-      final avgPower = (list[i].power + list[i - 1].power) / 2;
-      wh += avgPower * hoursIn(dt);
-    }
-    return wh;
-  }
+  static const Duration sagReferenceMaxAge = Duration(seconds: 60);
+  static const double sagReferenceMaxSocPoints = 2;
 }
 
 /// Aggregates over the buffered session that the advice engine reads.

@@ -113,7 +113,7 @@
   "discharging": "descargando",
   "resting": "en reposo",
   "sessionTitle": "Esta sesión",
-  "sessionEnergy": "Energía por el pack",
+  "sessionEnergy": "Energía sacada del pack",
   "sessionDistance": "Distancia",
   "sessionWhPerKm": "Wh por km",
   "sessionSamples": "Muestras en memoria",
@@ -136,7 +136,7 @@
   "packCycles": "Ciclos",
   "packSoh": "Salud",
   "packSag": "Caída bajo carga",
-  "packSagNoBaseline": "sin lectura en reposo aún",
+  "packSagNoBaseline": "sin reposo reciente con qué comparar",
   "packMosfets": "MOSFETs",
   "mosfetChargeOn": "carga on",
   "mosfetChargeOff": "carga off",
@@ -377,7 +377,7 @@
   "healthReportedCycles": "Ciclos que informa el BMS",
   "healthCycleInflation": "Inflación del contador",
   "healthImbalanceLoss": "Capacidad perdida por desbalance",
-  "healthImbalanceHint": "El pack se corta cuando la celda más baja llega al límite, no cuando llega el promedio. El delta actual se traduce a los Ah que quedan atrapados en el resto de las celdas.",
+  "healthImbalanceHint": "El pack se corta cuando la celda más baja llega al límite, no cuando llega el promedio. Se mide con las celdas en reposo: el voltaje de la más baja y el de la media se pasan a nivel de carga con la curva típica de la química, y la diferencia se traduce a la energía que queda atrapada en las demás. Bajo carga o con el cargador puesto no se calcula, porque la caída o el empuje del cargador se confundirían con desequilibrio. En LFP, en la zona plana de la curva, el voltaje no dice cuánta carga hay, así que tampoco.",
   "healthWeakestCell": "Celda que manda",
   "healthWeakestCellValue": "celda {index}",
   "@healthWeakestCellValue": {
@@ -425,7 +425,7 @@
     }
   },
   "rangeUsableEnergy": "Energía utilizable",
-  "rangeUsableHint": "Descuenta lo que queda atrapado por la celda más baja: el pack se corta cuando esa celda llega al límite, no cuando llega el promedio.",
+  "rangeUsableHint": "La energía que queda son los Ah restantes que informa el BMS por el voltaje medio al que van a salir hasta el corte, leído de la curva típica de la química del pack. No por el voltaje de este momento, que sube con el cargador puesto y baja al acelerar. Después se descuenta lo que deja atrapado la celda más baja. Si no se sabe la química, se usa una cifra a la baja. Las curvas son las típicas de cada química, no medidas en este pack.",
   "rangeNeedsGps": "La distancia sale del GPS del teléfono durante un viaje. El BMS no informa posición: el protocolo tiene bits de bloqueo por GPS, pero ningún campo de coordenadas.",
   "rangeDemoNote": "En modo demo la distancia también es simulada, para que se pueda ver cómo se comporta el estimador.",
   "systemPasscode": "Contraseña que entrega el BMS",
@@ -669,7 +669,7 @@
     }
   },
   "adviceImbalanceCostingTitle": "El desbalance te está costando autonomía",
-  "adviceImbalanceCostingBody": "Un {percent}% de la energía que el pack todavía guarda queda atrapada arriba del corte, porque la celda más baja llega antes que las demás. Cerrar el delta te devuelve esos kilómetros sin cambiar una sola celda.",
+  "adviceImbalanceCostingBody": "Un {percent}% de la energía que el pack todavía guarda queda atrapada arriba del corte, porque la celda más baja llega antes que las demás. Si el delta es de desequilibrio y no de capacidad, balancear lo recupera; si la celda tiene menos capacidad, no.",
   "@adviceImbalanceCostingBody": {
     "placeholders": {
       "percent": {
@@ -3110,5 +3110,16 @@
       }
     }
   },
-  "alertNearLimitUnavailable": "No disponible en este BMS: no informa su límite de corriente."
+  "alertNearLimitUnavailable": "No disponible en este BMS: no informa su límite de corriente.",
+  "sessionEnergyIn": "Energía que entró al pack",
+  "sessionEnergyHint": "Desde que se conectó el pack. Solo cuenta los momentos en que llegaban lecturas.",
+  "healthWeakCellStrandsNeedsRest": "Hace falta una lectura en reposo, sin corriente. En LFP, además, fuera de la zona plana de la curva.",
+  "healthWeakCellStrandsAge": "De la última lectura en reposo, hace {minutes} min.",
+  "@healthWeakCellStrandsAge": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  }
 }

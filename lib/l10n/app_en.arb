@@ -113,7 +113,7 @@
   "discharging": "discharging",
   "resting": "at rest",
   "sessionTitle": "This session",
-  "sessionEnergy": "Energy through pack",
+  "sessionEnergy": "Energy taken out of the pack",
   "sessionDistance": "Distance",
   "sessionWhPerKm": "Wh per km",
   "sessionSamples": "Samples buffered",
@@ -136,7 +136,7 @@
   "packCycles": "Cycles",
   "packSoh": "Health",
   "packSag": "Sag under load",
-  "packSagNoBaseline": "no resting reading yet",
+  "packSagNoBaseline": "no recent resting reading to compare with",
   "packMosfets": "MOSFETs",
   "mosfetChargeOn": "charge on",
   "mosfetChargeOff": "charge off",
@@ -377,7 +377,7 @@
   "healthReportedCycles": "Cycles the BMS reports",
   "healthCycleInflation": "Counter inflation",
   "healthImbalanceLoss": "Capacity lost to imbalance",
-  "healthImbalanceHint": "The pack cuts off when the lowest cell hits its limit, not when the average does. Today's delta translates into the Ah left stranded in every other cell.",
+  "healthImbalanceHint": "The pack cuts off when the lowest cell hits its limit, not when the average does. It is measured with the cells at rest: the lowest cell's voltage and the average's go through the chemistry's typical curve to a charge level, and the difference becomes the energy left stranded in the others. Under load or on the charger it is not worked out, because sag or the charger's push would read as imbalance. On LFP, on the flat part of the curve, the voltage does not say how much charge there is, so not there either.",
   "healthWeakestCell": "The cell in charge",
   "healthWeakestCellValue": "cell {index}",
   "@healthWeakestCellValue": {
@@ -425,7 +425,7 @@
     }
   },
   "rangeUsableEnergy": "Usable energy",
-  "rangeUsableHint": "Discounts what the lowest cell strands: the pack cuts off when that cell hits its limit, not when the average does.",
+  "rangeUsableHint": "The energy left is the remaining Ah the BMS reports times the mean voltage they will come out at down to cutoff, read off the typical curve for the pack's chemistry. Not times the voltage of this moment, which rises on the charger and drops when you accelerate. Then what the lowest cell strands is taken off. With the chemistry unknown, a figure on the low side is used. The curves are typical for each chemistry, not measured on this pack.",
   "rangeNeedsGps": "Distance comes from the phone's GPS while a trip is recording. The BMS does not report position: the protocol has GPS lock bits, but no coordinate fields at all.",
   "rangeDemoNote": "In demo mode the distance is simulated too, so you can watch how the estimator behaves.",
   "systemPasscode": "Passcode the BMS hands out",
@@ -669,7 +669,7 @@
     }
   },
   "adviceImbalanceCostingTitle": "The imbalance is costing you range",
-  "adviceImbalanceCostingBody": "{percent}% of the energy the pack still holds is stranded above cutoff, because the lowest cell gets there before the others. Closing the delta gives those kilometres back without replacing a single cell.",
+  "adviceImbalanceCostingBody": "{percent}% of the energy the pack still holds is stranded above cutoff, because the lowest cell gets there before the others. If the delta is imbalance rather than capacity, balancing gets it back; if the cell holds less, it does not.",
   "@adviceImbalanceCostingBody": {
     "placeholders": {
       "percent": {
@@ -2970,5 +2970,16 @@
       }
     }
   },
-  "alertNearLimitUnavailable": "Not available on this BMS: it does not report its current limit."
+  "alertNearLimitUnavailable": "Not available on this BMS: it does not report its current limit.",
+  "sessionEnergyIn": "Energy put into the pack",
+  "sessionEnergyHint": "Since the pack connected. Only counts the moments readings were arriving.",
+  "healthWeakCellStrandsNeedsRest": "Needs a reading at rest, with no current. On LFP, also off the flat part of the curve.",
+  "healthWeakCellStrandsAge": "From the last reading at rest, {minutes} min ago.",
+  "@healthWeakCellStrandsAge": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 /// What the cells in a pack are made of.
 ///
 /// The app asks rather than guesses, because every safe range in the
@@ -186,4 +188,107 @@ class ChemistryLimits {
 
   /// Above this, even discharging is.
   static const double hotDischargeLimitCelsius = 60;
+}
+
+/// Resting cell voltage against state of charge, for turning amp-hours into
+/// watt-hours and cell voltages into charge.
+///
+/// Typical curves for the chemistry, read off published datasheets and the
+/// usual pack-builder tables, not measured on any particular pack. Good to a
+/// few percent in energy, which is the job: the figure these replace took
+/// the pack voltage of the moment as the voltage of the whole remaining
+/// discharge. On a full 20S NMC pack that is about 83 V against a real mean
+/// near 75, so every "Wh remaining" read some 12% high at the top, higher
+/// still with a charger pushing the cells up, and jumped with every twist of
+/// the throttle as the voltage sagged.
+///
+/// Eleven points, one every ten percent, interpolated linearly. The curve's
+/// 0% is the chemistry's usual cutoff.
+class OcvCurve {
+  const OcvCurve._(this.volts);
+
+  /// Volts per cell at 0, 10, ... 100 % charge.
+  final List<double> volts;
+
+  static const OcvCurve nmc = OcvCurve._([
+    3.00, 3.45, 3.55, 3.62, 3.68, 3.73, 3.80, 3.88, 3.96, 4.06, 4.18, //
+  ]);
+
+  /// Flat between about 20 and 90 %, with a knee at each end. On the flat
+  /// part a resting voltage says almost nothing about charge; see [resolves].
+  static const OcvCurve lfp = OcvCurve._([
+    2.80, 3.15, 3.22, 3.25, 3.27, 3.28, 3.29, 3.30, 3.31, 3.33, 3.45, //
+  ]);
+
+  /// Null for an unknown chemistry: the two curves differ by half a volt, and
+  /// picking one would be a guess dressed as a figure.
+  static OcvCurve? of(CellChemistry chemistry) => switch (chemistry) {
+    CellChemistry.nmc => nmc,
+    CellChemistry.lfp => lfp,
+    CellChemistry.unknown => null,
+  };
+
+  static const double _step = 10;
+
+  /// Resting volts per cell at [soc] percent.
+  double voltsAt(double soc) {
+    final s = soc.clamp(0.0, 100.0);
+    final i = (s / _step).floor().clamp(0, volts.length - 2);
+    final f = (s - i * _step) / _step;
+    return volts[i] + (volts[i + 1] - volts[i]) * f;
+  }
+
+  /// Charge in percent that a resting cell at [cellVolts] sits at.
+  double socAt(double cellVolts) {
+    if (cellVolts <= volts.first) return 0;
+    if (cellVolts >= volts.last) return 100;
+    for (var i = 0; i < volts.length - 1; i++) {
+      final lo = volts[i];
+      final hi = volts[i + 1];
+      if (cellVolts <= hi) {
+        return (i + (cellVolts - lo) / (hi - lo)) * _step;
+      }
+    }
+    return 100;
+  }
+
+  /// Millivolts per percent of charge around [soc].
+  double slopeAt(double soc) {
+    final s = soc.clamp(0.0, 100.0);
+    final i = (s / _step).floor().clamp(0, volts.length - 2);
+    return (volts[i + 1] - volts[i]) / _step * 1000;
+  }
+
+  /// Below this slope, a few millivolts of measurement is ten points of
+  /// charge, and a voltage cannot be turned into a charge level honestly.
+  static const double minResolvableSlopeMvPerPercent = 2.0;
+
+  /// Whether a resting voltage at [cellVolts] says where the cell is.
+  bool resolves(double cellVolts) =>
+      slopeAt(socAt(cellVolts)) >= minResolvableSlopeMvPerPercent;
+
+  /// Area under the curve from 0 to [soc], in volt-percent: energy per
+  /// amp-hour-percent, the quantity whose ratio is an energy ratio.
+  double areaTo(double soc) {
+    final s = soc.clamp(0.0, 100.0);
+    var area = 0.0;
+    var at = 0.0;
+    while (at < s) {
+      final next = math.min(s, (at / _step).floor() * _step + _step);
+      area += (voltsAt(at) + voltsAt(next)) / 2 * (next - at);
+      at = next;
+    }
+    return area;
+  }
+
+  /// Mean resting volts per cell over a discharge from [soc] down to empty.
+  ///
+  /// The voltage an amp-hour is actually delivered at, on average, from here
+  /// to the bottom: what turns remaining amp-hours into remaining
+  /// watt-hours. At [soc] 0 it is the cutoff itself.
+  double meanVoltsBelow(double soc) {
+    final s = soc.clamp(0.0, 100.0);
+    if (s <= 0) return volts.first;
+    return areaTo(s) / s;
+  }
 }

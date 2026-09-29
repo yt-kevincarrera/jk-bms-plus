@@ -379,7 +379,12 @@ class TripRecorder {
   double get energyOutWh {
     final ah = ahOut;
     final volts = meanPackVoltage;
-    if (ah != null && volts > 0) return ah * volts;
+    // The counter's difference is net: whatever went back in mid-ride has
+    // already been taken off it. [whPerKm] and everything stored takes
+    // [energyInWh] off this figure, so the charge put back is added here to
+    // make it gross. Returning the net figure took it off twice, and a ride
+    // with a top-up in the middle came out cheaper than it was.
+    if (ah != null && volts > 0) return ah * volts + _integratedInWh;
     // Integrating instead would tell the same lie in a different unit: it can
     // only account for the moments the phone was listening, which here are
     // precisely the minutes that are not the ride. Zero, so every caller that

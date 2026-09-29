@@ -7,8 +7,10 @@ import '../data/database.dart';
 import '../metrics/advice_engine.dart';
 import '../metrics/cell_drift.dart';
 import '../metrics/degradation.dart';
+import '../metrics/pack_energy.dart';
 import '../metrics/range_estimator.dart';
 import '../metrics/range_outlook.dart';
+import '../pack/chemistry.dart';
 import '../pack/pack_baseline.dart';
 import '../metrics/maintenance.dart';
 import '../license/entitlements.dart';
@@ -130,39 +132,67 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
     final cells = newest == null
         ? const <double>[]
         : decodeCellVoltages(newest.cellVoltagesJson);
-    final averageCell = cells.isEmpty
-        ? 0.0
-        : cells.reduce((a, b) => a + b) / cells.length;
-    // The pack's own cutoff is not stored with a reading, so the app's default
-    // stands in. It is the same figure the live screen falls back to before the
-    // settings frame arrives.
-    const cutoffPerCell = 3.0;
+    double averageOf(List<double> v) =>
+        v.isEmpty ? 0.0 : v.reduce((a, b) => a + b) / v.length;
 
-    final usableFraction = newest == null || cells.isEmpty
-        ? 1.0
-        : RangeEstimator.usableFractionOf(
-            minCellVoltage: newest.minCellVoltage,
-            averageCellVoltage: averageCell,
-            cutoffVoltagePerCell: cutoffPerCell,
-          );
+    // The same chemistry and cutoff the live screen would use without a
+    // settings frame: the pack's own cutoff is not stored with a reading.
+    var highestCell = 0.0;
+    for (final r in readings) {
+      if (r.maxCellVoltage > highestCell) highestCell = r.maxCellVoltage;
+    }
+    final chemistry = PackEnergy.chemistryFor(
+      declared: widget.device.chemistry,
+      highestCellVolts: highestCell > 0 ? highestCell : null,
+    );
+    final cutoffPerCell =
+        ChemistryLimits.of(chemistry)?.typicalCutoffVolts ??
+        ChemistryLimits.unknownCutoffVolts;
 
-    final usableNow = newest == null || cells.isEmpty
-        ? 0.0
-        : RangeEstimator.usableWh(
+    // The imbalance from a resting reading only, as live, and only one taken
+    // close enough to the last reading to describe the same charge.
+    Snapshot? resting;
+    for (final r in readings.reversed) {
+      if (newest != null &&
+          newest.timestamp.difference(r.timestamp) > _restingReadingReach) {
+        break;
+      }
+      if (r.current > -1.0 && r.current <= 0.05) {
+        resting = r;
+        break;
+      }
+    }
+    final restingCells = resting == null
+        ? const <double>[]
+        : decodeCellVoltages(resting.cellVoltagesJson);
+
+    final energy = newest == null || cells.isEmpty
+        ? PackEnergy.none
+        : PackEnergy.remaining(
             remainingAh: newest.remainingAh,
-            packVoltage: newest.packVoltage,
+            soc: newest.soc,
             cellCount: cells.length,
-            minCellVoltage: newest.minCellVoltage,
-            averageCellVoltage: averageCell,
+            chemistry: chemistry,
             cutoffVoltagePerCell: cutoffPerCell,
+            resting: resting == null || restingCells.isEmpty
+                ? null
+                : RestingCells(
+                    minCellVoltage: resting.minCellVoltage,
+                    averageCellVoltage: averageOf(restingCells),
+                    at: resting.timestamp,
+                  ),
+            liveAverageCellVoltage: averageOf(cells),
           );
 
     final outlook = RangeOutlook.from(
       estimator: estimator,
-      usableWhNow: usableNow,
+      usableWhNow: energy.usableWh,
       fullCapacityAh: capacity,
-      fullPackVoltage: cells.isEmpty ? null : cells.length * 3.7,
-      usableFraction: usableFraction,
+      fullPackVoltage: PackEnergy.fullPackVoltage(
+        cellCount: cells.length,
+        chemistry: chemistry,
+      ),
+      usableFraction: energy.usableFraction ?? 1,
       capacityWasMeasured: measured != null,
     );
 
@@ -192,6 +222,10 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
     return DateTime.now().toUtc().difference(at.toUtc()) >
         const Duration(days: 3);
   }
+
+  /// How far before the last reading a resting one may be and still describe
+  /// the charge the last reading was taken at.
+  static const Duration _restingReadingReach = Duration(minutes: 30);
 
   /// The best capacity this pack has ever measured, ignoring tests with a hole
   /// in the middle: those count low, and counting low here would understate

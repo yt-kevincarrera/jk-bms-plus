@@ -251,6 +251,27 @@ void main() {
     expect(service.cutoffIsAssumed, isTrue);
   });
 
+  test('energy left is priced by the same chemistry, from the charge level',
+      () async {
+    // The one function every Wh and range figure goes through. With the
+    // chemistry declared, it is the LFP curve's mean below this charge, not
+    // the pack voltage of the moment and not a fixed 3.7 V a cell.
+    await service.connect('ANT1', name: 'ANT-BLE16ZMUB');
+    link.announce(BleLinkState.connected);
+    await link.deliver(antStatus16s);
+    await pumpEventQueue();
+    await repo.setPackProfile('ANT1', chemistry: 'lfp');
+    service.activeDevice = await repo.db.device('ANT1');
+
+    final s = service.lastSnapshot!;
+    final energy = service.energyOf(s);
+    expect(energy.meanCellVolts, OcvCurve.lfp.meanVoltsBelow(s.soc));
+    expect(
+      energy.grossWh,
+      closeTo(s.remainingCapacityAh * s.cellCount * energy.meanCellVolts, 1e-6),
+    );
+  });
+
   group('an ANT whose current runs against its own state', () {
     // The sign convention is assumed for ANT, not measured. The state byte
     // is the witness: charging at a clearly negative current, three frames

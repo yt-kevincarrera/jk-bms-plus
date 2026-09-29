@@ -7,7 +7,6 @@ import '../../bms_service.dart';
 import '../../metrics/cell_drift.dart';
 import '../../metrics/degradation.dart';
 import '../../metrics/pack_health_report.dart';
-import '../../metrics/range_estimator.dart';
 import '../../model/bms_snapshot.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
@@ -107,22 +106,18 @@ class _HealthTabState extends State<HealthTab> {
       return WaitingForData(message: t.waitingFor(t.waitingFirstReading));
     }
 
+    // One definition of the energy left, shared with the live tab, the widget
+    // and the saved-pack screen. See [PackEnergy] for why it is not remaining
+    // amp-hours times the voltage of the moment any more.
+    final energy = service.energyOf(s);
+    final usableWh = energy.usableWh;
     final report = PackHealthReport.from(
       snapshot: s,
       settings: service.lastSettings,
       catalogueCapacityAh: service.catalogueCapacityAh,
-      cutoffVoltagePerCell: service.cutoffVoltagePerCell,
+      energy: energy,
     );
     final estimator = service.rangeEstimator;
-
-    final usableWh = RangeEstimator.usableWh(
-      remainingAh: s.remainingCapacityAh,
-      packVoltage: s.packVoltage,
-      cellCount: s.cellCount,
-      minCellVoltage: s.minCellVoltage,
-      averageCellVoltage: s.averageCellVoltage,
-      cutoffVoltagePerCell: service.cutoffVoltagePerCell,
-    );
 
     // Degradation is measured against the best this pack has ever held, not
     // against what it was advertised as. Measuring wear against a marketing
@@ -336,7 +331,7 @@ class _HealthTabState extends State<HealthTab> {
               capacityTestCount: service.capacityTestCount,
               degradationMeasurable: lost != null,
               usableWh: usableWh,
-              grossWh: s.remainingCapacityAh * s.packVoltage,
+              grossWh: energy.grossWh,
               degradation: degradation,
               drift: _drift,
               outlook: service.rangeOutlook,
@@ -432,7 +427,13 @@ class _WeakCellSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strandedFraction = report.imbalanceLossFraction;
-    final strandedAh = report.imbalanceLossAh;
+    final strandedWh = report.imbalanceLossWh;
+    final measuredAt = report.imbalanceMeasuredAt;
+    // The imbalance is judged at rest, so on a ride with no stops the figure
+    // is from before it. Said when it is more than a few minutes old.
+    final ageMinutes = measuredAt == null
+        ? null
+        : DateTime.now().toUtc().difference(measuredAt.toUtc()).inMinutes;
     final rise = comparison?.worstResistanceRise;
 
     final String resistance;
@@ -457,8 +458,13 @@ class _WeakCellSection extends StatelessWidget {
           strandedFraction == null
               ? '--'
               : '${(strandedFraction * 100).toStringAsFixed(1)} %'
-                  '${strandedAh == null ? "" : "  ·  ${strandedAh.toStringAsFixed(1)} Ah"}',
+                  '${strandedWh == null ? "" : "  ·  ${strandedWh.toStringAsFixed(0)} Wh"}',
           dim: strandedFraction == null,
+          hint: strandedFraction == null
+              ? t.healthWeakCellStrandsNeedsRest
+              : (ageMinutes ?? 0) >= 5
+              ? t.healthWeakCellStrandsAge('$ageMinutes')
+              : null,
           valueColor: (strandedFraction ?? 0) > 0.05 ? AppTheme.watch : null,
         ),
         InfoRow(

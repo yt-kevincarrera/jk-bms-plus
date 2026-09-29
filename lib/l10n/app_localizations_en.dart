@@ -276,7 +276,7 @@ class AppL10nEn extends AppL10n {
   String get sessionTitle => 'This session';
 
   @override
-  String get sessionEnergy => 'Energy through pack';
+  String get sessionEnergy => 'Energy taken out of the pack';
 
   @override
   String get sessionDistance => 'Distance';
@@ -317,7 +317,7 @@ class AppL10nEn extends AppL10n {
   String get packSag => 'Sag under load';
 
   @override
-  String get packSagNoBaseline => 'no resting reading yet';
+  String get packSagNoBaseline => 'no recent resting reading to compare with';
 
   @override
   String get packMosfets => 'MOSFETs';
@@ -878,7 +878,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get healthImbalanceHint =>
-      'The pack cuts off when the lowest cell hits its limit, not when the average does. Today\'s delta translates into the Ah left stranded in every other cell.';
+      'The pack cuts off when the lowest cell hits its limit, not when the average does. It is measured with the cells at rest: the lowest cell\'s voltage and the average\'s go through the chemistry\'s typical curve to a charge level, and the difference becomes the energy left stranded in the others. Under load or on the charger it is not worked out, because sag or the charger\'s push would read as imbalance. On LFP, on the flat part of the curve, the voltage does not say how much charge there is, so not there either.';
 
   @override
   String get healthWeakestCell => 'The cell in charge';
@@ -962,7 +962,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get rangeUsableHint =>
-      'Discounts what the lowest cell strands: the pack cuts off when that cell hits its limit, not when the average does.';
+      'The energy left is the remaining Ah the BMS reports times the mean voltage they will come out at down to cutoff, read off the typical curve for the pack\'s chemistry. Not times the voltage of this moment, which rises on the charger and drops when you accelerate. Then what the lowest cell strands is taken off. With the chemistry unknown, a figure on the low side is used. The curves are typical for each chemistry, not measured on this pack.';
 
   @override
   String get rangeNeedsGps =>
@@ -1354,7 +1354,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String adviceImbalanceCostingBody(String percent) {
-    return '$percent% of the energy the pack still holds is stranded above cutoff, because the lowest cell gets there before the others. Closing the delta gives those kilometres back without replacing a single cell.';
+    return '$percent% of the energy the pack still holds is stranded above cutoff, because the lowest cell gets there before the others. If the delta is imbalance rather than capacity, balancing gets it back; if the cell holds less, it does not.';
   }
 
   @override
@@ -4683,4 +4683,20 @@ class AppL10nEn extends AppL10n {
   @override
   String get alertNearLimitUnavailable =>
       'Not available on this BMS: it does not report its current limit.';
+
+  @override
+  String get sessionEnergyIn => 'Energy put into the pack';
+
+  @override
+  String get sessionEnergyHint =>
+      'Since the pack connected. Only counts the moments readings were arriving.';
+
+  @override
+  String get healthWeakCellStrandsNeedsRest =>
+      'Needs a reading at rest, with no current. On LFP, also off the flat part of the curve.';
+
+  @override
+  String healthWeakCellStrandsAge(String minutes) {
+    return 'From the last reading at rest, $minutes min ago.';
+  }
 }
