@@ -16,8 +16,11 @@ import 'history_tab.dart';
 import '../../ble/simulator/simulated_pack.dart';
 import '../../bms_service.dart';
 import '../../model/bms_snapshot.dart';
-import '../../model/jk_device_info.dart';
+import '../../model/bms_device_info.dart';
 import '../../model/jk_settings.dart';
+import '../../protocol/ant_constants.dart';
+import '../../protocol/ant_parser.dart';
+import '../../protocol/bms_brand.dart';
 import '../../protocol/jk_frame.dart';
 import '../../protocol/protocol_variant.dart';
 import '../live_console_screen.dart';
@@ -59,9 +62,10 @@ class SystemTab extends StatefulWidget {
 class _SystemTabState extends State<SystemTab> {
   final List<StreamSubscription<Object?>> _subs = [];
   final List<String> _problems = [];
-  JkDeviceInfo? _info;
+  BmsDeviceInfo? _info;
   JkSettings? _settings;
   FrameStats? _stats;
+  AntStatus? _antStatus;
 
   @override
   void initState() {
@@ -70,10 +74,12 @@ class _SystemTabState extends State<SystemTab> {
     _info = s.lastDeviceInfo;
     _settings = s.lastSettings;
     _stats = s.stats;
+    _antStatus = s.lastAntStatus;
     _subs.addAll([
       s.deviceInfo.listen((v) => setState(() => _info = v)),
       s.settings.listen((v) => setState(() => _settings = v)),
       s.frameStats.listen((v) => setState(() => _stats = v)),
+      s.antStatus.listen((v) => setState(() => _antStatus = v)),
       s.problems.listen(
         (v) => setState(() {
           _problems.insert(0, v);
@@ -105,7 +111,16 @@ class _SystemTabState extends State<SystemTab> {
         PackProfileCard(service: service),
         Section(
           title: t.systemDeviceTitle,
-          children: info == null
+          children: [
+            // First, because it decides how to read every row below it: a
+            // pack's own reported fields only mean what they say once you
+            // know which BMS filled them in.
+            InfoRow(
+              t.systemBrand,
+              service.brand.name.toUpperCase(),
+              last: info == null,
+            ),
+            ...info == null
               ? [
                   InfoRow(
                     t.systemDeviceTitle,
@@ -124,31 +139,43 @@ class _SystemTabState extends State<SystemTab> {
                         ? t.notReported
                         : info.serialNumber,
                     dim: info.serialNumber.isEmpty,
+                    // JK is the only brand that hands out a device passcode,
+                    // a power-on count and an uptime, so this is the last row
+                    // for anything else.
+                    last: info.jk == null,
                   ),
-                  InfoRow(
-                    t.systemManufactured,
-                    info.manufacturingDate.isEmpty
-                        ? t.notReported
-                        : info.manufacturingDate,
-                    dim: info.manufacturingDate.isEmpty,
-                  ),
-                  InfoRow(t.systemPowerOnCount, '${info.powerOnCount}'),
-                  InfoRow(t.systemUptime, _duration(info.uptimeSeconds)),
-                  InfoRow(
-                    t.systemPasscode,
-                    info.devicePasscode.isEmpty
-                        ? t.systemPasscodeEmpty
-                        : info.devicePasscode,
-                    dim: info.devicePasscode.isEmpty,
-                    valueColor: info.devicePasscode.isEmpty
-                        ? null
-                        : AppTheme.watch,
-                    hint: t.systemPasscodeHint,
-                    last: true,
-                  ),
+                  // Everything below only JK reports: manufacturing date,
+                  // power-on count, uptime and the device's own passcode.
+                  // Hidden rather than shown blank for a brand that has none.
+                  if (info.jk case final jk?) ...[
+                    InfoRow(
+                      t.systemManufactured,
+                      jk.manufacturingDate.isEmpty
+                          ? t.notReported
+                          : jk.manufacturingDate,
+                      dim: jk.manufacturingDate.isEmpty,
+                    ),
+                    InfoRow(t.systemPowerOnCount, '${jk.powerOnCount}'),
+                    InfoRow(t.systemUptime, _duration(jk.uptimeSeconds)),
+                    InfoRow(
+                      t.systemPasscode,
+                      jk.devicePasscode.isEmpty
+                          ? t.systemPasscodeEmpty
+                          : jk.devicePasscode,
+                      dim: jk.devicePasscode.isEmpty,
+                      valueColor: jk.devicePasscode.isEmpty
+                          ? null
+                          : AppTheme.watch,
+                      hint: t.systemPasscodeHint,
+                      last: true,
+                    ),
+                  ],
                 ],
+          ],
         ),
-        _variantSection(t),
+        // Variant detection is a JK concept: ANT has no framing to guess.
+        if (service.brand == BmsBrand.jk) _variantSection(t),
+        if (_antStatus case final st?) _antStatusSection(t, st),
         Section(
           title: t.systemConnectionTitle,
           trailing: Pill(
@@ -200,7 +227,15 @@ class _SystemTabState extends State<SystemTab> {
             ),
           ],
         ),
-        if (_settings != null) _bmsSettingsSection(t, _settings!),
+        if (_settings != null)
+          _bmsSettingsSection(t, _settings!)
+        else if (service.brand == BmsBrand.ant)
+          Section(
+            title: t.systemSettingsTitle,
+            children: [
+              InfoRow(t.systemSettingsTitle, t.settingsNotExposed, dim: true, last: true),
+            ],
+          ),
         if (service.repository != null)
           StorageSection(repository: service.repository!, t: t),
         _settingsSection(t),
@@ -344,7 +379,7 @@ class _SystemTabState extends State<SystemTab> {
           t.systemVariantInUse,
           service.variant?.name ?? t.systemVariantUndecided,
           valueColor: service.variant == null ? AppTheme.watch : null,
-          hint: info == null ? null : _variantReason(t, info.detection),
+          hint: info?.jk == null ? null : _variantReason(t, info!.jk!.detection),
         ),
         if (service.variantProved)
           Padding(
@@ -394,6 +429,65 @@ class _SystemTabState extends State<SystemTab> {
       ],
     );
   }
+
+  /// What ANT reports that JK does not: MOSFET and balancer state in the
+  /// pack's own vocabulary, and the balancer's temperature. Rebuilt from
+  /// every plausible status, the same ones the readings come from: a status
+  /// held back as implausible never reaches it, so it cannot contradict the
+  /// numbers shown beside it.
+  Widget _antStatusSection(AppL10n t, AntStatus st) => Section(
+    title: t.antStatusTitle,
+    children: [
+      InfoRow(
+        t.antBatteryState,
+        _antCode(
+          t,
+          antBatteryStateText,
+          t.antBatteryStateCode,
+          st.batteryState,
+        ),
+      ),
+      InfoRow(
+        t.antChargeMosfet,
+        _antCode(
+          t,
+          antChargeMosfetText,
+          t.antChargeMosfetCode,
+          st.chargeMosfetCode,
+        ),
+      ),
+      InfoRow(
+        t.antDischargeMosfet,
+        _antCode(
+          t,
+          antDischargeMosfetText,
+          t.antDischargeMosfetCode,
+          st.dischargeMosfetCode,
+        ),
+      ),
+      InfoRow(
+        t.antBalancer,
+        _antCode(t, antBalancerText, t.antBalancerCode, st.balancerCode),
+      ),
+      InfoRow(
+        t.antBalancerTemp,
+        '${st.balancerTemp.toStringAsFixed(0)} °C',
+        last: true,
+      ),
+    ],
+  );
+
+  /// An ANT state code in the rider's language. The English table stays the
+  /// authority on which codes exist, so the logs and this screen agree on
+  /// where the known codes end; past that, the code itself is shown.
+  static String _antCode(
+    AppL10n t,
+    List<String> table,
+    String Function(String code) text,
+    int code,
+  ) => code < table.length
+      ? text('$code')
+      : t.antUnknownCode(code.toRadixString(16).padLeft(2, '0'));
 
   Widget _proximitySection(AppL10n t) {
     final watcher = widget.proximity;

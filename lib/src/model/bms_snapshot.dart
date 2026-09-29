@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import '../protocol/bms_brand.dart';
 import '../protocol/protocol_variant.dart';
 import 'bms_warning.dart';
 
@@ -11,6 +12,7 @@ import 'bms_warning.dart';
 class BmsSnapshot {
   const BmsSnapshot({
     required this.timestamp,
+    required this.brand,
     required this.variant,
     required this.frameCounter,
     required this.cellVoltages,
@@ -46,10 +48,16 @@ class BmsSnapshot {
   /// Phone clock, UTC. Never the BMS clock — it drifts and resets.
   final DateTime timestamp;
 
-  final JkProtocolVariant variant;
+  /// Which maker's protocol produced this reading.
+  final BmsBrand brand;
+
+  /// JK framing this was decoded with. Null for every other brand.
+  final JkProtocolVariant? variant;
 
   /// Frame counter from the BMS, for detecting dropped frames.
-  final int frameCounter;
+  ///
+  /// Null when the BMS does not report it (ANT does not).
+  final int? frameCounter;
 
   /// Volts, one entry per *enabled* cell, in cell order starting at cell 1.
   final List<double> cellVoltages;
@@ -57,10 +65,14 @@ class BmsSnapshot {
   /// Ohms, aligned index-for-index with [cellVoltages]. This is the BMS's own
   /// wire-resistance measurement, not the internal resistance the app derives
   /// from current steps.
-  final List<double> cellResistances;
+  ///
+  /// Null when the BMS does not report it (ANT does not).
+  final List<double>? cellResistances;
 
   /// Raw 32-bit "enabled cells" bitmask, kept so a cell count change is visible.
-  final int enabledCellMask;
+  ///
+  /// Null when the BMS does not report it (ANT does not).
+  final int? enabledCellMask;
 
   /// Volts, as measured by the BMS across the whole pack.
   final double packVoltage;
@@ -132,7 +144,9 @@ class BmsSnapshot {
   /// label is wrong. Until that is settled against the real pack, this value is
   /// carried through untouched and is NOT used to hide any reading. Do not
   /// filter on it without verifying first.
-  final int temperatureSensorMask;
+  ///
+  /// Null when the BMS does not report it (ANT does not).
+  final int? temperatureSensorMask;
 
   /// Celsius. Null on variants that do not report it.
   final double? mosfetTemp;
@@ -145,14 +159,20 @@ class BmsSnapshot {
 
   final double remainingCapacityAh;
   final double nominalCapacityAh;
-  final int cycleCount;
+
+  /// Null when the BMS does not report it (ANT does not).
+  final int? cycleCount;
   final double cycleCapacityAh;
 
   /// 0x00 idle, 0x01 charging balancer, 0x02 discharging balancer.
-  final int balancingAction;
+  ///
+  /// Null when the BMS does not report it (ANT does not).
+  final int? balancingAction;
 
   /// Amps flowing through the balancer.
-  final double balanceCurrent;
+  ///
+  /// Null when the BMS does not report it (ANT does not).
+  final double? balanceCurrent;
 
   final bool chargeMosfetOn;
   final bool dischargeMosfetOn;
@@ -165,15 +185,20 @@ class BmsSnapshot {
   /// is derived from the balancing-action byte instead.
   final bool balancerActive;
 
-  final bool heatingOn;
+  /// Null when the BMS does not report it (ANT does not).
+  final bool? heatingOn;
 
   final BmsWarnings warnings;
 
   /// Raw per-cell wire-resistance warning bitmask (byte 114+offset).
-  final int wireResistanceWarningMask;
+  ///
+  /// Null when the BMS does not report it (ANT does not).
+  final int? wireResistanceWarningMask;
 
   /// Amps drawn by the pack heater, where fitted.
-  final double heatingCurrent;
+  ///
+  /// Null when the BMS does not report it (ANT does not).
+  final double? heatingCurrent;
 
   final int totalRuntimeSeconds;
 
@@ -245,12 +270,14 @@ class BmsSnapshot {
 
   Map<String, Object?> toJson() => {
         'timestamp': timestamp.toIso8601String(),
-        'variant': variant.name,
+        'brand': brand.stored,
+        'variant': variant?.name,
         'frameCounter': frameCounter,
         'cellVoltages': cellVoltages,
         'cellResistances': cellResistances,
-        'enabledCellMask':
-            '0x${enabledCellMask.toRadixString(16).padLeft(8, '0').toUpperCase()}',
+        'enabledCellMask': enabledCellMask == null
+            ? null
+            : '0x${enabledCellMask!.toRadixString(16).padLeft(8, '0').toUpperCase()}',
         'cellCount': cellCount,
         'minCellVoltage': minCellVoltage,
         'maxCellVoltage': maxCellVoltage,

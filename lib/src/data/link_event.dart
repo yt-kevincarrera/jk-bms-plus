@@ -83,4 +83,23 @@ enum LinkEventKind {
 
   /// And told the ride is over, so the usual rules apply again.
   reconnectRelaxed,
+
+  // --- Which protocol the pack speaks ---
+
+  /// The bytes said the pack speaks another brand than the one chosen, and
+  /// the app switched. Detail carries from and to.
+  protocolSwitched,
+
+  /// The ANT assembler threw a buffer away. Detail carries the reason and the
+  /// hex, so a decoding mistake can be fixed from a backup. At most 20 per
+  /// connection.
+  antFrameRejected,
+
+  /// An ANT frame passed its CRC and still could not be decoded. Detail
+  /// carries the error and the hex.
+  antDecodeFailed,
+
+  /// Bytes starting AA 55 AA FF arrived: the pre-2021 ANT protocol, which the
+  /// app does not read yet.
+  oldAntProtocolSeen,
 }

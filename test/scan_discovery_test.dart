@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jk_bms/src/ble/ble_transport.dart';
+import 'package:jk_bms/src/protocol/bms_brand.dart';
 
 DiscoveredBms seen(
   String name, {
@@ -54,6 +55,20 @@ void main() {
       final d = seen('Speaker', services: ['0000180f-0000-1000-8000-00805f9b34fb']);
       expect(d.advertisesJkService, isFalse);
       expect(d.likelyBms, isFalse);
+    });
+
+    test('an ANT module is recognised as a likely BMS with a brand hint', () {
+      final d = classifyAdvertisement(
+          id: '1', name: 'ANT-BLE16ZMUB', rssi: -60, serviceUuids: const []);
+      expect(d.brandHint, BmsBrand.ant);
+      expect(d.likelyBms, isTrue);
+    });
+
+    test('a name that says nothing has no hint', () {
+      final d = classifyAdvertisement(
+          id: '2', name: 'Moto', rssi: -60, serviceUuids: const ['ffe0']);
+      expect(d.brandHint, isNull);
+      expect(d.likelyBms, isTrue); // the service UUID still counts
     });
   });
 

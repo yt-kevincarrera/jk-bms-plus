@@ -133,6 +133,15 @@ class $DevicesTable extends Devices with TableInfo<$DevicesTable, Device> {
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _brandMeta = const VerificationMeta('brand');
+  @override
+  late final GeneratedColumn<String> brand = GeneratedColumn<String>(
+    'brand',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -146,6 +155,7 @@ class $DevicesTable extends Devices with TableInfo<$DevicesTable, Device> {
     firstSeenAt,
     lastSeenAt,
     demo,
+    brand,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -243,6 +253,12 @@ class $DevicesTable extends Devices with TableInfo<$DevicesTable, Device> {
         demo.isAcceptableOrUnknown(data['demo']!, _demoMeta),
       );
     }
+    if (data.containsKey('brand')) {
+      context.handle(
+        _brandMeta,
+        brand.isAcceptableOrUnknown(data['brand']!, _brandMeta),
+      );
+    }
     return context;
   }
 
@@ -296,6 +312,10 @@ class $DevicesTable extends Devices with TableInfo<$DevicesTable, Device> {
         DriftSqlType.bool,
         data['${effectivePrefix}demo'],
       )!,
+      brand: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}brand'],
+      ),
     );
   }
 
@@ -354,6 +374,10 @@ class Device extends DataClass implements Insertable<Device> {
 
   /// True for the simulated pack, so demo data stays in its own world.
   final bool demo;
+
+  /// Which maker's protocol this pack speaks, by [BmsBrand.stored]. Null for
+  /// every row written before the app knew a second brand, all of them JK.
+  final String? brand;
   const Device({
     required this.id,
     required this.name,
@@ -366,6 +390,7 @@ class Device extends DataClass implements Insertable<Device> {
     required this.firstSeenAt,
     required this.lastSeenAt,
     required this.demo,
+    this.brand,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -385,6 +410,9 @@ class Device extends DataClass implements Insertable<Device> {
     map['first_seen_at'] = Variable<DateTime>(firstSeenAt);
     map['last_seen_at'] = Variable<DateTime>(lastSeenAt);
     map['demo'] = Variable<bool>(demo);
+    if (!nullToAbsent || brand != null) {
+      map['brand'] = Variable<String>(brand);
+    }
     return map;
   }
 
@@ -405,6 +433,9 @@ class Device extends DataClass implements Insertable<Device> {
       firstSeenAt: Value(firstSeenAt),
       lastSeenAt: Value(lastSeenAt),
       demo: Value(demo),
+      brand: brand == null && nullToAbsent
+          ? const Value.absent()
+          : Value(brand),
     );
   }
 
@@ -427,6 +458,7 @@ class Device extends DataClass implements Insertable<Device> {
       firstSeenAt: serializer.fromJson<DateTime>(json['firstSeenAt']),
       lastSeenAt: serializer.fromJson<DateTime>(json['lastSeenAt']),
       demo: serializer.fromJson<bool>(json['demo']),
+      brand: serializer.fromJson<String?>(json['brand']),
     );
   }
   @override
@@ -444,6 +476,7 @@ class Device extends DataClass implements Insertable<Device> {
       'firstSeenAt': serializer.toJson<DateTime>(firstSeenAt),
       'lastSeenAt': serializer.toJson<DateTime>(lastSeenAt),
       'demo': serializer.toJson<bool>(demo),
+      'brand': serializer.toJson<String?>(brand),
     };
   }
 
@@ -459,6 +492,7 @@ class Device extends DataClass implements Insertable<Device> {
     DateTime? firstSeenAt,
     DateTime? lastSeenAt,
     bool? demo,
+    Value<String?> brand = const Value.absent(),
   }) => Device(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -473,6 +507,7 @@ class Device extends DataClass implements Insertable<Device> {
     firstSeenAt: firstSeenAt ?? this.firstSeenAt,
     lastSeenAt: lastSeenAt ?? this.lastSeenAt,
     demo: demo ?? this.demo,
+    brand: brand.present ? brand.value : this.brand,
   );
   Device copyWithCompanion(DevicesCompanion data) {
     return Device(
@@ -499,6 +534,7 @@ class Device extends DataClass implements Insertable<Device> {
           ? data.lastSeenAt.value
           : this.lastSeenAt,
       demo: data.demo.present ? data.demo.value : this.demo,
+      brand: data.brand.present ? data.brand.value : this.brand,
     );
   }
 
@@ -515,7 +551,8 @@ class Device extends DataClass implements Insertable<Device> {
           ..write('acquiredAt: $acquiredAt, ')
           ..write('firstSeenAt: $firstSeenAt, ')
           ..write('lastSeenAt: $lastSeenAt, ')
-          ..write('demo: $demo')
+          ..write('demo: $demo, ')
+          ..write('brand: $brand')
           ..write(')'))
         .toString();
   }
@@ -533,6 +570,7 @@ class Device extends DataClass implements Insertable<Device> {
     firstSeenAt,
     lastSeenAt,
     demo,
+    brand,
   );
   @override
   bool operator ==(Object other) =>
@@ -548,7 +586,8 @@ class Device extends DataClass implements Insertable<Device> {
           other.acquiredAt == this.acquiredAt &&
           other.firstSeenAt == this.firstSeenAt &&
           other.lastSeenAt == this.lastSeenAt &&
-          other.demo == this.demo);
+          other.demo == this.demo &&
+          other.brand == this.brand);
 }
 
 class DevicesCompanion extends UpdateCompanion<Device> {
@@ -563,6 +602,7 @@ class DevicesCompanion extends UpdateCompanion<Device> {
   final Value<DateTime> firstSeenAt;
   final Value<DateTime> lastSeenAt;
   final Value<bool> demo;
+  final Value<String?> brand;
   final Value<int> rowid;
   const DevicesCompanion({
     this.id = const Value.absent(),
@@ -576,6 +616,7 @@ class DevicesCompanion extends UpdateCompanion<Device> {
     this.firstSeenAt = const Value.absent(),
     this.lastSeenAt = const Value.absent(),
     this.demo = const Value.absent(),
+    this.brand = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   DevicesCompanion.insert({
@@ -590,6 +631,7 @@ class DevicesCompanion extends UpdateCompanion<Device> {
     required DateTime firstSeenAt,
     required DateTime lastSeenAt,
     this.demo = const Value.absent(),
+    this.brand = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        firstSeenAt = Value(firstSeenAt),
@@ -606,6 +648,7 @@ class DevicesCompanion extends UpdateCompanion<Device> {
     Expression<DateTime>? firstSeenAt,
     Expression<DateTime>? lastSeenAt,
     Expression<bool>? demo,
+    Expression<String>? brand,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -621,6 +664,7 @@ class DevicesCompanion extends UpdateCompanion<Device> {
       if (firstSeenAt != null) 'first_seen_at': firstSeenAt,
       if (lastSeenAt != null) 'last_seen_at': lastSeenAt,
       if (demo != null) 'demo': demo,
+      if (brand != null) 'brand': brand,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -637,6 +681,7 @@ class DevicesCompanion extends UpdateCompanion<Device> {
     Value<DateTime>? firstSeenAt,
     Value<DateTime>? lastSeenAt,
     Value<bool>? demo,
+    Value<String?>? brand,
     Value<int>? rowid,
   }) {
     return DevicesCompanion(
@@ -651,6 +696,7 @@ class DevicesCompanion extends UpdateCompanion<Device> {
       firstSeenAt: firstSeenAt ?? this.firstSeenAt,
       lastSeenAt: lastSeenAt ?? this.lastSeenAt,
       demo: demo ?? this.demo,
+      brand: brand ?? this.brand,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -693,6 +739,9 @@ class DevicesCompanion extends UpdateCompanion<Device> {
     if (demo.present) {
       map['demo'] = Variable<bool>(demo.value);
     }
+    if (brand.present) {
+      map['brand'] = Variable<String>(brand.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -713,6 +762,7 @@ class DevicesCompanion extends UpdateCompanion<Device> {
           ..write('firstSeenAt: $firstSeenAt, ')
           ..write('lastSeenAt: $lastSeenAt, ')
           ..write('demo: $demo, ')
+          ..write('brand: $brand, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4180,6 +4230,15 @@ class $RawFramesTable extends RawFrames
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _brandMeta = const VerificationMeta('brand');
+  @override
+  late final GeneratedColumn<String> brand = GeneratedColumn<String>(
+    'brand',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -4187,6 +4246,7 @@ class $RawFramesTable extends RawFrames
     recordType,
     bytes,
     deviceId,
+    brand,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -4233,6 +4293,12 @@ class $RawFramesTable extends RawFrames
         deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
       );
     }
+    if (data.containsKey('brand')) {
+      context.handle(
+        _brandMeta,
+        brand.isAcceptableOrUnknown(data['brand']!, _brandMeta),
+      );
+    }
     return context;
   }
 
@@ -4262,6 +4328,10 @@ class $RawFramesTable extends RawFrames
         DriftSqlType.string,
         data['${effectivePrefix}device_id'],
       ),
+      brand: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}brand'],
+      ),
     );
   }
 
@@ -4280,12 +4350,17 @@ class RawFrame extends DataClass implements Insertable<RawFrame> {
   /// Which pack this was recorded on. Null for rows written before the app
   /// tracked packs at all -- see [BmsRepository.orphanCounts].
   final String? deviceId;
+
+  /// Which protocol these bytes are, so a reparse picks the right decoder.
+  /// Null means JK.
+  final String? brand;
   const RawFrame({
     required this.id,
     required this.timestamp,
     required this.recordType,
     required this.bytes,
     this.deviceId,
+    this.brand,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -4296,6 +4371,9 @@ class RawFrame extends DataClass implements Insertable<RawFrame> {
     map['bytes'] = Variable<Uint8List>(bytes);
     if (!nullToAbsent || deviceId != null) {
       map['device_id'] = Variable<String>(deviceId);
+    }
+    if (!nullToAbsent || brand != null) {
+      map['brand'] = Variable<String>(brand);
     }
     return map;
   }
@@ -4309,6 +4387,9 @@ class RawFrame extends DataClass implements Insertable<RawFrame> {
       deviceId: deviceId == null && nullToAbsent
           ? const Value.absent()
           : Value(deviceId),
+      brand: brand == null && nullToAbsent
+          ? const Value.absent()
+          : Value(brand),
     );
   }
 
@@ -4323,6 +4404,7 @@ class RawFrame extends DataClass implements Insertable<RawFrame> {
       recordType: serializer.fromJson<int>(json['recordType']),
       bytes: serializer.fromJson<Uint8List>(json['bytes']),
       deviceId: serializer.fromJson<String?>(json['deviceId']),
+      brand: serializer.fromJson<String?>(json['brand']),
     );
   }
   @override
@@ -4334,6 +4416,7 @@ class RawFrame extends DataClass implements Insertable<RawFrame> {
       'recordType': serializer.toJson<int>(recordType),
       'bytes': serializer.toJson<Uint8List>(bytes),
       'deviceId': serializer.toJson<String?>(deviceId),
+      'brand': serializer.toJson<String?>(brand),
     };
   }
 
@@ -4343,12 +4426,14 @@ class RawFrame extends DataClass implements Insertable<RawFrame> {
     int? recordType,
     Uint8List? bytes,
     Value<String?> deviceId = const Value.absent(),
+    Value<String?> brand = const Value.absent(),
   }) => RawFrame(
     id: id ?? this.id,
     timestamp: timestamp ?? this.timestamp,
     recordType: recordType ?? this.recordType,
     bytes: bytes ?? this.bytes,
     deviceId: deviceId.present ? deviceId.value : this.deviceId,
+    brand: brand.present ? brand.value : this.brand,
   );
   RawFrame copyWithCompanion(RawFramesCompanion data) {
     return RawFrame(
@@ -4359,6 +4444,7 @@ class RawFrame extends DataClass implements Insertable<RawFrame> {
           : this.recordType,
       bytes: data.bytes.present ? data.bytes.value : this.bytes,
       deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      brand: data.brand.present ? data.brand.value : this.brand,
     );
   }
 
@@ -4369,7 +4455,8 @@ class RawFrame extends DataClass implements Insertable<RawFrame> {
           ..write('timestamp: $timestamp, ')
           ..write('recordType: $recordType, ')
           ..write('bytes: $bytes, ')
-          ..write('deviceId: $deviceId')
+          ..write('deviceId: $deviceId, ')
+          ..write('brand: $brand')
           ..write(')'))
         .toString();
   }
@@ -4381,6 +4468,7 @@ class RawFrame extends DataClass implements Insertable<RawFrame> {
     recordType,
     $driftBlobEquality.hash(bytes),
     deviceId,
+    brand,
   );
   @override
   bool operator ==(Object other) =>
@@ -4390,7 +4478,8 @@ class RawFrame extends DataClass implements Insertable<RawFrame> {
           other.timestamp == this.timestamp &&
           other.recordType == this.recordType &&
           $driftBlobEquality.equals(other.bytes, this.bytes) &&
-          other.deviceId == this.deviceId);
+          other.deviceId == this.deviceId &&
+          other.brand == this.brand);
 }
 
 class RawFramesCompanion extends UpdateCompanion<RawFrame> {
@@ -4399,12 +4488,14 @@ class RawFramesCompanion extends UpdateCompanion<RawFrame> {
   final Value<int> recordType;
   final Value<Uint8List> bytes;
   final Value<String?> deviceId;
+  final Value<String?> brand;
   const RawFramesCompanion({
     this.id = const Value.absent(),
     this.timestamp = const Value.absent(),
     this.recordType = const Value.absent(),
     this.bytes = const Value.absent(),
     this.deviceId = const Value.absent(),
+    this.brand = const Value.absent(),
   });
   RawFramesCompanion.insert({
     this.id = const Value.absent(),
@@ -4412,6 +4503,7 @@ class RawFramesCompanion extends UpdateCompanion<RawFrame> {
     required int recordType,
     required Uint8List bytes,
     this.deviceId = const Value.absent(),
+    this.brand = const Value.absent(),
   }) : timestamp = Value(timestamp),
        recordType = Value(recordType),
        bytes = Value(bytes);
@@ -4421,6 +4513,7 @@ class RawFramesCompanion extends UpdateCompanion<RawFrame> {
     Expression<int>? recordType,
     Expression<Uint8List>? bytes,
     Expression<String>? deviceId,
+    Expression<String>? brand,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -4428,6 +4521,7 @@ class RawFramesCompanion extends UpdateCompanion<RawFrame> {
       if (recordType != null) 'record_type': recordType,
       if (bytes != null) 'bytes': bytes,
       if (deviceId != null) 'device_id': deviceId,
+      if (brand != null) 'brand': brand,
     });
   }
 
@@ -4437,6 +4531,7 @@ class RawFramesCompanion extends UpdateCompanion<RawFrame> {
     Value<int>? recordType,
     Value<Uint8List>? bytes,
     Value<String?>? deviceId,
+    Value<String?>? brand,
   }) {
     return RawFramesCompanion(
       id: id ?? this.id,
@@ -4444,6 +4539,7 @@ class RawFramesCompanion extends UpdateCompanion<RawFrame> {
       recordType: recordType ?? this.recordType,
       bytes: bytes ?? this.bytes,
       deviceId: deviceId ?? this.deviceId,
+      brand: brand ?? this.brand,
     );
   }
 
@@ -4465,6 +4561,9 @@ class RawFramesCompanion extends UpdateCompanion<RawFrame> {
     if (deviceId.present) {
       map['device_id'] = Variable<String>(deviceId.value);
     }
+    if (brand.present) {
+      map['brand'] = Variable<String>(brand.value);
+    }
     return map;
   }
 
@@ -4475,7 +4574,8 @@ class RawFramesCompanion extends UpdateCompanion<RawFrame> {
           ..write('timestamp: $timestamp, ')
           ..write('recordType: $recordType, ')
           ..write('bytes: $bytes, ')
-          ..write('deviceId: $deviceId')
+          ..write('deviceId: $deviceId, ')
+          ..write('brand: $brand')
           ..write(')'))
         .toString();
   }
@@ -7021,6 +7121,7 @@ typedef $$DevicesTableCreateCompanionBuilder =
       required DateTime firstSeenAt,
       required DateTime lastSeenAt,
       Value<bool> demo,
+      Value<String?> brand,
       Value<int> rowid,
     });
 typedef $$DevicesTableUpdateCompanionBuilder =
@@ -7036,6 +7137,7 @@ typedef $$DevicesTableUpdateCompanionBuilder =
       Value<DateTime> firstSeenAt,
       Value<DateTime> lastSeenAt,
       Value<bool> demo,
+      Value<String?> brand,
       Value<int> rowid,
     });
 
@@ -7100,6 +7202,11 @@ class $$DevicesTableFilterComposer
 
   ColumnFilters<bool> get demo => $composableBuilder(
     column: $table.demo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get brand => $composableBuilder(
+    column: $table.brand,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -7167,6 +7274,11 @@ class $$DevicesTableOrderingComposer
     column: $table.demo,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get brand => $composableBuilder(
+    column: $table.brand,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$DevicesTableAnnotationComposer
@@ -7222,6 +7334,9 @@ class $$DevicesTableAnnotationComposer
 
   GeneratedColumn<bool> get demo =>
       $composableBuilder(column: $table.demo, builder: (column) => column);
+
+  GeneratedColumn<String> get brand =>
+      $composableBuilder(column: $table.brand, builder: (column) => column);
 }
 
 class $$DevicesTableTableManager
@@ -7263,6 +7378,7 @@ class $$DevicesTableTableManager
                 Value<DateTime> firstSeenAt = const Value.absent(),
                 Value<DateTime> lastSeenAt = const Value.absent(),
                 Value<bool> demo = const Value.absent(),
+                Value<String?> brand = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DevicesCompanion(
                 id: id,
@@ -7276,6 +7392,7 @@ class $$DevicesTableTableManager
                 firstSeenAt: firstSeenAt,
                 lastSeenAt: lastSeenAt,
                 demo: demo,
+                brand: brand,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -7291,6 +7408,7 @@ class $$DevicesTableTableManager
                 required DateTime firstSeenAt,
                 required DateTime lastSeenAt,
                 Value<bool> demo = const Value.absent(),
+                Value<String?> brand = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DevicesCompanion.insert(
                 id: id,
@@ -7304,6 +7422,7 @@ class $$DevicesTableTableManager
                 firstSeenAt: firstSeenAt,
                 lastSeenAt: lastSeenAt,
                 demo: demo,
+                brand: brand,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -9016,6 +9135,7 @@ typedef $$RawFramesTableCreateCompanionBuilder =
       required int recordType,
       required Uint8List bytes,
       Value<String?> deviceId,
+      Value<String?> brand,
     });
 typedef $$RawFramesTableUpdateCompanionBuilder =
     RawFramesCompanion Function({
@@ -9024,6 +9144,7 @@ typedef $$RawFramesTableUpdateCompanionBuilder =
       Value<int> recordType,
       Value<Uint8List> bytes,
       Value<String?> deviceId,
+      Value<String?> brand,
     });
 
 class $$RawFramesTableFilterComposer
@@ -9057,6 +9178,11 @@ class $$RawFramesTableFilterComposer
 
   ColumnFilters<String> get deviceId => $composableBuilder(
     column: $table.deviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get brand => $composableBuilder(
+    column: $table.brand,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -9094,6 +9220,11 @@ class $$RawFramesTableOrderingComposer
     column: $table.deviceId,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get brand => $composableBuilder(
+    column: $table.brand,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$RawFramesTableAnnotationComposer
@@ -9121,6 +9252,9 @@ class $$RawFramesTableAnnotationComposer
 
   GeneratedColumn<String> get deviceId =>
       $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<String> get brand =>
+      $composableBuilder(column: $table.brand, builder: (column) => column);
 }
 
 class $$RawFramesTableTableManager
@@ -9156,12 +9290,14 @@ class $$RawFramesTableTableManager
                 Value<int> recordType = const Value.absent(),
                 Value<Uint8List> bytes = const Value.absent(),
                 Value<String?> deviceId = const Value.absent(),
+                Value<String?> brand = const Value.absent(),
               }) => RawFramesCompanion(
                 id: id,
                 timestamp: timestamp,
                 recordType: recordType,
                 bytes: bytes,
                 deviceId: deviceId,
+                brand: brand,
               ),
           createCompanionCallback:
               ({
@@ -9170,12 +9306,14 @@ class $$RawFramesTableTableManager
                 required int recordType,
                 required Uint8List bytes,
                 Value<String?> deviceId = const Value.absent(),
+                Value<String?> brand = const Value.absent(),
               }) => RawFramesCompanion.insert(
                 id: id,
                 timestamp: timestamp,
                 recordType: recordType,
                 bytes: bytes,
                 deviceId: deviceId,
+                brand: brand,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

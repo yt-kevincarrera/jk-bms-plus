@@ -101,8 +101,9 @@ class CellsTab extends StatelessWidget {
               color: _cellColour(s, i + 1, s.cellVoltages[i] - avg),
               balancing: i < balancing.length && balancing[i],
               isExtreme: i + 1 == s.minCellIndex || i + 1 == s.maxCellIndex,
-              resistance:
-                  i < s.cellResistances.length ? s.cellResistances[i] : null,
+              resistance: s.cellResistances != null && i < s.cellResistances!.length
+                  ? s.cellResistances![i]
+                  : null,
             ),
           ),
         ),
@@ -126,20 +127,22 @@ class CellsTab extends StatelessWidget {
           ),
           intro: t.balanceActiveNote,
           children: [
-            InfoRow(
-              t.balanceCurrent,
-              '${s.balanceCurrent.toStringAsFixed(3)} A',
-              valueColor: s.balancerActive ? AppTheme.cool : null,
-            ),
-            InfoRow(
-              t.balanceDirection,
-              switch (s.balancingAction) {
-                0x01 => t.balanceDirectionCharge,
-                0x02 => t.balanceDirectionDischarge,
-                _ => t.balanceDirectionOff,
-              },
-              dim: s.balancingAction == 0,
-            ),
+            if (s.balanceCurrent != null)
+              InfoRow(
+                t.balanceCurrent,
+                '${s.balanceCurrent!.toStringAsFixed(3)} A',
+                valueColor: s.balancerActive ? AppTheme.cool : null,
+              ),
+            if (s.balancingAction != null)
+              InfoRow(
+                t.balanceDirection,
+                switch (s.balancingAction!) {
+                  0x01 => t.balanceDirectionCharge,
+                  0x02 => t.balanceDirectionDischarge,
+                  _ => t.balanceDirectionOff,
+                },
+                dim: s.balancingAction == 0,
+              ),
             InfoRow(t.balanceWhichCells, t.balanceWhichCellsValue, dim: true),
             InfoRow(t.balanceRanking, t.needsDatabase, dim: true, last: true),
           ],
@@ -148,16 +151,25 @@ class CellsTab extends StatelessWidget {
           title: t.resistanceTitle,
           children: [
             InfoRow(t.resistanceSource, t.resistanceSourceValue, dim: true),
-            InfoRow(t.resistanceEstimated, t.needsSteps, dim: true),
             InfoRow(
-              t.resistanceWireWarnings,
-              s.wireResistanceWarningMask == 0
-                  ? t.none
-                  : '0x${s.wireResistanceWarningMask.toRadixString(16)}',
-              valueColor:
-                  s.wireResistanceWarningMask == 0 ? null : AppTheme.watch,
-              last: true,
+              t.resistanceEstimated,
+              t.needsSteps,
+              dim: true,
+              // ANT reports no wire-resistance warning mask, so the row below
+              // never appears for it, and this one has to close the section
+              // instead of leaving it with no last row at all.
+              last: s.wireResistanceWarningMask == null,
             ),
+            if (s.wireResistanceWarningMask != null)
+              InfoRow(
+                t.resistanceWireWarnings,
+                s.wireResistanceWarningMask == 0
+                    ? t.none
+                    : '0x${s.wireResistanceWarningMask!.toRadixString(16)}',
+                valueColor:
+                    s.wireResistanceWarningMask == 0 ? null : AppTheme.watch,
+                last: true,
+              ),
           ],
         ),
       ],

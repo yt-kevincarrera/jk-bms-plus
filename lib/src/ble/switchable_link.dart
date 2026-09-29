@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'ble_transport.dart';
 import 'bms_link.dart';
+import 'link_script.dart';
 import 'simulator/simulated_link.dart';
 import 'simulator/simulated_pack.dart';
 
@@ -21,8 +22,8 @@ class SwitchableLink implements BmsLink {
   final BleTransport _real;
   SimulatedLink? _simulator;
 
-  /// The radio, for the one caller that needs to write to the pack directly:
-  /// the service asking for cell info again when none has arrived.
+  /// The radio, for the one caller that needs it directly: the service asking
+  /// whether the phone already holds the pack for somebody else.
   BleTransport get real => _real;
 
   final _bytes = StreamController<List<int>>.broadcast();
@@ -64,7 +65,17 @@ class SwitchableLink implements BmsLink {
   Future<void> retryNow() => _active.retryNow();
 
   @override
-  void frameAccepted() => _active.frameAccepted();
+  void frameAccepted({bool deviceInfo = false}) =>
+      _active.frameAccepted(deviceInfo: deviceInfo);
+
+  /// Always the radio's: the simulator writes nothing, and the brand being
+  /// spoken belongs to the real pack whether or not demo mode is on.
+  @override
+  set script(LinkScript value) => _real.script = value;
+
+  /// Nothing in demo mode, where there is no pack to ask.
+  @override
+  Future<void> askAgain() => isSimulated ? Future.value() : _real.askAgain();
 
   @override
   set persistRetries(bool value) => _active.persistRetries = value;
@@ -137,7 +148,11 @@ class _Uninitialised implements BmsLink {
   @override
   Future<void> retryNow() async {}
   @override
-  void frameAccepted() {}
+  void frameAccepted({bool deviceInfo = false}) {}
+  @override
+  set script(LinkScript value) {}
+  @override
+  Future<void> askAgain() async {}
 
   @override
   set persistRetries(bool value) {}

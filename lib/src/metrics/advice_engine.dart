@@ -550,7 +550,9 @@ class AdviceEngine {
           evidence: [
             Evidence(
               EvidenceKind.reportedCycles,
-              value: report.reportedCycles.toDouble(),
+              // Non-null here: inflation is only non-null when
+              // bmsCycleCountWorthQuoting was, which is reportedCycles itself.
+              value: report.reportedCycles!.toDouble(),
             ),
             Evidence(
               EvidenceKind.equivalentCycles,

@@ -21,6 +21,9 @@ import 'database.dart';
 /// running migrations over a file of unknown vintage. JSON with a stated
 /// schema version can be read by a human, repaired by hand, and imported into
 /// any later version that knows what to do with it.
+///
+/// Format 2 adds the brand to devices and raw frames; a format 1 file
+/// restores as JK.
 class BackupCodec {
   BackupCodec(this.db);
 
@@ -28,7 +31,7 @@ class BackupCodec {
 
   /// Bumped only when the shape changes in a way an older reader could not
   /// cope with. Stored so an import can refuse rather than guess.
-  static const int formatVersion = 1;
+  static const int formatVersion = 2;
 
   /// Writes the backup and returns the file.
   ///
@@ -153,6 +156,9 @@ class BackupCodec {
           firstSeenAt: _time(d['firstSeenAt'])!,
           lastSeenAt: _time(d['lastSeenAt'])!,
           demo: Value(d['demo'] as bool? ?? false),
+          // Absent from every backup made before a second brand existed,
+          // which restores as null -- read back as JK by BmsBrand.fromStored.
+          brand: Value(d['brand'] as String?),
         ),
       );
     }
@@ -281,6 +287,7 @@ class BackupCodec {
     'firstSeenAt': d.firstSeenAt.toIso8601String(),
     'lastSeenAt': d.lastSeenAt.toIso8601String(),
     'demo': d.demo,
+    'brand': d.brand,
   };
 
   /// A pack's day one. Carried because a history without the point it is
@@ -415,6 +422,7 @@ class BackupCodec {
     // Hex, so the file stays readable and diffable. Base64 would be
     // shorter; being able to eyeball a frame is worth the bytes.
     'bytes': f.bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join(),
+    'brand': f.brand,
   };
 
   // --- from JSON ---
@@ -543,6 +551,7 @@ class BackupCodec {
       timestamp: _time(f['timestamp'])!,
       recordType: _i(f['recordType']),
       bytes: Uint8List.fromList(bytes),
+      brand: Value(f['brand'] as String?),
     );
   }
 }

@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
+import '../model/bms_device_info.dart';
 import '../model/bms_snapshot.dart';
-import '../model/jk_device_info.dart';
 import '../model/jk_settings.dart';
 import 'pack_config.dart';
 
@@ -100,12 +100,15 @@ class PackBaseline {
   static PackBaseline capture({
     required BmsSnapshot snapshot,
     JkSettings? settings,
-    JkDeviceInfo? info,
+    BmsDeviceInfo? info,
     DateTime? at,
   }) => PackBaseline(
     capturedAt: at ?? DateTime.now().toUtc(),
     cellVoltages: List<double>.from(snapshot.cellVoltages),
-    cellResistances: List<double>.from(snapshot.cellResistances),
+    // ANT does not report a wire resistance; an empty list is already the
+    // baseline's own way of saying "not captured", see the isNotEmpty check
+    // below.
+    cellResistances: List<double>.from(snapshot.cellResistances ?? const []),
     wireResistances: settings == null
         ? const []
         : List<double>.from(settings.connectionWireResistances),
@@ -309,7 +312,9 @@ class BaselineComparison {
     baseline: baseline,
     at: now.timestamp,
     cells: now.cellVoltages,
-    cellResistances: now.cellResistances,
+    // ANT does not report a wire resistance; an empty list is already the
+    // baseline's own way of saying "not captured".
+    cellResistances: List<double>.from(now.cellResistances ?? const []),
     current: now.current,
     cycleCount: now.cycleCount,
     settings: settings,

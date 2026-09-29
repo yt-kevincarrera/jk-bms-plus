@@ -3,6 +3,7 @@ import 'package:jk_bms/src/gps/location_source.dart';
 import 'package:jk_bms/src/metrics/trip_recorder.dart';
 import 'package:jk_bms/src/model/bms_snapshot.dart';
 import 'package:jk_bms/src/model/bms_warning.dart';
+import 'package:jk_bms/src/protocol/bms_brand.dart';
 import 'package:jk_bms/src/protocol/protocol_variant.dart';
 
 /// Roughly 111 m of latitude per 0.001 degree, which makes the expected
@@ -27,6 +28,7 @@ BmsSnapshot snap(DateTime at, {double current = -10, double soc = 80}) {
   final cells = List.filled(20, 3.9);
   return BmsSnapshot(
     timestamp: at,
+    brand: BmsBrand.jk,
     variant: JkProtocolVariant.jk02_24s,
     frameCounter: 1,
     cellVoltages: cells,

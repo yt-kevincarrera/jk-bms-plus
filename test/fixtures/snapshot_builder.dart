@@ -1,5 +1,6 @@
 import 'package:jk_bms/src/model/bms_snapshot.dart';
 import 'package:jk_bms/src/model/bms_warning.dart';
+import 'package:jk_bms/src/protocol/bms_brand.dart';
 import 'package:jk_bms/src/protocol/protocol_variant.dart';
 
 /// A plausible reading, with only the parts a test cares about spelled out.
@@ -20,6 +21,7 @@ BmsSnapshot buildSnapshot({
   final v = cells ?? List.filled(20, 3.90);
   return BmsSnapshot(
     timestamp: timestamp ?? DateTime.utc(2026, 1, 1),
+    brand: BmsBrand.jk,
     variant: JkProtocolVariant.jk02_24s,
     frameCounter: 1,
     cellVoltages: v,

@@ -72,6 +72,10 @@ class Devices extends Table {
   /// True for the simulated pack, so demo data stays in its own world.
   BoolColumn get demo => boolean().withDefault(const Constant(false))();
 
+  /// Which maker's protocol this pack speaks, by [BmsBrand.stored]. Null for
+  /// every row written before the app knew a second brand, all of them JK.
+  TextColumn get brand => text().nullable()();
+
   @override
   Set<Column<Object>> get primaryKey => {id};
 }
@@ -253,7 +257,8 @@ class Snapshots extends Table {
   TextColumn get deviceId => text().nullable()();
 }
 
-/// The raw 300-byte frames, exactly as they arrived.
+/// The raw frames exactly as they arrived (300 bytes for JK, variable for
+/// ANT).
 ///
 /// This is not optional. Several byte offsets in this protocol are still
 /// uncertain (see docs/PROTOCOL.md). When one of them turns out to be wrong —
@@ -268,6 +273,10 @@ class RawFrames extends Table {
   /// Which pack this was recorded on. Null for rows written before the app
   /// tracked packs at all -- see [BmsRepository.orphanCounts].
   TextColumn get deviceId => text().nullable()();
+
+  /// Which protocol these bytes are, so a reparse picks the right decoder.
+  /// Null means JK.
+  TextColumn get brand => text().nullable()();
 }
 
 /// A guided full-discharge capacity measurement.
@@ -418,7 +427,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -464,6 +473,7 @@ class AppDatabase extends _$AppDatabase {
               devices.catalogueFromBms,
               devices.chemistry,
               devices.acquiredAt,
+              devices.brand,
             ],
           ),
         );
@@ -534,6 +544,14 @@ class AppDatabase extends _$AppDatabase {
         // rider updates, which is the honest starting point for a record of
         // decisions the app had not been making a note of.
         await m.createTable(linkEvents);
+      }
+      if (from < 15) {
+        // Raw frames were never recreated, so every older version gets the
+        // column here. Devices were rebuilt from the current schema by the
+        // from < 5 step, which already carries it: adding it again would
+        // fail with a duplicate column and stop the app opening.
+        await m.addColumn(rawFrames, rawFrames.brand);
+        if (from >= 5) await m.addColumn(devices, devices.brand);
       }
     },
   );

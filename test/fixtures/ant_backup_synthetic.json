@@ -1,0 +1,67 @@
+{
+  "format": 2,
+  "schema": 15,
+  "exportedAt": "2026-09-28T12:00:00.000Z",
+  "includesRawFrames": true,
+  "devices": [
+    {
+      "id": "ANT1",
+      "name": "Synthetic ANT pack",
+      "serialNumber": "ANT-SYNTH-0001",
+      "model": "16ZMUB00-211026A",
+      "catalogueCapacityAh": 280.0,
+      "catalogueFromBms": false,
+      "chemistry": "LiFePO4",
+      "acquiredAt": null,
+      "firstSeenAt": "2026-09-28T11:00:00.000Z",
+      "lastSeenAt": "2026-09-28T12:00:00.000Z",
+      "demo": false,
+      "brand": "ant"
+    }
+  ],
+  "trips": [],
+  "tripPoints": [],
+  "snapshots": [],
+  "capacityTests": [],
+  "maintenance": [],
+  "inspections": [],
+  "baselines": [],
+  "linkEvents": [
+    {
+      "at": "2026-09-28T11:59:56.000Z",
+      "deviceId": "ANT1",
+      "kind": "antFrameRejected",
+      "detail": "badCrc 7ea11100008e05010210000000000000000080008001000000000000000000000000e40ce40ce50c1a0ce80ce70ce70ce60ce80ce70ce70ce70ce70ce70ce60ce90c0100020002000700a41403005b006400010100000076b010d5670e0fba324a000f00000010582e0200000000e90c1000e40c01000500e60c000080007a000f02f2fab98c3b00bbd85800da2d4300e8b649000543aa55"
+    }
+  ],
+  "rawFrames": [
+    {
+      "deviceId": "ANT1",
+      "timestamp": "2026-09-28T11:59:57.000Z",
+      "recordType": 17,
+      "bytes": "7ea11100008e05010210000000000000000080008001000000000000000000000000e40ce40ce50ce50ce80ce70ce70ce60ce80ce70ce70ce70ce70ce70ce60ce90c0100020002000700a41403005b006400010100000076b010d5670e0fba324a000f00000010582e0200000000e90c1000e40c01000500e60c000080007a000f02f2fab98c3b00bbd85800da2d4300e8b649000543aa55",
+      "brand": "ant"
+    },
+    {
+      "deviceId": "ANT1",
+      "timestamp": "2026-09-28T11:59:58.000Z",
+      "recordType": 17,
+      "bytes": "7ea11100008e0501040e020000000000000000000001000000000000000000000000111011101110111011101110111011101110111011101110111011101c001c00d8ff1c001c001c007e160000600064000102000080c3c9014f55b30108530000000000006b28120000000000111001001110010000001110020070000300ac02f1fa7d2e000094770000de0700007776000035e2aa55",
+      "brand": "ant"
+    },
+    {
+      "deviceId": "ANT1",
+      "timestamp": "2026-09-28T11:59:59.000Z",
+      "recordType": 18,
+      "bytes": "7ea1126c022031365a4d00000000000000000000000031365a4d554230302d323131303236417208ff0b000041f2aa55",
+      "brand": "ant"
+    },
+    {
+      "deviceId": "ANT1",
+      "timestamp": "2026-09-28T12:00:00.000Z",
+      "recordType": 18,
+      "bytes": "7ea1126c02203232504842385442313330410000000032324141554230302d32343130303841ef2fff0b000041f2aa55",
+      "brand": "ant"
+    }
+  ]
+}

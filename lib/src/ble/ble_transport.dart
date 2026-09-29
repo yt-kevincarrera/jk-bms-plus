@@ -2,9 +2,10 @@ import 'dart:async';
 
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
+import '../protocol/bms_brand.dart';
 import '../protocol/jk_constants.dart';
 import 'bms_link.dart';
-import 'link_quiet.dart';
+import 'link_script.dart';
 import 'link_trouble.dart';
 import 'reconnect_backoff.dart';
 
@@ -19,7 +20,7 @@ enum BleLinkState {
   failed,
 }
 
-/// A JK BMS advertising nearby.
+/// A BMS, or something that might be one, advertising nearby.
 class DiscoveredBms {
   const DiscoveredBms({
     required this.id,
@@ -27,6 +28,7 @@ class DiscoveredBms {
     required this.rssi,
     this.advertisesJkService = false,
     this.nameLooksLikeJk = false,
+    this.brandHint,
   });
 
   final String id;
@@ -41,14 +43,18 @@ class DiscoveredBms {
   /// setting, and a renamed pack stops matching.
   final bool nameLooksLikeJk;
 
+  /// From the advertised name; see [brandFromName].
+  final BmsBrand? brandHint;
+
   /// Whether this is probably the BMS rather than a headset or a TV.
   ///
-  /// Used to sort and to highlight, never to hide. A device that fails both
-  /// checks can still be the right one -- a JK BMS renamed in the official app
+  /// Used to sort and to highlight, never to hide. A device that fails every
+  /// check can still be the right one -- a JK BMS renamed in the official app
   /// to something personal advertises neither the service UUID nor the letters
   /// JK, and hiding it would leave a rider staring at an empty list with no
   /// way to tell an absent pack from a filtered one.
-  bool get likelyBms => advertisesJkService || nameLooksLikeJk;
+  bool get likelyBms =>
+      advertisesJkService || nameLooksLikeJk || brandHint == BmsBrand.ant;
 }
 
 /// Judges one advertisement, without deciding whether to show it.
@@ -70,6 +76,7 @@ DiscoveredBms classifyAdvertisement({
       advertisesJkService:
           serviceUuids.any((u) => u.toLowerCase().contains('ffe0')),
       nameLooksLikeJk: name.toUpperCase().contains('JK'),
+      brandHint: brandFromName(name),
     );
 
 /// Strongest signal of being the BMS first, then closest.
@@ -184,7 +191,7 @@ class BleTransport implements BmsLink {
     this.muteBefore = const Duration(seconds: 20),
     this.muteRetryDelay = const Duration(seconds: 3),
     this.attachTimeout = const Duration(seconds: 25),
-  });
+  }) : _script = LinkScript.jk(tickEvery: pollInterval);
 
   /// MTU we ask for on connect. 244 is the largest an Android BLE stack will
   /// grant over a 247-byte ATT MTU, and it drops a 300-byte frame from 15
@@ -241,7 +248,22 @@ class BleTransport implements BmsLink {
   ///
   /// So the nudge is a nudge now: it only writes when nothing has arrived for
   /// [quietBefore]. On a pack that is streaming normally it never fires at all.
+  ///
+  /// This is the JK script's tick. The rule itself lives in [LinkScript.tick],
+  /// and a brand that has to be asked every time brings its own interval.
   final Duration pollInterval;
+
+  /// What to write, and when, for the brand on the other end. JK until told
+  /// otherwise, which is every pack the app knew before it knew a second one.
+  LinkScript _script;
+
+  /// Ticks of [_pollTimer] on the current link, so a script can do something
+  /// every few ticks rather than every one.
+  int _tick = 0;
+
+  /// Whether the pack has identified itself on the current link, so a script
+  /// that keeps asking until it does can stop.
+  bool _deviceInfoSeen = false;
 
   /// Silence long enough to be worth a nudge.
   ///
@@ -625,14 +647,18 @@ class BleTransport implements BmsLink {
         _droppedAt = null;
       }
 
-      // The BMS answers device info first; the variant we decode everything
-      // else with comes out of that frame, so it has to be the first request.
-      await requestDeviceInfo();
-      await requestCellInfo();
+      // The script's opening requests, in its order. For a JK that is device
+      // info first: the variant we decode everything else with comes out of
+      // that frame, so it has to be the first request.
+      _tick = 0;
+      _deviceInfoSeen = false;
+      for (final f in _script.onConnect) {
+        await _write(f);
+      }
 
       _pollTimer?.cancel();
-      _pollTimer = Timer.periodic(pollInterval, (_) => _nudgeIfQuiet());
-    } on NotAJkBmsException catch (e) {
+      _pollTimer = Timer.periodic(_script.tickEvery, (_) => _onTick());
+    } on NotABmsException catch (e) {
       // The wrong device, not a bad link. Stop wanting it so the reconnect
       // loop does not chase it, and let go so it is not held either.
       _wantConnection = false;
@@ -775,9 +801,9 @@ class BleTransport implements BmsLink {
         if (c.properties.notify || c.properties.indicate) return c;
       }
     }
-    throw NotAJkBmsException(
+    throw NotABmsException(
       'This device does not expose a notifying $jkCharacteristicUuid16 '
-      'characteristic on service $jkServiceUuid16, so it is not a JK BMS '
+      'characteristic on service $jkServiceUuid16, so it is not a BMS '
       'this app can talk to.',
     );
   }
@@ -880,8 +906,9 @@ class BleTransport implements BmsLink {
 
   /// The decoder assembled a frame out of this link's bytes. See [BmsLink].
   @override
-  void frameAccepted() {
+  void frameAccepted({bool deviceInfo = false}) {
     _lastFrameAt = DateTime.now();
+    if (deviceInfo) _deviceInfoSeen = true;
     // The one thing that disproves what the failures implied, which is why the
     // ledger is cleared here and not on the link coming up, and not on bytes
     // either. A pack that accepts the connection and then says nothing, or
@@ -931,55 +958,69 @@ class BleTransport implements BmsLink {
     if (_wantConnection) _onDropped();
   }
 
-  /// Asks the BMS for a device info frame (record type 0x03).
-  Future<void> requestDeviceInfo() => _writeCommand(commandDeviceInfo);
-
-  /// Asks the BMS for a cell info frame (record type 0x02).
-  Future<void> requestCellInfo() => _writeCommand(commandCellInfo);
-
-  /// Asks again, but only if the pack has actually stopped talking. Gives up
-  /// on the link altogether once it has been mute for [muteBefore].
-  Future<void> _nudgeIfQuiet() async {
-    final now = DateTime.now();
-    final lastSign = _lastFrameAt ?? _connectedAt;
-    if (lastSign != null && now.difference(lastSign) > muteBefore) {
-      await _resetMuteLink();
-      return;
+  @override
+  set script(LinkScript value) {
+    // A different brand starts its schedule from the beginning. The ticks and
+    // the device-info flag counted so far belong to the other brand's script,
+    // and an ANT that inherited them after a mid-link switch would wait for a
+    // tick number that already passed before asking who it is.
+    if (value.brand != _script.brand) {
+      _tick = 0;
+      _deviceInfoSeen = false;
     }
-    if (!shouldNudge(
-      lastHeardAt: _lastFrameAt,
-      now: now,
-      quietBefore: quietBefore,
-    )) {
-      return;
+    _script = value;
+    // A brand learned mid-link takes effect on the next tick rather than the
+    // next connection, because a pack that only speaks when asked would
+    // otherwise sit silent until it was judged mute and let go.
+    if (_pollTimer?.isActive ?? false) {
+      _pollTimer?.cancel();
+      _pollTimer = Timer.periodic(value.tickEvery, (_) => _onTick());
     }
-    nudges++;
-    _nudgesThisLink++;
-    await requestCellInfo();
   }
 
-  /// Builds and sends a read command.
+  /// Asks the pack again now, with the script's own request.
+  @override
+  Future<void> askAgain() => _write(_script.askAgain);
+
+  /// Does whatever the script decides for this tick: nothing, a request, or
+  /// letting go of a link that has been mute for [muteBefore].
   ///
-  /// This is the only place the app ever writes to the BMS, and it only ever
-  /// writes read requests. Writing settings is out of scope: the protocol is
-  /// reverse-engineered, and a wrong value can disable a protection.
+  /// For a JK that is a nudge, and only if the pack has actually stopped
+  /// talking; the reasoning is on [pollInterval].
+  Future<void> _onTick() async {
+    _tick++;
+    final action = _script.tick(
+      now: DateTime.now(),
+      lastFrameAt: _lastFrameAt,
+      connectedAt: _connectedAt,
+      tickNumber: _tick,
+      deviceInfoSeen: _deviceInfoSeen,
+      quietBefore: quietBefore,
+      muteBefore: muteBefore,
+    );
+    switch (action) {
+      case NoAction():
+        return;
+      case ReleaseMute():
+        await _resetMuteLink();
+      case WriteFrame(:final bytes, :final countsAsNudge):
+        if (countsAsNudge) {
+          nudges++;
+          _nudgesThisLink++;
+        }
+        await _write(bytes);
+    }
+  }
+
+  /// Sends one frame.
   ///
-  /// Frame layout source: `build_frame()` in
-  /// https://github.com/syssi/esphome-jk-bms/blob/main/components/jk_bms_ble/jk_bms_ble.cpp
-  Future<void> _writeCommand(int register) async {
+  /// This is the only place the app ever writes to a BMS, and it only writes
+  /// frames a [LinkScript] produced, all of them read requests. Writing
+  /// settings is out of scope: the protocols are reverse-engineered, and a
+  /// wrong value can disable a protection.
+  Future<void> _write(List<int> frame) async {
     final c = _characteristic;
     if (c == null) return;
-
-    final frame = List<int>.filled(commandFrameSize, 0);
-    frame.setRange(0, 4, commandPreamble);
-    frame[4] = register; // holding register
-    frame[5] = 0x00; // value length in bytes; 0 for a read
-    // Bytes 6..9 carry the value, which stays zero for a read.
-    var sum = 0;
-    for (var i = 0; i < commandFrameSize - 1; i++) {
-      sum = (sum + frame[i]) & 0xFF;
-    }
-    frame[commandFrameSize - 1] = sum;
 
     try {
       await c.write(frame, withoutResponse: c.properties.writeWithoutResponse);

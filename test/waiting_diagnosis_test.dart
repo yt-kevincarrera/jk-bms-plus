@@ -14,6 +14,8 @@ void main() {
     int heldBack = 0,
     int failures = 0,
     bool variantKnown = true,
+    int rejected = 0,
+    int implausible = 0,
   }) => diagnoseWaiting(
     link: link,
     framesAccepted: accepted,
@@ -21,6 +23,8 @@ void main() {
     heldBackFrames: heldBack,
     decodeFailures: failures,
     variantKnown: variantKnown,
+    rejectedFrames: rejected,
+    implausibleFrames: implausible,
   );
 
   test('a link that is not up comes first, whatever else was seen', () {
@@ -52,5 +56,40 @@ void main() {
 
   test('everything worked and the screen still has nothing: say so', () {
     expect(at(accepted: 10, cellInfo: 7), WaitingReason.unexplained);
+  });
+
+  // ANT has no framing to guess, so its buffers either become a frame or are
+  // thrown away before that -- there is no held-back-for-variant stage, and a
+  // thrown-away buffer never reaches cellInfoFrames or decodeFailures. Its
+  // rejected count is what proves the pack is talking, and what tells "still
+  // silent" apart from "talking, but none of it decodes".
+  test('an ANT that only sends buffers nothing can frame is not silent', () {
+    expect(
+      at(accepted: 0, cellInfo: 0, rejected: 6),
+      WaitingReason.decodeFailing,
+    );
+  });
+
+  test('an ANT with nothing at all, not even a rejected buffer, is silent', () {
+    expect(at(accepted: 0, cellInfo: 0, rejected: 0), WaitingReason.noFrames);
+  });
+
+  test('an ANT reading real status frames is unaffected by rejects seen '
+      'earlier on the same connection', () {
+    expect(
+      at(accepted: 10, cellInfo: 7, rejected: 3),
+      WaitingReason.unexplained,
+    );
+  });
+
+  // An ANT status that decodes but fails plausibility is held back. There is
+  // no variant to pick for ANT, so it must not fall through to "everything
+  // worked": it is the pack's bytes not making sense, and says so.
+  test('an ANT whose readings are all held back as implausible is decoding '
+      'badly, not unexplained', () {
+    expect(
+      at(accepted: 10, cellInfo: 7, implausible: 7),
+      WaitingReason.decodeFailing,
+    );
   });
 }

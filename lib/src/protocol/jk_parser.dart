@@ -2,6 +2,7 @@ import '../model/bms_snapshot.dart';
 import '../model/bms_warning.dart';
 import '../model/jk_device_info.dart';
 import '../model/jk_settings.dart';
+import 'bms_brand.dart';
 import 'byte_reader.dart';
 import 'jk_constants.dart';
 import 'jk_frame.dart';
@@ -251,6 +252,7 @@ class JkParser {
 
     return BmsSnapshot(
       timestamp: frame.receivedAt,
+      brand: BmsBrand.jk,
       variant: variant,
       frameCounter: frame.counter,
       cellVoltages: List.unmodifiable(voltages),

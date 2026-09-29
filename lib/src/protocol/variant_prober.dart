@@ -60,8 +60,10 @@ class Plausibility {
     if (s.cellCount < 3) {
       reasons.add('${s.cellCount} cells');
     }
-    if (s.cellCount > s.variant.cellSlots) {
-      reasons.add('${s.cellCount} cells in ${s.variant.cellSlots} slots');
+    // 32 is the most cells an ANT status frame can declare; spec §5.1.
+    final slots = s.variant?.cellSlots ?? 32;
+    if (s.cellCount > slots) {
+      reasons.add('${s.cellCount} cells in $slots slots');
     }
 
     for (final v in s.cellVoltages) {

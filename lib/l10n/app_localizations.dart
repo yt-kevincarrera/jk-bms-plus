@@ -199,6 +199,30 @@ abstract class AppL10n {
   /// **'anuncia el servicio JK'**
   String get connectByService;
 
+  /// No description provided for @brandAskTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Qué BMS es?'**
+  String get brandAskTitle;
+
+  /// No description provided for @brandAskBody.
+  ///
+  /// In es, this message translates to:
+  /// **'El nombre no lo dice. Elige la marca una vez; la app la recuerda.'**
+  String get brandAskBody;
+
+  /// No description provided for @brandJk.
+  ///
+  /// In es, this message translates to:
+  /// **'JK (Jikong)'**
+  String get brandJk;
+
+  /// No description provided for @brandAnt.
+  ///
+  /// In es, this message translates to:
+  /// **'ANT'**
+  String get brandAnt;
+
   /// No description provided for @tapBusy.
   ///
   /// In es, this message translates to:
@@ -1009,6 +1033,12 @@ abstract class AppL10n {
   /// **'todavía no llegó'**
   String get systemDeviceInfoMissing;
 
+  /// No description provided for @systemBrand.
+  ///
+  /// In es, this message translates to:
+  /// **'Marca'**
+  String get systemBrand;
+
   /// No description provided for @systemVariantTitle.
   ///
   /// In es, this message translates to:
@@ -1050,6 +1080,72 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'La app cambió de formato por su cuenta. La versión del firmware apuntaba a otro, y con ese los números eran imposibles: este es el que cuadra con la lectura.'**
   String get systemVariantCorrected;
+
+  /// No description provided for @antStatusTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Estado ANT'**
+  String get antStatusTitle;
+
+  /// No description provided for @antBatteryState.
+  ///
+  /// In es, this message translates to:
+  /// **'Estado de la batería'**
+  String get antBatteryState;
+
+  /// No description provided for @antChargeMosfet.
+  ///
+  /// In es, this message translates to:
+  /// **'MOSFET de carga'**
+  String get antChargeMosfet;
+
+  /// No description provided for @antDischargeMosfet.
+  ///
+  /// In es, this message translates to:
+  /// **'MOSFET de descarga'**
+  String get antDischargeMosfet;
+
+  /// No description provided for @antBalancer.
+  ///
+  /// In es, this message translates to:
+  /// **'Balanceador'**
+  String get antBalancer;
+
+  /// No description provided for @antBalancerTemp.
+  ///
+  /// In es, this message translates to:
+  /// **'Temperatura del balanceador'**
+  String get antBalancerTemp;
+
+  /// No description provided for @antBatteryStateCode.
+  ///
+  /// In es, this message translates to:
+  /// **'{code, select, 0{Desconocido} 1{Inactiva} 2{Cargando} 3{Descargando} 4{En espera} 5{Error} other{Desconocido}}'**
+  String antBatteryStateCode(String code);
+
+  /// No description provided for @antChargeMosfetCode.
+  ///
+  /// In es, this message translates to:
+  /// **'{code, select, 0{Apagado} 1{Encendido} 2{Protección por sobrecarga} 3{Protección por sobrecorriente} 4{Batería llena} 5{Sobretensión del pack} 6{Sobretemperatura de la batería} 7{Sobretemperatura del MOSFET} 8{Corriente anómala} 9{Cable de balanceo desconectado} 10{Sobretemperatura de la placa} 11{Reservado} 12{No se pudo encender} 13{Fallo del MOSFET de descarga} 14{En espera} 15{Apagado manualmente} 16{Sobretensión de segundo nivel} 17{Protección por baja temperatura} 18{Diferencia de voltaje excesiva} 19{Reservado} 20{Error de autodiagnóstico} other{Desconocido}}'**
+  String antChargeMosfetCode(String code);
+
+  /// No description provided for @antDischargeMosfetCode.
+  ///
+  /// In es, this message translates to:
+  /// **'{code, select, 0{Apagado} 1{Encendido} 2{Protección por sobredescarga} 3{Protección por sobrecorriente} 4{Sobrecorriente de segundo nivel} 5{Subtensión del pack} 6{Sobretemperatura de la batería} 7{Sobretemperatura del MOSFET} 8{Corriente anómala} 9{Cable de balanceo desconectado} 10{Sobretemperatura de la placa} 11{MOSFET de carga encendido} 12{Protección por cortocircuito} 13{Fallo del MOSFET de descarga} 14{No se pudo encender} 15{Apagado manualmente} 16{Subtensión de segundo nivel} 17{Protección por baja temperatura} 18{Diferencia de voltaje excesiva} 19{Error de autodiagnóstico} other{Desconocido}}'**
+  String antDischargeMosfetCode(String code);
+
+  /// No description provided for @antBalancerCode.
+  ///
+  /// In es, this message translates to:
+  /// **'{code, select, 0{Apagado} 1{Balanceo por límite superado} 2{Balanceo por diferencia de voltaje en carga} 3{Sobretemperatura del balanceo} 4{Balanceo automático} 10{Sobretemperatura de la placa} other{Desconocido}}'**
+  String antBalancerCode(String code);
+
+  /// No description provided for @antUnknownCode.
+  ///
+  /// In es, this message translates to:
+  /// **'Desconocido (0x{hex})'**
+  String antUnknownCode(String hex);
 
   /// No description provided for @systemConnectionTitle.
   ///
@@ -1110,6 +1206,12 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Configuración del BMS (solo lectura)'**
   String get systemSettingsTitle;
+
+  /// No description provided for @settingsNotExposed.
+  ///
+  /// In es, this message translates to:
+  /// **'Este BMS no expone su configuración a la app.'**
+  String get settingsNotExposed;
 
   /// No description provided for @systemNotices.
   ///
@@ -3553,17 +3655,23 @@ abstract class AppL10n {
   /// **'No se pudo levantar la conexión Bluetooth con la batería en 25 segundos, y la app lo intentó más de una vez. Comprueba que la batería esté encendida y cerca, y que la app oficial de JK esté cerrada del todo, no solo en segundo plano.'**
   String get connectLinkNeverCameUp;
 
-  /// No description provided for @connectSilentJk.
+  /// No description provided for @connectSilent.
   ///
   /// In es, this message translates to:
-  /// **'Se conectó, pero la batería no dijo nada en 12 segundos. Se anuncia como JK, así que sí es un BMS JK: su única sesión de datos la tiene otro, o se quedó colgada. Lo primero a mirar es la app oficial de JK, que se reconecta sola desde el segundo plano: fuérzala a detenerse en los ajustes de Android, no solo la cierres. Si no hay nadie más, el módulo Bluetooth del BMS suelta la sesión colgada por sí solo al cabo de un rato, y apagar y encender el Bluetooth del teléfono no lo acelera; con el vigilante de proximidad activado la app vuelve a intentarlo sola. La consola de frames crudos en Ajustes muestra si llega algo.'**
-  String get connectSilentJk;
+  /// **'Conectó pero no llegaron lecturas. Si elegiste la marca, prueba con la otra.'**
+  String get connectSilent;
 
   /// No description provided for @connectTalkingUndecoded.
   ///
   /// In es, this message translates to:
   /// **'Se conectó y están llegando bytes, pero ninguno se decodifica como un frame JK. Abre la consola con el icono de terminal de arriba: lo que aparezca ahí es lo que hace falta para añadir soporte.'**
   String get connectTalkingUndecoded;
+
+  /// No description provided for @antEvidence.
+  ///
+  /// In es, this message translates to:
+  /// **'ANT: {status} de estado, {info} de info, {rejected} rechazadas'**
+  String antEvidence(int status, int info, int rejected);
 
   /// No description provided for @storedCount.
   ///
@@ -4270,7 +4378,7 @@ abstract class AppL10n {
   /// No description provided for @troubleNotJkBms.
   ///
   /// In es, this message translates to:
-  /// **'Ese dispositivo no tiene el servicio Bluetooth de JK. No es un BMS JK, o no uno con el que esta app pueda hablar.'**
+  /// **'Ese dispositivo no tiene el servicio Bluetooth que usan los BMS compatibles. No es un BMS compatible, o no uno con el que esta app pueda hablar.'**
   String get troubleNotJkBms;
 
   /// No description provided for @troublePackMute.

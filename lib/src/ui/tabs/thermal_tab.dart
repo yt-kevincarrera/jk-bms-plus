@@ -118,21 +118,36 @@ class ThermalTab extends StatelessWidget {
                   dim: true,
                 ),
 
+            // Which rows follow depends on the brand: ANT reports no sensor
+            // mask and no heater, so the MOSFET row can be the last one, and
+            // the last visible row is the one that must close the section.
             InfoRow(
               t.thermalMosfetSensor,
               s.mosfetTemp == null ? t.notReported : t.reported,
+              last:
+                  s.temperatureSensorMask == null &&
+                  s.heatingOn == null &&
+                  s.heatingCurrent == null,
             ),
-            InfoRow(
-              t.thermalSensorMask,
-              '0x${s.temperatureSensorMask.toRadixString(16).padLeft(4, '0')}',
-              hint: t.thermalMaskNote,
-            ),
-            InfoRow(t.thermalHeater, s.heatingOn ? t.on : t.off),
-            InfoRow(
-              t.thermalHeaterCurrent,
-              '${s.heatingCurrent.toStringAsFixed(2)} A',
-              last: true,
-            ),
+            if (s.temperatureSensorMask != null)
+              InfoRow(
+                t.thermalSensorMask,
+                '0x${s.temperatureSensorMask!.toRadixString(16).padLeft(4, '0')}',
+                hint: t.thermalMaskNote,
+                last: s.heatingOn == null && s.heatingCurrent == null,
+              ),
+            if (s.heatingOn != null)
+              InfoRow(
+                t.thermalHeater,
+                s.heatingOn! ? t.on : t.off,
+                last: s.heatingCurrent == null,
+              ),
+            if (s.heatingCurrent != null)
+              InfoRow(
+                t.thermalHeaterCurrent,
+                '${s.heatingCurrent!.toStringAsFixed(2)} A',
+                last: true,
+              ),
           ],
         ),
       ],

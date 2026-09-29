@@ -67,6 +67,19 @@ class AppL10nEn extends AppL10n {
   String get connectByService => 'advertises the JK service';
 
   @override
+  String get brandAskTitle => 'Which BMS is this?';
+
+  @override
+  String get brandAskBody =>
+      'The name does not say. Pick the brand once; the app remembers it.';
+
+  @override
+  String get brandJk => 'JK (Jikong)';
+
+  @override
+  String get brandAnt => 'ANT';
+
+  @override
   String get tapBusy =>
       'An attempt is already running. Let it finish: tapping again does not speed it up and can leave another connection stuck on the phone.';
 
@@ -516,6 +529,9 @@ class AppL10nEn extends AppL10n {
   String get systemDeviceInfoMissing => 'not received yet';
 
   @override
+  String get systemBrand => 'Brand';
+
+  @override
   String get systemVariantTitle => 'Protocol variant';
 
   @override
@@ -538,6 +554,114 @@ class AppL10nEn extends AppL10n {
   @override
   String get systemVariantCorrected =>
       'The app switched framing on its own. The firmware version pointed at another one, and with that one the numbers were impossible; this is the one the reading agrees with.';
+
+  @override
+  String get antStatusTitle => 'ANT status';
+
+  @override
+  String get antBatteryState => 'Battery state';
+
+  @override
+  String get antChargeMosfet => 'Charge MOSFET';
+
+  @override
+  String get antDischargeMosfet => 'Discharge MOSFET';
+
+  @override
+  String get antBalancer => 'Balancer';
+
+  @override
+  String get antBalancerTemp => 'Balancer temperature';
+
+  @override
+  String antBatteryStateCode(String code) {
+    String _temp0 = intl.Intl.selectLogic(code, {
+      '0': 'Unknown',
+      '1': 'Idle',
+      '2': 'Charge',
+      '3': 'Discharge',
+      '4': 'Standby',
+      '5': 'Error',
+      'other': 'Unknown',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String antChargeMosfetCode(String code) {
+    String _temp0 = intl.Intl.selectLogic(code, {
+      '0': 'Off',
+      '1': 'On',
+      '2': 'Overcharge protection',
+      '3': 'Over current protection',
+      '4': 'Battery full',
+      '5': 'Total overpressure',
+      '6': 'Battery over temperature',
+      '7': 'MOSFET over temperature',
+      '8': 'Abnormal current',
+      '9': 'Balanced line dropped string',
+      '10': 'Motherboard over temperature',
+      '11': 'Reserved',
+      '12': 'Open failed',
+      '13': 'Discharge MOSFET abnormality',
+      '14': 'Waiting',
+      '15': 'Manually turned off',
+      '16': 'Two level exceed voltage',
+      '17': 'Low temperature protection',
+      '18': 'Voltage difference exceeded',
+      '19': 'Reserved',
+      '20': 'Self detect error',
+      'other': 'Unknown',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String antDischargeMosfetCode(String code) {
+    String _temp0 = intl.Intl.selectLogic(code, {
+      '0': 'Off',
+      '1': 'On',
+      '2': 'Overdischarge protection',
+      '3': 'Over current protection',
+      '4': 'Two current exceeded',
+      '5': 'Total pressure undervoltage',
+      '6': 'Battery over temperature',
+      '7': 'MOSFET over temperature',
+      '8': 'Abnormal current',
+      '9': 'Balanced line dropped string',
+      '10': 'Motherboard over temperature',
+      '11': 'Charge MOSFET on',
+      '12': 'Short circuit protection',
+      '13': 'Discharge MOSFET abnormality',
+      '14': 'Open failed',
+      '15': 'Manually turned off',
+      '16': 'Two level low voltage',
+      '17': 'Low temperature protection',
+      '18': 'Voltage difference exceeded',
+      '19': 'Self detect error',
+      'other': 'Unknown',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String antBalancerCode(String code) {
+    String _temp0 = intl.Intl.selectLogic(code, {
+      '0': 'Off',
+      '1': 'Exceeds the limit equilibrium',
+      '2': 'Charge differential pressure balance',
+      '3': 'Balanced over temperature',
+      '4': 'Automatic equalization',
+      '10': 'Motherboard over temperature',
+      'other': 'Unknown',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String antUnknownCode(String hex) {
+    return 'Unknown (0x$hex)';
+  }
 
   @override
   String get systemConnectionTitle => 'Connection';
@@ -570,6 +694,10 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get systemSettingsTitle => 'BMS settings (read-only)';
+
+  @override
+  String get settingsNotExposed =>
+      'This BMS does not expose its configuration to the app.';
 
   @override
   String get systemNotices => 'Notices';
@@ -1964,12 +2092,17 @@ class AppL10nEn extends AppL10n {
       'The Bluetooth link to the pack did not come up in 25 seconds, and the app tried more than once. Check that the pack is on and nearby, and that the official JK app is fully closed, not just in the background.';
 
   @override
-  String get connectSilentJk =>
-      'It connected, but the pack said nothing for 12 seconds. It announces itself as JK, so it is a JK BMS: its one data session belongs to someone else, or is stuck. Look first at the official JK app, which reconnects on its own from the background: force-stop it in Android settings, do not just close it. If nobody else is there, the BMS\'s Bluetooth module lets a stuck session go by itself after a while, and switching the phone\'s Bluetooth off and on does not hurry it; with the proximity watcher on, the app retries on its own. The raw frame console in Settings shows whether anything arrives.';
+  String get connectSilent =>
+      'Connected but no readings arrived. If you picked the brand, try the other one.';
 
   @override
   String get connectTalkingUndecoded =>
       'It connected and bytes are arriving, but none of them decode as a JK frame. Open the console with the terminal icon at the top: what shows up there is what is needed to add support.';
+
+  @override
+  String antEvidence(int status, int info, int rejected) {
+    return 'ANT: $status status, $info info, $rejected rejected';
+  }
 
   @override
   String storedCount(String count) {
@@ -2384,7 +2517,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get troubleNotJkBms =>
-      'That device has no JK Bluetooth service on it. It is not a JK BMS, or not one this app can talk to.';
+      'That device has none of the Bluetooth service the supported BMS brands use. It is not a supported BMS, or not one this app can talk to.';
 
   @override
   String get troublePackMute =>

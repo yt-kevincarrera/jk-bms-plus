@@ -69,8 +69,8 @@ class PackHealthReport {
     final equivalent = configured > 0
         ? snapshot.cycleCapacityAh / configured
         : 0.0;
-    final inflation = equivalent > 0.5
-        ? snapshot.cycleCount / equivalent
+    final inflation = equivalent > 0.5 && snapshot.cycleCount != null
+        ? snapshot.cycleCount! / equivalent
         : null;
 
     // Imbalance cost: how much of the pack the lowest cell strands.
@@ -125,8 +125,9 @@ class PackHealthReport {
   /// Charge throughput expressed as whole pack-fulls.
   final double equivalentFullCycles;
 
-  /// What the BMS counter says.
-  final int reportedCycles;
+  /// What the BMS counter says. Null when the BMS does not report it (ANT
+  /// does not).
+  final int? reportedCycles;
 
   /// How many times higher the BMS counter reads than the honest figure.
   final double? cycleInflation;

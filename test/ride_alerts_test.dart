@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:jk_bms/src/metrics/ride_alerts.dart';
 import 'package:jk_bms/src/model/bms_snapshot.dart';
 import 'package:jk_bms/src/model/bms_warning.dart';
+import 'package:jk_bms/src/protocol/bms_brand.dart';
 import 'package:jk_bms/src/protocol/protocol_variant.dart';
 
 BmsSnapshot snap(
@@ -17,6 +18,7 @@ BmsSnapshot snap(
   cells[0] = minCell;
   return BmsSnapshot(
     timestamp: at,
+    brand: BmsBrand.jk,
     variant: JkProtocolVariant.jk02_24s,
     frameCounter: 1,
     cellVoltages: cells,

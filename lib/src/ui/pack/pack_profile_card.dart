@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../bms_service.dart';
 import '../../data/database.dart';
+import '../../protocol/bms_brand.dart';
 import '../../pack/chemistry.dart';
 import '../../pack/pack_baseline.dart';
 import '../../pack/pack_config.dart';
@@ -180,7 +181,12 @@ class _PackProfileCardState extends State<PackProfileCard> {
         InfoRow(t.profileCyclesSince, '${c.cyclesSince}'),
       InfoRow(
         t.profileConfigChanged,
-        changed.isEmpty
+        // ANT never hands over a settings frame this app can read, so there
+        // is no baseline to compare against -- "unchanged" would claim a
+        // comparison that was never made.
+        widget.service.brand == BmsBrand.ant
+            ? t.settingsNotExposed
+            : changed.isEmpty
             ? t.profileConfigUnchanged
             : t.profileConfigChangedCount('${changed.length}'),
         dim: changed.isEmpty,

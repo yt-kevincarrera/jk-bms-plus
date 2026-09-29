@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'ble/ble_transport.dart';
 import 'ble/bms_link.dart';
+import 'ble/link_script.dart';
 import 'ble/link_lost_alarm.dart';
 import 'ble/link_trouble.dart';
 import 'ble/simulator/simulated_pack.dart';
@@ -15,13 +16,19 @@ import 'platform/alert_notifications.dart';
 import 'platform/live_notification.dart';
 import 'platform/pack_widget.dart';
 import 'platform/widget_publisher.dart';
+import 'model/bms_device_info.dart';
 import 'model/bms_snapshot.dart';
 import 'model/jk_device_info.dart';
 import 'model/jk_settings.dart';
+import 'protocol/ant_frame.dart';
+import 'protocol/ant_frame_assembler.dart';
+import 'protocol/ant_parser.dart';
+import 'protocol/bms_brand.dart';
 import 'protocol/frame_assembler.dart';
 import 'protocol/jk_constants.dart';
 import 'protocol/jk_frame.dart';
 import 'protocol/jk_parser.dart';
+import 'protocol/raw_bms_frame.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -83,7 +90,8 @@ class BmsService {
   }) : _transport = transport ?? SwitchableLink(),
        _parser = parser,
        _locationFactory = locationFactory {
-    _assembler.onRejected = (_) => _statsController.add(_assembler.stats);
+    _assembler.onRejected = (_) => _statsController.add(stats);
+    _antAssembler.onRejected = _onAntRejected;
     _bytesSub = _transport.bytes.listen(_onBytes);
     _stateSub = _transport.state.listen((s) {
       final was = lastLinkState;
@@ -194,6 +202,78 @@ class BmsService {
   final LocationSource Function()? _locationFactory;
   final FrameAssembler _assembler = FrameAssembler();
 
+  // --- Brand ---
+  //
+  // JK and ANT share the GATT service and characteristic, so one connection
+  // can carry either. The brand decides which assembler the bytes reach and
+  // which script the link runs; everything from the snapshot down is shared.
+
+  BmsBrand _brand = BmsBrand.jk;
+
+  /// Which protocol the current connection is being read with.
+  BmsBrand get brand => _brand;
+
+  /// Whether the rider named the brand, as opposed to the app inferring it
+  /// from a stored row or an advertised name. Only then is it fair for the
+  /// silence notice to say "you said", and to suggest the other brand.
+  bool _brandChosenByRider = false;
+
+  final AntFrameAssembler _antAssembler = AntFrameAssembler();
+  final AntParser _antParser = const AntParser();
+
+  /// The last ANT status that reached the snapshot stream, with the fields
+  /// only ANT reports (MOSFET codes, balancer), for the System tab.
+  AntStatus? get lastAntStatus => _lastAntStatus;
+  AntStatus? _lastAntStatus;
+
+  final _antStatusController = StreamController<AntStatus>.broadcast();
+
+  /// Every plausible ANT status, as it arrives.
+  Stream<AntStatus> get antStatus => _antStatusController.stream;
+
+  /// What the ANT path has seen on this connection, by outcome. Reset on
+  /// every connect, like the JK counters.
+  int antStatusFrames = 0;
+  int antInfoFrames = 0;
+  int antRejectedFrames = 0;
+
+  /// Why the last ANT buffer or frame could not be used, for the console.
+  String? lastDecodeError;
+
+  /// Diagnosis rows written to LinkEvents on this connection. Capped, because
+  /// a pack sending garbage twice a second would otherwise fill the table in
+  /// an afternoon, and the first twenty say everything the rest would.
+  int _rejectedNoted = 0;
+  static const int _rejectedNoteCap = 20;
+
+  /// Rejected ANT buffers kept as raw frames on this connection. A separate,
+  /// larger cap than the LinkEvents one: these rows only exist once a pack is
+  /// active, and they are what a firmware nobody has captured yet gets
+  /// reverse-engineered from.
+  int _rejectedRawKept = 0;
+  static const int _rejectedRawCap = 200;
+
+  /// Whether the pre-2021 ANT protocol has been named on this connection.
+  bool _oldAntNoted = false;
+
+  /// Whether the ANT nominal capacity has been offered to the stored pack on
+  /// this connection. Once is enough: it is a setting, not a reading.
+  bool _antNominalOffered = false;
+
+  /// Whether this connection has decoded anything yet. Passive detection only
+  /// runs before that: once the chosen brand has produced a frame, the brand
+  /// is proved, and any two bytes can start a notification by chance. At two
+  /// or three frames a second, "a chunk starting 7E A1" happens inside a JK
+  /// stream every few hours, and switching a pack mid-ride over that would be
+  /// far worse than never switching.
+  bool _brandProved = false;
+
+  /// A second assembler for the brand not chosen, fed only until the chosen
+  /// one proves itself. Neither has an `onRejected`, so a probe never writes
+  /// anything down: its rejections are the expected case, not news.
+  final FrameAssembler _jkProbe = FrameAssembler();
+  final AntFrameAssembler _antProbe = AntFrameAssembler();
+
   /// Full-resolution ring buffer every screen reads from.
   final SnapshotHistory history = SnapshotHistory();
 
@@ -246,15 +326,15 @@ class BmsService {
 
   /// Fires when the link is up but nothing decodable has arrived for a while.
   ///
-  /// Worth calling out explicitly: reading a JK BMS needs no password — the
+  /// Worth calling out explicitly: reading a JK BMS needs no password. The
   /// reference implementation authenticates nowhere, and the device hands out
-  /// its own passcode in the device info frame. So silence here means something
-  /// else, and the message says what.
+  /// its own passcode in the device info frame. Reading an ANT needs none
+  /// either. So silence here means something else, and the message says what.
   Timer? _silenceTimer;
   static const Duration _silenceTimeout = Duration(seconds: 12);
 
   final _snapshotController = StreamController<BmsSnapshot>.broadcast();
-  final _deviceInfoController = StreamController<JkDeviceInfo>.broadcast();
+  final _deviceInfoController = StreamController<BmsDeviceInfo>.broadcast();
   final _settingsController = StreamController<JkSettings>.broadcast();
   final _statsController = StreamController<FrameStats>.broadcast();
   final _problemController = StreamController<String>.broadcast();
@@ -267,7 +347,7 @@ class BmsService {
   Stream<BmsSnapshot> get snapshots => _snapshotController.stream;
 
   /// Device identity, normally once per connection.
-  Stream<JkDeviceInfo> get deviceInfo => _deviceInfoController.stream;
+  Stream<BmsDeviceInfo> get deviceInfo => _deviceInfoController.stream;
 
   /// BMS configuration, read-only.
   Stream<JkSettings> get settings => _settingsController.stream;
@@ -329,6 +409,10 @@ class BmsService {
     decodeFailures = 0;
     snapshotsEmitted = 0;
     variantCorrections = 0;
+    antStatusFrames = 0;
+    antInfoFrames = 0;
+    antRejectedFrames = 0;
+    lastDecodeError = null;
     recentProblems.clear();
   }
 
@@ -350,13 +434,41 @@ class BmsService {
   Future<void> retryLink() => _transport.retryNow();
 
   BmsSnapshot? get lastSnapshot => _lastSnapshot;
-  JkDeviceInfo? get lastDeviceInfo => _lastDeviceInfo;
+  BmsDeviceInfo? get lastDeviceInfo => _lastDeviceInfo;
+
+  /// The JK-specific half of [lastDeviceInfo], for callers that only ever
+  /// speak JK and have not been converted to the brand-neutral type yet.
+  JkDeviceInfo? get jkDeviceInfo => _lastDeviceInfo?.jk;
   JkSettings? get lastSettings => _lastSettings;
-  FrameStats get stats => _assembler.stats;
+  /// Link quality counters: frame outcomes from the assembler the current
+  /// brand is read with, and bytes from the service's own total.
+  ///
+  /// The byte count cannot come from an assembler. Each one counts only what
+  /// reached it, for the life of the service, so after a JK session an ANT
+  /// connection started below the JK figure; the connect screen, which
+  /// measures bytes against the total it saw before connecting, then reported
+  /// "0 bytes received" while an ANT was sending frames that failed their CRC.
+  /// One object, updated in place, so a screen holding it stays current.
+  FrameStats get stats {
+    final from =
+        _brand == BmsBrand.ant ? _antAssembler.stats : _assembler.stats;
+    _linkStats
+      ..accepted = from.accepted
+      ..badChecksum = from.badChecksum
+      ..unsupportedType = from.unsupportedType
+      ..bytesReceived = _bytesReceived;
+    return _linkStats;
+  }
+
+  final FrameStats _linkStats = FrameStats();
+
+  /// Every byte the link delivered, whichever brand it was read as, counted
+  /// before detection so the chunk that triggers a switch is counted too.
+  int _bytesReceived = 0;
   int? get negotiatedMtu => _transport.negotiatedMtu;
 
   BmsSnapshot? _lastSnapshot;
-  JkDeviceInfo? _lastDeviceInfo;
+  BmsDeviceInfo? _lastDeviceInfo;
   JkSettings? _lastSettings;
 
   /// Which framing we are decoding with. Null until the device info frame
@@ -408,6 +520,11 @@ class BmsService {
     final link = _switchable;
     if (link == null) return;
     _resetDecoding();
+    // The simulator speaks JK. Without this, a demo entered after an ANT
+    // session would feed its JK frames to the ANT assembler and show nothing.
+    _brandChosenByRider = false;
+    _resetBrandEvidence();
+    _useBrand(BmsBrand.jk);
     await link.useSimulator(scenario: scenario);
     // The simulated pack is a pack like any other as far as storage goes. It
     // gets its own row, so demo rides learn from demo rides and never touch
@@ -442,7 +559,12 @@ class BmsService {
   }) async {
     final repo = repository;
     if (repo == null) return;
-    activeDevice = await repo.rememberDevice(id: id, name: name, demo: demo);
+    activeDevice = await repo.rememberDevice(
+      id: id,
+      name: name,
+      demo: demo,
+      brand: _brand,
+    );
     repo.activeDeviceId = id;
     repo.activeIsDemo = demo;
     _deviceController.add(activeDevice);
@@ -530,6 +652,9 @@ class BmsService {
   /// a stale snapshot cannot leak across a switch.
   void _resetDecoding() {
     _assembler.reset();
+    _antAssembler.reset();
+    _lastAntStatus = null;
+    _antNominalOffered = false;
     history.clear();
     _segments.reset();
     rangeEstimator = RangeEstimator();
@@ -577,6 +702,7 @@ class BmsService {
     String deviceId, {
     String name = '',
     bool inspecting = false,
+    BmsBrand? brand,
   }) async {
     // One pack at a time, and the one before it is let go first. The BMS
     // accepts a single connection, so asking for a second while the first is
@@ -598,9 +724,66 @@ class BmsService {
     _pendingDeviceId = deviceId;
     _pendingDeviceName = name;
     _resetCounters();
+    // Strongest evidence first: what the rider just said, then what this pack
+    // was last read as, then the advertised name. JK when nothing says
+    // anything, because every pack this app knew before ANT was one.
+    String? stored;
+    try {
+      stored = (await repository?.device(deviceId))?.brand;
+    } catch (e) {
+      // A database that cannot be read must not stop the pack from being
+      // read. The advertised name, then JK, still say something.
+      _problem('Could not read the stored brand for this pack: $e');
+    }
+    // The rider may have let go of this pack, or picked another one, while
+    // the stored row was being read. Connecting now would open a link
+    // nobody wants, or the wrong one.
+    if (_disconnectRequested || _pendingDeviceId != deviceId) return;
+    // The rider's answer only counts as the rider's claim for a pack with no
+    // stored brand. With a stored row it either repeats that row or
+    // overrules it; it is used either way, but the silence notice then
+    // speaks generally instead of quoting the rider back.
+    _brandChosenByRider = brand != null && stored == null;
+    _useBrand(
+      brand ??
+          (stored != null ? BmsBrand.fromStored(stored) : null) ??
+          brandFromName(name) ??
+          BmsBrand.jk,
+    );
+    _resetBrandEvidence();
+    _antAssembler.reset();
+    _antNominalOffered = false;
     _armSilenceWatchdog();
-    _armCellInfoRequests();
+    // ANT is polled by its script and never asked for JK cell info; a timer
+    // left from a JK connection before this one must not survive into it.
+    if (_brand == BmsBrand.jk) {
+      _armCellInfoRequests();
+    } else {
+      _stopCellInfoRequests();
+    }
     await _transport.connect(deviceId);
+  }
+
+  /// Hands the link the script for [b] and routes bytes to its assembler.
+  void _useBrand(BmsBrand b) {
+    _brand = b;
+    _transport.script = LinkScript.forBrand(b);
+  }
+
+  /// Forgets what this connection has shown about its brand, so the next one
+  /// starts unproved and with its diagnosis budget full.
+  void _resetBrandEvidence() {
+    _brandProved = false;
+    _jkProbe.reset();
+    _antProbe.reset();
+    _rejectedNoted = 0;
+    _rejectedRawKept = 0;
+    _oldAntNoted = false;
+  }
+
+  void _stopCellInfoRequests() {
+    _cellInfoTimer?.cancel();
+    _cellInfoTimer = null;
   }
 
   /// Asks the pack for cell info again, every few seconds, until one arrives.
@@ -625,8 +808,6 @@ class BmsService {
         return;
       }
       if (isDemo || lastLinkState != BleLinkState.connected) return;
-      final real = _switchable?.real;
-      if (real == null) return;
       _cellInfoAsks++;
       if (_cellInfoAsks == 1 || _cellInfoAsks % 10 == 0) {
         _problem(
@@ -635,7 +816,7 @@ class BmsService {
           'no cell readings have.',
         );
       }
-      unawaited(real.requestCellInfo());
+      unawaited(_transport.askAgain());
     });
   }
 
@@ -658,11 +839,21 @@ class BmsService {
     _silenceTimer?.cancel();
     _silenceTimer = Timer(_silenceTimeout, () {
       if (_lastSnapshot != null) return;
+      // A brand the rider picked and the pack never answered to is most
+      // likely the wrong brand, and saying so is the one hint that gets them
+      // reading. A brand the app inferred gets the general explanation.
+      final other = _brand == BmsBrand.ant ? 'JK' : 'ANT';
+      final article = _brand == BmsBrand.ant ? 'a' : 'an';
       _problem(
-        'Connected, but no readings have arrived. Reading a JK BMS needs no '
-        'password, so this is not an authentication problem. The usual causes '
-        'are another client still holding the channel, or a firmware whose '
-        'frames this app does not recognise yet — check the raw frame console.',
+        _brandChosenByRider
+            ? 'Connected, but no readings have arrived. You said this pack is '
+                  '${_brand.name.toUpperCase()}; if it is $article $other, '
+                  'connect again and pick $other.'
+            : 'Connected, but no readings have arrived. Reading this BMS needs '
+                  'no password, so this is not an authentication problem. The '
+                  'usual causes are another client still holding the channel, '
+                  'or a firmware whose frames this app does not recognise yet; '
+                  'check the raw frame console.',
       );
     });
   }
@@ -712,20 +903,230 @@ class BmsService {
   }
 
   void _onBytes(List<int> chunk) {
+    // Counted before anything decides what the bytes are, so the evidence
+    // that a pack is talking never depends on which brand it was taken for.
+    _bytesReceived += chunk.length;
+    // The chunk that completed the other brand's frame was that frame's last
+    // piece, already consumed by the probe. Handing it on as well would give
+    // the newly chosen assembler a fragment with no head, which it can only
+    // reject and write down as if the pack had sent garbage.
+    if (_detectBrand(chunk)) {
+      _statsController.add(stats);
+      return;
+    }
+    if (_brand == BmsBrand.ant) {
+      _onAntBytes(chunk);
+      return;
+    }
     for (final frame in _assembler.addChunk(chunk)) {
+      _brandProved = true;
       // The one proof the link has that the pack is talking. Every accepted
       // frame, whatever its type: a record the app cannot decode is still the
       // pack speaking JK, and not a reason for the link to let go.
-      _transport.frameAccepted();
+      _transport.frameAccepted(
+        deviceInfo: frame.type == JkRecordType.deviceInfo,
+      );
       _dispatch(frame);
     }
-    _statsController.add(_assembler.stats);
+    _statsController.add(stats);
+  }
+
+  static bool _startsWith(List<int> c, List<int> p) {
+    if (c.length < p.length) return false;
+    for (var i = 0; i < p.length; i++) {
+      if (c[i] != p[i]) return false;
+    }
+    return true;
+  }
+
+  /// Reads the brand off the bytes themselves, and returns whether it
+  /// switched. Writes nothing to the pack: the only evidence used is what the
+  /// pack chose to send, and only a whole frame with a valid checksum counts.
+  bool _detectBrand(List<int> chunk) {
+    if (_brandProved) return false;
+    if (_brand == BmsBrand.jk && _antProbe.addChunk(chunk).isNotEmpty) {
+      _switchBrand(BmsBrand.ant, 'a CRC-valid ANT frame arrived');
+      return true;
+    }
+    if (_brand == BmsBrand.ant && _jkProbe.addChunk(chunk).isNotEmpty) {
+      _switchBrand(BmsBrand.jk, 'a checksum-valid JK frame arrived');
+      return true;
+    }
+    if (!_oldAntNoted && _startsWith(chunk, const [0xAA, 0x55, 0xAA, 0xFF])) {
+      // Named rather than decoded: the pre-2021 frames are a different
+      // protocol altogether, and a rider staring at "waiting for the first
+      // reading" deserves to know it is not their pack that is broken.
+      _oldAntNoted = true;
+      _problem(
+        'This ANT speaks the protocol from before 2021, which the app '
+        'cannot read yet. Nothing was changed on the pack.',
+      );
+      unawaited(
+        repository?.note(
+              LinkEventKind.oldAntProtocolSeen,
+              deviceId: activeDeviceId ?? _pendingDeviceId,
+            ) ??
+            Future.value(),
+      );
+    }
+    return false;
+  }
+
+  void _switchBrand(BmsBrand to, String why) {
+    final from = _brand;
+    _useBrand(to);
+    _assembler.reset();
+    _antAssembler.reset();
+    _jkProbe.reset();
+    _antProbe.reset();
+    if (to == BmsBrand.ant) {
+      // The JK timer asks with JK bytes. An ANT reads them as nothing, and a
+      // pack that is being polled by its own script has no need of them.
+      _stopCellInfoRequests();
+    } else {
+      // A JK found this way was connected without the timer, and a JK that
+      // sends device info but never cell info needs asking, same as always.
+      _armCellInfoRequests();
+    }
+    _problem(
+      'Switched from ${from.name.toUpperCase()} to '
+      '${to.name.toUpperCase()}: $why.',
+    );
+    final id = activeDeviceId ?? _pendingDeviceId;
+    unawaited(
+      repository?.note(
+            LinkEventKind.protocolSwitched,
+            detail: '${from.stored}->${to.stored}: $why',
+            deviceId: id,
+          ) ??
+          Future.value(),
+    );
+    final active = activeDeviceId;
+    if (active != null) {
+      unawaited(repository?.setDeviceBrand(active, to) ?? Future.value());
+    }
+  }
+
+  void _onAntBytes(List<int> chunk) {
+    for (final frame in _antAssembler.addChunk(chunk)) {
+      _brandProved = true;
+      // Same proof as for JK: any CRC-valid frame is the pack talking, even
+      // one the parser then refuses.
+      _transport.frameAccepted(deviceInfo: frame.isDeviceInfo);
+      // Stored before decoding, for the same reason as JK frames are.
+      repository?.addRawFrame(RawBmsFrame.ant(frame));
+      try {
+        if (frame.isStatus) {
+          antStatusFrames++;
+          unawaited(_handleAntStatus(_antParser.parseStatus(frame), frame));
+        } else if (frame.isDeviceInfo) {
+          antInfoFrames++;
+          _handleDeviceInfo(_antParser.parseDeviceInfo(frame));
+        } else {
+          // A valid frame this app does not read, such as a refusal of the
+          // device-info request. The raw frame above is dropped until a pack
+          // is active, so before then this row is the only trace of what the
+          // pack said instead of the frames it was asked for.
+          _noteAntDiagnosis(
+            LinkEventKind.antDecodeFailed,
+            'unrecognised fn=0x'
+            '${frame.function.toRadixString(16).padLeft(2, '0')} '
+            '${_hex(frame.bytes)}',
+          );
+        }
+      } on AntParseException catch (e) {
+        decodeFailures++;
+        lastDecodeError = e.message;
+        // Throttled like held-back frames: a pack whose every status fails
+        // to decode would otherwise post a line every two seconds and push
+        // every other notice out of the recent problems.
+        if (decodeFailures == 1 || decodeFailures % 100 == 0) {
+          _problem('Could not decode an ANT frame: ${e.message}');
+        }
+        _noteAntDiagnosis(
+          LinkEventKind.antDecodeFailed,
+          '${e.message} ${_hex(frame.bytes)}',
+        );
+      }
+    }
+    _statsController.add(stats);
+  }
+
+  /// Writes one ANT diagnosis row to LinkEvents, within this connection's
+  /// budget. The detail always ends in the frame's hex, as its last
+  /// space-separated token, so a backup can be replayed through the decoder.
+  void _noteAntDiagnosis(LinkEventKind kind, String detail) {
+    if (_rejectedNoted >= _rejectedNoteCap) return;
+    _rejectedNoted++;
+    unawaited(
+      repository?.note(
+            kind,
+            detail: detail,
+            deviceId: activeDeviceId ?? _pendingDeviceId,
+          ) ??
+          Future.value(),
+    );
+  }
+
+  /// A buffer the ANT assembler threw away.
+  ///
+  /// Written down twice, on purpose. The raw frame keeps the bytes next to the
+  /// readings, but only once a pack is active; the LinkEvents row survives an
+  /// ANT that never decoded a single frame, which is exactly the pack whose
+  /// bytes are most needed.
+  void _onAntRejected(AntRejected r) {
+    antRejectedFrames++;
+    lastDecodeError = r.reason.name;
+    _statsController.add(stats);
+    // Counted only when there is a pack to file it under: the repository
+    // drops raw frames until then, and a budget spent on frames nobody kept
+    // would leave less for the ones that are.
+    if (activeDeviceId != null && _rejectedRawKept < _rejectedRawCap) {
+      _rejectedRawKept++;
+      repository?.addRawFrame(
+        RawBmsFrame.antRejected(r.bytes, DateTime.now().toUtc()),
+      );
+    }
+    _noteAntDiagnosis(
+      LinkEventKind.antFrameRejected,
+      '${r.reason.name} ${_hex(r.bytes)}',
+    );
+  }
+
+  static String _hex(List<int> b) =>
+      b.map((x) => x.toRadixString(16).padLeft(2, '0')).join();
+
+  Future<void> _handleAntStatus(AntStatus status, AntFrame frame) async {
+    // ANT has no framing to guess, so a reading that fails physics is not a
+    // question of variant: it is a bad frame, and it is held back rather than
+    // shown. Its raw frame is only stored once a pack is active, and a pack
+    // whose readings all fail never becomes active, so the bytes also go to
+    // LinkEvents, which keep them either way.
+    final reasons = plausibility.reject(status.snapshot);
+    if (reasons.isNotEmpty) {
+      heldBackFrames++;
+      if (heldBackFrames == 1 || heldBackFrames % 100 == 0) {
+        _problem(
+          'This ANT reading does not describe a battery that could '
+          'exist (${reasons.join('; ')}). Not used; its bytes are kept.',
+        );
+      }
+      _noteAntDiagnosis(
+        LinkEventKind.antDecodeFailed,
+        'implausible ${reasons.join('; ')} ${_hex(frame.bytes)}',
+      );
+      return;
+    }
+    _lastAntStatus = status;
+    _antStatusController.add(status);
+    await _acceptSnapshot(status.snapshot);
+    unawaited(_adoptNominalFromSnapshot(status.snapshot));
   }
 
   void _dispatch(JkFrame frame) {
     // Stored before decoding, and regardless of whether decoding succeeds: the
     // frames worth keeping most are the ones this app got wrong.
-    repository?.addRawFrame(frame);
+    repository?.addRawFrame(RawBmsFrame.jk(frame));
 
     final type = frame.type;
     if (type == null) {
@@ -740,7 +1141,9 @@ class BmsService {
       switch (type) {
         case JkRecordType.deviceInfo:
           deviceInfoFrames++;
-          _handleDeviceInfo(_parser.parseDeviceInfo(frame));
+          _handleDeviceInfo(
+            BmsDeviceInfo.fromJk(_parser.parseDeviceInfo(frame)),
+          );
         case JkRecordType.cellInfo:
           cellInfoFrames++;
           unawaited(_handleCellInfo(frame));
@@ -789,23 +1192,28 @@ class BmsService {
     }
   }
 
-  void _handleDeviceInfo(JkDeviceInfo info) {
+  void _handleDeviceInfo(BmsDeviceInfo info) {
     _lastDeviceInfo = info;
     // The serial and model only arrive once a frame has been parsed, so the
     // stored row catches up here rather than at connect time.
     _recordDeviceDetails(info);
-    _variant = _override ?? info.variant;
     _deviceInfoController.add(info);
 
-    if (info.variant == null) {
+    // Variant detection is a JK concept: ANT has no framing to guess and no
+    // detection confidence to report. Everything below is skipped for a pack
+    // whose device info carries no JK payload.
+    final jk = info.jk;
+    if (jk == null) return;
+    _variant = _override ?? jk.variant;
+    if (jk.variant == null) {
       _problem(
         'Could not work out which JK protocol variant this BMS speaks. '
         'Pick one manually in the System tab; until '
         'then no readings will be decoded, because decoding with the wrong '
         'variant produces wrong numbers rather than an error.',
       );
-    } else if (!info.detection.confident && _override == null) {
-      _problem('Assuming ${info.variant!.name}.');
+    } else if (!jk.detection.confident && _override == null) {
+      _problem('Assuming ${jk.variant!.name}.');
     }
   }
 
@@ -934,6 +1342,13 @@ class BmsService {
         _variantConfirmed = true;
       }
     }
+    await _acceptSnapshot(snapshot);
+  }
+
+  /// Everything a decoded, believable reading does, whichever brand it came
+  /// from. The seam between the two protocols is here: above it each brand
+  /// has its own framing and its own doubts, below it a reading is a reading.
+  Future<void> _acceptSnapshot(BmsSnapshot snapshot) async {
     _silenceTimer?.cancel();
 
     // A frame that decodes into cell voltages is the proof that this is a BMS,
@@ -1748,6 +2163,13 @@ class BmsService {
   /// interrupted. A real ride has 26 gaps in 21 minutes, all of which closed
   /// on their own, so that is 26 interruptions for nothing.
   void _onLinkDown() {
+    // A frame cut in half by the drop must not be finished by whatever the
+    // next link sends first. The ANT assembler only restarts on a notification
+    // that begins 7E A1, so a leftover head plus a tail from a later frame
+    // could pass the length check. The JK one resynchronises on its preamble
+    // anyway; clearing it too costs nothing.
+    _assembler.reset();
+    _antAssembler.reset();
     if (_disconnectRequested) return;
     if (_linkDownSince != null) return;
     _linkDownSince = DateTime.now();
@@ -2340,7 +2762,7 @@ class BmsService {
     return n;
   }
 
-  Future<void> _recordDeviceDetails(JkDeviceInfo info) async {
+  Future<void> _recordDeviceDetails(BmsDeviceInfo info) async {
     final id = activeDeviceId;
     final repo = repository;
     if (id == null || repo == null) return;
@@ -2354,11 +2776,23 @@ class BmsService {
     _deviceController.add(activeDevice);
   }
 
-  Future<void> _adoptCapacityFromBms(JkSettings settings) async {
+  Future<void> _adoptCapacityFromBms(JkSettings settings) =>
+      _adoptNominal(settings.nominalCapacityAh);
+
+  /// The ANT equivalent: its nominal capacity rides in every status frame
+  /// rather than in a settings frame, so it is offered once per connection
+  /// instead of on every reading.
+  Future<void> _adoptNominalFromSnapshot(BmsSnapshot s) async {
+    if (_antNominalOffered) return;
+    _antNominalOffered = true;
+    await _adoptNominal(s.nominalCapacityAh);
+  }
+
+  /// Fills a blank catalogue capacity from the pack's own configuration.
+  Future<void> _adoptNominal(double nominal) async {
     final id = activeDeviceId;
     final repo = repository;
     if (id == null || repo == null) return;
-    final nominal = settings.nominalCapacityAh;
     if (nominal < 1 || nominal > 2000) return;
     if (await repo.adoptDeviceCatalogueFromBms(id, nominal)) {
       await refreshActiveDevice();
@@ -2381,6 +2815,7 @@ class BmsService {
     await _snapshotController.close();
     await _deviceInfoController.close();
     await _settingsController.close();
+    await _antStatusController.close();
     await _statsController.close();
     await _problemController.close();
     await _alertController.close();
