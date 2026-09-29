@@ -909,7 +909,7 @@
   "settingsHaptics": "Vibrar con los avisos",
   "settingsHapticsHint": "Rodando nadie mira la pantalla. Con la app a la vista vibra el propio teléfono; con la pantalla apagada o el teléfono en el bolsillo vibra la notificación del aviso, así que para eso tienen que estar activados los avisos en la barra de notificaciones.",
   "settingsRawFrames": "Guardar frames crudos",
-  "settingsRawFramesHint": "Déjalo encendido. Es lo que permite reinterpretar el histórico si aparece que un offset del protocolo estaba mal leído.",
+  "settingsRawFramesHint": "Déjalo encendido. Guarda 30 días de frames crudos para diagnosticar y reinterpretar lecturas recientes si aparece que un offset del protocolo estaba mal leído. Los más viejos se borran solos.",
   "settingsSave": "Guardar",
   "exportTitle": "Exportar",
   "exportIntro": "Los datos que no puedes sacar no son del todo tuyos.",
@@ -955,7 +955,7 @@
   "warnDischargeUndertemp": "Temperatura baja descargando",
   "warnGpsRemoteLock": "Bloqueo remoto por GPS",
   "updateTitle": "Actualizaciones",
-  "updateIntro": "La app no está en ninguna tienda, así que se actualiza desde las releases de GitHub. No comprueba nada sola ni descarga nada por su cuenta: lo pides tú.",
+  "updateIntro": "La app no está en ninguna tienda, así que se actualiza desde las releases de GitHub. Comprueba una vez al día si hay versión nueva y te pregunta; nunca descarga nada sin que lo pidas.",
   "updateInstalled": "Versión instalada",
   "updatePublished": "Última publicada",
   "updateReleasedOn": "Publicada el {date}",
@@ -1593,7 +1593,7 @@
       }
     }
   },
-  "licenseFreeBody": "Visor completo en vivo y las últimas 24 horas de historial, gratis. Lo demás (historial ilimitado, degradación, veredictos, avisos con la app cerrada, copia de seguridad) es Pro: un pago único, de por vida, para este teléfono.",
+  "licenseFreeBody": "Visor completo en vivo y las últimas 24 horas de historial, gratis. Lo demás (historial ilimitado, degradación, veredictos, vigilar la carga toda la noche, copia de seguridad) es Pro: un pago único, de por vida, para este teléfono.",
   "licenseProBody": "Pro activo en este teléfono. Pago único, sin caducidad.",
   "licenseWorkshopBody": "Pro Taller activo hasta el {date}.",
   "@licenseWorkshopBody": {
@@ -1711,7 +1711,7 @@
   "proFeatureHistory": "El historial de más de 24 horas",
   "proFeatureDegradation": "La degradación y las curvas a largo plazo",
   "proFeatureVerdicts": "Los veredictos sobre el estado del pack",
-  "proFeatureBackgroundAlerts": "Los avisos con la app cerrada",
+  "proFeatureBackgroundAlerts": "Vigilar la carga toda la noche, sin dejar de reconectar si la conexión se corta",
   "proFeatureBackup": "La copia de seguridad y su restauración",
   "proFeatureConfigAudit": "La auditoría de la configuración del BMS",
   "proFeatureBatteryReport": "El informe PDF de la batería",
@@ -1726,7 +1726,7 @@
       }
     }
   },
-  "chargeWatchProHint": "Es Pro: requiere licencia para mantener la conexión con la app cerrada.",
+  "chargeWatchProHint": "Es Pro: requiere licencia para vigilar la carga toda la noche, reconectando si se corta. Seguir leyendo con la pantalla apagada es gratis.",
   "licenseStatusAdmin": "Admin",
   "licenseAdminBody": "Acceso total en este teléfono: todo desbloqueado, sin límites ni caducidad.",
   "adviceWhy": "POR QUÉ",
@@ -2748,7 +2748,7 @@
   "alertsNotifyDenied": "Android no ha dado permiso para notificar. Los avisos seguirán saliendo en pantalla y con vibración mientras mires la app, pero no llegarán con la app en segundo plano ni con la pantalla apagada.",
   "alertsNotifyOneConnection": "Recuerda: el BMS acepta una sola conexión Bluetooth. Mientras el móvil esté conectado en segundo plano, la app oficial de tu BMS no podrá conectarse, y al revés.",
   "alertsThresholdsTitle": "A partir de cuándo avisar",
-  "alertsThresholdsIntro": "Los valores por defecto son conservadores. Súbelos si tu batería vive en un rango distinto al típico y te avisa de más.",
+  "alertsThresholdsIntro": "Los valores por defecto son conservadores. Si un aviso salta de más, muévelo hacia el lado que avisa menos: la diferencia entre celdas y la temperatura, hacia arriba; la carga baja, hacia abajo.",
   "alertsDeltaWarn": "Diferencia entre celdas",
   "alertsTempWarn": "Temperatura",
   "alertsLowChargeWarn": "Carga baja",
@@ -3257,5 +3257,6 @@
   },
   "alertsNotifyQuietChannel": "Avisos sin vibración",
   "alertLinkLostNeedsWatch": "Solo avisa con «Seguir leyendo con la pantalla apagada» o «Vigilar la carga» encendidos: sin ellos no hay nada vigilando la conexión.",
-  "alertLinkLostRidingHint": "Mientras grabas un viaje no avisa: rodando la conexión va y viene, y el viaje ya muestra en pantalla cuándo se corta."
+  "alertLinkLostRidingHint": "Mientras grabas un viaje no avisa: rodando la conexión va y viene, y el viaje ya muestra en pantalla cuándo se corta.",
+  "alertsLowChargeWarnHint": "Avisa al bajar de aquí. Bájalo si te avisa demasiado pronto; súbelo si quieres enterarte antes."
 }

@@ -136,9 +136,12 @@ class AppSettings extends ChangeNotifier {
   /// is not a reason for a phone that never sleeps.
   ScreenAwake screenAwake = ScreenAwake.whileRiding;
 
-  /// Whether the 300-byte frames are kept. On by default and worth leaving on:
-  /// it is what makes a wrongly-decoded byte offset recoverable rather than
-  /// months of history lost.
+  /// Whether the raw frames are kept. On by default and worth leaving on: the
+  /// last 30 days of them ([BmsRepository.rawFrameRetention]) are what a
+  /// diagnosis reads, and what would let a wrongly-decoded byte offset be
+  /// re-read for recent readings. Not months: older frames are pruned at
+  /// every start, and the app has no reparse of its own; they travel in a
+  /// backup.
   bool recordRawFrames = true;
 
   Future<void> load() async {

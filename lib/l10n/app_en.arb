@@ -909,7 +909,7 @@
   "settingsHaptics": "Buzz on alerts",
   "settingsHapticsHint": "Nobody looks at the screen while riding. With the app in view the phone itself buzzes; with the screen off or the phone in a pocket it is the alert notification that vibrates, so the notification-shade alerts need to be on for that.",
   "settingsRawFrames": "Keep raw frames",
-  "settingsRawFramesHint": "Leave this on. It is what allows the history to be re-read if a protocol offset turns out to have been wrong.",
+  "settingsRawFramesHint": "Leave this on. It keeps 30 days of raw frames, to diagnose and re-read recent readings if a protocol offset turns out to have been wrong. Older ones are deleted on their own.",
   "settingsSave": "Save",
   "exportTitle": "Export",
   "exportIntro": "Data you cannot get out is not really yours.",
@@ -955,7 +955,7 @@
   "warnDischargeUndertemp": "Too cold while discharging",
   "warnGpsRemoteLock": "Remote GPS lock",
   "updateTitle": "Updates",
-  "updateIntro": "This app is not on a store, so it updates from GitHub releases. It never checks or downloads on its own: you ask.",
+  "updateIntro": "This app is not on a store, so it updates from GitHub releases. It checks once a day for a new version and asks you; it never downloads anything unless you ask.",
   "updateInstalled": "Installed version",
   "updatePublished": "Latest published",
   "updateReleasedOn": "Published on {date}",
@@ -1491,7 +1491,7 @@
       }
     }
   },
-  "licenseFreeBody": "The complete live viewer and the last 24 hours of history, free. The rest (unlimited history, degradation, verdicts, alerts with the app closed, backup) is Pro: one payment, for life, for this phone.",
+  "licenseFreeBody": "The complete live viewer and the last 24 hours of history, free. The rest (unlimited history, degradation, verdicts, watching a charge all night, backup) is Pro: one payment, for life, for this phone.",
   "licenseProBody": "Pro is active on this phone. One payment, no expiry.",
   "licenseWorkshopBody": "Pro Workshop active until {date}.",
   "@licenseWorkshopBody": {
@@ -1609,7 +1609,7 @@
   "proFeatureHistory": "History older than 24 hours",
   "proFeatureDegradation": "Degradation and the long-term curves",
   "proFeatureVerdicts": "The verdicts on the pack's condition",
-  "proFeatureBackgroundAlerts": "Alerts with the app closed",
+  "proFeatureBackgroundAlerts": "Watching a charge all night, reconnecting whenever the link drops",
   "proFeatureBackup": "Backup and restore",
   "proFeatureConfigAudit": "The BMS configuration audit",
   "proFeatureBatteryReport": "The battery PDF report",
@@ -1624,7 +1624,7 @@
       }
     }
   },
-  "chargeWatchProHint": "Pro: needs a licence to hold the link with the app closed.",
+  "chargeWatchProHint": "Pro: needs a licence to watch a charge all night, reconnecting if the link drops. Keeping reading with the screen off is free.",
   "licenseStatusAdmin": "Admin",
   "licenseAdminBody": "Full access on this phone: everything unlocked, no limits, no expiry.",
   "adviceWhy": "WHY",
@@ -2646,7 +2646,7 @@
   "alertsNotifyDenied": "Android has not granted permission to notify. Alerts will still appear on screen and buzz while you are looking at the app, but they will not arrive with the app in the background or the screen off.",
   "alertsNotifyOneConnection": "Remember: the BMS accepts a single Bluetooth connection. While the phone is connected in the background your BMS's official app cannot connect, and the other way round.",
   "alertsThresholdsTitle": "When to speak up",
-  "alertsThresholdsIntro": "The defaults are conservative. Raise them if your pack lives outside the usual range and it is warning you too often.",
+  "alertsThresholdsIntro": "The defaults are conservative. If an alert fires too often, move it the way that warns less: cell spread and temperature up, low charge down.",
   "alertsDeltaWarn": "Spread between cells",
   "alertsTempWarn": "Temperature",
   "alertsLowChargeWarn": "Low charge",
@@ -3117,5 +3117,6 @@
   },
   "alertsNotifyQuietChannel": "Alerts without vibration",
   "alertLinkLostNeedsWatch": "Only speaks with \"Keep reading with the screen off\" or \"Watch the charge\" on: without them nothing is watching the link.",
-  "alertLinkLostRidingHint": "Silent while a ride is recording: riding, the link comes and goes, and the ride already shows on screen when it drops."
+  "alertLinkLostRidingHint": "Silent while a ride is recording: riding, the link comes and goes, and the ride already shows on screen when it drops.",
+  "alertsLowChargeWarnHint": "Warns when the charge falls below this. Lower it if it warns too early; raise it to hear sooner."
 }

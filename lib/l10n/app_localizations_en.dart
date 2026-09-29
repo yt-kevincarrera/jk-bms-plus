@@ -1701,7 +1701,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get settingsRawFramesHint =>
-      'Leave this on. It is what allows the history to be re-read if a protocol offset turns out to have been wrong.';
+      'Leave this on. It keeps 30 days of raw frames, to diagnose and re-read recent readings if a protocol offset turns out to have been wrong. Older ones are deleted on their own.';
 
   @override
   String get settingsSave => 'Save';
@@ -1821,7 +1821,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get updateIntro =>
-      'This app is not on a store, so it updates from GitHub releases. It never checks or downloads on its own: you ask.';
+      'This app is not on a store, so it updates from GitHub releases. It checks once a day for a new version and asks you; it never downloads anything unless you ask.';
 
   @override
   String get updateInstalled => 'Installed version';
@@ -2753,7 +2753,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get licenseFreeBody =>
-      'The complete live viewer and the last 24 hours of history, free. The rest (unlimited history, degradation, verdicts, alerts with the app closed, backup) is Pro: one payment, for life, for this phone.';
+      'The complete live viewer and the last 24 hours of history, free. The rest (unlimited history, degradation, verdicts, watching a charge all night, backup) is Pro: one payment, for life, for this phone.';
 
   @override
   String get licenseProBody =>
@@ -2910,7 +2910,8 @@ class AppL10nEn extends AppL10n {
   String get proFeatureVerdicts => 'The verdicts on the pack\'s condition';
 
   @override
-  String get proFeatureBackgroundAlerts => 'Alerts with the app closed';
+  String get proFeatureBackgroundAlerts =>
+      'Watching a charge all night, reconnecting whenever the link drops';
 
   @override
   String get proFeatureBackup => 'Backup and restore';
@@ -2937,7 +2938,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get chargeWatchProHint =>
-      'Pro: needs a licence to hold the link with the app closed.';
+      'Pro: needs a licence to watch a charge all night, reconnecting if the link drops. Keeping reading with the screen off is free.';
 
   @override
   String get licenseStatusAdmin => 'Admin';
@@ -4312,7 +4313,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get alertsThresholdsIntro =>
-      'The defaults are conservative. Raise them if your pack lives outside the usual range and it is warning you too often.';
+      'The defaults are conservative. If an alert fires too often, move it the way that warns less: cell spread and temperature up, low charge down.';
 
   @override
   String get alertsDeltaWarn => 'Spread between cells';
@@ -4847,4 +4848,8 @@ class AppL10nEn extends AppL10n {
   @override
   String get alertLinkLostRidingHint =>
       'Silent while a ride is recording: riding, the link comes and goes, and the ride already shows on screen when it drops.';
+
+  @override
+  String get alertsLowChargeWarnHint =>
+      'Warns when the charge falls below this. Lower it if it warns too early; raise it to hear sooner.';
 }

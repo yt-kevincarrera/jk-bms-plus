@@ -2956,7 +2956,7 @@ abstract class AppL10n {
   /// No description provided for @settingsRawFramesHint.
   ///
   /// In es, this message translates to:
-  /// **'Déjalo encendido. Es lo que permite reinterpretar el histórico si aparece que un offset del protocolo estaba mal leído.'**
+  /// **'Déjalo encendido. Guarda 30 días de frames crudos para diagnosticar y reinterpretar lecturas recientes si aparece que un offset del protocolo estaba mal leído. Los más viejos se borran solos.'**
   String get settingsRawFramesHint;
 
   /// No description provided for @settingsSave.
@@ -3190,7 +3190,7 @@ abstract class AppL10n {
   /// No description provided for @updateIntro.
   ///
   /// In es, this message translates to:
-  /// **'La app no está en ninguna tienda, así que se actualiza desde las releases de GitHub. No comprueba nada sola ni descarga nada por su cuenta: lo pides tú.'**
+  /// **'La app no está en ninguna tienda, así que se actualiza desde las releases de GitHub. Comprueba una vez al día si hay versión nueva y te pregunta; nunca descarga nada sin que lo pidas.'**
   String get updateIntro;
 
   /// No description provided for @updateInstalled.
@@ -4750,7 +4750,7 @@ abstract class AppL10n {
   /// No description provided for @licenseFreeBody.
   ///
   /// In es, this message translates to:
-  /// **'Visor completo en vivo y las últimas 24 horas de historial, gratis. Lo demás (historial ilimitado, degradación, veredictos, avisos con la app cerrada, copia de seguridad) es Pro: un pago único, de por vida, para este teléfono.'**
+  /// **'Visor completo en vivo y las últimas 24 horas de historial, gratis. Lo demás (historial ilimitado, degradación, veredictos, vigilar la carga toda la noche, copia de seguridad) es Pro: un pago único, de por vida, para este teléfono.'**
   String get licenseFreeBody;
 
   /// No description provided for @licenseProBody.
@@ -5002,7 +5002,7 @@ abstract class AppL10n {
   /// No description provided for @proFeatureBackgroundAlerts.
   ///
   /// In es, this message translates to:
-  /// **'Los avisos con la app cerrada'**
+  /// **'Vigilar la carga toda la noche, sin dejar de reconectar si la conexión se corta'**
   String get proFeatureBackgroundAlerts;
 
   /// No description provided for @proFeatureBackup.
@@ -5050,7 +5050,7 @@ abstract class AppL10n {
   /// No description provided for @chargeWatchProHint.
   ///
   /// In es, this message translates to:
-  /// **'Es Pro: requiere licencia para mantener la conexión con la app cerrada.'**
+  /// **'Es Pro: requiere licencia para vigilar la carga toda la noche, reconectando si se corta. Seguir leyendo con la pantalla apagada es gratis.'**
   String get chargeWatchProHint;
 
   /// No description provided for @licenseStatusAdmin.
@@ -7311,7 +7311,7 @@ abstract class AppL10n {
   /// No description provided for @alertsThresholdsIntro.
   ///
   /// In es, this message translates to:
-  /// **'Los valores por defecto son conservadores. Súbelos si tu batería vive en un rango distinto al típico y te avisa de más.'**
+  /// **'Los valores por defecto son conservadores. Si un aviso salta de más, muévelo hacia el lado que avisa menos: la diferencia entre celdas y la temperatura, hacia arriba; la carga baja, hacia abajo.'**
   String get alertsThresholdsIntro;
 
   /// No description provided for @alertsDeltaWarn.
@@ -8119,6 +8119,12 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Mientras grabas un viaje no avisa: rodando la conexión va y viene, y el viaje ya muestra en pantalla cuándo se corta.'**
   String get alertLinkLostRidingHint;
+
+  /// No description provided for @alertsLowChargeWarnHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Avisa al bajar de aquí. Bájalo si te avisa demasiado pronto; súbelo si quieres enterarte antes.'**
+  String get alertsLowChargeWarnHint;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

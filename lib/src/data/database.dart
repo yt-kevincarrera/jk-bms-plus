@@ -277,9 +277,10 @@ class Snapshots extends Table {
 /// ANT).
 ///
 /// This is not optional. Several byte offsets in this protocol are still
-/// uncertain (see docs/PROTOCOL.md). When one of them turns out to be wrong —
-/// and one will — these rows are the difference between reparsing months of
-/// history and losing it.
+/// uncertain (see docs/PROTOCOL.md). When one of them turns out to be wrong,
+/// and one will, these rows are the difference between re-reading the recent
+/// history and losing it. Recent: they are kept for 30 days
+/// ([BmsRepository.rawFrameRetention]), not for ever.
 class RawFrames extends Table {
   IntColumn get id => integer().autoIncrement()();
   DateTimeColumn get timestamp => dateTime()();

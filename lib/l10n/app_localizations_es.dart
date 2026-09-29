@@ -1706,7 +1706,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get settingsRawFramesHint =>
-      'Déjalo encendido. Es lo que permite reinterpretar el histórico si aparece que un offset del protocolo estaba mal leído.';
+      'Déjalo encendido. Guarda 30 días de frames crudos para diagnosticar y reinterpretar lecturas recientes si aparece que un offset del protocolo estaba mal leído. Los más viejos se borran solos.';
 
   @override
   String get settingsSave => 'Guardar';
@@ -1828,7 +1828,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get updateIntro =>
-      'La app no está en ninguna tienda, así que se actualiza desde las releases de GitHub. No comprueba nada sola ni descarga nada por su cuenta: lo pides tú.';
+      'La app no está en ninguna tienda, así que se actualiza desde las releases de GitHub. Comprueba una vez al día si hay versión nueva y te pregunta; nunca descarga nada sin que lo pidas.';
 
   @override
   String get updateInstalled => 'Versión instalada';
@@ -2764,7 +2764,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get licenseFreeBody =>
-      'Visor completo en vivo y las últimas 24 horas de historial, gratis. Lo demás (historial ilimitado, degradación, veredictos, avisos con la app cerrada, copia de seguridad) es Pro: un pago único, de por vida, para este teléfono.';
+      'Visor completo en vivo y las últimas 24 horas de historial, gratis. Lo demás (historial ilimitado, degradación, veredictos, vigilar la carga toda la noche, copia de seguridad) es Pro: un pago único, de por vida, para este teléfono.';
 
   @override
   String get licenseProBody =>
@@ -2922,7 +2922,8 @@ class AppL10nEs extends AppL10n {
   String get proFeatureVerdicts => 'Los veredictos sobre el estado del pack';
 
   @override
-  String get proFeatureBackgroundAlerts => 'Los avisos con la app cerrada';
+  String get proFeatureBackgroundAlerts =>
+      'Vigilar la carga toda la noche, sin dejar de reconectar si la conexión se corta';
 
   @override
   String get proFeatureBackup => 'La copia de seguridad y su restauración';
@@ -2950,7 +2951,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get chargeWatchProHint =>
-      'Es Pro: requiere licencia para mantener la conexión con la app cerrada.';
+      'Es Pro: requiere licencia para vigilar la carga toda la noche, reconectando si se corta. Seguir leyendo con la pantalla apagada es gratis.';
 
   @override
   String get licenseStatusAdmin => 'Admin';
@@ -4334,7 +4335,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get alertsThresholdsIntro =>
-      'Los valores por defecto son conservadores. Súbelos si tu batería vive en un rango distinto al típico y te avisa de más.';
+      'Los valores por defecto son conservadores. Si un aviso salta de más, muévelo hacia el lado que avisa menos: la diferencia entre celdas y la temperatura, hacia arriba; la carga baja, hacia abajo.';
 
   @override
   String get alertsDeltaWarn => 'Diferencia entre celdas';
@@ -4868,4 +4869,8 @@ class AppL10nEs extends AppL10n {
   @override
   String get alertLinkLostRidingHint =>
       'Mientras grabas un viaje no avisa: rodando la conexión va y viene, y el viaje ya muestra en pantalla cuándo se corta.';
+
+  @override
+  String get alertsLowChargeWarnHint =>
+      'Avisa al bajar de aquí. Bájalo si te avisa demasiado pronto; súbelo si quieres enterarte antes.';
 }

@@ -468,6 +468,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                 // anything from 5 to 7 switched the alert off in silence.
                 _threshold(
                   label: t.alertsLowChargeWarn,
+                  hint: t.alertsLowChargeWarnHint,
                   value: settings.alertLowChargeWarn,
                   min: RideAlerts.minLowChargeWarn,
                   max: 40,
