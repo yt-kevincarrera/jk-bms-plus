@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../bms_service.dart';
 import '../../model/bms_snapshot.dart';
+import '../../protocol/ant_constants.dart';
+import '../../protocol/bms_brand.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/gauges.dart';
@@ -29,7 +31,14 @@ class CellsTab extends StatelessWidget {
     }
 
     final avg = s.averageCellVoltage;
-    final balancing = s.inferredBalancingCells;
+    // The BMS's own list where it gives one (an ANT does), the inference
+    // from the cell voltages where it does not (a JK).
+    final balancing = s.balancingCells;
+    final reported = s.reportedBalancingCells;
+    final ant = s.brand == BmsBrand.ant ? service.lastAntStatus : null;
+    // An ANT balancer stopped by heat is not "idle" and is not "working".
+    final stoppedByHeat =
+        ant != null && antBalancerFaultCodes.contains(ant.balancerCode);
 
     return ListView(
       padding: const EdgeInsets.only(bottom: 28),
@@ -121,12 +130,32 @@ class CellsTab extends StatelessWidget {
         Section(
           title: t.balancingTitle,
           trailing: Pill(
-            s.balancerActive ? t.balancerWorking : t.balancerIdle,
-            color: s.balancerActive ? AppTheme.cool : AppTheme.textFaint,
+            s.balancerActive
+                ? t.balancerWorking
+                : stoppedByHeat
+                ? t.balancerStoppedByHeat
+                : t.balancerIdle,
+            color: s.balancerActive
+                ? AppTheme.cool
+                : stoppedByHeat
+                ? AppTheme.bad
+                : AppTheme.textFaint,
             icon: s.balancerActive ? Icons.bolt : null,
           ),
-          intro: t.balanceActiveNote,
+          // Said of a JK, which is an active balancer. An ANT's balancer can
+          // be either kind and the frame does not say, so nothing is claimed.
+          intro: s.brand == BmsBrand.jk ? t.balanceActiveNote : null,
           children: [
+            if (ant != null)
+              InfoRow(
+                t.antBalancer,
+                ant.balancerCode < antBalancerText.length
+                    ? t.antBalancerCode('${ant.balancerCode}')
+                    : t.antUnknownCode(
+                        ant.balancerCode.toRadixString(16).padLeft(2, '0'),
+                      ),
+                valueColor: stoppedByHeat ? AppTheme.bad : null,
+              ),
             if (s.balanceCurrent != null)
               InfoRow(
                 t.balanceCurrent,
@@ -143,7 +172,20 @@ class CellsTab extends StatelessWidget {
                 },
                 dim: s.balancingAction == 0,
               ),
-            InfoRow(t.balanceWhichCells, t.balanceWhichCellsValue, dim: true),
+            InfoRow(
+              t.balanceWhichCells,
+              reported == null
+                  ? t.balanceWhichCellsValue
+                  : reported.contains(true)
+                  ? t.balanceWhichCellsReported(
+                      [
+                        for (var i = 0; i < reported.length; i++)
+                          if (reported[i]) '${i + 1}',
+                      ].join(', '),
+                    )
+                  : t.balanceWhichCellsNoneReported,
+              dim: reported == null || !reported.contains(true),
+            ),
             InfoRow(t.balanceRanking, t.needsDatabase, dim: true, last: true),
           ],
         ),

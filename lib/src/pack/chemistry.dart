@@ -100,9 +100,10 @@ class ChemistryHint {
 
 /// The voltages and temperatures a chemistry is happy inside.
 ///
-/// One table, used by the configuration audit and by nothing else that makes
-/// claims. The numbers are the conservative end of what cell datasheets and
-/// pack builders agree on, because the cost of the two errors is not
+/// One table, used by the configuration audit, and by the cell cutoff warning
+/// only when the BMS has not stated its own cutoff. The numbers are the
+/// conservative end of what cell datasheets and pack builders agree on,
+/// because the cost of the two errors is not
 /// symmetric: calling a safe setting risky wastes a minute of the rider's
 /// time, and calling a risky setting safe is how a pack ends up alight.
 class ChemistryLimits {
@@ -113,6 +114,7 @@ class ChemistryLimits {
     required this.hardMinVolts,
     required this.comfortableMinVolts,
     required this.typicalBalanceStartVolts,
+    required this.typicalCutoffVolts,
   });
 
   /// Nothing is known, so the audit says nothing about voltages.
@@ -127,6 +129,7 @@ class ChemistryLimits {
     hardMinVolts: 2.50,
     comfortableMinVolts: 2.80,
     typicalBalanceStartVolts: 3.40,
+    typicalCutoffVolts: 2.80,
   );
 
   static const ChemistryLimits nmc = ChemistryLimits(
@@ -136,6 +139,7 @@ class ChemistryLimits {
     hardMinVolts: 3.00,
     comfortableMinVolts: 3.20,
     typicalBalanceStartVolts: 4.00,
+    typicalCutoffVolts: 3.00,
   );
 
   static ChemistryLimits? of(CellChemistry chemistry) => switch (chemistry) {
@@ -156,6 +160,18 @@ class ChemistryLimits {
   final double hardMinVolts;
   final double comfortableMinVolts;
   final double typicalBalanceStartVolts;
+
+  /// Where a BMS set up for this chemistry usually cuts a cell off, for when
+  /// the BMS has not said where it does (an ANT never does; a JK until its
+  /// settings frame arrives). The cautious end of what pack builders set:
+  /// an LFP pack cut at 2.5 V would be warned about at 2.6, deep in the
+  /// cliff, so 2.8 is used. Always shown as assumed, never as the BMS's.
+  final double typicalCutoffVolts;
+
+  /// The same, when the chemistry is not known either: the NMC figure, the
+  /// higher of the two, so on a pack of unknown chemistry the warning errs
+  /// early (if it is LFP) rather than late (if it is NMC).
+  static const double unknownCutoffVolts = 3.0;
 
   /// Temperature limits are the same for both, because they are about
   /// lithium plating and electrolyte breakdown rather than about the cathode.

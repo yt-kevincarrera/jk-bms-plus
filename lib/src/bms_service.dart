@@ -21,6 +21,9 @@ import 'model/bms_device_info.dart';
 import 'model/bms_snapshot.dart';
 import 'model/jk_device_info.dart';
 import 'model/jk_settings.dart';
+import 'pack/chemistry.dart';
+import 'protocol/ant_constants.dart';
+import 'protocol/ant_current_sign.dart';
 import 'protocol/ant_frame.dart';
 import 'protocol/ant_frame_assembler.dart';
 import 'protocol/ant_parser.dart';
@@ -230,6 +233,10 @@ class BmsService {
   AntStatus? get lastAntStatus => _lastAntStatus;
   AntStatus? _lastAntStatus;
 
+  /// What each ANT pack has shown about the sign of its current, by pack.
+  /// Never cleared on reconnect: the answer is a fact about the pack.
+  final Map<String, AntCurrentSign> _antCurrentSign = {};
+
   final _antStatusController = StreamController<AntStatus>.broadcast();
 
   /// Every plausible ANT status, as it arrives.
@@ -320,12 +327,39 @@ class BmsService {
   /// Volts per cell at which the pack cuts off. Taken from the BMS's own
   /// undervoltage setting once the settings frame arrives, so the usable-energy
   /// figure follows how this pack is actually configured.
-  double get cutoffVoltagePerCell {
+  ///
+  /// Until then, and always on an ANT, which reports no settings, it is the
+  /// usual cutoff for the pack's chemistry
+  /// ([ChemistryLimits.typicalCutoffVolts]), and [cutoffIsAssumed] says so. It used to be a flat 3.0 V whatever the
+  /// cells, which on an LFP pack put the "near cutoff" warning at 3.1 V, where
+  /// an LFP cell spends a good part of an ordinary ride.
+  double get cutoffVoltagePerCell =>
+      _configuredCutoff ??
+      ChemistryLimits.of(cutoffChemistry)?.typicalCutoffVolts ??
+      ChemistryLimits.unknownCutoffVolts;
+
+  /// True when [cutoffVoltagePerCell] is not the BMS's own setting, so
+  /// anything quoting it has to say it is assumed.
+  bool get cutoffIsAssumed => _configuredCutoff == null;
+
+  double? get _configuredCutoff {
     final configured = _lastSettings?.cellUvp;
     if (configured != null && configured > 1.5 && configured < 3.6) {
       return configured;
     }
-    return 3.0;
+    return null;
+  }
+
+  /// The chemistry an assumed cutoff is chosen for: what the rider declared
+  /// for this pack, else what the pack itself shows (a cell above 3.8 V is
+  /// not LFP), else unknown.
+  CellChemistry get cutoffChemistry {
+    final declared = CellChemistry.byName(activeDevice?.chemistry);
+    if (declared.isKnown) return declared;
+    return ChemistryHint.from(
+      cellOvp: _lastSettings?.cellOvp,
+      highestCellVolts: _lastSnapshot?.maxCellVoltage,
+    ).chemistry;
   }
 
   /// Fires when the link is up but nothing decodable has arrived for a while.
@@ -759,6 +793,9 @@ class BmsService {
     // history folder and a place in the saved list.
     _pendingDeviceId = deviceId;
     _pendingDeviceName = name;
+    // A pack under inspection is never adopted, so its sign check is filed
+    // under no id. That one must not carry over to the next pack looked at.
+    _antCurrentSign.remove('');
     _resetCounters();
     // Strongest evidence first: what the rider just said, then what this pack
     // was last read as, then the advertised name. JK when nothing says
@@ -1186,6 +1223,32 @@ class BmsService {
         'implausible ${reasons.join('; ')} ${_hex(frame.bytes)}',
       );
       return;
+    }
+    // The sign of an ANT's current is an assumption the frame can check: its
+    // own battery state says which way the charge is going. Per pack, and
+    // kept across reconnects, so a pack found to run backwards is corrected
+    // from its first frame the next time rather than after three wrong ones.
+    final packKey = activeDeviceId ?? _pendingDeviceId ?? '';
+    final sign = _antCurrentSign.putIfAbsent(packKey, AntCurrentSign.new);
+    final raw = status.snapshot.current;
+    if (sign.observe(batteryState: status.batteryState, current: raw)) {
+      final state = antText(antBatteryStateText, status.batteryState);
+      _problem(
+        'This ANT reports its current with the opposite sign to its own '
+        'battery state ($state at ${raw.toStringAsFixed(1)} A, several '
+        'frames running). Reversed from now on for this pack.',
+      );
+      unawaited(
+        repository?.note(
+              LinkEventKind.antCurrentSignInverted,
+              detail: 'state $state current ${raw.toStringAsFixed(1)} A',
+              deviceId: activeDeviceId ?? _pendingDeviceId,
+            ) ??
+            Future.value(),
+      );
+    }
+    if (sign.inverted) {
+      status = status.withSnapshot(status.snapshot.withCurrent(-raw));
     }
     _lastAntStatus = status;
     _antStatusController.add(status);

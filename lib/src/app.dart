@@ -294,11 +294,25 @@ class _JkBmsAppState extends State<JkBmsApp> {
                     (snapshot?.soc ?? 0).toStringAsFixed(0),
                   ),
                 ),
+                // "Close to the BMS cutoff" only when the BMS said where that
+                // is. Otherwise the cutoff is the usual one for the chemistry,
+                // or a cautious guess when even that is unknown, and the
+                // words say which rather than claiming a setting.
                 RideAlert.cellNearCutoff => (
                   t.alertCellNearCutoff,
-                  t.alertNotificationBodyCell(
-                    (snapshot?.minCellVoltage ?? 0).toStringAsFixed(3),
-                  ),
+                  !_service.cutoffIsAssumed
+                      ? t.alertNotificationBodyCell(
+                          (snapshot?.minCellVoltage ?? 0).toStringAsFixed(3),
+                        )
+                      : _service.cutoffChemistry.isKnown
+                      ? t.alertNotificationBodyCellTypical(
+                          (snapshot?.minCellVoltage ?? 0).toStringAsFixed(3),
+                          _service.cutoffVoltagePerCell.toStringAsFixed(2),
+                        )
+                      : t.alertNotificationBodyCellAssumed(
+                          (snapshot?.minCellVoltage ?? 0).toStringAsFixed(3),
+                          _service.cutoffVoltagePerCell.toStringAsFixed(2),
+                        ),
                 ),
                 RideAlert.nearCurrentLimit => (
                   t.alertNearCurrentLimit,

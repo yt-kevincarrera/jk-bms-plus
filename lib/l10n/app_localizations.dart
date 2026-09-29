@@ -7855,6 +7855,42 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'MOSFET (sin sondas en la batería)'**
   String get thermalLegendMosfet;
+
+  /// No description provided for @balanceWhichCellsReported.
+  ///
+  /// In es, this message translates to:
+  /// **'{cells} (lo informa el BMS)'**
+  String balanceWhichCellsReported(String cells);
+
+  /// No description provided for @balanceWhichCellsNoneReported.
+  ///
+  /// In es, this message translates to:
+  /// **'ninguna ahora (lo informa el BMS)'**
+  String get balanceWhichCellsNoneReported;
+
+  /// No description provided for @balancerStoppedByHeat.
+  ///
+  /// In es, this message translates to:
+  /// **'detenido por calor'**
+  String get balancerStoppedByHeat;
+
+  /// No description provided for @alertNotificationBodyCellTypical.
+  ///
+  /// In es, this message translates to:
+  /// **'Una celda está a {value} V, cerca de {cutoff} V, el corte habitual para esta química (el BMS no informó el suyo). Se puede quedar sin batería aunque el porcentaje aún parezca razonable.'**
+  String alertNotificationBodyCellTypical(String value, String cutoff);
+
+  /// No description provided for @alertNotificationBodyCellAssumed.
+  ///
+  /// In es, this message translates to:
+  /// **'Una celda está a {value} V, cerca de {cutoff} V, un corte supuesto: el BMS no informó el suyo y no se sabe la química del pack. Se puede quedar sin batería aunque el porcentaje aún parezca razonable.'**
+  String alertNotificationBodyCellAssumed(String value, String cutoff);
+
+  /// No description provided for @alertNearLimitUnavailable.
+  ///
+  /// In es, this message translates to:
+  /// **'No disponible en este BMS: no informa su límite de corriente.'**
+  String get alertNearLimitUnavailable;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

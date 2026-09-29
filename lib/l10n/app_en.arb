@@ -2937,5 +2937,38 @@
   },
   "evidenceMosfetTemp": "BMS MOSFET",
   "thermalMirrorNote": "Probe 5 on this BMS repeats the MOSFET temperature, so it is not counted as a battery probe.",
-  "thermalLegendMosfet": "MOSFET (no battery probes)"
+  "thermalLegendMosfet": "MOSFET (no battery probes)",
+  "balanceWhichCellsReported": "{cells} (reported by the BMS)",
+  "@balanceWhichCellsReported": {
+    "placeholders": {
+      "cells": {
+        "type": "String"
+      }
+    }
+  },
+  "balanceWhichCellsNoneReported": "none right now (reported by the BMS)",
+  "balancerStoppedByHeat": "stopped by heat",
+  "alertNotificationBodyCellTypical": "A cell is at {value} V, close to {cutoff} V, the usual cutoff for this chemistry (the BMS did not report its own). It can run out even while the percentage still looks reasonable.",
+  "@alertNotificationBodyCellTypical": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "cutoff": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyCellAssumed": "A cell is at {value} V, close to {cutoff} V, an assumed cutoff: the BMS did not report its own and the pack's chemistry is not known. It can run out even while the percentage still looks reasonable.",
+  "@alertNotificationBodyCellAssumed": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "cutoff": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNearLimitUnavailable": "Not available on this BMS: it does not report its current limit."
 }

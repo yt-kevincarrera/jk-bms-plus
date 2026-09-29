@@ -238,8 +238,11 @@ class InspectionVerdicts {
     // Cycles and configured capacity are typed into the BMS from the official
     // app. A vendor can set cycles to 3 and capacity to 45 Ah in a minute.
     // Shown, marked, and set against what was actually measured above.
-    if (r.reported.cycleCount != null ||
-        r.reported.configuredCapacityAh != null) {
+    //
+    // Only when there is a cycle count to distrust. An ANT keeps none, and
+    // this used to fire on its capacity alone and tell the rider "the BMS
+    // reports -- cycles", a sentence about a number that does not exist.
+    if (r.reported.cycleCount != null) {
       out.add(
         Advice(
           code: AdviceCode.inspectionCountersEditable,

@@ -84,3 +84,23 @@ const Map<int, BmsWarning> antDischargeWarnings = {
   0x0E: BmsWarning.dischargeOnFailed,
   0x11: BmsWarning.dischargeUndertemperatureAlarm,
 };
+
+/// The battery state byte (7), by what it says. Index into
+/// [antBatteryStateText].
+const int antStateCharge = 0x02;
+const int antStateDischarge = 0x03;
+
+/// Balancer codes (byte 48+o) that mean cells are being balanced right now.
+///
+/// Read off `BALANCER_STATUS` in the reference: 1 "exceeds the limit
+/// equilibrium" and 2 "charge differential pressure balance" both describe
+/// balancing that is under way. The rest do not, and two of them are faults:
+/// 3 "balanced over temperature" and 0x0A "motherboard over temperature" are
+/// the balancer stopped by heat, not the balancer working. 4 "automatic
+/// equalization" is the balancer switched on and waiting (the reference maps
+/// it to its balancer *switch*), which is not the same as moving charge.
+/// The cell bitmask at 70+o is the stronger signal and is taken as well.
+const Set<int> antBalancerBalancingCodes = {0x01, 0x02};
+
+/// Balancer codes that are faults rather than states.
+const Set<int> antBalancerFaultCodes = {0x03, 0x0A};

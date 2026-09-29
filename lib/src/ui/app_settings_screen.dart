@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../app_settings.dart';
 import '../bms_service.dart';
+import '../protocol/bms_brand.dart';
 import '../metrics/charge_alerts.dart';
 import '../metrics/ride_alerts.dart';
 import '../update/update_service.dart';
@@ -109,6 +110,13 @@ class AppSettingsScreen extends StatefulWidget {
 }
 
 class _AppSettingsScreenState extends State<AppSettingsScreen> {
+  /// Whether the alert [name] cannot fire on the pack connected now. Only the
+  /// current-limit alert, and only on an ANT, which reports no limits.
+  bool _unavailableHere(String name) =>
+      name == RideAlert.nearCurrentLimit.name &&
+      widget.service.activeDevice != null &&
+      widget.service.brand == BmsBrand.ant;
+
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
@@ -381,6 +389,18 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                         a.label,
                         style: const TextStyle(fontSize: 13.5),
                       ),
+                      // An ANT reports no current limit, so this alert has
+                      // nothing to compare against and can never fire. Said,
+                      // rather than leaving a switch that looks like it works.
+                      subtitle: _unavailableHere(a.name)
+                          ? Text(
+                              t.alertNearLimitUnavailable,
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                color: AppTheme.textFaint,
+                              ),
+                            )
+                          : null,
                     ),
                 ],
                 const SizedBox(height: 4),

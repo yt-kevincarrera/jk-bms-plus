@@ -3077,5 +3077,38 @@
   },
   "evidenceMosfetTemp": "MOSFET del BMS",
   "thermalMirrorNote": "La sonda 5 de este BMS repite la temperatura del MOSFET, así que no se cuenta como sonda de la batería.",
-  "thermalLegendMosfet": "MOSFET (sin sondas en la batería)"
+  "thermalLegendMosfet": "MOSFET (sin sondas en la batería)",
+  "balanceWhichCellsReported": "{cells} (lo informa el BMS)",
+  "@balanceWhichCellsReported": {
+    "placeholders": {
+      "cells": {
+        "type": "String"
+      }
+    }
+  },
+  "balanceWhichCellsNoneReported": "ninguna ahora (lo informa el BMS)",
+  "balancerStoppedByHeat": "detenido por calor",
+  "alertNotificationBodyCellTypical": "Una celda está a {value} V, cerca de {cutoff} V, el corte habitual para esta química (el BMS no informó el suyo). Se puede quedar sin batería aunque el porcentaje aún parezca razonable.",
+  "@alertNotificationBodyCellTypical": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "cutoff": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyCellAssumed": "Una celda está a {value} V, cerca de {cutoff} V, un corte supuesto: el BMS no informó el suyo y no se sabe la química del pack. Se puede quedar sin batería aunque el porcentaje aún parezca razonable.",
+  "@alertNotificationBodyCellAssumed": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "cutoff": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNearLimitUnavailable": "No disponible en este BMS: no informa su límite de corriente."
 }

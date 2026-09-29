@@ -417,7 +417,12 @@ class _NowTabState extends State<NowTab> {
                 s.nominalCapacityAh.toStringAsFixed(1),
               ),
             ),
-            InfoRow(t.packCycles, '${s.cycleCount}'),
+            // An ANT keeps no cycle counter. It used to print "null" here.
+            InfoRow(
+              t.packCycles,
+              s.cycleCount == null ? t.notReported : '${s.cycleCount}',
+              dim: s.cycleCount == null,
+            ),
             InfoRow(t.packSoh, '${s.soh.toStringAsFixed(0)} %'),
             InfoRow(
               t.packSag,

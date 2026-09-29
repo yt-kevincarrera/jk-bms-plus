@@ -4657,4 +4657,30 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get thermalLegendMosfet => 'MOSFET (no battery probes)';
+
+  @override
+  String balanceWhichCellsReported(String cells) {
+    return '$cells (reported by the BMS)';
+  }
+
+  @override
+  String get balanceWhichCellsNoneReported =>
+      'none right now (reported by the BMS)';
+
+  @override
+  String get balancerStoppedByHeat => 'stopped by heat';
+
+  @override
+  String alertNotificationBodyCellTypical(String value, String cutoff) {
+    return 'A cell is at $value V, close to $cutoff V, the usual cutoff for this chemistry (the BMS did not report its own). It can run out even while the percentage still looks reasonable.';
+  }
+
+  @override
+  String alertNotificationBodyCellAssumed(String value, String cutoff) {
+    return 'A cell is at $value V, close to $cutoff V, an assumed cutoff: the BMS did not report its own and the pack\'s chemistry is not known. It can run out even while the percentage still looks reasonable.';
+  }
+
+  @override
+  String get alertNearLimitUnavailable =>
+      'Not available on this BMS: it does not report its current limit.';
 }

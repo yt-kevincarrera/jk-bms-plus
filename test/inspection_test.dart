@@ -319,6 +319,25 @@ void main() {
       );
     });
 
+    test('a BMS with no cycle counter gets no sentence about its cycles', () {
+      // An ANT reports a configured capacity but keeps no cycle count. The
+      // counters line fired on the capacity alone and read "the BMS reports
+      // -- cycles", which is a sentence about nothing.
+      final s = InspectionSession();
+      Rig(
+        currentAt: scripted,
+        cellsAt: (t) => healthyCells(scripted(t).abs()),
+      ).run(s, 200);
+      final r = const InspectionAnalysis().compute(
+        s,
+        reported: const ReportedFigures(configuredCapacityAh: 45),
+      );
+      expect(
+        has(verdicts.evaluate(r), AdviceCode.inspectionCountersEditable),
+        isFalse,
+      );
+    });
+
     test('a weak cell is red and named', () {
       final r = result(weakCellPack);
       expect(verdicts.light(r), InspectionLight.problem);

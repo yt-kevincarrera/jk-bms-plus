@@ -117,4 +117,10 @@ enum LinkEventKind {
   /// or one the parser refused. Detail carries the type or the error, and the
   /// hex.
   jkFrameUndecoded,
+
+  /// An ANT reported its current with the opposite sign to its own battery
+  /// state for several frames running, and the app reversed it for that
+  /// pack from then on. Detail carries the state and the raw current that
+  /// settled it. Written once per pack per session.
+  antCurrentSignInverted,
 }

@@ -43,6 +43,7 @@ class BmsSnapshot {
     this.batteryTypeCode,
     this.chargeStatusCode,
     this.chargerPlugged,
+    this.balancingCellMask,
   });
 
   /// Phone clock, UTC. Never the BMS clock — it drifts and resets.
@@ -263,6 +264,11 @@ class BmsSnapshot {
   final int? chargeStatusCode;
   final bool? chargerPlugged;
 
+  /// Which cells the BMS says it is balancing, one bit per cell starting at
+  /// cell 1. Reported by an ANT (bytes 70+o); null for a JK, whose frame says
+  /// only that balancing is happening, not where.
+  final int? balancingCellMask;
+
   // --- Derived, never stored ---
 
   int get cellCount => cellVoltages.length;
@@ -317,6 +323,60 @@ class BmsSnapshot {
     return [for (final v in cellVoltages) (v - target).abs() <= 0.002];
   }
 
+  /// Which cells are being balanced as the BMS itself reports it, or null
+  /// when it does not say (a JK).
+  List<bool>? get reportedBalancingCells {
+    final mask = balancingCellMask;
+    if (mask == null) return null;
+    return [for (var i = 0; i < cellCount; i++) (mask >> i) & 1 == 1];
+  }
+
+  /// Which cells are being balanced: the BMS's own answer where it gives one,
+  /// and the inference otherwise. [balancingCellsReported] says which.
+  List<bool> get balancingCells =>
+      reportedBalancingCells ?? inferredBalancingCells;
+
+  bool get balancingCellsReported => balancingCellMask != null;
+
+  /// This reading with the current replaced, for a BMS found to report it
+  /// with the opposite sign to its own charge state. Everything else is kept
+  /// exactly as it arrived.
+  BmsSnapshot withCurrent(double value) => BmsSnapshot(
+        timestamp: timestamp,
+        brand: brand,
+        variant: variant,
+        frameCounter: frameCounter,
+        cellVoltages: cellVoltages,
+        cellResistances: cellResistances,
+        enabledCellMask: enabledCellMask,
+        packVoltage: packVoltage,
+        current: value,
+        temperatures: temperatures,
+        temperatureSensorMask: temperatureSensorMask,
+        mosfetTemp: mosfetTemp,
+        soc: soc,
+        soh: soh,
+        remainingCapacityAh: remainingCapacityAh,
+        nominalCapacityAh: nominalCapacityAh,
+        cycleCount: cycleCount,
+        cycleCapacityAh: cycleCapacityAh,
+        balancingAction: balancingAction,
+        balanceCurrent: balanceCurrent,
+        chargeMosfetOn: chargeMosfetOn,
+        dischargeMosfetOn: dischargeMosfetOn,
+        prechargeOn: prechargeOn,
+        balancerActive: balancerActive,
+        heatingOn: heatingOn,
+        warnings: warnings,
+        wireResistanceWarningMask: wireResistanceWarningMask,
+        heatingCurrent: heatingCurrent,
+        totalRuntimeSeconds: totalRuntimeSeconds,
+        batteryTypeCode: batteryTypeCode,
+        chargeStatusCode: chargeStatusCode,
+        chargerPlugged: chargerPlugged,
+        balancingCellMask: balancingCellMask,
+      );
+
   int _indexOf(double value) {
     for (var i = 0; i < cellVoltages.length; i++) {
       if (cellVoltages[i] == value) return i + 1;
@@ -369,5 +429,6 @@ class BmsSnapshot {
         'batteryTypeCode': batteryTypeCode,
         'chargeStatusCode': chargeStatusCode,
         'chargerPlugged': chargerPlugged,
+        'balancingCellMask': balancingCellMask,
       };
 }

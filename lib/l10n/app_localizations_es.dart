@@ -4680,4 +4680,30 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get thermalLegendMosfet => 'MOSFET (sin sondas en la batería)';
+
+  @override
+  String balanceWhichCellsReported(String cells) {
+    return '$cells (lo informa el BMS)';
+  }
+
+  @override
+  String get balanceWhichCellsNoneReported =>
+      'ninguna ahora (lo informa el BMS)';
+
+  @override
+  String get balancerStoppedByHeat => 'detenido por calor';
+
+  @override
+  String alertNotificationBodyCellTypical(String value, String cutoff) {
+    return 'Una celda está a $value V, cerca de $cutoff V, el corte habitual para esta química (el BMS no informó el suyo). Se puede quedar sin batería aunque el porcentaje aún parezca razonable.';
+  }
+
+  @override
+  String alertNotificationBodyCellAssumed(String value, String cutoff) {
+    return 'Una celda está a $value V, cerca de $cutoff V, un corte supuesto: el BMS no informó el suyo y no se sabe la química del pack. Se puede quedar sin batería aunque el porcentaje aún parezca razonable.';
+  }
+
+  @override
+  String get alertNearLimitUnavailable =>
+      'No disponible en este BMS: no informa su límite de corriente.';
 }

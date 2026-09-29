@@ -124,7 +124,9 @@ class RideAlerts {
   ///
   /// [cutoffVoltagePerCell] comes from the BMS's own undervoltage setting, so
   /// the cell warning tracks how this pack is actually configured rather than
-  /// a number picked here.
+  /// a number picked here. Where the BMS has not stated one (an ANT never
+  /// does) the caller passes the usual cutoff for the chemistry, and the
+  /// wording of the alert says it is assumed.
   List<RideAlert> evaluate(
     BmsSnapshot s, {
     required double cutoffVoltagePerCell,

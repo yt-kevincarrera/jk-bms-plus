@@ -10,6 +10,7 @@ import 'package:jk_bms/src/data/database.dart';
 import 'package:jk_bms/src/data/link_event.dart';
 import 'package:jk_bms/src/data/repository.dart';
 import 'package:jk_bms/src/protocol/ant_crc.dart';
+import 'package:jk_bms/src/pack/chemistry.dart';
 import 'package:jk_bms/src/protocol/bms_brand.dart';
 
 import 'fixtures/ant_frames.dart';
@@ -229,6 +230,78 @@ void main() {
     expect(service.stats.bytesReceived, before + antStatus16s.length);
   });
 
+  test("an ANT states no cutoff, so the chemistry's usual one is used, "
+      'and marked assumed', () async {
+    // It used to be a flat 3.0 V for any pack without a settings frame,
+    // quoted in the alert as "the BMS cutoff". An ANT never sends settings.
+    await service.connect('ANT1', name: 'ANT-BLE16ZMUB');
+    link.announce(BleLinkState.connected);
+    await link.deliver(antStatus16s);
+    await pumpEventQueue();
+    expect(service.activeDeviceId, 'ANT1');
+    expect(service.cutoffIsAssumed, isTrue);
+    // Cells at 3.3 V say nothing about the chemistry, and nobody has.
+    expect(service.cutoffChemistry, CellChemistry.unknown);
+    expect(service.cutoffVoltagePerCell, ChemistryLimits.unknownCutoffVolts);
+
+    await repo.setPackProfile('ANT1', chemistry: 'lfp');
+    service.activeDevice = await repo.db.device('ANT1');
+    expect(service.cutoffChemistry, CellChemistry.lfp);
+    expect(service.cutoffVoltagePerCell, ChemistryLimits.lfp.typicalCutoffVolts);
+    expect(service.cutoffIsAssumed, isTrue);
+  });
+
+  group('an ANT whose current runs against its own state', () {
+    // The sign convention is assumed for ANT, not measured. The state byte
+    // is the witness: charging at a clearly negative current, three frames
+    // running, means the pack reports the other way round.
+    Future<List<double>> feed(List<Uint8List> frames) async {
+      await service.connect('ANT1', name: 'ANT-BLE16ZMUB');
+      link.announce(BleLinkState.connected);
+      final seen = <double>[];
+      final sub = service.snapshots.listen((s) => seen.add(s.current));
+      for (final f in frames) {
+        await link.deliver(f);
+        await pumpEventQueue();
+      }
+      await sub.cancel();
+      return seen;
+    }
+
+    test('is reversed from the frame that settles it, and said once',
+        () async {
+      final charging = antFrameWithState(0x02, -6.0);
+      final seen = await feed([charging, charging, charging, charging]);
+      // The first two are taken as they come; the third settles it.
+      expect(seen, [-6.0, -6.0, 6.0, 6.0]);
+      expect(service.lastAntStatus!.snapshot.current, 6.0);
+      expect(service.lastSnapshot!.isCharging, isTrue);
+      expect(
+        service.recentProblems.where((p) => p.contains('opposite sign')),
+        hasLength(1),
+      );
+      final events = await service.repository!.recentLinkEvents();
+      final rows = events.where(
+        (e) => e.kind == LinkEventKind.antCurrentSignInverted.name,
+      );
+      expect(rows, hasLength(1));
+      expect(rows.single.detail, contains('Charge'));
+    });
+
+    test('and a pack whose state agrees is left alone', () async {
+      final charging = antFrameWithState(0x02, 6.0);
+      final seen = await feed([charging, charging, charging, charging]);
+      expect(seen, everyElement(6.0));
+      final events = await service.repository!.recentLinkEvents();
+      expect(
+        events.where(
+          (e) => e.kind == LinkEventKind.antCurrentSignInverted.name,
+        ),
+        isEmpty,
+      );
+    });
+  });
+
   test('an implausible ANT reading feeds nothing', () async {
     await service.connect('X', name: 'ANT-BLE16ZMUB');
     link.announce(BleLinkState.connected);
@@ -427,6 +500,20 @@ class _CountingLink extends FakeLink {
 
   @override
   Future<void> connect(String deviceId) async => connects++;
+}
+
+/// A copy of the 16S fixture with its battery state byte and current set, and
+/// the CRC recomputed. Current is at 40+o, o = 2 * (16 cells + 2 probes).
+Uint8List antFrameWithState(int state, double amps) {
+  final b = Uint8List.fromList(antStatus16s);
+  b[7] = state;
+  final raw = (amps * 10).round() & 0xFFFF;
+  b[40 + 36] = raw & 0xFF;
+  b[41 + 36] = raw >> 8;
+  final crc = antCrc16(b, 1, b.length - 4);
+  b[b.length - 4] = crc & 0xFF;
+  b[b.length - 3] = crc >> 8;
+  return b;
 }
 
 String _hexOf(List<int> b) =>

@@ -34,6 +34,19 @@ class AntStatus {
   final int balancerCode;
   final double balancerTemp;
   final int balancingCellMask;
+
+  /// The same frame with a corrected reading, for the one correction the
+  /// service makes after decoding: an ANT whose current sign contradicts its
+  /// own battery state.
+  AntStatus withSnapshot(BmsSnapshot s) => AntStatus(
+        snapshot: s,
+        batteryState: batteryState,
+        chargeMosfetCode: chargeMosfetCode,
+        dischargeMosfetCode: dischargeMosfetCode,
+        balancerCode: balancerCode,
+        balancerTemp: balancerTemp,
+        balancingCellMask: balancingCellMask,
+      );
 }
 
 /// The MOSFET codes, in the app's warning vocabulary (spec §5.2).
@@ -87,6 +100,14 @@ class AntParser {
     final charge = b[46 + o];
     final discharge = b[47 + o];
     final balancer = b[48 + o];
+    // 70+o, 4 bytes: which cells are being balanced, one bit each.
+    final balancingMask = u32(70 + o);
+    // Working means charge is being moved: either the BMS names cells, or its
+    // balancer code is one of the two that describe balancing under way. It
+    // used to be "any code but 0", which called a balancer stopped by
+    // overheating "working", and one merely switched on (code 4) too.
+    final balancing =
+        balancingMask != 0 || antBalancerBalancingCodes.contains(balancer);
 
     final snapshot = BmsSnapshot(
       timestamp: f.receivedAt,
@@ -97,7 +118,10 @@ class AntParser {
       cellResistances: null,
       enabledCellMask: null,
       packVoltage: u16(38 + o) / 100,
-      // Positive while charging, which is already this app's convention.
+      // Taken as positive while charging, this app's convention. Unverified
+      // on real ANT hardware: every capture so far is an idle pack. The
+      // service checks it against the battery state byte and reverses it for
+      // a pack whose own state contradicts it (AntCurrentSign).
       current: i16(40 + o) / 10,
       temperatures: probes,
       temperatureSensorMask: null,
@@ -112,12 +136,13 @@ class AntParser {
       balanceCurrent: null,
       chargeMosfetOn: charge == 0x01,
       dischargeMosfetOn: discharge == 0x01,
-      balancerActive: balancer != 0,
+      balancerActive: balancing,
       heatingOn: null,
       warnings: antWarnings(charge: charge, discharge: discharge),
       wireResistanceWarningMask: null,
       heatingCurrent: null,
       totalRuntimeSeconds: u32(66 + o),
+      balancingCellMask: balancingMask,
     );
     // Power (62+o) is deliberately not stored: BmsSnapshot.power is V x I,
     // computed in one place rather than trusted from two.
@@ -128,7 +153,7 @@ class AntParser {
       dischargeMosfetCode: discharge,
       balancerCode: balancer,
       balancerTemp: i16(36 + o).toDouble(),
-      balancingCellMask: u32(70 + o),
+      balancingCellMask: balancingMask,
     );
   }
 
