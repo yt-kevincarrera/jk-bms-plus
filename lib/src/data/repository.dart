@@ -75,16 +75,16 @@ class BmsRepository {
         soc: s.soc,
         soh: s.soh,
         remainingAh: s.remainingCapacityAh,
-        // ANT reports no cycle count; the column predates nullable readings
-        // and nothing on screen reads it back (spec §11.5).
-        cycleCount: (s.cycleCount ?? 0).toDouble(),
+        // Null when the BMS keeps no counter (an ANT does not): a 0 here read
+        // as a pack that had never been cycled.
+        cycleCount: Value(s.cycleCount?.toDouble()),
         cycleCapacityAh: Value(s.cycleCapacityAh),
         deltaVolts: s.deltaCellVoltage,
         minCellVoltage: s.minCellVoltage,
         maxCellVoltage: s.maxCellVoltage,
-        maxTemperature: temps.isEmpty
-            ? 0
-            : temps.reduce((a, b) => a > b ? a : b),
+        maxTemperature: Value(
+          temps.isEmpty ? null : temps.reduce((a, b) => a > b ? a : b),
+        ),
         mosfetTemp: Value(s.mosfetTemp),
         warningsMask: s.warnings.raw,
         balancerActive: s.balancerActive,
@@ -151,7 +151,8 @@ class BmsRepository {
         minPackVoltage: 0,
         maxPackVoltage: 0,
         maxDischargeCurrent: 0,
-        maxTemperature: 0,
+        // Unknown until the ride ends; a ride cut short by a crash leaves it
+        // empty rather than claiming 0 degC.
         maxDeltaVolts: 0,
         climbM: 0,
         descentM: 0,

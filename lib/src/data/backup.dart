@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import '../protocol/bms_brand.dart';
 import 'database.dart';
 
 /// Everything the app knows, in one file, and back again.
@@ -213,8 +214,13 @@ class BackupCodec {
     }
     if (pointRows.isNotEmpty) await db.insertTripPoints(pointRows);
 
+    final antDevices = <Object?>{
+      for (final d in devices)
+        if (BmsBrand.fromStored(d['brand'] as String?) == BmsBrand.ant)
+          d['id'],
+    };
     final snapshotRows = [
-      for (final s in snapshots) _snapshotCompanion(s, tripIds),
+      for (final s in snapshots) _snapshotCompanion(s, tripIds, antDevices),
     ];
     if (snapshotRows.isNotEmpty) await db.insertSnapshots(snapshotRows);
 
@@ -461,7 +467,9 @@ class BackupCodec {
         minPackVoltage: _d(t['minPackVoltage']),
         maxPackVoltage: _d(t['maxPackVoltage']),
         maxDischargeCurrent: _d(t['maxDischargeCurrent']),
-        maxTemperature: _d(t['maxTemperature']),
+        // Null when the pack had no probe; a backup from before that was
+        // possible carries a number, which is kept.
+        maxTemperature: Value(_double(t['maxTemperature'])),
         maxDeltaVolts: _d(t['maxDeltaVolts']),
         climbM: _d(t['climbM']),
         descentM: _d(t['descentM']),
@@ -501,6 +509,7 @@ class BackupCodec {
   static SnapshotsCompanion _snapshotCompanion(
     Map<String, dynamic> s,
     Map<int, int> tripIds,
+    Set<Object?> antDevices,
   ) => SnapshotsCompanion.insert(
     deviceId: Value(s['deviceId'] as String?),
     timestamp: _time(s['timestamp'])!,
@@ -510,12 +519,16 @@ class BackupCodec {
     soc: _d(s['soc']),
     soh: _d(s['soh']),
     remainingAh: _d(s['remainingAh']),
-    cycleCount: _d(s['cycleCount']),
+    // An ANT has no cycle counter. Backups made before the column could be
+    // empty carry a filler 0 for it, which would restore as a new pack.
+    cycleCount: Value(
+      antDevices.contains(s['deviceId']) ? null : _double(s['cycleCount']),
+    ),
     cycleCapacityAh: Value(_d(s['cycleCapacityAh'])),
     deltaVolts: _d(s['deltaVolts']),
     minCellVoltage: _d(s['minCellVoltage']),
     maxCellVoltage: _d(s['maxCellVoltage']),
-    maxTemperature: _d(s['maxTemperature']),
+    maxTemperature: Value(_double(s['maxTemperature'])),
     mosfetTemp: Value(_double(s['mosfetTemp'])),
     warningsMask: _i(s['warningsMask']),
     balancerActive: s['balancerActive'] as bool? ?? false,

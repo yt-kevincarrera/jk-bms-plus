@@ -165,7 +165,8 @@ class TripSummary {
   final double minPackVoltage;
   final double maxPackVoltage;
   final double maxDischargeCurrent;
-  final double maxTemperature;
+  /// Hottest battery probe over the ride, or null when the pack has none.
+  final double? maxTemperature;
   final double maxDeltaVolts;
   final double climbM;
   final double descentM;
@@ -281,7 +282,7 @@ class TripRecorder {
   double _minPackVoltage = double.infinity;
   double _maxPackVoltage = 0;
   double _maxDischargeCurrent = 0;
-  double _maxTemperature = -100;
+  double? _maxTemperature;
   double _maxDeltaVolts = 0;
 
   BmsSnapshot? _lastSnapshot;
@@ -486,7 +487,7 @@ class TripRecorder {
       minPackVoltage: _minPackVoltage.isFinite ? _minPackVoltage : 0,
       maxPackVoltage: _maxPackVoltage,
       maxDischargeCurrent: _maxDischargeCurrent,
-      maxTemperature: _maxTemperature > -100 ? _maxTemperature : 0,
+      maxTemperature: _maxTemperature,
       maxDeltaVolts: _maxDeltaVolts,
       climbM: _altitude.climbM,
       descentM: _altitude.descentM,
@@ -596,7 +597,9 @@ class TripRecorder {
       if (s.mosfetTemp != null) s.mosfetTemp!,
     ];
     if (temps.isNotEmpty) {
-      _maxTemperature = math.max(_maxTemperature, temps.reduce(math.max));
+      final hottest = temps.reduce(math.max);
+      final before = _maxTemperature;
+      _maxTemperature = before == null ? hottest : math.max(before, hottest);
     }
     _maxDeltaVolts = math.max(_maxDeltaVolts, s.deltaCellVoltage);
 
@@ -648,7 +651,7 @@ class TripRecorder {
     _minPackVoltage = double.infinity;
     _maxPackVoltage = 0;
     _maxDischargeCurrent = 0;
-    _maxTemperature = -100;
+    _maxTemperature = null;
     _maxDeltaVolts = 0;
   }
 

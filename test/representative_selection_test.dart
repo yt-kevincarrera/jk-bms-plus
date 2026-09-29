@@ -55,7 +55,7 @@ void main() {
         minPackVoltage: 70,
         maxPackVoltage: 80,
         maxDischargeCurrent: 20,
-        maxTemperature: 30,
+        maxTemperature: const Value(30),
         maxDeltaVolts: 0.02,
         climbM: 40,
         descentM: 40,

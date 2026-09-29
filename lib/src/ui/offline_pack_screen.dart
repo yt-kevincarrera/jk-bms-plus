@@ -374,7 +374,9 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
           ),
           if (last != null) ...[
             InfoRow(t.offlineSoh, '${last.soh.toStringAsFixed(0)} %'),
-            InfoRow(t.offlineCycles, last.cycleCount.toStringAsFixed(0)),
+            // Hidden rather than 0 when the BMS keeps no counter (an ANT).
+            if (last.cycleCount != null)
+              InfoRow(t.offlineCycles, last.cycleCount!.toStringAsFixed(0)),
             if (weakest != null)
               InfoRow(
                 t.offlineWeakest,
@@ -383,10 +385,12 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
                   weakest.$2.toStringAsFixed(3),
                 ),
               ),
-            InfoRow(
-              t.offlineMaxTemp,
-              '${last.maxTemperature.toStringAsFixed(0)} °C',
-            ),
+            // Hidden when no battery probe is fitted, rather than 0 degC.
+            if (last.maxTemperature != null)
+              InfoRow(
+                t.offlineMaxTemp,
+                '${last.maxTemperature!.toStringAsFixed(0)} °C',
+              ),
           ],
           if (bestMeasured != null)
             InfoRow(
@@ -588,7 +592,7 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
               at: _last!.timestamp,
               cells: decodeCellVoltages(_last!.cellVoltagesJson),
               current: _last!.current,
-              cycleCount: _last!.cycleCount.round(),
+              cycleCount: _last!.cycleCount?.round(),
             );
       final data = PackReportData.build(
         generatedAt: DateTime.now().toUtc(),

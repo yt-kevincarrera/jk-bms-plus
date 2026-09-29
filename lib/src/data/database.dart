@@ -120,7 +120,11 @@ class Trips extends Table {
   RealColumn get minPackVoltage => real()();
   RealColumn get maxPackVoltage => real()();
   RealColumn get maxDischargeCurrent => real()();
-  RealColumn get maxTemperature => real()();
+
+  /// Hottest battery probe over the ride, Celsius. Null when the pack has no
+  /// probe fitted: it used to be written as 0, which reads as a ride at
+  /// freezing point. The MOSFET is not a battery probe and is not in here.
+  RealColumn get maxTemperature => real().nullable()();
   RealColumn get maxDeltaVolts => real()();
   RealColumn get climbM => real()();
   RealColumn get descentM => real()();
@@ -230,7 +234,10 @@ class Snapshots extends Table {
   RealColumn get soc => real()();
   RealColumn get soh => real()();
   RealColumn get remainingAh => real()();
-  RealColumn get cycleCount => real()();
+
+  /// The BMS's own cycle counter. Null when the BMS does not report one: an
+  /// ANT has no such field, and a 0 here read as a brand-new pack.
+  RealColumn get cycleCount => real().nullable()();
 
   /// Total charge that has ever passed through the pack, in amp-hours.
   ///
@@ -243,7 +250,11 @@ class Snapshots extends Table {
   RealColumn get deltaVolts => real()();
   RealColumn get minCellVoltage => real()();
   RealColumn get maxCellVoltage => real()();
-  RealColumn get maxTemperature => real()();
+
+  /// Hottest battery probe in this reading, Celsius, or null when no probe is
+  /// fitted. The MOSFET has its own column and is deliberately not folded in:
+  /// a hot switch is not a hot pack.
+  RealColumn get maxTemperature => real().nullable()();
   RealColumn get mosfetTemp => real().nullable()();
   IntColumn get warningsMask => integer()();
   BoolColumn get balancerActive => boolean()();
@@ -427,7 +438,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -552,6 +563,25 @@ class AppDatabase extends _$AppDatabase {
         // fail with a duplicate column and stop the app opening.
         await m.addColumn(rawFrames, rawFrames.brand);
         if (from >= 5) await m.addColumn(devices, devices.brand);
+      }
+      if (from < 16) {
+        // Three columns become nullable: the hottest probe of a reading and
+        // of a ride, and the reading's cycle count. SQLite cannot drop a NOT
+        // NULL in place, so both tables are rebuilt from the current schema.
+        // Every earlier step has already added whatever columns these tables
+        // gained, so by this point the old table carries all of them and the
+        // copy needs no newColumns.
+        await m.alterTable(TableMigration(trips));
+        await m.alterTable(TableMigration(snapshots));
+        // An ANT has no cycle counter, and every one of its readings stored
+        // a 0 that read as a pack that had never been cycled. Those zeros are
+        // known to be fillers, so they go. Temperatures are left alone: until
+        // now the maximum included the MOSFET, which every BMS reports, so a
+        // stored 0 was a real reading of 0 degC and not a filler.
+        await customStatement(
+          'UPDATE snapshots SET cycle_count = NULL WHERE device_id IN '
+          "(SELECT id FROM devices WHERE brand = 'ant')",
+        );
       }
     },
   );

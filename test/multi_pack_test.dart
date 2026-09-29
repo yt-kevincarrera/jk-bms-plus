@@ -21,7 +21,7 @@ TripsCompanion ride(String? deviceId, DateTime at, {double km = 10}) =>
       minPackVoltage: 70,
       maxPackVoltage: 82,
       maxDischargeCurrent: 30,
-      maxTemperature: 30,
+      maxTemperature: const Value(30),
       maxDeltaVolts: 0.02,
       climbM: 10,
       descentM: 10,

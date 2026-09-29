@@ -35,7 +35,7 @@ class TripLearnedSection extends StatelessWidget {
 
   final double socUsed;
   final double distanceKm;
-  final double maxTemperature;
+  final double? maxTemperature;
   final double maxDeltaVolts;
   final AppL10n t;
 
@@ -134,8 +134,9 @@ class TripLearnedSection extends StatelessWidget {
       tips.add(t.tripThirstyTip(thirst.toStringAsFixed(0)));
     }
 
-    if (tips.length < 2 && maxTemperature > 45) {
-      tips.add(t.tripHotTip(maxTemperature.toStringAsFixed(1)));
+    final hottest = maxTemperature;
+    if (tips.length < 2 && hottest != null && hottest > 45) {
+      tips.add(t.tripHotTip(hottest.toStringAsFixed(1)));
     }
     if (tips.length < 2 && maxDeltaVolts > 0.06) {
       tips.add(t.tripDeltaTip(maxDeltaVolts.toStringAsFixed(3)));

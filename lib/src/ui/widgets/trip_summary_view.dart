@@ -55,7 +55,7 @@ class TripSummaryView {
   final double minPackVoltage;
   final double maxPackVoltage;
   final double maxDischargeCurrent;
-  final double maxTemperature;
+  final double? maxTemperature;
   final double maxDeltaVolts;
 
   /// What the estimate said before and after this ride was folded in.

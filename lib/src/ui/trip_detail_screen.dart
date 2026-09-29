@@ -242,9 +242,13 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                   t.tripMaxCurrent,
                   '${trip.maxDischargeCurrent.toStringAsFixed(1)} A',
                 ),
+                // Empty when the pack has no battery probe, not 0 degC.
                 InfoRow(
                   t.tripMaxTemp,
-                  '${trip.maxTemperature.toStringAsFixed(1)} °C',
+                  trip.maxTemperature == null
+                      ? '--'
+                      : '${trip.maxTemperature!.toStringAsFixed(1)} °C',
+                  dim: trip.maxTemperature == null,
                 ),
                 InfoRow(
                   t.tripMaxDelta,

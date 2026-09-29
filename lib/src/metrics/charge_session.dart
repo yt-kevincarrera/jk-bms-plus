@@ -30,7 +30,8 @@ class ChargeReport {
   final double ahIn;
   final double whIn;
   final double peakCurrent;
-  final double maxTemperature;
+  /// Hottest battery probe over the charge, or null when the pack has none.
+  final double? maxTemperature;
 
   /// Spread when charging began.
   final double deltaAtStart;
@@ -111,7 +112,7 @@ class ChargeSessionRecorder {
   double _startSoc = 0;
   double _endSoc = 0;
   double _peakCurrent = 0;
-  double _maxTemp = -100;
+  double? _maxTemp;
   double _deltaAtStart = 0;
   double _deltaAtTop = 0;
   double _worstDeltaHigh = 0;
@@ -162,7 +163,7 @@ class ChargeSessionRecorder {
     _startSoc = s.soc;
     _endSoc = s.soc;
     _peakCurrent = 0;
-    _maxTemp = -100;
+    _maxTemp = null;
     _deltaAtStart = s.deltaCellVoltage;
     _deltaAtTop = 0;
     _worstDeltaHigh = 0;
@@ -181,7 +182,9 @@ class ChargeSessionRecorder {
       if (s.mosfetTemp != null) s.mosfetTemp!,
     ];
     if (temps.isNotEmpty) {
-      _maxTemp = math.max(_maxTemp, temps.reduce(math.max));
+      final hottest = temps.reduce(math.max);
+      final before = _maxTemp;
+      _maxTemp = before == null ? hottest : math.max(before, hottest);
     }
 
     // Everything above the high-voltage mark is the part worth remembering.
@@ -239,7 +242,7 @@ class ChargeSessionRecorder {
       ahIn: _ah,
       whIn: _wh,
       peakCurrent: _peakCurrent,
-      maxTemperature: _maxTemp > -100 ? _maxTemp : 0,
+      maxTemperature: _maxTemp,
       deltaAtStart: _deltaAtStart,
       deltaAtTop: _deltaAtTop,
       worstDeltaHigh: _worstDeltaHigh,

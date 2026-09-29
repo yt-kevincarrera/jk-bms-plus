@@ -158,9 +158,13 @@ class _TripSummarySheetState extends State<TripSummarySheet> {
                 t.tripMaxCurrent,
                 '${view.maxDischargeCurrent.toStringAsFixed(1)} A',
               ),
+              // Empty when the pack has no battery probe, not 0 degC.
               InfoRow(
                 t.tripMaxTemp,
-                '${view.maxTemperature.toStringAsFixed(1)} °C',
+                view.maxTemperature == null
+                    ? '--'
+                    : '${view.maxTemperature!.toStringAsFixed(1)} °C',
+                dim: view.maxTemperature == null,
               ),
               InfoRow(
                 t.tripMaxDelta,

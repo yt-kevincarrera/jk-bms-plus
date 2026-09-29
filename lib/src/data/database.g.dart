@@ -935,9 +935,9 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
   late final GeneratedColumn<double> maxTemperature = GeneratedColumn<double>(
     'max_temperature',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.double,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _maxDeltaVoltsMeta = const VerificationMeta(
     'maxDeltaVolts',
@@ -1292,8 +1292,6 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
           _maxTemperatureMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_maxTemperatureMeta);
     }
     if (data.containsKey('max_delta_volts')) {
       context.handle(
@@ -1480,7 +1478,7 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
       maxTemperature: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}max_temperature'],
-      )!,
+      ),
       maxDeltaVolts: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}max_delta_volts'],
@@ -1565,7 +1563,11 @@ class Trip extends DataClass implements Insertable<Trip> {
   final double minPackVoltage;
   final double maxPackVoltage;
   final double maxDischargeCurrent;
-  final double maxTemperature;
+
+  /// Hottest battery probe over the ride, Celsius. Null when the pack has no
+  /// probe fitted: it used to be written as 0, which reads as a ride at
+  /// freezing point. The MOSFET is not a battery probe and is not in here.
+  final double? maxTemperature;
   final double maxDeltaVolts;
   final double climbM;
   final double descentM;
@@ -1647,7 +1649,7 @@ class Trip extends DataClass implements Insertable<Trip> {
     required this.minPackVoltage,
     required this.maxPackVoltage,
     required this.maxDischargeCurrent,
-    required this.maxTemperature,
+    this.maxTemperature,
     required this.maxDeltaVolts,
     required this.climbM,
     required this.descentM,
@@ -1681,7 +1683,9 @@ class Trip extends DataClass implements Insertable<Trip> {
     map['min_pack_voltage'] = Variable<double>(minPackVoltage);
     map['max_pack_voltage'] = Variable<double>(maxPackVoltage);
     map['max_discharge_current'] = Variable<double>(maxDischargeCurrent);
-    map['max_temperature'] = Variable<double>(maxTemperature);
+    if (!nullToAbsent || maxTemperature != null) {
+      map['max_temperature'] = Variable<double>(maxTemperature);
+    }
     map['max_delta_volts'] = Variable<double>(maxDeltaVolts);
     map['climb_m'] = Variable<double>(climbM);
     map['descent_m'] = Variable<double>(descentM);
@@ -1734,7 +1738,9 @@ class Trip extends DataClass implements Insertable<Trip> {
       minPackVoltage: Value(minPackVoltage),
       maxPackVoltage: Value(maxPackVoltage),
       maxDischargeCurrent: Value(maxDischargeCurrent),
-      maxTemperature: Value(maxTemperature),
+      maxTemperature: maxTemperature == null && nullToAbsent
+          ? const Value.absent()
+          : Value(maxTemperature),
       maxDeltaVolts: Value(maxDeltaVolts),
       climbM: Value(climbM),
       descentM: Value(descentM),
@@ -1793,7 +1799,7 @@ class Trip extends DataClass implements Insertable<Trip> {
       maxDischargeCurrent: serializer.fromJson<double>(
         json['maxDischargeCurrent'],
       ),
-      maxTemperature: serializer.fromJson<double>(json['maxTemperature']),
+      maxTemperature: serializer.fromJson<double?>(json['maxTemperature']),
       maxDeltaVolts: serializer.fromJson<double>(json['maxDeltaVolts']),
       climbM: serializer.fromJson<double>(json['climbM']),
       descentM: serializer.fromJson<double>(json['descentM']),
@@ -1829,7 +1835,7 @@ class Trip extends DataClass implements Insertable<Trip> {
       'minPackVoltage': serializer.toJson<double>(minPackVoltage),
       'maxPackVoltage': serializer.toJson<double>(maxPackVoltage),
       'maxDischargeCurrent': serializer.toJson<double>(maxDischargeCurrent),
-      'maxTemperature': serializer.toJson<double>(maxTemperature),
+      'maxTemperature': serializer.toJson<double?>(maxTemperature),
       'maxDeltaVolts': serializer.toJson<double>(maxDeltaVolts),
       'climbM': serializer.toJson<double>(climbM),
       'descentM': serializer.toJson<double>(descentM),
@@ -1863,7 +1869,7 @@ class Trip extends DataClass implements Insertable<Trip> {
     double? minPackVoltage,
     double? maxPackVoltage,
     double? maxDischargeCurrent,
-    double? maxTemperature,
+    Value<double?> maxTemperature = const Value.absent(),
     double? maxDeltaVolts,
     double? climbM,
     double? descentM,
@@ -1894,7 +1900,9 @@ class Trip extends DataClass implements Insertable<Trip> {
     minPackVoltage: minPackVoltage ?? this.minPackVoltage,
     maxPackVoltage: maxPackVoltage ?? this.maxPackVoltage,
     maxDischargeCurrent: maxDischargeCurrent ?? this.maxDischargeCurrent,
-    maxTemperature: maxTemperature ?? this.maxTemperature,
+    maxTemperature: maxTemperature.present
+        ? maxTemperature.value
+        : this.maxTemperature,
     maxDeltaVolts: maxDeltaVolts ?? this.maxDeltaVolts,
     climbM: climbM ?? this.climbM,
     descentM: descentM ?? this.descentM,
@@ -2107,7 +2115,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
   final Value<double> minPackVoltage;
   final Value<double> maxPackVoltage;
   final Value<double> maxDischargeCurrent;
-  final Value<double> maxTemperature;
+  final Value<double?> maxTemperature;
   final Value<double> maxDeltaVolts;
   final Value<double> climbM;
   final Value<double> descentM;
@@ -2170,7 +2178,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     required double minPackVoltage,
     required double maxPackVoltage,
     required double maxDischargeCurrent,
-    required double maxTemperature,
+    this.maxTemperature = const Value.absent(),
     required double maxDeltaVolts,
     required double climbM,
     required double descentM,
@@ -2199,7 +2207,6 @@ class TripsCompanion extends UpdateCompanion<Trip> {
        minPackVoltage = Value(minPackVoltage),
        maxPackVoltage = Value(maxPackVoltage),
        maxDischargeCurrent = Value(maxDischargeCurrent),
-       maxTemperature = Value(maxTemperature),
        maxDeltaVolts = Value(maxDeltaVolts),
        climbM = Value(climbM),
        descentM = Value(descentM);
@@ -2285,7 +2292,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     Value<double>? minPackVoltage,
     Value<double>? maxPackVoltage,
     Value<double>? maxDischargeCurrent,
-    Value<double>? maxTemperature,
+    Value<double?>? maxTemperature,
     Value<double>? maxDeltaVolts,
     Value<double>? climbM,
     Value<double>? descentM,
@@ -3173,9 +3180,9 @@ class $SnapshotsTable extends Snapshots
   late final GeneratedColumn<double> cycleCount = GeneratedColumn<double>(
     'cycle_count',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.double,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _cycleCapacityAhMeta = const VerificationMeta(
     'cycleCapacityAh',
@@ -3229,9 +3236,9 @@ class $SnapshotsTable extends Snapshots
   late final GeneratedColumn<double> maxTemperature = GeneratedColumn<double>(
     'max_temperature',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.double,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _mosfetTempMeta = const VerificationMeta(
     'mosfetTemp',
@@ -3393,8 +3400,6 @@ class $SnapshotsTable extends Snapshots
         _cycleCountMeta,
         cycleCount.isAcceptableOrUnknown(data['cycle_count']!, _cycleCountMeta),
       );
-    } else if (isInserting) {
-      context.missing(_cycleCountMeta);
     }
     if (data.containsKey('cycle_capacity_ah')) {
       context.handle(
@@ -3443,8 +3448,6 @@ class $SnapshotsTable extends Snapshots
           _maxTemperatureMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_maxTemperatureMeta);
     }
     if (data.containsKey('mosfet_temp')) {
       context.handle(
@@ -3535,7 +3538,7 @@ class $SnapshotsTable extends Snapshots
       cycleCount: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}cycle_count'],
-      )!,
+      ),
       cycleCapacityAh: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}cycle_capacity_ah'],
@@ -3555,7 +3558,7 @@ class $SnapshotsTable extends Snapshots
       maxTemperature: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}max_temperature'],
-      )!,
+      ),
       mosfetTemp: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}mosfet_temp'],
@@ -3594,7 +3597,10 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
   final double soc;
   final double soh;
   final double remainingAh;
-  final double cycleCount;
+
+  /// The BMS's own cycle counter. Null when the BMS does not report one: an
+  /// ANT has no such field, and a 0 here read as a brand-new pack.
+  final double? cycleCount;
 
   /// Total charge that has ever passed through the pack, in amp-hours.
   ///
@@ -3607,7 +3613,11 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
   final double deltaVolts;
   final double minCellVoltage;
   final double maxCellVoltage;
-  final double maxTemperature;
+
+  /// Hottest battery probe in this reading, Celsius, or null when no probe is
+  /// fitted. The MOSFET has its own column and is deliberately not folded in:
+  /// a hot switch is not a hot pack.
+  final double? maxTemperature;
   final double? mosfetTemp;
   final int warningsMask;
   final bool balancerActive;
@@ -3628,12 +3638,12 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
     required this.soc,
     required this.soh,
     required this.remainingAh,
-    required this.cycleCount,
+    this.cycleCount,
     required this.cycleCapacityAh,
     required this.deltaVolts,
     required this.minCellVoltage,
     required this.maxCellVoltage,
-    required this.maxTemperature,
+    this.maxTemperature,
     this.mosfetTemp,
     required this.warningsMask,
     required this.balancerActive,
@@ -3653,12 +3663,16 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
     map['soc'] = Variable<double>(soc);
     map['soh'] = Variable<double>(soh);
     map['remaining_ah'] = Variable<double>(remainingAh);
-    map['cycle_count'] = Variable<double>(cycleCount);
+    if (!nullToAbsent || cycleCount != null) {
+      map['cycle_count'] = Variable<double>(cycleCount);
+    }
     map['cycle_capacity_ah'] = Variable<double>(cycleCapacityAh);
     map['delta_volts'] = Variable<double>(deltaVolts);
     map['min_cell_voltage'] = Variable<double>(minCellVoltage);
     map['max_cell_voltage'] = Variable<double>(maxCellVoltage);
-    map['max_temperature'] = Variable<double>(maxTemperature);
+    if (!nullToAbsent || maxTemperature != null) {
+      map['max_temperature'] = Variable<double>(maxTemperature);
+    }
     if (!nullToAbsent || mosfetTemp != null) {
       map['mosfet_temp'] = Variable<double>(mosfetTemp);
     }
@@ -3683,12 +3697,16 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
       soc: Value(soc),
       soh: Value(soh),
       remainingAh: Value(remainingAh),
-      cycleCount: Value(cycleCount),
+      cycleCount: cycleCount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cycleCount),
       cycleCapacityAh: Value(cycleCapacityAh),
       deltaVolts: Value(deltaVolts),
       minCellVoltage: Value(minCellVoltage),
       maxCellVoltage: Value(maxCellVoltage),
-      maxTemperature: Value(maxTemperature),
+      maxTemperature: maxTemperature == null && nullToAbsent
+          ? const Value.absent()
+          : Value(maxTemperature),
       mosfetTemp: mosfetTemp == null && nullToAbsent
           ? const Value.absent()
           : Value(mosfetTemp),
@@ -3715,12 +3733,12 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
       soc: serializer.fromJson<double>(json['soc']),
       soh: serializer.fromJson<double>(json['soh']),
       remainingAh: serializer.fromJson<double>(json['remainingAh']),
-      cycleCount: serializer.fromJson<double>(json['cycleCount']),
+      cycleCount: serializer.fromJson<double?>(json['cycleCount']),
       cycleCapacityAh: serializer.fromJson<double>(json['cycleCapacityAh']),
       deltaVolts: serializer.fromJson<double>(json['deltaVolts']),
       minCellVoltage: serializer.fromJson<double>(json['minCellVoltage']),
       maxCellVoltage: serializer.fromJson<double>(json['maxCellVoltage']),
-      maxTemperature: serializer.fromJson<double>(json['maxTemperature']),
+      maxTemperature: serializer.fromJson<double?>(json['maxTemperature']),
       mosfetTemp: serializer.fromJson<double?>(json['mosfetTemp']),
       warningsMask: serializer.fromJson<int>(json['warningsMask']),
       balancerActive: serializer.fromJson<bool>(json['balancerActive']),
@@ -3740,12 +3758,12 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
       'soc': serializer.toJson<double>(soc),
       'soh': serializer.toJson<double>(soh),
       'remainingAh': serializer.toJson<double>(remainingAh),
-      'cycleCount': serializer.toJson<double>(cycleCount),
+      'cycleCount': serializer.toJson<double?>(cycleCount),
       'cycleCapacityAh': serializer.toJson<double>(cycleCapacityAh),
       'deltaVolts': serializer.toJson<double>(deltaVolts),
       'minCellVoltage': serializer.toJson<double>(minCellVoltage),
       'maxCellVoltage': serializer.toJson<double>(maxCellVoltage),
-      'maxTemperature': serializer.toJson<double>(maxTemperature),
+      'maxTemperature': serializer.toJson<double?>(maxTemperature),
       'mosfetTemp': serializer.toJson<double?>(mosfetTemp),
       'warningsMask': serializer.toJson<int>(warningsMask),
       'balancerActive': serializer.toJson<bool>(balancerActive),
@@ -3763,12 +3781,12 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
     double? soc,
     double? soh,
     double? remainingAh,
-    double? cycleCount,
+    Value<double?> cycleCount = const Value.absent(),
     double? cycleCapacityAh,
     double? deltaVolts,
     double? minCellVoltage,
     double? maxCellVoltage,
-    double? maxTemperature,
+    Value<double?> maxTemperature = const Value.absent(),
     Value<double?> mosfetTemp = const Value.absent(),
     int? warningsMask,
     bool? balancerActive,
@@ -3783,12 +3801,14 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
     soc: soc ?? this.soc,
     soh: soh ?? this.soh,
     remainingAh: remainingAh ?? this.remainingAh,
-    cycleCount: cycleCount ?? this.cycleCount,
+    cycleCount: cycleCount.present ? cycleCount.value : this.cycleCount,
     cycleCapacityAh: cycleCapacityAh ?? this.cycleCapacityAh,
     deltaVolts: deltaVolts ?? this.deltaVolts,
     minCellVoltage: minCellVoltage ?? this.minCellVoltage,
     maxCellVoltage: maxCellVoltage ?? this.maxCellVoltage,
-    maxTemperature: maxTemperature ?? this.maxTemperature,
+    maxTemperature: maxTemperature.present
+        ? maxTemperature.value
+        : this.maxTemperature,
     mosfetTemp: mosfetTemp.present ? mosfetTemp.value : this.mosfetTemp,
     warningsMask: warningsMask ?? this.warningsMask,
     balancerActive: balancerActive ?? this.balancerActive,
@@ -3925,12 +3945,12 @@ class SnapshotsCompanion extends UpdateCompanion<Snapshot> {
   final Value<double> soc;
   final Value<double> soh;
   final Value<double> remainingAh;
-  final Value<double> cycleCount;
+  final Value<double?> cycleCount;
   final Value<double> cycleCapacityAh;
   final Value<double> deltaVolts;
   final Value<double> minCellVoltage;
   final Value<double> maxCellVoltage;
-  final Value<double> maxTemperature;
+  final Value<double?> maxTemperature;
   final Value<double?> mosfetTemp;
   final Value<int> warningsMask;
   final Value<bool> balancerActive;
@@ -3966,12 +3986,12 @@ class SnapshotsCompanion extends UpdateCompanion<Snapshot> {
     required double soc,
     required double soh,
     required double remainingAh,
-    required double cycleCount,
+    this.cycleCount = const Value.absent(),
     this.cycleCapacityAh = const Value.absent(),
     required double deltaVolts,
     required double minCellVoltage,
     required double maxCellVoltage,
-    required double maxTemperature,
+    this.maxTemperature = const Value.absent(),
     this.mosfetTemp = const Value.absent(),
     required int warningsMask,
     required bool balancerActive,
@@ -3983,11 +4003,9 @@ class SnapshotsCompanion extends UpdateCompanion<Snapshot> {
        soc = Value(soc),
        soh = Value(soh),
        remainingAh = Value(remainingAh),
-       cycleCount = Value(cycleCount),
        deltaVolts = Value(deltaVolts),
        minCellVoltage = Value(minCellVoltage),
        maxCellVoltage = Value(maxCellVoltage),
-       maxTemperature = Value(maxTemperature),
        warningsMask = Value(warningsMask),
        balancerActive = Value(balancerActive),
        cellVoltagesJson = Value(cellVoltagesJson);
@@ -4044,12 +4062,12 @@ class SnapshotsCompanion extends UpdateCompanion<Snapshot> {
     Value<double>? soc,
     Value<double>? soh,
     Value<double>? remainingAh,
-    Value<double>? cycleCount,
+    Value<double?>? cycleCount,
     Value<double>? cycleCapacityAh,
     Value<double>? deltaVolts,
     Value<double>? minCellVoltage,
     Value<double>? maxCellVoltage,
-    Value<double>? maxTemperature,
+    Value<double?>? maxTemperature,
     Value<double?>? mosfetTemp,
     Value<int>? warningsMask,
     Value<bool>? balancerActive,
@@ -7463,7 +7481,7 @@ typedef $$TripsTableCreateCompanionBuilder =
       required double minPackVoltage,
       required double maxPackVoltage,
       required double maxDischargeCurrent,
-      required double maxTemperature,
+      Value<double?> maxTemperature,
       required double maxDeltaVolts,
       required double climbM,
       required double descentM,
@@ -7496,7 +7514,7 @@ typedef $$TripsTableUpdateCompanionBuilder =
       Value<double> minPackVoltage,
       Value<double> maxPackVoltage,
       Value<double> maxDischargeCurrent,
-      Value<double> maxTemperature,
+      Value<double?> maxTemperature,
       Value<double> maxDeltaVolts,
       Value<double> climbM,
       Value<double> descentM,
@@ -8084,7 +8102,7 @@ class $$TripsTableTableManager
                 Value<double> minPackVoltage = const Value.absent(),
                 Value<double> maxPackVoltage = const Value.absent(),
                 Value<double> maxDischargeCurrent = const Value.absent(),
-                Value<double> maxTemperature = const Value.absent(),
+                Value<double?> maxTemperature = const Value.absent(),
                 Value<double> maxDeltaVolts = const Value.absent(),
                 Value<double> climbM = const Value.absent(),
                 Value<double> descentM = const Value.absent(),
@@ -8148,7 +8166,7 @@ class $$TripsTableTableManager
                 required double minPackVoltage,
                 required double maxPackVoltage,
                 required double maxDischargeCurrent,
-                required double maxTemperature,
+                Value<double?> maxTemperature = const Value.absent(),
                 required double maxDeltaVolts,
                 required double climbM,
                 required double descentM,
@@ -8660,12 +8678,12 @@ typedef $$SnapshotsTableCreateCompanionBuilder =
       required double soc,
       required double soh,
       required double remainingAh,
-      required double cycleCount,
+      Value<double?> cycleCount,
       Value<double> cycleCapacityAh,
       required double deltaVolts,
       required double minCellVoltage,
       required double maxCellVoltage,
-      required double maxTemperature,
+      Value<double?> maxTemperature,
       Value<double?> mosfetTemp,
       required int warningsMask,
       required bool balancerActive,
@@ -8682,12 +8700,12 @@ typedef $$SnapshotsTableUpdateCompanionBuilder =
       Value<double> soc,
       Value<double> soh,
       Value<double> remainingAh,
-      Value<double> cycleCount,
+      Value<double?> cycleCount,
       Value<double> cycleCapacityAh,
       Value<double> deltaVolts,
       Value<double> minCellVoltage,
       Value<double> maxCellVoltage,
-      Value<double> maxTemperature,
+      Value<double?> maxTemperature,
       Value<double?> mosfetTemp,
       Value<int> warningsMask,
       Value<bool> balancerActive,
@@ -9032,12 +9050,12 @@ class $$SnapshotsTableTableManager
                 Value<double> soc = const Value.absent(),
                 Value<double> soh = const Value.absent(),
                 Value<double> remainingAh = const Value.absent(),
-                Value<double> cycleCount = const Value.absent(),
+                Value<double?> cycleCount = const Value.absent(),
                 Value<double> cycleCapacityAh = const Value.absent(),
                 Value<double> deltaVolts = const Value.absent(),
                 Value<double> minCellVoltage = const Value.absent(),
                 Value<double> maxCellVoltage = const Value.absent(),
-                Value<double> maxTemperature = const Value.absent(),
+                Value<double?> maxTemperature = const Value.absent(),
                 Value<double?> mosfetTemp = const Value.absent(),
                 Value<int> warningsMask = const Value.absent(),
                 Value<bool> balancerActive = const Value.absent(),
@@ -9074,12 +9092,12 @@ class $$SnapshotsTableTableManager
                 required double soc,
                 required double soh,
                 required double remainingAh,
-                required double cycleCount,
+                Value<double?> cycleCount = const Value.absent(),
                 Value<double> cycleCapacityAh = const Value.absent(),
                 required double deltaVolts,
                 required double minCellVoltage,
                 required double maxCellVoltage,
-                required double maxTemperature,
+                Value<double?> maxTemperature = const Value.absent(),
                 Value<double?> mosfetTemp = const Value.absent(),
                 required int warningsMask,
                 required bool balancerActive,
