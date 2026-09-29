@@ -294,9 +294,6 @@ class AppL10nEs extends AppL10n {
   String get needsDatabase => 'necesita más histórico';
 
   @override
-  String get needsSteps => 'necesita escalones de corriente';
-
-  @override
   String get packTitle => 'Pack';
 
   @override
@@ -395,16 +392,14 @@ class AppL10nEs extends AppL10n {
   String get balanceRanking => 'Ranking de celda débil';
 
   @override
-  String get resistanceTitle => 'Resistencia';
+  String get resistanceTitle => 'Cables de balanceo';
 
   @override
   String get resistanceSource => 'Origen';
 
   @override
-  String get resistanceSourceValue => 'medición de cableado del propio BMS';
-
-  @override
-  String get resistanceEstimated => 'Resistencia interna estimada';
+  String get resistanceSourceValue =>
+      'medición de cada cable de balanceo del propio BMS, no de la celda';
 
   @override
   String get resistanceWireWarnings => 'Alarmas de resistencia de cable';
@@ -474,32 +469,19 @@ class AppL10nEs extends AppL10n {
       'La máscara se muestra cruda y no se oculta ninguna lectura por su causa. La implementación de referencia la llama máscara de sensores «ausentes», pero las capturas reales encienden bits de sondas que claramente funcionan. Ver docs/PROTOCOL.md.';
 
   @override
-  String get historyEmptyTitle => 'Todavía no hay nada grabado';
-
-  @override
-  String get historyEmptyBody =>
-      'Los viajes que grabes quedan guardados con su recorrido, y las curvas de degradación se van dibujando solas con las semanas.';
-
-  @override
-  String get historyWhatGoesHere => 'QUÉ VA A APARECER AQUÍ';
-
-  @override
   String get historyItemCapacity =>
-      'Capacidad medida por ciclo, y la curva de degradación que dibuja con los meses';
+      'Capacidad medida en cada descarga completa, y cómo cambia con los meses';
 
   @override
   String get historyItemTrips => 'Lista de viajes con distancia, Wh y Wh/km';
 
   @override
   String get historyItemDelta =>
-      'Delta graficado contra voltaje de pack, que es donde una celda corta se delata';
+      'Delta contra el nivel de carga, que es donde una celda corta se delata';
 
   @override
   String get historyItemSag =>
-      'Caída de tensión a una corriente dada, y cómo empeora con el tiempo';
-
-  @override
-  String get historyItemBalance => 'En qué celdas trabaja más el balanceador';
+      'Resistencia aparente de cada viaje, sacada de la caída de tensión para la corriente pedida';
 
   @override
   String get systemDeviceTitle => 'Equipo';
@@ -850,7 +832,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get healthRealCapacityHint =>
-      'Restante dividido por el SOC informado. Si queda muy por debajo de la nominal configurada, el pack ya perdió capacidad o el contador de coulombs está desincronizado.';
+      'Sin tests de capacidad, la cifra de arriba es la capacidad configurada en el BMS: el BMS calcula los Ah restantes como el SOC por esa capacidad, así que dividir una cosa por la otra la devuelve tal cual. No dice nada del desgaste; para eso hace falta medir una descarga completa.';
 
   @override
   String get healthClaimedCapacity => 'Nominal configurada en el BMS';
@@ -866,7 +848,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get healthEquivalentCyclesHint =>
-      'Ah totales que pasaron por el pack divididos por su capacidad nominal. El contador de ciclos del BMS suma cargas parciales, así que casi siempre exagera.';
+      'Ah totales que el BMS contó pasar por el pack, divididos por su capacidad configurada. El contador de ciclos del propio BMS puede quedar por encima o por debajo de esta cifra: cuenta en números enteros y cada firmware decide qué es un ciclo.';
 
   @override
   String get healthReportedCycles => 'Ciclos que informa el BMS';
@@ -913,7 +895,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get healthNeedsHistoryBody =>
-      'La degradación medida, la vida restante estimada y la evolución de la caída de tensión necesitan meses de lecturas guardadas. Se van llenando solas a medida que uses la moto.';
+      'La degradación medida necesita al menos dos descargas completas. La deriva de una celda y la evolución de la caída de tensión necesitan semanas de lecturas guardadas. Lo que sale de viajes y lecturas se va llenando solo; la capacidad no: cada punto es una descarga completa.';
 
   @override
   String get healthNotEnoughData => 'sin datos suficientes';
@@ -1041,13 +1023,13 @@ class AppL10nEs extends AppL10n {
   String get healthHowCalculated => 'Cómo se calcula esto';
 
   @override
-  String get healthCardCapacity => 'Capacidad real';
+  String get healthCardCapacity => 'Restante según el BMS';
 
   @override
   String get healthCardLoss => 'Pérdida';
 
   @override
-  String get healthCardCycles => 'Ciclos reales';
+  String get healthCardCycles => 'Ciclos equivalentes (según el BMS)';
 
   @override
   String get healthCardUsable => 'Energía utilizable';
@@ -1489,7 +1471,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get proximityBody =>
-      'Cuando esté activado, la app busca tu BMS cada medio minuto y se conecta sola en cuanto aparece. Pensado para dejarlo un tiempo mientras calibras una batería nueva, no para siempre: mientras está conectado la app oficial de JK no puede entrar, y buscar consume algo de batería del teléfono.';
+      'Cuando esté activado, la app busca tu BMS cada medio minuto y se conecta sola en cuanto aparece. Pensado para dejarlo un tiempo mientras calibras una batería nueva, no para siempre: mientras está conectado la app oficial de tu BMS no puede entrar, y buscar consume algo de batería del teléfono.';
 
   @override
   String get proximityLimit =>
@@ -1686,14 +1668,14 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get settingsCatalogueHint =>
-      'Lo que dice la etiqueta del pack. Es contra este número que se mide la salud, así que conviene que sea el real.';
+      'Lo que dice la etiqueta del pack. Se usa para dos cosas: compararlo con lo que el pack mide de verdad en un test de capacidad, y calcular la autonomía con el pack lleno mientras no haya ninguna medida. El desgaste no se mide contra este número, sino contra la mejor descarga completa del propio pack.';
 
   @override
   String get catalogueUnset => 'Sin definir';
 
   @override
   String get catalogueUnsetHint =>
-      'Nadie ha dicho todavía con cuántos amperios-hora se vendió esta batería, y la app no se lo inventa. Hasta que lo pongas, la salud y la degradación no se pueden calcular: no hay contra qué compararlas.';
+      'Nadie ha dicho todavía con cuántos amperios-hora se vendió esta batería, y la app no se lo inventa. Sin él no hay comparación con lo anunciado, y la autonomía con el pack lleno espera a un test de capacidad. El desgaste no lo necesita: sale de las descargas completas medidas.';
 
   @override
   String get catalogueSetIt => 'Definir capacidad';
@@ -2081,7 +2063,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get catalogueFromBmsHint =>
-      'Tomado de la configuración del BMS, que es un número sobre este pack pero lo escribió quien lo armó. Si te lo vendieron con otra capacidad, ponla: la diferencia entre las dos cifras es justo lo que la salud mide.';
+      'Tomado de la configuración del BMS, que es un número sobre este pack pero lo escribió quien lo armó. Mientras venga de ahí, la app no lo trata como lo anunciado: no compara con él lo que mide, y la autonomía con el pack lleno dice de dónde sale. Si te lo vendieron con otra capacidad, ponla.';
 
   @override
   String get connectRetry => 'Reintentar búsqueda';
@@ -2448,11 +2430,12 @@ class AppL10nEs extends AppL10n {
 
   @override
   String degSoldShort(String sold, String real, String pct) {
-    return 'Se vendió como $sold Ah y lo mejor que ha dado son $real Ah: alrededor de un $pct % menos de autonomía de la anunciada. Eso no es desgaste, es que nunca fueron $sold.';
+    return 'Se vendió como $sold Ah y lo mejor que ha medido son $real Ah: alrededor de un $pct % menos de lo anunciado. Si esa medición se hizo con el pack nuevo, no es desgaste: es que nunca fueron $sold.';
   }
 
   @override
-  String get degSoldOk => 'Ha dado lo que se anunció.';
+  String get degSoldOk =>
+      'Lo mejor que ha medido está a la altura de lo que se anunció.';
 
   @override
   String get demoSetCharge => 'Poner la carga a';
@@ -2918,7 +2901,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get licenseWhyBody =>
-      'Lo gratis iguala a la app oficial de JK y no se recorta nunca. Lo Pro es lo que esa app no puede hacer por diseño: recordar, comparar y concluir. Un pago único; nada de suscripciones. Sin cuenta, sin servidor y sin internet: la clave se comprueba en el teléfono con la firma del autor.';
+      'Lo gratis iguala a la app oficial de tu BMS y no se recorta nunca. Lo Pro es lo que esa app no puede hacer por diseño: recordar, comparar y concluir. Un pago único; nada de suscripciones. Sin cuenta, sin servidor y sin internet: la clave se comprueba en el teléfono con la firma del autor.';
 
   @override
   String get licenseOpen => 'Ver licencia';
@@ -2993,7 +2976,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get adviceHonestyNote =>
-      'Cada frase se apoya en un dato medido: tócala para verlo. Los ciclos y la capacidad configurada del BMS se pueden editar desde la app oficial, así que aquí se contrastan siempre con lo que dice la física.';
+      'Cada frase se apoya en un dato: tócala para verlo. Los ciclos y la capacidad configurada del BMS se pueden editar desde su app oficial, así que aquí se contrastan con lo que la app mide por su cuenta siempre que puede.';
 
   @override
   String get verdictHealthMeasuredTitle =>
@@ -3001,7 +2984,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String verdictHealthMeasuredBody(String pct, String now, String best) {
-    return 'Tu batería está al $pct % de la capacidad con la que llegó: $now Ah medidos ahora frente a $best Ah, lo mejor que ha dado. Medido en descargas completas, no estimado.';
+    return 'Tu batería está al $pct % de la mejor medición que ha hecho: $now Ah en la última frente a $best Ah, la mejor. Medido en descargas completas, no estimado.';
   }
 
   @override
@@ -3068,7 +3051,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get evidenceEquivalentCycles =>
-      'Ciclos equivalentes por los amperios que pasaron';
+      'Ciclos equivalentes (Ah que contó el BMS entre la capacidad configurada)';
 
   @override
   String get evidenceReportedSoh => 'SOH según el BMS';
@@ -4350,7 +4333,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get alertsNotifyOneConnection =>
-      'Recuerda: el BMS acepta una sola conexión Bluetooth. Mientras el móvil esté conectado en segundo plano, la app oficial de JK no podrá conectarse, y al revés.';
+      'Recuerda: el BMS acepta una sola conexión Bluetooth. Mientras el móvil esté conectado en segundo plano, la app oficial de tu BMS no podrá conectarse, y al revés.';
 
   @override
   String get alertsThresholdsTitle => 'A partir de cuándo avisar';
@@ -4561,15 +4544,15 @@ class AppL10nEs extends AppL10n {
   String get healthWeakCellStrands => 'Lo que deja sin usar';
 
   @override
-  String get healthWeakCellResistance => 'Resistencia desde el día uno';
+  String get healthWeakCellResistance => 'Cable de balanceo desde el día uno';
 
   @override
   String healthWeakCellResistanceUp(String pct, String cell) {
-    return '+$pct % en la celda $cell';
+    return '+$pct % en el cable de la celda $cell';
   }
 
   @override
-  String get healthWeakCellResistanceFlat => 'Ninguna se ha movido';
+  String get healthWeakCellResistanceFlat => 'Ningún cable se ha movido';
 
   @override
   String get healthWeakCellResistanceNoBaseline =>
@@ -4722,4 +4705,52 @@ class AppL10nEs extends AppL10n {
   String healthWeakCellStrandsAge(String minutes) {
     return 'De la última lectura en reposo, hace $minutes min.';
   }
+
+  @override
+  String get degSoldUnmeasured =>
+      'Todavía sin medir contra lo anunciado: hace falta una descarga completa.';
+
+  @override
+  String get degConfiguredTitle => 'Capacidad configurada';
+
+  @override
+  String get healthVerdictReported => 'Sin medir todavía';
+
+  @override
+  String get healthWeakCellResistanceHint =>
+      'El BMS mide la resistencia del cable de balanceo y su conexión, no la de la celda. Si sube, lo primero a revisar es ese cable.';
+
+  @override
+  String get cellsResistanceNote =>
+      'Los mΩ bajo cada celda son la resistencia de su cable de balanceo y la conexión, que es lo que mide el BMS. No son la resistencia interna de la celda.';
+
+  @override
+  String get rangeFullFromBms =>
+      'Sale de la capacidad configurada en el BMS, no de una medida.';
+
+  @override
+  String get reportRangeFromBmsConfig => 'capacidad configurada en el BMS';
+
+  @override
+  String capacityOfConfigured(String pct) {
+    return '$pct % de la configurada';
+  }
+
+  @override
+  String get historyItemDrift =>
+      'Qué celda se va separando de las demás con las semanas';
+
+  @override
+  String get trendsCapacityNotEnough =>
+      'Cada punto es una descarga completa medida con la app conectada, así que no se llena sola: hacen falta al menos tres.';
+
+  @override
+  String get profileCaptureBaselineHintNoSettings =>
+      'Las celdas tal como están ahora. Este BMS no informa resistencias ni su configuración, así que la foto guarda lo que sí da. Todo lo que la app diga después sobre derivas se compara contra esto. Mejor con la batería en reposo.';
+
+  @override
+  String get profileConfigNotCompared => 'Sin comparar';
+
+  @override
+  String get profileDriftOtherCharge => 'a otro nivel de carga, no comparable';
 }

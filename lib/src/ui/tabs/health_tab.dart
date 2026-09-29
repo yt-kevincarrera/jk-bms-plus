@@ -84,7 +84,7 @@ class _HealthTabState extends State<HealthTab> {
     final result = Degradation.from(
       tests: await repo.capacityTests(device),
       readings: readings,
-      advertisedAh: widget.service.catalogueCapacityAh,
+      advertisedAh: widget.service.advertisedCapacityAh,
     );
     final drift = const CellDriftAnalysis().analyse(readings);
     final baseline = await repo.baseline(device);
@@ -114,7 +114,9 @@ class _HealthTabState extends State<HealthTab> {
     final report = PackHealthReport.from(
       snapshot: s,
       settings: service.lastSettings,
-      catalogueCapacityAh: service.catalogueCapacityAh,
+      // What it was sold as, never the BMS's own setting borrowed in its
+      // place: that would compare the configuration with itself.
+      catalogueCapacityAh: service.advertisedCapacityAh,
       energy: energy,
     );
     final estimator = service.rangeEstimator;
@@ -124,11 +126,18 @@ class _HealthTabState extends State<HealthTab> {
     // figure reported a pack sold as 45 Ah that was always 40 as permanently
     // 89% healthy, on day one, before it had lost anything: a number that
     // described the advert and never the battery.
-    final catalogue = service.catalogueCapacityAh;
+    final catalogue = service.advertisedCapacityAh;
     final degradation = _degradation;
     final lost = degradation?.lostFraction;
     final healthPercent = lost != null ? (1 - lost) * 100 : s.soh;
-    final tone = _healthTone(healthPercent);
+    // With nothing measured the gauge shows what the BMS reports, and only
+    // that: neutral, with no sentence drawn from it. The app calls this same
+    // figure decorative elsewhere, and on a pack reporting 0 it used to print
+    // "quite worn" in red off a number nobody measured.
+    final tone = lost != null ? _healthTone(healthPercent) : AppTheme.textFaint;
+    // The figure beside the gauge: measured when there is a test, otherwise
+    // the configured capacity read back off the counter, and labelled so.
+    final measuredNow = degradation?.current?.ah;
 
     return ListView(
       padding: const EdgeInsets.only(top: 4, bottom: 28),
@@ -157,7 +166,9 @@ class _HealthTabState extends State<HealthTab> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      _verdict(t, healthPercent),
+                      lost != null
+                          ? _verdict(t, healthPercent)
+                          : t.healthVerdictReported,
                       style: TextStyle(
                         fontSize: 15.5,
                         height: 1.3,
@@ -170,9 +181,11 @@ class _HealthTabState extends State<HealthTab> {
                     // actually held. Not against the advert, which is a
                     // different question answered further down.
                     Readout(
-                      label: t.degNowTitle,
+                      label: measuredNow == null && report.impliedCapacityAh != null
+                          ? t.degConfiguredTitle
+                          : t.degNowTitle,
                       value:
-                          degradation?.current?.ah.toStringAsFixed(1) ??
+                          measuredNow?.toStringAsFixed(1) ??
                           report.impliedCapacityAh?.toStringAsFixed(1) ??
                           '--',
                       unit: 'Ah',
@@ -222,16 +235,20 @@ class _HealthTabState extends State<HealthTab> {
                 if (catalogue != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
+                    // Only a measured baseline can be held against the
+                    // advert. With none, the shortfall is null, and it used
+                    // to be read as zero: "delivered what was advertised"
+                    // about a pack nothing had measured.
                     child: Text(
-                      (degradation.shortOfAdvertisedFraction ?? 0) < 0.02
-                          ? t.degSoldOk
-                          : t.degSoldShort(
-                              catalogue.toStringAsFixed(0),
-                              degradation.baseline!.ah.toStringAsFixed(1),
-                              ((degradation.shortOfAdvertisedFraction ?? 0) *
-                                      100)
-                                  .toStringAsFixed(0),
-                            ),
+                      switch (degradation.shortOfAdvertisedFraction) {
+                        null => t.degSoldUnmeasured,
+                        < 0.02 => t.degSoldOk,
+                        final short => t.degSoldShort(
+                          catalogue.toStringAsFixed(0),
+                          degradation.baseline!.ah.toStringAsFixed(1),
+                          (short * 100).toStringAsFixed(0),
+                        ),
+                      },
                       style: const TextStyle(
                         fontSize: 12,
                         height: 1.45,
@@ -372,7 +389,7 @@ class _HealthTabState extends State<HealthTab> {
               t.historyItemTrips,
               t.historyItemDelta,
               t.historyItemSag,
-              t.historyItemBalance,
+              t.historyItemDrift,
             ].map((e) => '  .  $e').join('\n'),
           ],
         ),
@@ -436,9 +453,16 @@ class _WeakCellSection extends StatelessWidget {
         : DateTime.now().toUtc().difference(measuredAt.toUtc()).inMinutes;
     final rise = comparison?.worstResistanceRise;
 
+    // An ANT reports no per-cell figure at all, and "no lead has moved" would
+    // claim a comparison of numbers that were never there.
+    final anyPair =
+        comparison?.cells.any((c) => c.resistanceRise != null) ?? false;
+
     final String resistance;
     if (comparison == null) {
       resistance = t.healthWeakCellResistanceNoBaseline;
+    } else if (!anyPair) {
+      resistance = t.notReported;
     } else if (rise == null) {
       resistance = t.healthWeakCellResistanceFlat;
     } else {
@@ -470,6 +494,10 @@ class _WeakCellSection extends StatelessWidget {
         InfoRow(
           t.healthWeakCellResistance,
           resistance,
+          // What JK reports per cell is the balance lead and its connection.
+          // Filed under the cell that sets the pack's limit it read as the
+          // cell's own resistance, which it is not.
+          hint: anyPair ? t.healthWeakCellResistanceHint : null,
           dim: rise == null,
           valueColor: rise == null ? null : AppTheme.watch,
           last: true,

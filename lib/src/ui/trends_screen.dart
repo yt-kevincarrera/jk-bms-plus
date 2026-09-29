@@ -182,6 +182,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
       unit: 'Ah',
       hint: t.trendsCapacityHint,
       axisNote: t.trendsAxisTime,
+      notEnough: t.trendsCapacityNotEnough,
       markers: ChartMarkers.place(
         pointDates: [for (final p in points) p.at],
         events: _maintenance,
@@ -343,6 +344,7 @@ class _TrendSection extends StatelessWidget {
     this.trendIsBad = false,
     this.hint,
     this.axisNote,
+    this.notEnough,
   });
 
   final String title;
@@ -363,6 +365,10 @@ class _TrendSection extends StatelessWidget {
   /// guess from a chart whose x axis is an index rather than a date.
   final String? axisNote;
 
+  /// What to say while there are too few points, when "it fills in on its
+  /// own" is not true: capacity needs a full discharge per point.
+  final String? notEnough;
+
   @override
   Widget build(BuildContext context) {
     if (pointCount < 3) {
@@ -372,7 +378,7 @@ class _TrendSection extends StatelessWidget {
         // somebody wants to know what it is going to tell them.
         intro: hint,
         children: [
-          InfoRow(t.trendsNotEnough, '', dim: true, last: true),
+          InfoRow(notEnough ?? t.trendsNotEnough, '', dim: true, last: true),
           const SizedBox(height: 6),
         ],
       );

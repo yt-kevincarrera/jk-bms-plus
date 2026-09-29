@@ -31,6 +31,7 @@ class CellsTab extends StatelessWidget {
     }
 
     final avg = s.averageCellVoltage;
+    final hasResistances = s.cellResistances?.isNotEmpty ?? false;
     // The BMS's own list where it gives one (an ANT does), the inference
     // from the cell voltages where it does not (a JK).
     final balancing = s.balancingCells;
@@ -110,7 +111,8 @@ class CellsTab extends StatelessWidget {
               color: _cellColour(s, i + 1, s.cellVoltages[i] - avg),
               balancing: i < balancing.length && balancing[i],
               isExtreme: i + 1 == s.minCellIndex || i + 1 == s.maxCellIndex,
-              resistance: s.cellResistances != null && i < s.cellResistances!.length
+              resistance:
+                  s.cellResistances != null && i < s.cellResistances!.length
                   ? s.cellResistances![i]
                   : null,
             ),
@@ -118,8 +120,13 @@ class CellsTab extends StatelessWidget {
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
+          // The figure under each tile is what JK reports per cell, which is
+          // the balance lead and its connection. Unlabelled it read as the
+          // cell's own resistance.
           child: Text(
-            t.cellsDeviationHint,
+            hasResistances
+                ? '${t.cellsDeviationHint} ${t.cellsResistanceNote}'
+                : t.cellsDeviationHint,
             style: const TextStyle(
               fontSize: 11.5,
               height: 1.4,
@@ -163,15 +170,11 @@ class CellsTab extends StatelessWidget {
                 valueColor: s.balancerActive ? AppTheme.cool : null,
               ),
             if (s.balancingAction != null)
-              InfoRow(
-                t.balanceDirection,
-                switch (s.balancingAction!) {
-                  0x01 => t.balanceDirectionCharge,
-                  0x02 => t.balanceDirectionDischarge,
-                  _ => t.balanceDirectionOff,
-                },
-                dim: s.balancingAction == 0,
-              ),
+              InfoRow(t.balanceDirection, switch (s.balancingAction!) {
+                0x01 => t.balanceDirectionCharge,
+                0x02 => t.balanceDirectionDischarge,
+                _ => t.balanceDirectionOff,
+              }, dim: s.balancingAction == 0),
             InfoRow(
               t.balanceWhichCells,
               reported == null
@@ -189,49 +192,50 @@ class CellsTab extends StatelessWidget {
             InfoRow(t.balanceRanking, t.needsDatabase, dim: true, last: true),
           ],
         ),
-        Section(
-          title: t.resistanceTitle,
-          children: [
-            InfoRow(t.resistanceSource, t.resistanceSourceValue, dim: true),
-            InfoRow(
-              t.resistanceEstimated,
-              t.needsSteps,
-              dim: true,
-              // ANT reports no wire-resistance warning mask, so the row below
-              // never appears for it, and this one has to close the section
-              // instead of leaving it with no last row at all.
-              last: s.wireResistanceWarningMask == null,
-            ),
-            if (s.wireResistanceWarningMask != null)
+        // An "estimated internal resistance" row used to sit here reading
+        // "needs current steps" for ever: nothing computes it. An ANT reports
+        // neither lead resistances nor their warnings, so it gets no section.
+        if (hasResistances || s.wireResistanceWarningMask != null)
+          Section(
+            title: t.resistanceTitle,
+            children: [
               InfoRow(
-                t.resistanceWireWarnings,
-                s.wireResistanceWarningMask == 0
-                    ? t.none
-                    : '0x${s.wireResistanceWarningMask!.toRadixString(16)}',
-                valueColor:
-                    s.wireResistanceWarningMask == 0 ? null : AppTheme.watch,
-                last: true,
+                t.resistanceSource,
+                t.resistanceSourceValue,
+                dim: true,
+                last: s.wireResistanceWarningMask == null,
               ),
-          ],
-        ),
+              if (s.wireResistanceWarningMask != null)
+                InfoRow(
+                  t.resistanceWireWarnings,
+                  s.wireResistanceWarningMask == 0
+                      ? t.none
+                      : '0x${s.wireResistanceWarningMask!.toRadixString(16)}',
+                  valueColor: s.wireResistanceWarningMask == 0
+                      ? null
+                      : AppTheme.watch,
+                  last: true,
+                ),
+            ],
+          ),
       ],
     );
   }
 
   Widget _extremeLine(IconData icon, Color colour, String text) => Row(
-        children: [
-          Icon(icon, size: 13, color: colour),
-          const SizedBox(width: 6),
-          Text(
-            text,
-            style: const TextStyle(
-              fontSize: 12.5,
-              color: AppTheme.textSecondary,
-              fontFeatures: AppTheme.tabular,
-            ),
-          ),
-        ],
-      );
+    children: [
+      Icon(icon, size: 13, color: colour),
+      const SizedBox(width: 6),
+      Text(
+        text,
+        style: const TextStyle(
+          fontSize: 12.5,
+          color: AppTheme.textSecondary,
+          fontFeatures: AppTheme.tabular,
+        ),
+      ),
+    ],
+  );
 
   /// Colour for the delta readout, where any value is a magnitude rather than a
   /// direction.

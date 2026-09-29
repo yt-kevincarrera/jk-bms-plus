@@ -105,6 +105,7 @@ void main() {
       cellResistances: [for (var i = 1; i <= 16; i++) 0.00030],
       cycleCount: 12,
       current: 0.1,
+      soc: 78,
     );
 
     test('names the cell that has fallen behind the pack', () {
@@ -159,6 +160,43 @@ void main() {
       final c = BaselineComparison.compute(baseline: dayOne, now: now)!;
       final seven = c.cells.firstWhere((e) => e.index == 7);
       expect(seven.resistanceRise, closeTo(1.0, 0.01));
+    });
+
+    test('a cell against the average at another charge level is not drift', () {
+      // A cell short of capacity sits level mid-charge and falls away near
+      // empty. Day one at 78% against today at 30% would name it as drifting
+      // when all that moved is where on the curve the pack was.
+      final now = buildSnapshot(
+        cells: cells(at: 3.300, low: {7: 3.240}),
+        current: 0.1,
+        soc: 30,
+      );
+      final c = BaselineComparison.compute(baseline: dayOne, now: now)!;
+      expect(c.sameChargeLevel, isFalse);
+      expect(c.worstDrift, isNull);
+    });
+
+    test('an unknown charge level on either side is not the same level', () {
+      final noSoc = PackBaseline(
+        capturedAt: DateTime.utc(2026, 1, 5),
+        cellVoltages: cells(),
+        current: 0.1,
+      );
+      final c = BaselineComparison.compute(
+        baseline: noSoc,
+        now: buildSnapshot(cells: cells(low: {7: 3.240}), current: 0.1),
+      )!;
+      expect(c.sameChargeLevel, isFalse);
+      expect(c.worstDrift, isNull);
+    });
+
+    test('settings not compared are not called unchanged', () {
+      // No settings frame yet, or a BMS that never sends one: the printed
+      // sheet said "same as day one" about a comparison never made.
+      final now = buildSnapshot(cells: cells(), current: 0.1);
+      final c = BaselineComparison.compute(baseline: dayOne, now: now)!;
+      expect(c.configCompared, isFalse);
+      expect(c.configChanged, isEmpty);
     });
   });
 

@@ -194,6 +194,7 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
       ),
       usableFraction: energy.usableFraction ?? 1,
       capacityWasMeasured: measured != null,
+      capacityFromBmsConfig: widget.device.catalogueFromBms,
     );
 
     if (!mounted) return;
@@ -313,7 +314,9 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
     final wear = Degradation.from(
       tests: _tests,
       readings: const [],
-      advertisedAh: widget.device.catalogueCapacityAh,
+      advertisedAh: widget.device.catalogueFromBms
+          ? null
+          : widget.device.catalogueCapacityAh,
     );
     final lost = wear.lostFraction;
 
@@ -507,6 +510,8 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
               child: Text(
                 _outlook.fullFromMeasuredCapacity
                     ? t.rangeFullFromMeasured
+                    : _outlook.fullFromBmsConfig
+                    ? t.rangeFullFromBms
                     : t.rangeFullFromAdvert,
                 style: const TextStyle(
                   fontSize: 11,
@@ -611,7 +616,9 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
       final wear = Degradation.from(
         tests: _tests,
         readings: const [],
-        advertisedAh: widget.device.catalogueCapacityAh,
+        advertisedAh: widget.device.catalogueFromBms
+          ? null
+          : widget.device.catalogueCapacityAh,
       );
       // The day-one copy, and today against it, when both exist. Read here
       // rather than held in state: a sheet is built once and this is the only
@@ -626,6 +633,7 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
               at: _last!.timestamp,
               cells: decodeCellVoltages(_last!.cellVoltagesJson),
               current: _last!.current,
+              soc: _last!.soc,
               cycleCount: _last!.cycleCount?.round(),
             );
       final data = PackReportData.build(

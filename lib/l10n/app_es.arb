@@ -119,7 +119,6 @@
   "sessionSamples": "Muestras en memoria",
   "needsGps": "necesita un viaje activo",
   "needsDatabase": "necesita más histórico",
-  "needsSteps": "necesita escalones de corriente",
   "packTitle": "Pack",
   "packRemaining": "Restante",
   "packRemainingValue": "{remaining} de {nominal} Ah",
@@ -180,10 +179,9 @@
   "balanceWhichCells": "Qué celdas",
   "balanceWhichCellsValue": "deducido, el BMS no lo informa",
   "balanceRanking": "Ranking de celda débil",
-  "resistanceTitle": "Resistencia",
+  "resistanceTitle": "Cables de balanceo",
   "resistanceSource": "Origen",
-  "resistanceSourceValue": "medición de cableado del propio BMS",
-  "resistanceEstimated": "Resistencia interna estimada",
+  "resistanceSourceValue": "medición de cada cable de balanceo del propio BMS, no de la celda",
   "resistanceWireWarnings": "Alarmas de resistencia de cable",
   "none": "ninguna",
   "thermalProbe": "Sonda {index}",
@@ -225,14 +223,10 @@
   "on": "on",
   "off": "off",
   "thermalMaskNote": "La máscara se muestra cruda y no se oculta ninguna lectura por su causa. La implementación de referencia la llama máscara de sensores «ausentes», pero las capturas reales encienden bits de sondas que claramente funcionan. Ver docs/PROTOCOL.md.",
-  "historyEmptyTitle": "Todavía no hay nada grabado",
-  "historyEmptyBody": "Los viajes que grabes quedan guardados con su recorrido, y las curvas de degradación se van dibujando solas con las semanas.",
-  "historyWhatGoesHere": "QUÉ VA A APARECER AQUÍ",
-  "historyItemCapacity": "Capacidad medida por ciclo, y la curva de degradación que dibuja con los meses",
+  "historyItemCapacity": "Capacidad medida en cada descarga completa, y cómo cambia con los meses",
   "historyItemTrips": "Lista de viajes con distancia, Wh y Wh/km",
-  "historyItemDelta": "Delta graficado contra voltaje de pack, que es donde una celda corta se delata",
-  "historyItemSag": "Caída de tensión a una corriente dada, y cómo empeora con el tiempo",
-  "historyItemBalance": "En qué celdas trabaja más el balanceador",
+  "historyItemDelta": "Delta contra el nivel de carga, que es donde una celda corta se delata",
+  "historyItemSag": "Resistencia aparente de cada viaje, sacada de la caída de tensión para la corriente pedida",
   "systemDeviceTitle": "Equipo",
   "systemModel": "Modelo",
   "systemHardware": "Hardware",
@@ -368,12 +362,12 @@
   "healthTitle": "Lo que el fabricante no te muestra",
   "healthIntro": "Estos números salen de lo que el BMS ya informa, cruzados entre sí. Ninguno es un dato que el fabricante publique.",
   "healthRealCapacity": "Capacidad real implícita",
-  "healthRealCapacityHint": "Restante dividido por el SOC informado. Si queda muy por debajo de la nominal configurada, el pack ya perdió capacidad o el contador de coulombs está desincronizado.",
+  "healthRealCapacityHint": "Sin tests de capacidad, la cifra de arriba es la capacidad configurada en el BMS: el BMS calcula los Ah restantes como el SOC por esa capacidad, así que dividir una cosa por la otra la devuelve tal cual. No dice nada del desgaste; para eso hace falta medir una descarga completa.",
   "healthClaimedCapacity": "Nominal configurada en el BMS",
   "healthSpecCapacity": "Capacidad de catálogo",
   "healthCapacityLoss": "Pérdida frente a catálogo",
   "healthEquivalentCycles": "Ciclos completos equivalentes",
-  "healthEquivalentCyclesHint": "Ah totales que pasaron por el pack divididos por su capacidad nominal. El contador de ciclos del BMS suma cargas parciales, así que casi siempre exagera.",
+  "healthEquivalentCyclesHint": "Ah totales que el BMS contó pasar por el pack, divididos por su capacidad configurada. El contador de ciclos del propio BMS puede quedar por encima o por debajo de esta cifra: cuenta en números enteros y cada firmware decide qué es un ciclo.",
   "healthReportedCycles": "Ciclos que informa el BMS",
   "healthCycleInflation": "Inflación del contador",
   "healthImbalanceLoss": "Capacidad perdida por desbalance",
@@ -400,7 +394,7 @@
   "healthSohReported": "Salud que informa el BMS",
   "healthSohSuspect": "Muchos firmwares dejan este número fijo y no lo recalculan nunca. Tratalo como decorativo hasta que lo veas moverse.",
   "healthNeedsHistoryTitle": "Necesita histórico",
-  "healthNeedsHistoryBody": "La degradación medida, la vida restante estimada y la evolución de la caída de tensión necesitan meses de lecturas guardadas. Se van llenando solas a medida que uses la moto.",
+  "healthNeedsHistoryBody": "La degradación medida necesita al menos dos descargas completas. La deriva de una celda y la evolución de la caída de tensión necesitan semanas de lecturas guardadas. Lo que sale de viajes y lecturas se va llenando solo; la capacidad no: cada punto es una descarga completa.",
   "healthNotEnoughData": "sin datos suficientes",
   "healthCapacityUnavailable": "Con el SOC muy bajo o muy alto este cálculo se vuelve ruido, así que no se muestra.",
   "rangeLearning": "aprendiendo",
@@ -478,9 +472,9 @@
   "healthVerdictWatch": "El pack perdió algo de capacidad",
   "healthVerdictBad": "El pack está bastante gastado",
   "healthHowCalculated": "Cómo se calcula esto",
-  "healthCardCapacity": "Capacidad real",
+  "healthCardCapacity": "Restante según el BMS",
   "healthCardLoss": "Pérdida",
-  "healthCardCycles": "Ciclos reales",
+  "healthCardCycles": "Ciclos equivalentes (según el BMS)",
   "healthCardUsable": "Energía utilizable",
   "healthCardConsumption": "Consumo",
   "healthCardLearnedKm": "Km aprendidos",
@@ -789,7 +783,7 @@
   "tripNotificationChannelDesc": "Mantiene el viaje grabando con la pantalla apagada o con otra app abierta.",
   "tripNotificationDenied": "Sin permiso de notificaciones el viaje se detiene al salir de la app. Se puede activar en los ajustes de Android.",
   "proximityTitle": "Conectar solo al acercarme",
-  "proximityBody": "Cuando esté activado, la app busca tu BMS cada medio minuto y se conecta sola en cuanto aparece. Pensado para dejarlo un tiempo mientras calibras una batería nueva, no para siempre: mientras está conectado la app oficial de JK no puede entrar, y buscar consume algo de batería del teléfono.",
+  "proximityBody": "Cuando esté activado, la app busca tu BMS cada medio minuto y se conecta sola en cuanto aparece. Pensado para dejarlo un tiempo mientras calibras una batería nueva, no para siempre: mientras está conectado la app oficial de tu BMS no puede entrar, y buscar consume algo de batería del teléfono.",
   "proximityLimit": "Funciona con la app abierta o en segundo plano. Si Android mata el proceso, deja de buscar hasta que la vuelvas a abrir.",
   "proximityRemembered": "Buscando",
   "proximityNoDevice": "Conecta una vez a tu BMS y quedará recordado aquí.",
@@ -885,9 +879,9 @@
   "alertCellNearCutoff": "Una celda está cerca del corte",
   "settingsTitle": "Ajustes",
   "settingsCatalogue": "Capacidad de catálogo",
-  "settingsCatalogueHint": "Lo que dice la etiqueta del pack. Es contra este número que se mide la salud, así que conviene que sea el real.",
+  "settingsCatalogueHint": "Lo que dice la etiqueta del pack. Se usa para dos cosas: compararlo con lo que el pack mide de verdad en un test de capacidad, y calcular la autonomía con el pack lleno mientras no haya ninguna medida. El desgaste no se mide contra este número, sino contra la mejor descarga completa del propio pack.",
   "catalogueUnset": "Sin definir",
-  "catalogueUnsetHint": "Nadie ha dicho todavía con cuántos amperios-hora se vendió esta batería, y la app no se lo inventa. Hasta que lo pongas, la salud y la degradación no se pueden calcular: no hay contra qué compararlas.",
+  "catalogueUnsetHint": "Nadie ha dicho todavía con cuántos amperios-hora se vendió esta batería, y la app no se lo inventa. Sin él no hay comparación con lo anunciado, y la autonomía con el pack lleno espera a un test de capacidad. El desgaste no lo necesita: sale de las descargas completas medidas.",
   "catalogueSetIt": "Definir capacidad",
   "catalogueUseBms": "Usar {ah} Ah del BMS",
   "@catalogueUseBms": {
@@ -1119,7 +1113,7 @@
   "agoSuffix": "",
   "catalogueFromBmsTag": "del BMS",
   "catalogueConfirm": "Confirmar que se vendió así",
-  "catalogueFromBmsHint": "Tomado de la configuración del BMS, que es un número sobre este pack pero lo escribió quien lo armó. Si te lo vendieron con otra capacidad, ponla: la diferencia entre las dos cifras es justo lo que la salud mide.",
+  "catalogueFromBmsHint": "Tomado de la configuración del BMS, que es un número sobre este pack pero lo escribió quien lo armó. Mientras venga de ahí, la app no lo trata como lo anunciado: no compara con él lo que mide, y la autonomía con el pack lleno dice de dónde sale. Si te lo vendieron con otra capacidad, ponla.",
   "connectRetry": "Reintentar búsqueda",
   "storedManageHint": "Mantén pulsada una batería para renombrarla o borrarla.",
   "offlineHealthTitle": "Salud guardada",
@@ -1364,7 +1358,7 @@
   "degLostWhy": "La degradación se mide contra lo mejor que ha dado esta batería, no contra lo que decía el anuncio. Hace falta más de una medición: con una sola tienes una capacidad, no una pérdida.",
   "degImpliedNote": "Estimada del contador del BMS, no medida. Un test de capacidad da la cifra de verdad.",
   "degSoldTitle": "Frente a lo anunciado",
-  "degSoldShort": "Se vendió como {sold} Ah y lo mejor que ha dado son {real} Ah: alrededor de un {pct} % menos de autonomía de la anunciada. Eso no es desgaste, es que nunca fueron {sold}.",
+  "degSoldShort": "Se vendió como {sold} Ah y lo mejor que ha medido son {real} Ah: alrededor de un {pct} % menos de lo anunciado. Si esa medición se hizo con el pack nuevo, no es desgaste: es que nunca fueron {sold}.",
   "@degSoldShort": {
     "placeholders": {
       "sold": {
@@ -1378,7 +1372,7 @@
       }
     }
   },
-  "degSoldOk": "Ha dado lo que se anunció.",
+  "degSoldOk": "Lo mejor que ha medido está a la altura de lo que se anunció.",
   "demoSetCharge": "Poner la carga a",
   "demoFull": "Llenar al 100 %",
   "demoEmpty": "Vaciar al 10 %",
@@ -1698,7 +1692,7 @@
   "licenseRemoveConfirmTitle": "¿Quitar esta clave?",
   "licenseRemoveConfirmBody": "La app pierde lo que esta clave desbloquea. La clave sigue siendo válida: si la guardaste, puedes pegarla otra vez.",
   "licenseWhyTitle": "Por qué se cobra",
-  "licenseWhyBody": "Lo gratis iguala a la app oficial de JK y no se recorta nunca. Lo Pro es lo que esa app no puede hacer por diseño: recordar, comparar y concluir. Un pago único; nada de suscripciones. Sin cuenta, sin servidor y sin internet: la clave se comprueba en el teléfono con la firma del autor.",
+  "licenseWhyBody": "Lo gratis iguala a la app oficial de tu BMS y no se recorta nunca. Lo Pro es lo que esa app no puede hacer por diseño: recordar, comparar y concluir. Un pago único; nada de suscripciones. Sin cuenta, sin servidor y sin internet: la clave se comprueba en el teléfono con la firma del autor.",
   "licenseOpen": "Ver licencia",
   "proBadge": "PRO",
   "proGateTitle": "Función Pro",
@@ -1734,9 +1728,9 @@
   "licenseAdminBody": "Acceso total en este teléfono: todo desbloqueado, sin límites ni caducidad.",
   "adviceWhy": "POR QUÉ",
   "adviceWhyHide": "OCULTAR",
-  "adviceHonestyNote": "Cada frase se apoya en un dato medido: tócala para verlo. Los ciclos y la capacidad configurada del BMS se pueden editar desde la app oficial, así que aquí se contrastan siempre con lo que dice la física.",
+  "adviceHonestyNote": "Cada frase se apoya en un dato: tócala para verlo. Los ciclos y la capacidad configurada del BMS se pueden editar desde su app oficial, así que aquí se contrastan con lo que la app mide por su cuenta siempre que puede.",
   "verdictHealthMeasuredTitle": "Capacidad frente a la mejor que ha dado",
-  "verdictHealthMeasuredBody": "Tu batería está al {pct} % de la capacidad con la que llegó: {now} Ah medidos ahora frente a {best} Ah, lo mejor que ha dado. Medido en descargas completas, no estimado.",
+  "verdictHealthMeasuredBody": "Tu batería está al {pct} % de la mejor medición que ha hecho: {now} Ah en la última frente a {best} Ah, la mejor. Medido en descargas completas, no estimado.",
   "@verdictHealthMeasuredBody": {
     "placeholders": {
       "pct": {
@@ -1836,7 +1830,7 @@
   },
   "evidenceReadingsInSession": "Lecturas en esta sesión",
   "evidenceReportedCycles": "Ciclos según el BMS (dato editable)",
-  "evidenceEquivalentCycles": "Ciclos equivalentes por los amperios que pasaron",
+  "evidenceEquivalentCycles": "Ciclos equivalentes (Ah que contó el BMS entre la capacidad configurada)",
   "evidenceReportedSoh": "SOH según el BMS",
   "evidenceReportedSoc": "Carga según el BMS",
   "evidenceSocFullAnchor": "Donde termina la carga (por celda)",
@@ -2749,7 +2743,7 @@
   "alertsNotifyIntro": "Los avisos suenan en la barra de notificaciones aunque la app esté en segundo plano o cerrada. Sin esto, un aviso a las tres de la mañana con el móvil en otra habitación no lo ve nadie.",
   "alertsNotifyEnable": "Avisar en la barra de notificaciones",
   "alertsNotifyDenied": "Android no ha dado permiso para notificar. Los avisos seguirán saliendo en pantalla y con vibración, pero no llegarán con la app cerrada.",
-  "alertsNotifyOneConnection": "Recuerda: el BMS acepta una sola conexión Bluetooth. Mientras el móvil esté conectado en segundo plano, la app oficial de JK no podrá conectarse, y al revés.",
+  "alertsNotifyOneConnection": "Recuerda: el BMS acepta una sola conexión Bluetooth. Mientras el móvil esté conectado en segundo plano, la app oficial de tu BMS no podrá conectarse, y al revés.",
   "alertsThresholdsTitle": "A partir de cuándo avisar",
   "alertsThresholdsIntro": "Los valores por defecto son conservadores. Súbelos si tu batería vive en un rango distinto al típico y te avisa de más.",
   "alertsDeltaWarn": "Diferencia entre celdas",
@@ -2985,8 +2979,8 @@
   "healthWeakCellWhy": "El pack se apaga cuando la celda más baja llega al corte, no cuando la media llega. Todo lo que las demás todavía tienen por encima de ese punto no lo vas a usar.",
   "healthWeakCellWhich": "Cuál es",
   "healthWeakCellStrands": "Lo que deja sin usar",
-  "healthWeakCellResistance": "Resistencia desde el día uno",
-  "healthWeakCellResistanceUp": "+{pct} % en la celda {cell}",
+  "healthWeakCellResistance": "Cable de balanceo desde el día uno",
+  "healthWeakCellResistanceUp": "+{pct} % en el cable de la celda {cell}",
   "@healthWeakCellResistanceUp": {
     "placeholders": {
       "pct": {
@@ -2997,7 +2991,7 @@
       }
     }
   },
-  "healthWeakCellResistanceFlat": "Ninguna se ha movido",
+  "healthWeakCellResistanceFlat": "Ningún cable se ha movido",
   "healthWeakCellResistanceNoBaseline": "Hace falta una foto del día uno para comparar",
   "subjectCells": "Celdas",
   "subjectCapacity": "Capacidad",
@@ -3121,5 +3115,25 @@
         "type": "String"
       }
     }
-  }
+  },
+  "degSoldUnmeasured": "Todavía sin medir contra lo anunciado: hace falta una descarga completa.",
+  "degConfiguredTitle": "Capacidad configurada",
+  "healthVerdictReported": "Sin medir todavía",
+  "healthWeakCellResistanceHint": "El BMS mide la resistencia del cable de balanceo y su conexión, no la de la celda. Si sube, lo primero a revisar es ese cable.",
+  "cellsResistanceNote": "Los mΩ bajo cada celda son la resistencia de su cable de balanceo y la conexión, que es lo que mide el BMS. No son la resistencia interna de la celda.",
+  "rangeFullFromBms": "Sale de la capacidad configurada en el BMS, no de una medida.",
+  "reportRangeFromBmsConfig": "capacidad configurada en el BMS",
+  "capacityOfConfigured": "{pct} % de la configurada",
+  "@capacityOfConfigured": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "historyItemDrift": "Qué celda se va separando de las demás con las semanas",
+  "trendsCapacityNotEnough": "Cada punto es una descarga completa medida con la app conectada, así que no se llena sola: hacen falta al menos tres.",
+  "profileCaptureBaselineHintNoSettings": "Las celdas tal como están ahora. Este BMS no informa resistencias ni su configuración, así que la foto guarda lo que sí da. Todo lo que la app diga después sobre derivas se compara contra esto. Mejor con la batería en reposo.",
+  "profileConfigNotCompared": "Sin comparar",
+  "profileDriftOtherCharge": "a otro nivel de carga, no comparable"
 }

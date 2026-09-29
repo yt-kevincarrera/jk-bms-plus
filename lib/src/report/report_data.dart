@@ -41,6 +41,7 @@ class PackReportData {
     this.capacityTests = 0,
     this.fullRangeKm,
     this.rangeFromMeasuredCapacity = false,
+    this.rangeFromBmsConfig = false,
     this.whPerKm,
     this.drift = const [],
     this.advice = const [],
@@ -89,6 +90,11 @@ class PackReportData {
 
   final double? fullRangeKm;
   final bool rangeFromMeasuredCapacity;
+
+  /// Whether the full-pack range rests on the BMS's configured capacity,
+  /// borrowed as the catalogue figure, rather than on anything sold or
+  /// measured.
+  final bool rangeFromBmsConfig;
   final double? whPerKm;
 
   /// Worst first, as the Health tab ranks them.
@@ -163,11 +169,16 @@ class PackReportData {
       baselineAt: degradation?.baseline?.at,
       baselineIsMeasured: degradation?.baselineIsMeasured ?? false,
       configuredAh: degradation?.configuredAh,
-      advertisedAh: degradation?.advertisedAh ?? device.catalogueCapacityAh,
+      // Borrowed from the BMS is not advertised, and the sheet row says
+      // "advertised when bought".
+      advertisedAh: device.catalogueFromBms
+          ? null
+          : degradation?.advertisedAh ?? device.catalogueCapacityAh,
       lostFraction: degradation?.lostFraction,
       capacityTests: capacityTests,
       fullRangeKm: outlook?.fullKm,
       rangeFromMeasuredCapacity: outlook?.fullFromMeasuredCapacity ?? false,
+      rangeFromBmsConfig: outlook?.fullFromBmsConfig ?? false,
       whPerKm: whPerKm,
       drift: drift,
       advice: advice,

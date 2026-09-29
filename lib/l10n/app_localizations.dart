@@ -601,12 +601,6 @@ abstract class AppL10n {
   /// **'necesita más histórico'**
   String get needsDatabase;
 
-  /// No description provided for @needsSteps.
-  ///
-  /// In es, this message translates to:
-  /// **'necesita escalones de corriente'**
-  String get needsSteps;
-
   /// No description provided for @packTitle.
   ///
   /// In es, this message translates to:
@@ -790,7 +784,7 @@ abstract class AppL10n {
   /// No description provided for @resistanceTitle.
   ///
   /// In es, this message translates to:
-  /// **'Resistencia'**
+  /// **'Cables de balanceo'**
   String get resistanceTitle;
 
   /// No description provided for @resistanceSource.
@@ -802,14 +796,8 @@ abstract class AppL10n {
   /// No description provided for @resistanceSourceValue.
   ///
   /// In es, this message translates to:
-  /// **'medición de cableado del propio BMS'**
+  /// **'medición de cada cable de balanceo del propio BMS, no de la celda'**
   String get resistanceSourceValue;
-
-  /// No description provided for @resistanceEstimated.
-  ///
-  /// In es, this message translates to:
-  /// **'Resistencia interna estimada'**
-  String get resistanceEstimated;
 
   /// No description provided for @resistanceWireWarnings.
   ///
@@ -931,28 +919,10 @@ abstract class AppL10n {
   /// **'La máscara se muestra cruda y no se oculta ninguna lectura por su causa. La implementación de referencia la llama máscara de sensores «ausentes», pero las capturas reales encienden bits de sondas que claramente funcionan. Ver docs/PROTOCOL.md.'**
   String get thermalMaskNote;
 
-  /// No description provided for @historyEmptyTitle.
-  ///
-  /// In es, this message translates to:
-  /// **'Todavía no hay nada grabado'**
-  String get historyEmptyTitle;
-
-  /// No description provided for @historyEmptyBody.
-  ///
-  /// In es, this message translates to:
-  /// **'Los viajes que grabes quedan guardados con su recorrido, y las curvas de degradación se van dibujando solas con las semanas.'**
-  String get historyEmptyBody;
-
-  /// No description provided for @historyWhatGoesHere.
-  ///
-  /// In es, this message translates to:
-  /// **'QUÉ VA A APARECER AQUÍ'**
-  String get historyWhatGoesHere;
-
   /// No description provided for @historyItemCapacity.
   ///
   /// In es, this message translates to:
-  /// **'Capacidad medida por ciclo, y la curva de degradación que dibuja con los meses'**
+  /// **'Capacidad medida en cada descarga completa, y cómo cambia con los meses'**
   String get historyItemCapacity;
 
   /// No description provided for @historyItemTrips.
@@ -964,20 +934,14 @@ abstract class AppL10n {
   /// No description provided for @historyItemDelta.
   ///
   /// In es, this message translates to:
-  /// **'Delta graficado contra voltaje de pack, que es donde una celda corta se delata'**
+  /// **'Delta contra el nivel de carga, que es donde una celda corta se delata'**
   String get historyItemDelta;
 
   /// No description provided for @historyItemSag.
   ///
   /// In es, this message translates to:
-  /// **'Caída de tensión a una corriente dada, y cómo empeora con el tiempo'**
+  /// **'Resistencia aparente de cada viaje, sacada de la caída de tensión para la corriente pedida'**
   String get historyItemSag;
-
-  /// No description provided for @historyItemBalance.
-  ///
-  /// In es, this message translates to:
-  /// **'En qué celdas trabaja más el balanceador'**
-  String get historyItemBalance;
 
   /// No description provided for @systemDeviceTitle.
   ///
@@ -1498,7 +1462,7 @@ abstract class AppL10n {
   /// No description provided for @healthRealCapacityHint.
   ///
   /// In es, this message translates to:
-  /// **'Restante dividido por el SOC informado. Si queda muy por debajo de la nominal configurada, el pack ya perdió capacidad o el contador de coulombs está desincronizado.'**
+  /// **'Sin tests de capacidad, la cifra de arriba es la capacidad configurada en el BMS: el BMS calcula los Ah restantes como el SOC por esa capacidad, así que dividir una cosa por la otra la devuelve tal cual. No dice nada del desgaste; para eso hace falta medir una descarga completa.'**
   String get healthRealCapacityHint;
 
   /// No description provided for @healthClaimedCapacity.
@@ -1528,7 +1492,7 @@ abstract class AppL10n {
   /// No description provided for @healthEquivalentCyclesHint.
   ///
   /// In es, this message translates to:
-  /// **'Ah totales que pasaron por el pack divididos por su capacidad nominal. El contador de ciclos del BMS suma cargas parciales, así que casi siempre exagera.'**
+  /// **'Ah totales que el BMS contó pasar por el pack, divididos por su capacidad configurada. El contador de ciclos del propio BMS puede quedar por encima o por debajo de esta cifra: cuenta en números enteros y cada firmware decide qué es un ciclo.'**
   String get healthEquivalentCyclesHint;
 
   /// No description provided for @healthReportedCycles.
@@ -1606,7 +1570,7 @@ abstract class AppL10n {
   /// No description provided for @healthNeedsHistoryBody.
   ///
   /// In es, this message translates to:
-  /// **'La degradación medida, la vida restante estimada y la evolución de la caída de tensión necesitan meses de lecturas guardadas. Se van llenando solas a medida que uses la moto.'**
+  /// **'La degradación medida necesita al menos dos descargas completas. La deriva de una celda y la evolución de la caída de tensión necesitan semanas de lecturas guardadas. Lo que sale de viajes y lecturas se va llenando solo; la capacidad no: cada punto es una descarga completa.'**
   String get healthNeedsHistoryBody;
 
   /// No description provided for @healthNotEnoughData.
@@ -1834,7 +1798,7 @@ abstract class AppL10n {
   /// No description provided for @healthCardCapacity.
   ///
   /// In es, this message translates to:
-  /// **'Capacidad real'**
+  /// **'Restante según el BMS'**
   String get healthCardCapacity;
 
   /// No description provided for @healthCardLoss.
@@ -1846,7 +1810,7 @@ abstract class AppL10n {
   /// No description provided for @healthCardCycles.
   ///
   /// In es, this message translates to:
-  /// **'Ciclos reales'**
+  /// **'Ciclos equivalentes (según el BMS)'**
   String get healthCardCycles;
 
   /// No description provided for @healthCardUsable.
@@ -2584,7 +2548,7 @@ abstract class AppL10n {
   /// No description provided for @proximityBody.
   ///
   /// In es, this message translates to:
-  /// **'Cuando esté activado, la app busca tu BMS cada medio minuto y se conecta sola en cuanto aparece. Pensado para dejarlo un tiempo mientras calibras una batería nueva, no para siempre: mientras está conectado la app oficial de JK no puede entrar, y buscar consume algo de batería del teléfono.'**
+  /// **'Cuando esté activado, la app busca tu BMS cada medio minuto y se conecta sola en cuanto aparece. Pensado para dejarlo un tiempo mientras calibras una batería nueva, no para siempre: mientras está conectado la app oficial de tu BMS no puede entrar, y buscar consume algo de batería del teléfono.'**
   String get proximityBody;
 
   /// No description provided for @proximityLimit.
@@ -2932,7 +2896,7 @@ abstract class AppL10n {
   /// No description provided for @settingsCatalogueHint.
   ///
   /// In es, this message translates to:
-  /// **'Lo que dice la etiqueta del pack. Es contra este número que se mide la salud, así que conviene que sea el real.'**
+  /// **'Lo que dice la etiqueta del pack. Se usa para dos cosas: compararlo con lo que el pack mide de verdad en un test de capacidad, y calcular la autonomía con el pack lleno mientras no haya ninguna medida. El desgaste no se mide contra este número, sino contra la mejor descarga completa del propio pack.'**
   String get settingsCatalogueHint;
 
   /// No description provided for @catalogueUnset.
@@ -2944,7 +2908,7 @@ abstract class AppL10n {
   /// No description provided for @catalogueUnsetHint.
   ///
   /// In es, this message translates to:
-  /// **'Nadie ha dicho todavía con cuántos amperios-hora se vendió esta batería, y la app no se lo inventa. Hasta que lo pongas, la salud y la degradación no se pueden calcular: no hay contra qué compararlas.'**
+  /// **'Nadie ha dicho todavía con cuántos amperios-hora se vendió esta batería, y la app no se lo inventa. Sin él no hay comparación con lo anunciado, y la autonomía con el pack lleno espera a un test de capacidad. El desgaste no lo necesita: sale de las descargas completas medidas.'**
   String get catalogueUnsetHint;
 
   /// No description provided for @catalogueSetIt.
@@ -3628,7 +3592,7 @@ abstract class AppL10n {
   /// No description provided for @catalogueFromBmsHint.
   ///
   /// In es, this message translates to:
-  /// **'Tomado de la configuración del BMS, que es un número sobre este pack pero lo escribió quien lo armó. Si te lo vendieron con otra capacidad, ponla: la diferencia entre las dos cifras es justo lo que la salud mide.'**
+  /// **'Tomado de la configuración del BMS, que es un número sobre este pack pero lo escribió quien lo armó. Mientras venga de ahí, la app no lo trata como lo anunciado: no compara con él lo que mide, y la autonomía con el pack lleno dice de dónde sale. Si te lo vendieron con otra capacidad, ponla.'**
   String get catalogueFromBmsHint;
 
   /// No description provided for @connectRetry.
@@ -4246,13 +4210,13 @@ abstract class AppL10n {
   /// No description provided for @degSoldShort.
   ///
   /// In es, this message translates to:
-  /// **'Se vendió como {sold} Ah y lo mejor que ha dado son {real} Ah: alrededor de un {pct} % menos de autonomía de la anunciada. Eso no es desgaste, es que nunca fueron {sold}.'**
+  /// **'Se vendió como {sold} Ah y lo mejor que ha medido son {real} Ah: alrededor de un {pct} % menos de lo anunciado. Si esa medición se hizo con el pack nuevo, no es desgaste: es que nunca fueron {sold}.'**
   String degSoldShort(String sold, String real, String pct);
 
   /// No description provided for @degSoldOk.
   ///
   /// In es, this message translates to:
-  /// **'Ha dado lo que se anunció.'**
+  /// **'Lo mejor que ha medido está a la altura de lo que se anunció.'**
   String get degSoldOk;
 
   /// No description provided for @demoSetCharge.
@@ -5002,7 +4966,7 @@ abstract class AppL10n {
   /// No description provided for @licenseWhyBody.
   ///
   /// In es, this message translates to:
-  /// **'Lo gratis iguala a la app oficial de JK y no se recorta nunca. Lo Pro es lo que esa app no puede hacer por diseño: recordar, comparar y concluir. Un pago único; nada de suscripciones. Sin cuenta, sin servidor y sin internet: la clave se comprueba en el teléfono con la firma del autor.'**
+  /// **'Lo gratis iguala a la app oficial de tu BMS y no se recorta nunca. Lo Pro es lo que esa app no puede hacer por diseño: recordar, comparar y concluir. Un pago único; nada de suscripciones. Sin cuenta, sin servidor y sin internet: la clave se comprueba en el teléfono con la firma del autor.'**
   String get licenseWhyBody;
 
   /// No description provided for @licenseOpen.
@@ -5134,7 +5098,7 @@ abstract class AppL10n {
   /// No description provided for @adviceHonestyNote.
   ///
   /// In es, this message translates to:
-  /// **'Cada frase se apoya en un dato medido: tócala para verlo. Los ciclos y la capacidad configurada del BMS se pueden editar desde la app oficial, así que aquí se contrastan siempre con lo que dice la física.'**
+  /// **'Cada frase se apoya en un dato: tócala para verlo. Los ciclos y la capacidad configurada del BMS se pueden editar desde su app oficial, así que aquí se contrastan con lo que la app mide por su cuenta siempre que puede.'**
   String get adviceHonestyNote;
 
   /// No description provided for @verdictHealthMeasuredTitle.
@@ -5146,7 +5110,7 @@ abstract class AppL10n {
   /// No description provided for @verdictHealthMeasuredBody.
   ///
   /// In es, this message translates to:
-  /// **'Tu batería está al {pct} % de la capacidad con la que llegó: {now} Ah medidos ahora frente a {best} Ah, lo mejor que ha dado. Medido en descargas completas, no estimado.'**
+  /// **'Tu batería está al {pct} % de la mejor medición que ha hecho: {now} Ah en la última frente a {best} Ah, la mejor. Medido en descargas completas, no estimado.'**
   String verdictHealthMeasuredBody(String pct, String now, String best);
 
   /// No description provided for @verdictHealthNotMeasurableTitle.
@@ -5242,7 +5206,7 @@ abstract class AppL10n {
   /// No description provided for @evidenceEquivalentCycles.
   ///
   /// In es, this message translates to:
-  /// **'Ciclos equivalentes por los amperios que pasaron'**
+  /// **'Ciclos equivalentes (Ah que contó el BMS entre la capacidad configurada)'**
   String get evidenceEquivalentCycles;
 
   /// No description provided for @evidenceReportedSoh.
@@ -7353,7 +7317,7 @@ abstract class AppL10n {
   /// No description provided for @alertsNotifyOneConnection.
   ///
   /// In es, this message translates to:
-  /// **'Recuerda: el BMS acepta una sola conexión Bluetooth. Mientras el móvil esté conectado en segundo plano, la app oficial de JK no podrá conectarse, y al revés.'**
+  /// **'Recuerda: el BMS acepta una sola conexión Bluetooth. Mientras el móvil esté conectado en segundo plano, la app oficial de tu BMS no podrá conectarse, y al revés.'**
   String get alertsNotifyOneConnection;
 
   /// No description provided for @alertsThresholdsTitle.
@@ -7655,19 +7619,19 @@ abstract class AppL10n {
   /// No description provided for @healthWeakCellResistance.
   ///
   /// In es, this message translates to:
-  /// **'Resistencia desde el día uno'**
+  /// **'Cable de balanceo desde el día uno'**
   String get healthWeakCellResistance;
 
   /// No description provided for @healthWeakCellResistanceUp.
   ///
   /// In es, this message translates to:
-  /// **'+{pct} % en la celda {cell}'**
+  /// **'+{pct} % en el cable de la celda {cell}'**
   String healthWeakCellResistanceUp(String pct, String cell);
 
   /// No description provided for @healthWeakCellResistanceFlat.
   ///
   /// In es, this message translates to:
-  /// **'Ninguna se ha movido'**
+  /// **'Ningún cable se ha movido'**
   String get healthWeakCellResistanceFlat;
 
   /// No description provided for @healthWeakCellResistanceNoBaseline.
@@ -7915,6 +7879,84 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'De la última lectura en reposo, hace {minutes} min.'**
   String healthWeakCellStrandsAge(String minutes);
+
+  /// No description provided for @degSoldUnmeasured.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía sin medir contra lo anunciado: hace falta una descarga completa.'**
+  String get degSoldUnmeasured;
+
+  /// No description provided for @degConfiguredTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Capacidad configurada'**
+  String get degConfiguredTitle;
+
+  /// No description provided for @healthVerdictReported.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin medir todavía'**
+  String get healthVerdictReported;
+
+  /// No description provided for @healthWeakCellResistanceHint.
+  ///
+  /// In es, this message translates to:
+  /// **'El BMS mide la resistencia del cable de balanceo y su conexión, no la de la celda. Si sube, lo primero a revisar es ese cable.'**
+  String get healthWeakCellResistanceHint;
+
+  /// No description provided for @cellsResistanceNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Los mΩ bajo cada celda son la resistencia de su cable de balanceo y la conexión, que es lo que mide el BMS. No son la resistencia interna de la celda.'**
+  String get cellsResistanceNote;
+
+  /// No description provided for @rangeFullFromBms.
+  ///
+  /// In es, this message translates to:
+  /// **'Sale de la capacidad configurada en el BMS, no de una medida.'**
+  String get rangeFullFromBms;
+
+  /// No description provided for @reportRangeFromBmsConfig.
+  ///
+  /// In es, this message translates to:
+  /// **'capacidad configurada en el BMS'**
+  String get reportRangeFromBmsConfig;
+
+  /// No description provided for @capacityOfConfigured.
+  ///
+  /// In es, this message translates to:
+  /// **'{pct} % de la configurada'**
+  String capacityOfConfigured(String pct);
+
+  /// No description provided for @historyItemDrift.
+  ///
+  /// In es, this message translates to:
+  /// **'Qué celda se va separando de las demás con las semanas'**
+  String get historyItemDrift;
+
+  /// No description provided for @trendsCapacityNotEnough.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada punto es una descarga completa medida con la app conectada, así que no se llena sola: hacen falta al menos tres.'**
+  String get trendsCapacityNotEnough;
+
+  /// No description provided for @profileCaptureBaselineHintNoSettings.
+  ///
+  /// In es, this message translates to:
+  /// **'Las celdas tal como están ahora. Este BMS no informa resistencias ni su configuración, así que la foto guarda lo que sí da. Todo lo que la app diga después sobre derivas se compara contra esto. Mejor con la batería en reposo.'**
+  String get profileCaptureBaselineHintNoSettings;
+
+  /// No description provided for @profileConfigNotCompared.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin comparar'**
+  String get profileConfigNotCompared;
+
+  /// No description provided for @profileDriftOtherCharge.
+  ///
+  /// In es, this message translates to:
+  /// **'a otro nivel de carga, no comparable'**
+  String get profileDriftOtherCharge;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

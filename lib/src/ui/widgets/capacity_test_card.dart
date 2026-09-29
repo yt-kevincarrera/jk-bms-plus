@@ -91,11 +91,18 @@ class _CapacityTestCardState extends State<CapacityTestCard> {
               // The amp-hours measured are the fact; the percentage is a
               // comparison against a claim, so it only appears when a claim
               // exists.
+              //
+              // Against a catalogue figure that was only the BMS's own
+              // setting borrowed, the percentage is of the configuration,
+              // said so, and not coloured as a verdict on what was sold.
               test.catalogueAh == null
                   ? '${test.measuredAh.toStringAsFixed(1)} Ah'
+                  : _againstConfigured(test)
+                  ? '${test.measuredAh.toStringAsFixed(1)} Ah  ·  '
+                        '${t.capacityOfConfigured((test.measuredAh / test.catalogueAh! * 100).toStringAsFixed(0))}'
                   : '${test.measuredAh.toStringAsFixed(1)} Ah  ·  '
-                      '${(test.measuredAh / test.catalogueAh! * 100).toStringAsFixed(0)} %',
-              valueColor: test.catalogueAh == null
+                        '${(test.measuredAh / test.catalogueAh! * 100).toStringAsFixed(0)} %',
+              valueColor: test.catalogueAh == null || _againstConfigured(test)
                   ? null
                   : _resultTone(test.measuredAh / test.catalogueAh!),
               last: test == completed.last && test.gapSeconds < 120,
@@ -219,6 +226,17 @@ class _CapacityTestCardState extends State<CapacityTestCard> {
         label: Text(t.capacityStart),
       ),
     ];
+  }
+
+  /// Whether [test]'s catalogue figure is the BMS's configured capacity the
+  /// pack borrowed, rather than what the rider said it was sold as. The test
+  /// row keeps only the number, so it is matched against the pack's current
+  /// catalogue and its flag.
+  bool _againstConfigured(CapacityTest test) {
+    final device = widget.service.activeDevice;
+    return device != null &&
+        device.catalogueFromBms &&
+        test.catalogueAh == device.catalogueCapacityAh;
   }
 
   static Color? _resultTone(double fraction) {

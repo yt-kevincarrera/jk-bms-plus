@@ -176,7 +176,12 @@ class _PackProfileCardState extends State<PackProfileCard> {
             (worst.driftVolts * 1000).toStringAsFixed(0),
           ),
           valueColor: AppTheme.watch,
-        ),
+        )
+      // Said rather than left out: at two different charge levels a cell's
+      // place against the average moves on its own, and silence here would
+      // read as nobody having drifted.
+      else if (!c.sameChargeLevel)
+        InfoRow(t.profileWorstDrift, t.profileDriftOtherCharge, dim: true),
       if (c.cyclesSince != null)
         InfoRow(t.profileCyclesSince, '${c.cyclesSince}'),
       InfoRow(
@@ -184,8 +189,12 @@ class _PackProfileCardState extends State<PackProfileCard> {
         // ANT never hands over a settings frame this app can read, so there
         // is no baseline to compare against -- "unchanged" would claim a
         // comparison that was never made.
+        // Before a settings frame arrives, or with a day-one snapshot that
+        // holds none, nothing was compared, and "unchanged" would say it was.
         widget.service.brand == BmsBrand.ant
             ? t.settingsNotExposed
+            : !c.configCompared
+            ? t.profileConfigNotCompared
             : changed.isEmpty
             ? t.profileConfigUnchanged
             : t.profileConfigChangedCount('${changed.length}'),

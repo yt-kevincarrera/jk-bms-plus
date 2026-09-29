@@ -108,6 +108,8 @@ class PdfReports {
               t.reportRangeBasis,
               d.rangeFromMeasuredCapacity
                   ? t.reportRangeFromMeasured
+                  : d.rangeFromBmsConfig
+                  ? t.reportRangeFromBmsConfig
                   : t.reportRangeFromCatalogue,
             ),
           ]),
@@ -159,10 +161,17 @@ class PdfReports {
         ),
       if (since?.cyclesSince != null)
         _row(t.profileCyclesSince, '${since!.cyclesSince}'),
+      if (since != null && since.worstDrift == null && !since.sameChargeLevel)
+        _row(t.profileWorstDrift, t.profileDriftOtherCharge),
+      // The saved-pack sheet has no settings frame to compare with (none is
+      // stored), so it says so. It used to print "same as day one" on every
+      // sheet, an ANT's included.
       if (since != null)
         _row(
           t.profileConfigChanged,
-          since.configChanged.isEmpty
+          !since.configCompared
+              ? t.profileConfigNotCompared
+              : since.configChanged.isEmpty
               ? t.profileConfigUnchanged
               : t.profileConfigChangedCount('${since.configChanged.length}'),
         ),

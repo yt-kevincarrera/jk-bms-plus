@@ -662,6 +662,8 @@ class _FullPackRange extends StatelessWidget {
         Text(
           outlook.fullFromMeasuredCapacity
               ? t.rangeFullFromMeasured
+              : outlook.fullFromBmsConfig
+              ? t.rangeFullFromBms
               : t.rangeFullFromAdvert,
           style: TextStyle(
             fontSize: 10,

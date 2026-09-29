@@ -232,8 +232,14 @@ class _PackProfileSheetState extends State<PackProfileSheet> {
                   t.profileCaptureBaseline,
                   style: const TextStyle(fontSize: 13.5),
                 ),
+                // An ANT sends neither lead resistances nor its settings, and
+                // the snapshot was promising both.
                 subtitle: Text(
-                  t.profileCaptureBaselineHint,
+                  widget.service.lastSettings == null &&
+                          (widget.service.lastSnapshot?.cellResistances?.isEmpty ??
+                              true)
+                      ? t.profileCaptureBaselineHintNoSettings
+                      : t.profileCaptureBaselineHint,
                   style: const TextStyle(
                     fontSize: 11.5,
                     height: 1.4,

@@ -82,6 +82,11 @@ void main() {
     await pumpEventQueue();
     expect(service.activeDevice?.catalogueCapacityAh, closeTo(280, 1e-6));
     expect(service.activeDevice?.catalogueFromBms, isTrue);
+    // Borrowed, so nothing may compare against it as what was sold, and the
+    // full-pack range says it rests on the BMS's setting.
+    expect(service.catalogueFromBms, isTrue);
+    expect(service.advertisedCapacityAh, isNull);
+    expect(service.catalogueCapacityAh, closeTo(280, 1e-6));
   });
 
   test('the brand is stored on the pack', () async {

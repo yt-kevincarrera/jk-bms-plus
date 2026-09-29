@@ -119,7 +119,6 @@
   "sessionSamples": "Samples buffered",
   "needsGps": "needs an active trip",
   "needsDatabase": "needs more history",
-  "needsSteps": "needs current steps",
   "packTitle": "Pack",
   "packRemaining": "Remaining",
   "packRemainingValue": "{remaining} of {nominal} Ah",
@@ -180,10 +179,9 @@
   "balanceWhichCells": "Which cells",
   "balanceWhichCellsValue": "inferred, the BMS does not report it",
   "balanceRanking": "Weak-cell ranking",
-  "resistanceTitle": "Resistance",
+  "resistanceTitle": "Balance leads",
   "resistanceSource": "Source",
-  "resistanceSourceValue": "the BMS's own wire measurement",
-  "resistanceEstimated": "Estimated internal resistance",
+  "resistanceSourceValue": "the BMS's own measurement of each balance lead, not of the cell",
   "resistanceWireWarnings": "Wire resistance warnings",
   "none": "none",
   "thermalProbe": "Probe {index}",
@@ -225,14 +223,10 @@
   "on": "on",
   "off": "off",
   "thermalMaskNote": "The bitmask is shown raw and no reading is hidden because of it. The reference implementation calls it an \"absent\" sensor mask, but real captures set bits for probes that are plainly working. See docs/PROTOCOL.md.",
-  "historyEmptyTitle": "Nothing recorded yet",
-  "historyEmptyBody": "Trips you record are stored with their track, and the degradation curves draw themselves over the weeks.",
-  "historyWhatGoesHere": "WHAT WILL LIVE HERE",
-  "historyItemCapacity": "Measured capacity per cycle, and the degradation curve it draws over months",
+  "historyItemCapacity": "Capacity measured on each full discharge, and how it changes over months",
   "historyItemTrips": "Trip list with distance, Wh and Wh/km",
-  "historyItemDelta": "Delta plotted against pack voltage, which is where a short cell gives itself away",
-  "historyItemSag": "Sag at a given current, and how it worsens over time",
-  "historyItemBalance": "Which cells the balancer works hardest on",
+  "historyItemDelta": "Delta against charge level, which is where a short cell gives itself away",
+  "historyItemSag": "Apparent resistance of each ride, from how far the voltage dropped for the current drawn",
   "systemDeviceTitle": "Device",
   "systemModel": "Model",
   "systemHardware": "Hardware",
@@ -368,12 +362,12 @@
   "healthTitle": "What the manufacturer would rather not show you",
   "healthIntro": "These come from what the BMS already reports, cross-checked against itself. None of them is a figure the manufacturer publishes.",
   "healthRealCapacity": "Implied real capacity",
-  "healthRealCapacityHint": "Remaining divided by reported charge. If it sits well under the configured nominal, the pack has lost capacity or the coulomb counter has drifted.",
+  "healthRealCapacityHint": "With no capacity tests, the figure above is the capacity configured in the BMS: the BMS works out remaining Ah as charge times that capacity, so dividing one by the other hands it back unchanged. It says nothing about wear; that needs a full discharge measured.",
   "healthClaimedCapacity": "Nominal configured in the BMS",
   "healthSpecCapacity": "Catalogue capacity",
   "healthCapacityLoss": "Loss against catalogue",
   "healthEquivalentCycles": "Full-equivalent cycles",
-  "healthEquivalentCyclesHint": "Total Ah put through the pack divided by its nominal capacity. The BMS cycle counter adds up partial charges, so it almost always flatters the pack.",
+  "healthEquivalentCyclesHint": "Total Ah the BMS counted through the pack, divided by its configured capacity. The BMS's own cycle counter can sit above or below this: it counts in whole numbers and each firmware decides what a cycle is.",
   "healthReportedCycles": "Cycles the BMS reports",
   "healthCycleInflation": "Counter inflation",
   "healthImbalanceLoss": "Capacity lost to imbalance",
@@ -400,7 +394,7 @@
   "healthSohReported": "Health the BMS reports",
   "healthSohSuspect": "Plenty of firmwares leave this number fixed and never recompute it. Treat it as decorative until you see it move.",
   "healthNeedsHistoryTitle": "Needs history",
-  "healthNeedsHistoryBody": "Measured degradation, estimated remaining life and how sag evolves all need months of stored readings. They fill in on their own as you ride.",
+  "healthNeedsHistoryBody": "Measured degradation needs at least two full discharges. A cell drifting and how sag evolves need weeks of stored readings. What comes from rides and readings fills in on its own; capacity does not: every point is a full discharge.",
   "healthNotEnoughData": "not enough data",
   "healthCapacityUnavailable": "At very low or very high charge this calculation turns into noise, so it is not shown.",
   "rangeLearning": "learning",
@@ -478,9 +472,9 @@
   "healthVerdictWatch": "The pack has lost some capacity",
   "healthVerdictBad": "The pack is fairly worn",
   "healthHowCalculated": "How these are worked out",
-  "healthCardCapacity": "Real capacity",
+  "healthCardCapacity": "Remaining per the BMS",
   "healthCardLoss": "Loss",
-  "healthCardCycles": "Real cycles",
+  "healthCardCycles": "Equivalent cycles (per the BMS)",
   "healthCardUsable": "Usable energy",
   "healthCardConsumption": "Consumption",
   "healthCardLearnedKm": "Kilometres learned",
@@ -789,7 +783,7 @@
   "tripNotificationChannelDesc": "Keeps a trip recording with the screen off or another app open.",
   "tripNotificationDenied": "Without notification permission the trip stops when you leave the app. It can be enabled in Android settings.",
   "proximityTitle": "Connect when I get close",
-  "proximityBody": "While this is on, the app looks for your BMS every half minute and connects on its own the moment it appears. Meant to be left on for a stretch while a new battery is being calibrated, not forever: while it is connected the official JK app cannot get in, and scanning costs some phone battery.",
+  "proximityBody": "While this is on, the app looks for your BMS every half minute and connects on its own the moment it appears. Meant to be left on for a stretch while a new battery is being calibrated, not forever: while it is connected your BMS's official app cannot get in, and scanning costs some phone battery.",
   "proximityLimit": "Works with the app open or backgrounded. If Android kills the process it stops looking until you open it again.",
   "proximityRemembered": "Watching for",
   "proximityNoDevice": "Connect to your BMS once and it will be remembered here.",
@@ -885,9 +879,9 @@
   "alertCellNearCutoff": "A cell is close to cutoff",
   "settingsTitle": "Settings",
   "settingsCatalogue": "Catalogue capacity",
-  "settingsCatalogueHint": "What the label on the pack claims. Health is measured against this number, so it is worth getting right.",
+  "settingsCatalogueHint": "What the label on the pack claims. It is used for two things: comparing it with what the pack really measures in a capacity test, and working out the full-pack range while nothing has been measured. Wear is not measured against this number but against the pack's own best full discharge.",
   "catalogueUnset": "Not set",
-  "catalogueUnsetHint": "Nobody has said how many amp-hours this battery was sold as, and the app does not invent one. Until you set it, health and degradation cannot be worked out: there is nothing to measure them against.",
+  "catalogueUnsetHint": "Nobody has said how many amp-hours this battery was sold as, and the app does not invent one. Without it there is no comparison with the advert, and the full-pack range waits for a capacity test. Wear does not need it: it comes from measured full discharges.",
   "catalogueSetIt": "Set capacity",
   "catalogueUseBms": "Use the BMS figure, {ah} Ah",
   "@catalogueUseBms": {
@@ -1119,7 +1113,7 @@
   "agoSuffix": "ago",
   "catalogueFromBmsTag": "from the BMS",
   "catalogueConfirm": "Confirm it was sold as this",
-  "catalogueFromBmsHint": "Taken from the BMS configuration. That is a number about this pack, but whoever assembled it typed it in. If you were sold a different capacity, set it: the gap between the two is exactly what health measures.",
+  "catalogueFromBmsHint": "Taken from the BMS configuration. That is a number about this pack, but whoever assembled it typed it in. While it comes from there, the app does not treat it as the advert: it does not compare its measurements against it, and the full-pack range says where it comes from. If you were sold a different capacity, set it.",
   "connectRetry": "Search again",
   "storedManageHint": "Long-press a battery to rename or delete it.",
   "offlineHealthTitle": "Stored health",
@@ -1364,7 +1358,7 @@
   "degLostWhy": "Degradation is measured against the best this battery has ever held, not against what the advert said. It needs more than one measurement: with a single one you have a capacity, not a loss.",
   "degImpliedNote": "Estimated from the BMS counter, not measured. A capacity test gives the real figure.",
   "degSoldTitle": "Against the advert",
-  "degSoldShort": "Sold as {sold} Ah, and the best it has held is {real} Ah: about {pct} % less range than advertised. That is not wear, it was never {sold}.",
+  "degSoldShort": "Sold as {sold} Ah, and the best it has measured is {real} Ah: about {pct} % less than advertised. If that measurement was made with the pack new, it is not wear: it was never {sold}.",
   "@degSoldShort": {
     "placeholders": {
       "sold": {
@@ -1378,7 +1372,7 @@
       }
     }
   },
-  "degSoldOk": "It has delivered what was advertised.",
+  "degSoldOk": "The best it has measured lives up to what was advertised.",
   "demoSetCharge": "Set the charge to",
   "demoFull": "Fill to 100 %",
   "demoEmpty": "Drain to 10 %",
@@ -1596,7 +1590,7 @@
   "licenseRemoveConfirmTitle": "Remove this key?",
   "licenseRemoveConfirmBody": "The app loses what this key unlocks. The key itself stays valid: if you kept it, you can paste it again.",
   "licenseWhyTitle": "Why it costs money",
-  "licenseWhyBody": "The free tier matches the official JK app and is never cut down. Pro is what that app cannot do by design: remember, compare and conclude. One payment; no subscriptions. No account, no server, no internet: the key is checked on the phone against the author's signature.",
+  "licenseWhyBody": "The free tier matches your BMS's official app and is never cut down. Pro is what that app cannot do by design: remember, compare and conclude. One payment; no subscriptions. No account, no server, no internet: the key is checked on the phone against the author's signature.",
   "licenseOpen": "See licence",
   "proBadge": "PRO",
   "proGateTitle": "Pro feature",
@@ -1632,9 +1626,9 @@
   "licenseAdminBody": "Full access on this phone: everything unlocked, no limits, no expiry.",
   "adviceWhy": "WHY",
   "adviceWhyHide": "HIDE",
-  "adviceHonestyNote": "Every sentence rests on a measured figure: tap it to see which. The BMS's cycle count and configured capacity can be edited from the official app, so they are always checked here against what the physics says.",
+  "adviceHonestyNote": "Every sentence rests on a figure: tap it to see which. The BMS's cycle count and configured capacity can be edited from its official app, so here they are checked against what the app measures on its own wherever it can.",
   "verdictHealthMeasuredTitle": "Capacity against the best it has held",
-  "verdictHealthMeasuredBody": "Your battery is at {pct} % of the capacity it arrived with: {now} Ah measured now against {best} Ah, the best it has given. Measured over full discharges, not estimated.",
+  "verdictHealthMeasuredBody": "Your battery is at {pct} % of the best measurement it has made: {now} Ah in the latest against {best} Ah, the best. Measured over full discharges, not estimated.",
   "@verdictHealthMeasuredBody": {
     "placeholders": {
       "pct": {
@@ -1734,7 +1728,7 @@
   },
   "evidenceReadingsInSession": "Readings this session",
   "evidenceReportedCycles": "Cycles per the BMS (editable figure)",
-  "evidenceEquivalentCycles": "Equivalent cycles from amp-hours that flowed",
+  "evidenceEquivalentCycles": "Equivalent cycles (Ah the BMS counted over the configured capacity)",
   "evidenceReportedSoh": "SOH per the BMS",
   "evidenceReportedSoc": "Charge per the BMS",
   "evidenceSocFullAnchor": "Where a charge ends (per cell)",
@@ -2647,7 +2641,7 @@
   "alertsNotifyIntro": "Alerts land in the notification shade even when the app is in the background or closed. Without this, an alert at three in the morning with the phone in another room reaches nobody.",
   "alertsNotifyEnable": "Post alerts to the notification shade",
   "alertsNotifyDenied": "Android has not granted permission to notify. Alerts will still appear on screen and buzz, but they will not arrive with the app closed.",
-  "alertsNotifyOneConnection": "Remember: the BMS accepts a single Bluetooth connection. While the phone is connected in the background the official JK app cannot connect, and the other way round.",
+  "alertsNotifyOneConnection": "Remember: the BMS accepts a single Bluetooth connection. While the phone is connected in the background your BMS's official app cannot connect, and the other way round.",
   "alertsThresholdsTitle": "When to speak up",
   "alertsThresholdsIntro": "The defaults are conservative. Raise them if your pack lives outside the usual range and it is warning you too often.",
   "alertsDeltaWarn": "Spread between cells",
@@ -2866,8 +2860,8 @@
   "healthWeakCellWhy": "The pack stops when the lowest cell reaches cutoff, not when the average does. Whatever the others still hold above that point is not yours to use.",
   "healthWeakCellWhich": "Which one",
   "healthWeakCellStrands": "What it strands",
-  "healthWeakCellResistance": "Resistance since day one",
-  "healthWeakCellResistanceUp": "+{pct} % on cell {cell}",
+  "healthWeakCellResistance": "Balance lead since day one",
+  "healthWeakCellResistanceUp": "+{pct} % on the lead of cell {cell}",
   "@healthWeakCellResistanceUp": {
     "placeholders": {
       "pct": {
@@ -2878,7 +2872,7 @@
       }
     }
   },
-  "healthWeakCellResistanceFlat": "Nobody has moved",
+  "healthWeakCellResistanceFlat": "No lead has moved",
   "healthWeakCellResistanceNoBaseline": "Needs a day-one snapshot to compare against",
   "subjectCells": "Cells",
   "subjectCapacity": "Capacity",
@@ -2981,5 +2975,25 @@
         "type": "String"
       }
     }
-  }
+  },
+  "degSoldUnmeasured": "Not yet measured against the advert: that needs a full discharge.",
+  "degConfiguredTitle": "Configured capacity",
+  "healthVerdictReported": "Not measured yet",
+  "healthWeakCellResistanceHint": "The BMS measures the resistance of the balance lead and its connection, not of the cell. If it climbs, that lead is the first thing to check.",
+  "cellsResistanceNote": "The mΩ under each cell is the resistance of its balance lead and connection, which is what the BMS measures. It is not the cell's internal resistance.",
+  "rangeFullFromBms": "From the capacity configured in the BMS, not a measured one.",
+  "reportRangeFromBmsConfig": "capacity configured in the BMS",
+  "capacityOfConfigured": "{pct} % of configured",
+  "@capacityOfConfigured": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "historyItemDrift": "Which cell is pulling away from the others over the weeks",
+  "trendsCapacityNotEnough": "Each point is a full discharge measured with the app connected, so this does not fill in on its own: it needs at least three.",
+  "profileCaptureBaselineHintNoSettings": "The cells exactly as they are now. This BMS reports neither resistances nor its configuration, so the snapshot keeps what it does give. Everything the app later says about drift is measured against this. Best done with the pack at rest.",
+  "profileConfigNotCompared": "Not compared",
+  "profileDriftOtherCharge": "at another charge level, not comparable"
 }

@@ -1826,6 +1826,7 @@ class BmsService {
       // full pack exactly as much as it shortens a half-empty one.
       usableFraction: energy.usableFraction ?? 1,
       capacityWasMeasured: measured != null,
+      capacityFromBmsConfig: catalogueFromBms,
     );
   }
 
@@ -2884,14 +2885,27 @@ class BmsService {
 
   /// Whether the catalogue figure came from the rider.
   ///
-  /// The app deliberately does *not* adopt the capacity the BMS is configured
-  /// with. That number is not a measurement — it is what whoever assembled the
-  /// pack typed in, and it is what the coulomb counter scales the charge
-  /// percentage against. If it disagrees with what the pack was sold as, that
-  /// disagreement is a finding, and adopting the BMS figure would erase it:
-  /// a pack sold as 45 Ah with a BMS set to 40 would measure 40 and be called
-  /// perfectly healthy. See [configuredCapacityAh].
+  /// A blank catalogue figure *is* filled from the capacity the BMS is
+  /// configured with (see [_adoptNominal]), and the stored row says so
+  /// ([Device.catalogueFromBms]). That number is not a measurement: it is
+  /// what whoever assembled the pack typed in, and it is what the coulomb
+  /// counter scales the charge percentage against. So while it is borrowed,
+  /// nothing may compare against it as though it were what the pack was sold
+  /// as: a pack sold as 45 Ah with a BMS set to 40 would measure 40 against
+  /// 40 and be called exactly as advertised. See [advertisedCapacityAh].
   bool catalogueSetByUser = false;
+
+  /// Whether the active pack's catalogue figure was adopted from the BMS
+  /// rather than stated by the rider.
+  bool get catalogueFromBms => activeDevice?.catalogueFromBms ?? false;
+
+  /// What the pack was sold as, when the rider said: the catalogue figure,
+  /// or null while it is only the BMS's configuration borrowed. Every
+  /// comparison against "sold as" reads this rather than
+  /// [catalogueCapacityAh], which also serves as a stand-in capacity for the
+  /// full-pack range.
+  double? get advertisedCapacityAh =>
+      catalogueFromBms ? null : catalogueCapacityAh;
 
   /// What the BMS is configured for, when it has said. Shown next to the
   /// catalogue figure rather than replacing it.

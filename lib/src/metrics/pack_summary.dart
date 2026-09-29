@@ -101,7 +101,7 @@ class PackSummary {
     final wear = Degradation.from(
       tests: tests,
       readings: const [],
-      advertisedAh: catalogue,
+      advertisedAh: device.catalogueFromBms ? null : catalogue,
     );
     final lost = wear.lostFraction;
     final health = lost == null ? null : ((1 - lost) * 100).clamp(0.0, 100.0);
