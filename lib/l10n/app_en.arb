@@ -343,6 +343,27 @@
   "consolePaused": "Paused",
   "consoleCopy": "Copy log",
   "consoleCopied": "Log copied",
+  "consoleViewDecoded": "Decoded",
+  "consoleViewBytes": "Bytes",
+  "consoleCopyAll": "Copy everything for diagnosis",
+  "consoleCopiedAll": "Copied: counters, notices, log and bytes",
+  "consoleLiveFromHere": "--- live from here ---",
+  "consoleNoBytes": "No bytes have crossed the link since the app was opened.",
+  "consoleBytesLegend": "← received from the BMS · → written by the app. Kept across connections.",
+  "consoleThisConnection": "This connection",
+  "consoleLastReading": "last reading {seconds} s ago",
+  "@consoleLastReading": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "consoleReportTitle": "Raw frame console",
+  "consoleReportNotices": "Notices, oldest first",
+  "consoleReportDecoded": "Decoded log",
+  "consoleReportBytes": "Bytes, oldest first",
+  "systemCountersThisConnection": "Frames and bytes count from the last connect. Drops, time disconnected and prods count from when the app was opened.",
   "tabHealth": "Health",
   "healthTitle": "What the manufacturer would rather not show you",
   "healthIntro": "These come from what the BMS already reports, cross-checked against itself. None of them is a figure the manufacturer publishes.",

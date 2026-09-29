@@ -788,6 +788,54 @@ class AppL10nEs extends AppL10n {
   String get consoleCopied => 'Registro copiado';
 
   @override
+  String get consoleViewDecoded => 'Decodificado';
+
+  @override
+  String get consoleViewBytes => 'Bytes';
+
+  @override
+  String get consoleCopyAll => 'Copiar todo para diagnóstico';
+
+  @override
+  String get consoleCopiedAll =>
+      'Copiado: contadores, avisos, registro y bytes';
+
+  @override
+  String get consoleLiveFromHere => '--- en vivo desde aquí ---';
+
+  @override
+  String get consoleNoBytes =>
+      'Todavía no pasó ningún byte por el enlace desde que se abrió la app.';
+
+  @override
+  String get consoleBytesLegend =>
+      '← recibido del BMS · → escrito por la app. Se conserva entre conexiones.';
+
+  @override
+  String get consoleThisConnection => 'Esta conexión';
+
+  @override
+  String consoleLastReading(int seconds) {
+    return 'última lectura hace $seconds s';
+  }
+
+  @override
+  String get consoleReportTitle => 'Consola de frames crudos';
+
+  @override
+  String get consoleReportNotices => 'Avisos, del más antiguo al más reciente';
+
+  @override
+  String get consoleReportDecoded => 'Registro decodificado';
+
+  @override
+  String get consoleReportBytes => 'Bytes, del más antiguo al más reciente';
+
+  @override
+  String get systemCountersThisConnection =>
+      'Frames y bytes cuentan desde la última conexión. Caídas, tiempo desconectado e insistencias cuentan desde que se abrió la app.';
+
+  @override
   String get tabHealth => 'Salud';
 
   @override

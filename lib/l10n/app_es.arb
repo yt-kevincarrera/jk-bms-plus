@@ -343,6 +343,27 @@
   "consolePaused": "Pausado",
   "consoleCopy": "Copiar registro",
   "consoleCopied": "Registro copiado",
+  "consoleViewDecoded": "Decodificado",
+  "consoleViewBytes": "Bytes",
+  "consoleCopyAll": "Copiar todo para diagnóstico",
+  "consoleCopiedAll": "Copiado: contadores, avisos, registro y bytes",
+  "consoleLiveFromHere": "--- en vivo desde aquí ---",
+  "consoleNoBytes": "Todavía no pasó ningún byte por el enlace desde que se abrió la app.",
+  "consoleBytesLegend": "← recibido del BMS · → escrito por la app. Se conserva entre conexiones.",
+  "consoleThisConnection": "Esta conexión",
+  "consoleLastReading": "última lectura hace {seconds} s",
+  "@consoleLastReading": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "consoleReportTitle": "Consola de frames crudos",
+  "consoleReportNotices": "Avisos, del más antiguo al más reciente",
+  "consoleReportDecoded": "Registro decodificado",
+  "consoleReportBytes": "Bytes, del más antiguo al más reciente",
+  "systemCountersThisConnection": "Frames y bytes cuentan desde la última conexión. Caídas, tiempo desconectado e insistencias cuentan desde que se abrió la app.",
   "tabHealth": "Salud",
   "healthTitle": "Lo que el fabricante no te muestra",
   "healthIntro": "Estos números salen de lo que el BMS ya informa, cruzados entre sí. Ninguno es un dato que el fabricante publique.",

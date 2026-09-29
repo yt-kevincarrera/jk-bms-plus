@@ -1387,6 +1387,90 @@ abstract class AppL10n {
   /// **'Registro copiado'**
   String get consoleCopied;
 
+  /// No description provided for @consoleViewDecoded.
+  ///
+  /// In es, this message translates to:
+  /// **'Decodificado'**
+  String get consoleViewDecoded;
+
+  /// No description provided for @consoleViewBytes.
+  ///
+  /// In es, this message translates to:
+  /// **'Bytes'**
+  String get consoleViewBytes;
+
+  /// No description provided for @consoleCopyAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Copiar todo para diagnóstico'**
+  String get consoleCopyAll;
+
+  /// No description provided for @consoleCopiedAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Copiado: contadores, avisos, registro y bytes'**
+  String get consoleCopiedAll;
+
+  /// No description provided for @consoleLiveFromHere.
+  ///
+  /// In es, this message translates to:
+  /// **'--- en vivo desde aquí ---'**
+  String get consoleLiveFromHere;
+
+  /// No description provided for @consoleNoBytes.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía no pasó ningún byte por el enlace desde que se abrió la app.'**
+  String get consoleNoBytes;
+
+  /// No description provided for @consoleBytesLegend.
+  ///
+  /// In es, this message translates to:
+  /// **'← recibido del BMS · → escrito por la app. Se conserva entre conexiones.'**
+  String get consoleBytesLegend;
+
+  /// No description provided for @consoleThisConnection.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta conexión'**
+  String get consoleThisConnection;
+
+  /// No description provided for @consoleLastReading.
+  ///
+  /// In es, this message translates to:
+  /// **'última lectura hace {seconds} s'**
+  String consoleLastReading(int seconds);
+
+  /// No description provided for @consoleReportTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Consola de frames crudos'**
+  String get consoleReportTitle;
+
+  /// No description provided for @consoleReportNotices.
+  ///
+  /// In es, this message translates to:
+  /// **'Avisos, del más antiguo al más reciente'**
+  String get consoleReportNotices;
+
+  /// No description provided for @consoleReportDecoded.
+  ///
+  /// In es, this message translates to:
+  /// **'Registro decodificado'**
+  String get consoleReportDecoded;
+
+  /// No description provided for @consoleReportBytes.
+  ///
+  /// In es, this message translates to:
+  /// **'Bytes, del más antiguo al más reciente'**
+  String get consoleReportBytes;
+
+  /// No description provided for @systemCountersThisConnection.
+  ///
+  /// In es, this message translates to:
+  /// **'Frames y bytes cuentan desde la última conexión. Caídas, tiempo desconectado e insistencias cuentan desde que se abrió la app.'**
+  String get systemCountersThisConnection;
+
   /// No description provided for @tabHealth.
   ///
   /// In es, this message translates to:

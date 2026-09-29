@@ -191,7 +191,14 @@ class _SystemTabState extends State<SystemTab> {
                   ? t.unknown
                   : t.systemMtuValue(service.negotiatedMtu!),
             ),
-            InfoRow(t.systemFramesOk, '${stats?.accepted ?? 0}'),
+            // The frame counters restart on every connect now and the three
+            // link-health rows below do not, so the section says which is
+            // which rather than leaving two periods side by side unmarked.
+            InfoRow(
+              t.systemFramesOk,
+              '${stats?.accepted ?? 0}',
+              hint: t.systemCountersThisConnection,
+            ),
             InfoRow(
               t.systemFramesBadChecksum,
               '${stats?.badChecksum ?? 0}',

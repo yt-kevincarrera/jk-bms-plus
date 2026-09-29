@@ -788,6 +788,53 @@ class AppL10nEn extends AppL10n {
   String get consoleCopied => 'Log copied';
 
   @override
+  String get consoleViewDecoded => 'Decoded';
+
+  @override
+  String get consoleViewBytes => 'Bytes';
+
+  @override
+  String get consoleCopyAll => 'Copy everything for diagnosis';
+
+  @override
+  String get consoleCopiedAll => 'Copied: counters, notices, log and bytes';
+
+  @override
+  String get consoleLiveFromHere => '--- live from here ---';
+
+  @override
+  String get consoleNoBytes =>
+      'No bytes have crossed the link since the app was opened.';
+
+  @override
+  String get consoleBytesLegend =>
+      '← received from the BMS · → written by the app. Kept across connections.';
+
+  @override
+  String get consoleThisConnection => 'This connection';
+
+  @override
+  String consoleLastReading(int seconds) {
+    return 'last reading $seconds s ago';
+  }
+
+  @override
+  String get consoleReportTitle => 'Raw frame console';
+
+  @override
+  String get consoleReportNotices => 'Notices, oldest first';
+
+  @override
+  String get consoleReportDecoded => 'Decoded log';
+
+  @override
+  String get consoleReportBytes => 'Bytes, oldest first';
+
+  @override
+  String get systemCountersThisConnection =>
+      'Frames and bytes count from the last connect. Drops, time disconnected and prods count from when the app was opened.';
+
+  @override
   String get tabHealth => 'Health';
 
   @override
