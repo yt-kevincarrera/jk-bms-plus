@@ -1573,12 +1573,13 @@ class AppL10nEn extends AppL10n {
       'This charge never got above 4.0 V per cell, so it says nothing about imbalance. It has to reach the top to be useful.';
 
   @override
-  String chargeOpensAtTop(int cell) {
-    return 'The cells were even and came apart at the end. That pattern is capacity mismatch rather than a loose connection: cell $cell fills before the others.';
+  String chargeOpensAtTop(int cell, int weak) {
+    return 'The cells were even and came apart at the end. That pattern is capacity mismatch rather than a loose connection: cell $cell fills before the others, and cell $weak is the one furthest behind.';
   }
 
   @override
-  String get chargeNone => 'No charge has been recorded yet';
+  String get chargeNone =>
+      'No charge of this pack has been recorded yet. One is recorded when the app is connected while it charges.';
 
   @override
   String get trendsTitle => 'Over time';
@@ -2204,7 +2205,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String chargeAlertTargetReached(String soc) {
-    return 'The battery reached $soc %';
+    return 'The battery reached $soc %, by the BMS';
   }
 
   @override
@@ -2438,10 +2439,11 @@ class AppL10nEn extends AppL10n {
   String get demoSpeedNormal => 'normal';
 
   @override
-  String get etaFull => 'Full in';
+  String get etaFull => 'Full in about';
 
   @override
-  String get etaTapering => 'approx., the current is already tailing off';
+  String get etaTapering =>
+      'the current is already tailing off, and the end takes longer';
 
   @override
   String get etaDone => 'It is full';
@@ -4364,11 +4366,12 @@ class AppL10nEn extends AppL10n {
 
   @override
   String alertNotificationBodyChargeTarget(String value) {
-    return 'The pack has reached the $value % you asked for.';
+    return 'The BMS reads $value %, what you asked for. That is its counter, not a measurement of the cells.';
   }
 
   @override
-  String get alertNotificationBodyChargeComplete => 'Charging has finished.';
+  String get alertNotificationBodyChargeComplete =>
+      'The highest cell is at the top and the charger is barely putting anything in: charging has finished.';
 
   @override
   String alertNotificationBodyChargeHot(String value) {
@@ -4805,4 +4808,27 @@ class AppL10nEn extends AppL10n {
   @override
   String get capacityUntrustedNote =>
       'The tagged ones do not count as a capacity. \"partial\": it ended before the cutoff. \"old\": it was closed on the BMS percentage, which is worked out against the configured capacity, so it handed that setting back rather than what the battery holds. \"charged part way\": current went in along the way.';
+
+  @override
+  String chargeGapNote(String minutes) {
+    return '$minutes min without a connection along the way: the BMS counted that part, not the app.';
+  }
+
+  @override
+  String get etaNearlyFull => 'Nearly full';
+
+  @override
+  String chargeTargetAtTop(String soc) {
+    return 'From $soc % this alert is the charge-finished one: the BMS counter gets there before the cells do, so it speaks when the highest cell is at the top and the current has dropped.';
+  }
+
+  @override
+  String alertsTempWarnHint(String limit) {
+    return 'Riding, it warns from here. Charging, from here or from $limit °C, whichever is lower: charging hotter damages the cells, so that limit is never raised.';
+  }
+
+  @override
+  String alertsDeltaWarnHint(String limit) {
+    return 'Riding, it warns from here. At the end of a charge, from here or from $limit mV, whichever is lower: up there the curve is steep and that gap is already a mismatch.';
+  }
 }

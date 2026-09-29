@@ -8,6 +8,7 @@ import '../../app_settings.dart';
 import '../../ble/waiting_diagnosis.dart';
 import '../../bms_service.dart';
 import '../../protocol/bms_brand.dart';
+import '../../metrics/charge_alerts.dart';
 import '../../metrics/charge_eta.dart';
 import '../../metrics/range_outlook.dart';
 import '../../metrics/soc_trust.dart';
@@ -695,8 +696,16 @@ Widget _chargeEta(AppL10n t, BmsSnapshot s, BmsService service) {
   // What the counter gets checked against. Both are allowed to be missing —
   // an empty cell list reads as 0 V, which is not a low cell, and the anchor
   // only exists once a settings frame has arrived.
+  // The last minute's current, not this frame's: the BMS repeats a value
+  // across frames and the charger wanders, and minutes computed off one
+  // reading jumped about with it.
+  final current =
+      ChargeEta.smoothedCurrent(
+        service.history.recent(const Duration(seconds: 60)),
+      ) ??
+      s.current;
   final eta = const ChargeEtaEstimator().estimate(
-    current: s.current,
+    current: current,
     soc: s.soc,
     capacityAh: capacity,
     highestCellVolts: s.cellVoltages.isEmpty ? null : s.maxCellVoltage,
@@ -705,23 +714,35 @@ Widget _chargeEta(AppL10n t, BmsSnapshot s, BmsService service) {
       cellOvp: service.lastSettings?.cellOvp,
     ),
   );
-  final left = eta.remaining;
+  final exact = eta.remaining;
   // No number and no reason to doubt one: nothing to say.
-  if (left == null && !eta.socLooksOptimistic) return const SizedBox.shrink();
+  if (exact == null && !eta.socLooksOptimistic && !eta.nearlyFull) {
+    return const SizedBox.shrink();
+  }
+  final left = exact == null || exact == Duration.zero
+      ? exact
+      : ChargeEta.rounded(exact);
 
   final String label;
-  if (eta.socLooksOptimistic || left == null) {
+  if (eta.socLooksOptimistic) {
     // Not "nearly there". At 99 % with the cells still low, the charge the
     // rider reported had two hours to run: "nearly there" is the same wrong
     // promise as "3 min", only vaguer. The subtitle below says why.
     label = t.etaCannotSay;
+  } else if (eta.nearlyFull || left == null) {
+    // The counter is at the top and the charger is still pushing more than
+    // a tapered current: not full, and no minutes left to divide.
+    label = t.etaNearlyFull;
   } else if (left == Duration.zero) {
     label = t.etaDone;
   } else if (left.inHours >= 1) {
-    label = '${left.inHours} h ${left.inMinutes % 60} min';
+    label = left.inMinutes % 60 == 0
+        ? '${left.inHours} h'
+        : '${left.inHours} h ${left.inMinutes % 60} min';
   } else {
     label = '${left.inMinutes} min';
   }
+  final hasTime = left != null && left != Duration.zero;
 
   return Padding(
     padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -741,9 +762,8 @@ Widget _chargeEta(AppL10n t, BmsSnapshot s, BmsService service) {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  left == Duration.zero || eta.socLooksOptimistic
-                      ? label
-                      : '${t.etaFull} $label',
+                  // Always "about": see [ChargeEta.rounded].
+                  hasTime ? '${t.etaFull} $label' : label,
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -758,7 +778,7 @@ Widget _chargeEta(AppL10n t, BmsSnapshot s, BmsService service) {
                       color: AppTheme.textFaint,
                     ),
                   )
-                else if (eta.isTapering && left != Duration.zero)
+                else if (eta.isTapering && hasTime)
                   Text(
                     t.etaTapering,
                     style: const TextStyle(
@@ -811,35 +831,74 @@ class _AlertBanner extends StatefulWidget {
   State<_AlertBanner> createState() => _AlertBannerState();
 }
 
+/// One alert as the banner shows it: the name it is muted under, whether it
+/// is the red kind, and its words.
+typedef _Shown = ({String key, bool critical, String Function(AppL10n) label});
+
 class _AlertBannerState extends State<_AlertBanner> {
-  StreamSubscription<RideAlert>? _sub;
-  RideAlert? _latest;
+  final List<StreamSubscription<Object?>> _subs = [];
+  _Shown? _latest;
   Timer? _clear;
 
   @override
   void initState() {
     super.initState();
-    _sub = widget.service.rideAlerts.listen((alert) {
-      if (!mounted) return;
-      setState(() => _latest = alert);
-      _clear?.cancel();
-      // Long enough to be seen at the next glance down, short enough that a
-      // stale warning is not still sitting there ten minutes later.
-      _clear = Timer(const Duration(minutes: 1), () {
-        if (mounted) setState(() => _latest = null);
-      });
+    // Riding alerts, charge alerts and the link going: all three. Only the
+    // first used to reach the screen, so a charge finishing or the cells
+    // spreading at the top with the app open in hand was a buzz with nothing
+    // on screen to say what it was about.
+    _subs
+      ..add(
+        widget.service.rideAlerts.listen(
+          (a) => _show((
+            key: a.name,
+            critical: a.isCritical,
+            label: (t) => _label(t, a),
+          )),
+        ),
+      )
+      ..add(
+        widget.service.chargeAlertStream.listen(
+          (a) => _show((
+            key: a.name,
+            critical: a.isProblem,
+            label: (t) => _chargeLabel(t, a),
+          )),
+        ),
+      )
+      ..add(
+        widget.service.linkLostAlerts.listen(
+          (_) => _show((
+            key: BmsService.linkLostAlertKey,
+            critical: true,
+            label: (t) => t.alertLinkLost,
+          )),
+        ),
+      );
+  }
+
+  void _show(_Shown alert) {
+    if (!mounted) return;
+    setState(() => _latest = alert);
+    _clear?.cancel();
+    // Long enough to be seen at the next glance down, short enough that a
+    // stale warning is not still sitting there ten minutes later.
+    _clear = Timer(const Duration(minutes: 1), () {
+      if (mounted) setState(() => _latest = null);
     });
   }
 
   @override
   void dispose() {
-    _sub?.cancel();
+    for (final s in _subs) {
+      s.cancel();
+    }
     _clear?.cancel();
     super.dispose();
   }
 
-  Future<void> _silence(AppL10n t, RideAlert alert) async {
-    await widget.settings.setAlertMuted(alert.name, true);
+  Future<void> _silence(AppL10n t, _Shown alert) async {
+    await widget.settings.setAlertMuted(alert.key, true);
     widget.service.mutedAlerts = widget.settings.mutedAlerts;
     if (!mounted) return;
     setState(() => _latest = null);
@@ -854,7 +913,7 @@ class _AlertBannerState extends State<_AlertBanner> {
     if (alert == null) return const SizedBox.shrink();
 
     final t = AppL10n.of(context);
-    final tone = alert.isCritical ? AppTheme.bad : AppTheme.watch;
+    final tone = alert.critical ? AppTheme.bad : AppTheme.watch;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -874,7 +933,7 @@ class _AlertBannerState extends State<_AlertBanner> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _label(t, alert),
+                    alert.label(t),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -919,5 +978,14 @@ class _AlertBannerState extends State<_AlertBanner> {
     RideAlert.criticalCharge => t.alertCriticalCharge,
     RideAlert.cellNearCutoff => t.alertCellNearCutoff,
     RideAlert.nearCurrentLimit => t.alertNearCurrentLimit,
+  };
+
+  String _chargeLabel(AppL10n t, ChargeAlert alert) => switch (alert) {
+    ChargeAlert.targetReached => t.chargeAlertTargetReached(
+      (widget.service.lastSnapshot?.soc ?? 0).toStringAsFixed(0),
+    ),
+    ChargeAlert.chargeComplete => t.chargeAlertComplete,
+    ChargeAlert.hotWhileCharging => t.chargeAlertHot,
+    ChargeAlert.spreadAtTop => t.chargeAlertSpread,
   };
 }

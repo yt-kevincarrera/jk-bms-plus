@@ -825,15 +825,18 @@
   "chargeWeakCell": "Celda que se queda atrás",
   "chargeBalancerTime": "Balanceador trabajando",
   "chargeNeverReachedTop": "Esta carga no llegó arriba de 4,0 V por celda, así que no dice nada del desbalance. Para que sirva hay que cargar hasta el tope.",
-  "chargeOpensAtTop": "Las celdas iban parejas y se abrieron al final. Ese patrón es capacidad desigual, no una conexión floja: la celda {cell} se llena antes que las demás.",
+  "chargeOpensAtTop": "Las celdas iban parejas y se abrieron al final. Ese patrón es capacidad desigual, no una conexión floja: la celda {cell} se llena antes que las demás, y la {weak} es la que va más atrás.",
   "@chargeOpensAtTop": {
     "placeholders": {
       "cell": {
         "type": "int"
+      },
+      "weak": {
+        "type": "int"
       }
     }
   },
-  "chargeNone": "Todavía no se ha grabado ninguna carga",
+  "chargeNone": "Todavía no hay ninguna carga grabada de esta batería. Se graba cuando la app está conectada mientras carga.",
   "trendsTitle": "Con el tiempo",
   "trendsConsumption": "Consumo por viaje",
   "trendsCapacity": "Capacidad medida",
@@ -1221,7 +1224,7 @@
   "chargeAlertsIntro": "Se carga de noche y nadie lo mira. Estos avisos existen para eso. Parar antes del tope no es superstición: la parte alta del rango es donde una celda de litio envejece más, así que si mañana no necesitas el pack entero, te conviene quedarte antes.",
   "chargeTarget": "Avisar al llegar a",
   "chargeTargetOff": "Desactivado",
-  "chargeAlertTargetReached": "La batería llegó al {soc} %",
+  "chargeAlertTargetReached": "La batería llegó al {soc} %, según el BMS",
   "chargeAlertComplete": "Carga terminada",
   "chargeAlertHot": "Se está calentando cargando",
   "chargeAlertSpread": "Las celdas se separan arriba",
@@ -1379,8 +1382,8 @@
   "demoSpeed": "Velocidad del simulador",
   "demoSpeedHint": "Acelera el tiempo del pack simulado. Un test de capacidad es una descarga entera: a velocidad normal son horas, y una función que tarda una tarde en llegar no se puede juzgar. La distancia y el GPS no se aceleran, así que el consumo aprendido sigue siendo realista.",
   "demoSpeedNormal": "normal",
-  "etaFull": "Lleno en",
-  "etaTapering": "aprox., ya va bajando la corriente",
+  "etaFull": "Lleno en aprox.",
+  "etaTapering": "ya va bajando la corriente, y el final tarda más",
   "etaDone": "Está lleno",
   "etaCannotSay": "No puedo decirlo",
   "etaCounterAhead": "el contador va por delante de las celdas, así que no doy minutos",
@@ -2800,7 +2803,7 @@
     }
   },
   "alertNotificationBodyLinkLost": "La app dejó de recibir lecturas de la batería. Si estabas vigilando una carga, ya no se está vigilando.",
-  "alertNotificationBodyChargeTarget": "La batería ha llegado al {value} % que pediste.",
+  "alertNotificationBodyChargeTarget": "El BMS marca {value} %, lo que pediste. Es su contador, no una medición de las celdas.",
   "@alertNotificationBodyChargeTarget": {
     "placeholders": {
       "value": {
@@ -2808,7 +2811,7 @@
       }
     }
   },
-  "alertNotificationBodyChargeComplete": "La carga ha terminado.",
+  "alertNotificationBodyChargeComplete": "La celda más alta está arriba y el cargador ya casi no mete corriente: la carga ha terminado.",
   "alertNotificationBodyChargeHot": "{value} °C mientras carga. Desenchufa y déjala enfriar.",
   "@alertNotificationBodyChargeHot": {
     "placeholders": {
@@ -3210,5 +3213,38 @@
   "capacityPartialTag": "parcial",
   "capacityLegacyTag": "antigua",
   "capacityChargedTag": "cargada a mitad",
-  "capacityUntrustedNote": "Las marcadas no cuentan como capacidad. «parcial»: terminó antes del corte. «antigua»: se cerró con el porcentaje del BMS, que se calcula contra la capacidad configurada, así que devolvía esa configuración y no lo que tiene la batería. «cargada a mitad»: entró corriente por el camino."
+  "capacityUntrustedNote": "Las marcadas no cuentan como capacidad. «parcial»: terminó antes del corte. «antigua»: se cerró con el porcentaje del BMS, que se calcula contra la capacidad configurada, así que devolvía esa configuración y no lo que tiene la batería. «cargada a mitad»: entró corriente por el camino.",
+  "chargeGapNote": "{minutes} min sin conexión por el camino: esa parte la contó el BMS, no la app.",
+  "@chargeGapNote": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "etaNearlyFull": "Casi lleno",
+  "chargeTargetAtTop": "Desde el {soc} % este aviso es el de carga terminada: el contador del BMS llega ahí antes que las celdas, así que avisa cuando la celda más alta está arriba y la corriente ya bajó.",
+  "@chargeTargetAtTop": {
+    "placeholders": {
+      "soc": {
+        "type": "String"
+      }
+    }
+  },
+  "alertsTempWarnHint": "Rodando avisa desde aquí. Cargando, desde aquí o desde {limit} °C, lo que sea menor: cargar más caliente daña las celdas, así que ese límite no se sube.",
+  "@alertsTempWarnHint": {
+    "placeholders": {
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "alertsDeltaWarnHint": "Rodando avisa desde aquí. Al final de la carga, desde aquí o desde {limit} mV, lo que sea menor: arriba la curva es empinada y esa diferencia ya es un desbalance.",
+  "@alertsDeltaWarnHint": {
+    "placeholders": {
+      "limit": {
+        "type": "String"
+      }
+    }
+  }
 }

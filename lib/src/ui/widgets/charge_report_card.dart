@@ -39,10 +39,16 @@ class ChargeReportCard extends StatelessWidget {
         InfoRow(
           t.chargeAdded,
           '${r.ahIn.toStringAsFixed(1)} Ah  ·  ${r.whIn.toStringAsFixed(0)} Wh',
-          hint: t.chargeFrom(
-            r.startSoc.toStringAsFixed(0),
-            r.endSoc.toStringAsFixed(0),
-          ),
+          hint: [
+            t.chargeFrom(
+              r.startSoc.toStringAsFixed(0),
+              r.endSoc.toStringAsFixed(0),
+            ),
+            // Across a drop the amp-hours are the BMS's own count; said, so
+            // the figure is not read as all the app's.
+            if (r.gapSeconds >= 60)
+              t.chargeGapNote((r.gapSeconds / 60).round().toString()),
+          ].join('\n'),
         ),
         InfoRow(t.chargeDeltaStart, r.deltaAtStart.toStringAsFixed(3)),
         if (r.reachedTop) ...[
@@ -92,7 +98,11 @@ class ChargeReportCard extends StatelessWidget {
                 ),
                 Expanded(
                   child: Text(
-                    t.chargeOpensAtTop(r.weakCellAtTop),
+                    // The cell that fills first is the one reading highest:
+                    // in series they all take the same current, so the one
+                    // with the least room gets to the top first. This used
+                    // to name the lowest cell as the one filling first.
+                    t.chargeOpensAtTop(r.strongCellAtTop, r.weakCellAtTop),
                     style: const TextStyle(
                       fontSize: 12.5,
                       height: 1.45,

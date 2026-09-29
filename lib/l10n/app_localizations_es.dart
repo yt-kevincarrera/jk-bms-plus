@@ -1578,12 +1578,13 @@ class AppL10nEs extends AppL10n {
       'Esta carga no llegó arriba de 4,0 V por celda, así que no dice nada del desbalance. Para que sirva hay que cargar hasta el tope.';
 
   @override
-  String chargeOpensAtTop(int cell) {
-    return 'Las celdas iban parejas y se abrieron al final. Ese patrón es capacidad desigual, no una conexión floja: la celda $cell se llena antes que las demás.';
+  String chargeOpensAtTop(int cell, int weak) {
+    return 'Las celdas iban parejas y se abrieron al final. Ese patrón es capacidad desigual, no una conexión floja: la celda $cell se llena antes que las demás, y la $weak es la que va más atrás.';
   }
 
   @override
-  String get chargeNone => 'Todavía no se ha grabado ninguna carga';
+  String get chargeNone =>
+      'Todavía no hay ninguna carga grabada de esta batería. Se graba cuando la app está conectada mientras carga.';
 
   @override
   String get trendsTitle => 'Con el tiempo';
@@ -2213,7 +2214,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String chargeAlertTargetReached(String soc) {
-    return 'La batería llegó al $soc %';
+    return 'La batería llegó al $soc %, según el BMS';
   }
 
   @override
@@ -2447,10 +2448,10 @@ class AppL10nEs extends AppL10n {
   String get demoSpeedNormal => 'normal';
 
   @override
-  String get etaFull => 'Lleno en';
+  String get etaFull => 'Lleno en aprox.';
 
   @override
-  String get etaTapering => 'aprox., ya va bajando la corriente';
+  String get etaTapering => 'ya va bajando la corriente, y el final tarda más';
 
   @override
   String get etaDone => 'Está lleno';
@@ -4387,11 +4388,12 @@ class AppL10nEs extends AppL10n {
 
   @override
   String alertNotificationBodyChargeTarget(String value) {
-    return 'La batería ha llegado al $value % que pediste.';
+    return 'El BMS marca $value %, lo que pediste. Es su contador, no una medición de las celdas.';
   }
 
   @override
-  String get alertNotificationBodyChargeComplete => 'La carga ha terminado.';
+  String get alertNotificationBodyChargeComplete =>
+      'La celda más alta está arriba y el cargador ya casi no mete corriente: la carga ha terminado.';
 
   @override
   String alertNotificationBodyChargeHot(String value) {
@@ -4827,4 +4829,27 @@ class AppL10nEs extends AppL10n {
   @override
   String get capacityUntrustedNote =>
       'Las marcadas no cuentan como capacidad. «parcial»: terminó antes del corte. «antigua»: se cerró con el porcentaje del BMS, que se calcula contra la capacidad configurada, así que devolvía esa configuración y no lo que tiene la batería. «cargada a mitad»: entró corriente por el camino.';
+
+  @override
+  String chargeGapNote(String minutes) {
+    return '$minutes min sin conexión por el camino: esa parte la contó el BMS, no la app.';
+  }
+
+  @override
+  String get etaNearlyFull => 'Casi lleno';
+
+  @override
+  String chargeTargetAtTop(String soc) {
+    return 'Desde el $soc % este aviso es el de carga terminada: el contador del BMS llega ahí antes que las celdas, así que avisa cuando la celda más alta está arriba y la corriente ya bajó.';
+  }
+
+  @override
+  String alertsTempWarnHint(String limit) {
+    return 'Rodando avisa desde aquí. Cargando, desde aquí o desde $limit °C, lo que sea menor: cargar más caliente daña las celdas, así que ese límite no se sube.';
+  }
+
+  @override
+  String alertsDeltaWarnHint(String limit) {
+    return 'Rodando avisa desde aquí. Al final de la carga, desde aquí o desde $limit mV, lo que sea menor: arriba la curva es empinada y esa diferencia ya es un desbalance.';
+  }
 }

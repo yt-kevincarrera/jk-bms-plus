@@ -943,6 +943,11 @@ class BmsRepository {
   Future<void> setDeviceName(String id, String name) =>
       db.updateDevice(id, DevicesCompanion(name: Value(name)));
 
+  /// Keeps the last finished charge with its pack, so the report is still
+  /// there after a restart.
+  Future<void> saveLastChargeReport(String id, String json) =>
+      db.updateDevice(id, DevicesCompanion(lastChargeJson: Value(json)));
+
   /// The rider stating what the pack was sold as. Sticks, and outranks the BMS.
   Future<void> setDeviceCatalogue(String id, double ah) => db.updateDevice(
     id,

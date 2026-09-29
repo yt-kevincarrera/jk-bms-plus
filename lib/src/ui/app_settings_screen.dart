@@ -6,6 +6,7 @@ import '../bms_service.dart';
 import '../protocol/bms_brand.dart';
 import '../metrics/charge_alerts.dart';
 import '../metrics/ride_alerts.dart';
+import '../pack/chemistry.dart';
 import '../update/update_service.dart';
 import 'locale_controller.dart';
 import 'theme.dart';
@@ -410,8 +411,13 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               title: t.alertsThresholdsTitle,
               intro: t.alertsThresholdsIntro,
               children: [
+                // Both of these also move the charging alerts, downwards
+                // only, and the hint says so: see [BmsService.applySettings].
                 _threshold(
                   label: t.alertsDeltaWarn,
+                  hint: t.alertsDeltaWarnHint(
+                    (ChargeAlerts.maxSpreadWarn * 1000).toStringAsFixed(0),
+                  ),
                   value: settings.alertDeltaWarn,
                   min: 0.030,
                   max: 0.300,
@@ -421,6 +427,9 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                 ),
                 _threshold(
                   label: t.alertsTempWarn,
+                  hint: t.alertsTempWarnHint(
+                    ChemistryLimits.hotChargeLimitCelsius.toStringAsFixed(0),
+                  ),
                   value: settings.alertTempWarn,
                   min: 35,
                   max: 75,
@@ -480,6 +489,24 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                     if (mounted) setState(() {});
                   },
                 ),
+                // A target up where the counter runs ahead of the cells is
+                // announced as the charge finishing. It used to be announced
+                // by nothing at all: the target alert refused anything at or
+                // above the completion level, and never said so.
+                if ((settings.chargeTargetSoc ?? 0) >=
+                    widget.service.chargeAlerts.completeSoc)
+                  Text(
+                    t.chargeTargetAtTop(
+                      widget.service.chargeAlerts.completeSoc.toStringAsFixed(
+                        0,
+                      ),
+                    ),
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      height: 1.4,
+                      color: AppTheme.textFaint,
+                    ),
+                  ),
                 const SizedBox(height: 4),
               ],
             ),
@@ -614,6 +641,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
   /// slider with no number on it is a guess.
   Widget _threshold({
     required String label,
+    String? hint,
     required double value,
     required double min,
     required double max,
@@ -636,6 +664,18 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           ),
         ],
       ),
+      if (hint != null)
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Text(
+            hint,
+            style: const TextStyle(
+              fontSize: 11.5,
+              height: 1.4,
+              color: AppTheme.textFaint,
+            ),
+          ),
+        ),
       Slider(
         value: value.clamp(min, max),
         min: min,

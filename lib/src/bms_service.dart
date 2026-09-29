@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'ble/ble_transport.dart';
 import 'ble/bms_link.dart';
@@ -2391,8 +2392,15 @@ class BmsService {
       return;
     }
     _linkLostWarned = true;
+    _linkLostController.add(null);
     _notify(key: linkLostAlertKey, words: linkLostText?.call(), critical: true);
   }
+
+  final _linkLostController = StreamController<void>.broadcast();
+
+  /// Fires when the link-lost alert is raised, for the on-screen banner. The
+  /// same moment, and the same gating, as the notification.
+  Stream<void> get linkLostAlerts => _linkLostController.stream;
 
   /// The name this alert is muted under. Not a [RideAlert]: it is not about a
   /// reading, it is about there being no readings.
@@ -2659,21 +2667,35 @@ class BmsService {
 
   Stream<ChargeAlert> get chargeAlertStream => _chargeAlertController.stream;
 
+  /// Where the top cell sits when this pack is full: the chemistry's mark, or
+  /// 30 mV under what the BMS requests charge to. Null when neither is known.
+  double? get fullCellVolts => ChemistryLimits.fullCellVoltsFor(
+    cutoffChemistry,
+    requestChargeVolts: _lastSettings?.cellRequestChargeVoltage,
+  );
+
   void _checkChargeAlerts(BmsSnapshot snapshot) {
-    for (final alert in chargeAlerts.evaluate(snapshot)) {
+    final raised = chargeAlerts.evaluate(
+      snapshot,
+      fullCellVolts: fullCellVolts,
+      capacityAh: _taperCapacityAh,
+    );
+    for (final alert in raised) {
       if (mutedAlerts.contains(alert.name)) continue;
+      // The stream is what the Now tab's banner listens to. It used to have
+      // no listener at all, so a charge alert with the app open in hand was
+      // a buzz with nothing on screen to say what it was about.
       _chargeAlertController.add(alert);
       // This is the case the whole notification channel exists for: a charge
       // finishing at three in the morning with the phone in another room.
+      // The alert channel is its own high-importance channel, separate from
+      // the foreground service, and posts whether or not a service is up;
+      // what keeps readings arriving with the screen off is the service.
       _notify(
         key: alert.name,
         words: chargeAlertText?.call(alert, snapshot),
         critical: alert.isProblem,
       );
-      // The notification the trip service already owns is the only way any of
-      // this reaches a phone in another room. It is only running during a
-      // ride, so on the bench this is a buzz and a banner; plugged in with the
-      // service up, it is a notification.
       if (hapticAlerts) {
         if (alert.isProblem) {
           HapticFeedback.heavyImpact();
@@ -2824,13 +2846,37 @@ class BmsService {
   /// Fires when a charge finishes with enough behind it to be worth reading.
   Stream<ChargeReport> get chargeReports => _chargeController.stream;
 
-  /// The most recent finished charge, for the screen to show on arrival.
-  ChargeReport? lastChargeReport;
+  /// The most recent finished charge of the pack connected now, for the
+  /// screen to show on arrival.
+  ///
+  /// Read back from the pack's stored row, so it survives a restart. It used
+  /// to live only in memory, and after one the card said no charge had ever
+  /// been recorded on a pack that had recorded many.
+  ChargeReport? get lastChargeReport {
+    final live = _liveChargeReport;
+    if (live != null && _liveChargeDevice == activeDeviceId) return live;
+    final json = activeDevice?.lastChargeJson;
+    if (json != _parsedChargeJson) {
+      _parsedChargeJson = json;
+      _parsedChargeReport = ChargeReport.tryParse(json);
+    }
+    return _parsedChargeReport;
+  }
+
+  ChargeReport? _liveChargeReport;
+  String? _liveChargeDevice;
+  String? _parsedChargeJson;
+  ChargeReport? _parsedChargeReport;
 
   void _watchCharging(BmsSnapshot snapshot) {
     final report = chargeRecorder.addSnapshot(snapshot);
     if (report == null) return;
-    lastChargeReport = report;
+    _liveChargeReport = report;
+    _liveChargeDevice = activeDeviceId;
+    final id = activeDeviceId;
+    if (id != null) {
+      unawaited(repository?.saveLastChargeReport(id, report.toJson()));
+    }
     _chargeController.add(report);
   }
 
@@ -2859,13 +2905,27 @@ class BmsService {
     // Where the alerts start speaking. The clearing thresholds move with
     // them, keeping the same gap, so an alert never becomes one that cannot
     // clear itself and chatters on every reading.
+    //
+    // The charge alerts follow them too, but only downwards. They used to
+    // ignore both sliders and sit at 45 degC and 60 mV whatever the rider
+    // chose. 45 is where charging starts doing damage, so a slider can bring
+    // the charging alert earlier and never later; 60 mV at the top of a
+    // charge is already a mismatch, so the same.
     if (alertDeltaWarn != null) {
       alerts.deltaWarn = alertDeltaWarn;
       alerts.deltaClear = alertDeltaWarn * 0.8;
+      chargeAlerts.spreadWarn = math.min(
+        alertDeltaWarn,
+        ChargeAlerts.maxSpreadWarn,
+      );
     }
     if (alertTempWarn != null) {
       alerts.tempWarn = alertTempWarn;
       alerts.tempClear = alertTempWarn - 5;
+      chargeAlerts.hotWarn = math.min(
+        alertTempWarn,
+        ChemistryLimits.hotChargeLimitCelsius,
+      );
     }
     if (alertLowChargeWarn != null) {
       alerts.lowChargeWarn = alertLowChargeWarn;
@@ -3069,6 +3129,8 @@ class BmsService {
     await _alertController.close();
     await _capacityController.close();
     await _chargeController.close();
+    await _chargeAlertController.close();
+    await _linkLostController.close();
   }
 }
 

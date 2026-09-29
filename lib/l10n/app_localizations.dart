@@ -2740,13 +2740,13 @@ abstract class AppL10n {
   /// No description provided for @chargeOpensAtTop.
   ///
   /// In es, this message translates to:
-  /// **'Las celdas iban parejas y se abrieron al final. Ese patrón es capacidad desigual, no una conexión floja: la celda {cell} se llena antes que las demás.'**
-  String chargeOpensAtTop(int cell);
+  /// **'Las celdas iban parejas y se abrieron al final. Ese patrón es capacidad desigual, no una conexión floja: la celda {cell} se llena antes que las demás, y la {weak} es la que va más atrás.'**
+  String chargeOpensAtTop(int cell, int weak);
 
   /// No description provided for @chargeNone.
   ///
   /// In es, this message translates to:
-  /// **'Todavía no se ha grabado ninguna carga'**
+  /// **'Todavía no hay ninguna carga grabada de esta batería. Se graba cuando la app está conectada mientras carga.'**
   String get chargeNone;
 
   /// No description provided for @trendsTitle.
@@ -3838,7 +3838,7 @@ abstract class AppL10n {
   /// No description provided for @chargeAlertTargetReached.
   ///
   /// In es, this message translates to:
-  /// **'La batería llegó al {soc} %'**
+  /// **'La batería llegó al {soc} %, según el BMS'**
   String chargeAlertTargetReached(String soc);
 
   /// No description provided for @chargeAlertComplete.
@@ -4240,13 +4240,13 @@ abstract class AppL10n {
   /// No description provided for @etaFull.
   ///
   /// In es, this message translates to:
-  /// **'Lleno en'**
+  /// **'Lleno en aprox.'**
   String get etaFull;
 
   /// No description provided for @etaTapering.
   ///
   /// In es, this message translates to:
-  /// **'aprox., ya va bajando la corriente'**
+  /// **'ya va bajando la corriente, y el final tarda más'**
   String get etaTapering;
 
   /// No description provided for @etaDone.
@@ -7389,13 +7389,13 @@ abstract class AppL10n {
   /// No description provided for @alertNotificationBodyChargeTarget.
   ///
   /// In es, this message translates to:
-  /// **'La batería ha llegado al {value} % que pediste.'**
+  /// **'El BMS marca {value} %, lo que pediste. Es su contador, no una medición de las celdas.'**
   String alertNotificationBodyChargeTarget(String value);
 
   /// No description provided for @alertNotificationBodyChargeComplete.
   ///
   /// In es, this message translates to:
-  /// **'La carga ha terminado.'**
+  /// **'La celda más alta está arriba y el cargador ya casi no mete corriente: la carga ha terminado.'**
   String get alertNotificationBodyChargeComplete;
 
   /// No description provided for @alertNotificationBodyChargeHot.
@@ -8065,6 +8065,36 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Las marcadas no cuentan como capacidad. «parcial»: terminó antes del corte. «antigua»: se cerró con el porcentaje del BMS, que se calcula contra la capacidad configurada, así que devolvía esa configuración y no lo que tiene la batería. «cargada a mitad»: entró corriente por el camino.'**
   String get capacityUntrustedNote;
+
+  /// No description provided for @chargeGapNote.
+  ///
+  /// In es, this message translates to:
+  /// **'{minutes} min sin conexión por el camino: esa parte la contó el BMS, no la app.'**
+  String chargeGapNote(String minutes);
+
+  /// No description provided for @etaNearlyFull.
+  ///
+  /// In es, this message translates to:
+  /// **'Casi lleno'**
+  String get etaNearlyFull;
+
+  /// No description provided for @chargeTargetAtTop.
+  ///
+  /// In es, this message translates to:
+  /// **'Desde el {soc} % este aviso es el de carga terminada: el contador del BMS llega ahí antes que las celdas, así que avisa cuando la celda más alta está arriba y la corriente ya bajó.'**
+  String chargeTargetAtTop(String soc);
+
+  /// No description provided for @alertsTempWarnHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Rodando avisa desde aquí. Cargando, desde aquí o desde {limit} °C, lo que sea menor: cargar más caliente daña las celdas, así que ese límite no se sube.'**
+  String alertsTempWarnHint(String limit);
+
+  /// No description provided for @alertsDeltaWarnHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Rodando avisa desde aquí. Al final de la carga, desde aquí o desde {limit} mV, lo que sea menor: arriba la curva es empinada y esa diferencia ya es un desbalance.'**
+  String alertsDeltaWarnHint(String limit);
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

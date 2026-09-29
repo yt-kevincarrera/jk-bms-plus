@@ -825,15 +825,18 @@
   "chargeWeakCell": "Cell falling behind",
   "chargeBalancerTime": "Balancer working",
   "chargeNeverReachedTop": "This charge never got above 4.0 V per cell, so it says nothing about imbalance. It has to reach the top to be useful.",
-  "chargeOpensAtTop": "The cells were even and came apart at the end. That pattern is capacity mismatch rather than a loose connection: cell {cell} fills before the others.",
+  "chargeOpensAtTop": "The cells were even and came apart at the end. That pattern is capacity mismatch rather than a loose connection: cell {cell} fills before the others, and cell {weak} is the one furthest behind.",
   "@chargeOpensAtTop": {
     "placeholders": {
       "cell": {
         "type": "int"
+      },
+      "weak": {
+        "type": "int"
       }
     }
   },
-  "chargeNone": "No charge has been recorded yet",
+  "chargeNone": "No charge of this pack has been recorded yet. One is recorded when the app is connected while it charges.",
   "trendsTitle": "Over time",
   "trendsConsumption": "Consumption per ride",
   "trendsCapacity": "Measured capacity",
@@ -1221,7 +1224,7 @@
   "chargeAlertsIntro": "Charging happens overnight and nobody watches it. That is what these are for. Stopping short of full is not superstition: the top of the range is where a lithium cell ages fastest, so if you do not need the whole pack tomorrow you are better off stopping early.",
   "chargeTarget": "Tell me at",
   "chargeTargetOff": "Off",
-  "chargeAlertTargetReached": "The battery reached {soc} %",
+  "chargeAlertTargetReached": "The battery reached {soc} %, by the BMS",
   "chargeAlertComplete": "Charging finished",
   "chargeAlertHot": "Getting hot while charging",
   "chargeAlertSpread": "Cells spreading apart at the top",
@@ -1379,8 +1382,8 @@
   "demoSpeed": "Simulator speed",
   "demoSpeedHint": "Speeds up the simulated pack. A capacity test is a whole discharge: at normal speed that is hours, and a feature that takes an afternoon to reach cannot be judged. Distance and GPS are not sped up, so the learned consumption stays realistic.",
   "demoSpeedNormal": "normal",
-  "etaFull": "Full in",
-  "etaTapering": "approx., the current is already tailing off",
+  "etaFull": "Full in about",
+  "etaTapering": "the current is already tailing off, and the end takes longer",
   "etaDone": "It is full",
   "etaCannotSay": "Cannot say",
   "etaCounterAhead": "the counter is ahead of the cells, so no minutes here",
@@ -2698,7 +2701,7 @@
     }
   },
   "alertNotificationBodyLinkLost": "The app stopped receiving readings from the battery. If you were watching a charge, nothing is watching it now.",
-  "alertNotificationBodyChargeTarget": "The pack has reached the {value} % you asked for.",
+  "alertNotificationBodyChargeTarget": "The BMS reads {value} %, what you asked for. That is its counter, not a measurement of the cells.",
   "@alertNotificationBodyChargeTarget": {
     "placeholders": {
       "value": {
@@ -2706,7 +2709,7 @@
       }
     }
   },
-  "alertNotificationBodyChargeComplete": "Charging has finished.",
+  "alertNotificationBodyChargeComplete": "The highest cell is at the top and the charger is barely putting anything in: charging has finished.",
   "alertNotificationBodyChargeHot": "{value} °C while charging. Unplug it and let it cool.",
   "@alertNotificationBodyChargeHot": {
     "placeholders": {
@@ -3070,5 +3073,38 @@
   "capacityPartialTag": "partial",
   "capacityLegacyTag": "old",
   "capacityChargedTag": "charged part way",
-  "capacityUntrustedNote": "The tagged ones do not count as a capacity. \"partial\": it ended before the cutoff. \"old\": it was closed on the BMS percentage, which is worked out against the configured capacity, so it handed that setting back rather than what the battery holds. \"charged part way\": current went in along the way."
+  "capacityUntrustedNote": "The tagged ones do not count as a capacity. \"partial\": it ended before the cutoff. \"old\": it was closed on the BMS percentage, which is worked out against the configured capacity, so it handed that setting back rather than what the battery holds. \"charged part way\": current went in along the way.",
+  "chargeGapNote": "{minutes} min without a connection along the way: the BMS counted that part, not the app.",
+  "@chargeGapNote": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "etaNearlyFull": "Nearly full",
+  "chargeTargetAtTop": "From {soc} % this alert is the charge-finished one: the BMS counter gets there before the cells do, so it speaks when the highest cell is at the top and the current has dropped.",
+  "@chargeTargetAtTop": {
+    "placeholders": {
+      "soc": {
+        "type": "String"
+      }
+    }
+  },
+  "alertsTempWarnHint": "Riding, it warns from here. Charging, from here or from {limit} °C, whichever is lower: charging hotter damages the cells, so that limit is never raised.",
+  "@alertsTempWarnHint": {
+    "placeholders": {
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "alertsDeltaWarnHint": "Riding, it warns from here. At the end of a charge, from here or from {limit} mV, whichever is lower: up there the curve is steep and that gap is already a mismatch.",
+  "@alertsDeltaWarnHint": {
+    "placeholders": {
+      "limit": {
+        "type": "String"
+      }
+    }
+  }
 }
