@@ -1173,14 +1173,17 @@ class _ConnectScreenState extends State<ConnectScreen> {
     // tap found it mute too. [FirstContact] judges from what actually happened.
     final contact = FirstContact(
       startedAt: DateTime.now(),
-      bytesBefore: widget.service.stats.bytesReceived,
+      // The lifetime total, not this connection's: the per-connection count
+      // restarts inside connect(), below, and would leave the baseline above
+      // everything the new pack sends.
+      bytesBefore: widget.service.bytesReceivedTotal,
     );
     final subs = <StreamSubscription<Object?>>[
       widget.service.linkState.listen(
         (state) => contact.onLinkState(state, DateTime.now()),
       ),
       widget.service.frameStats.listen(
-        (stats) => contact.onBytesTotal(stats.bytesReceived),
+        (_) => contact.onBytesTotal(widget.service.bytesReceivedTotal),
       ),
       widget.service.deviceInfo.listen((_) => contact.onDecoded()),
       widget.service.snapshots.listen((_) => contact.onDecoded()),

@@ -205,13 +205,17 @@ void main() {
     await link.deliver(deviceInfoFrames[1]);
     await link.deliver(cellInfo24s[0]);
     await pumpEventQueue();
-    final before = service.stats.bytesReceived;
+    // The baseline is the lifetime total, which the connect screen takes for
+    // exactly this reason. The per-connection figure restarts on connect,
+    // so it cannot be measured against a number taken before it.
+    final before = service.bytesReceivedTotal;
     await service.connect('ANT1', name: 'ANT-BLE16ZMUB');
     link.announce(BleLinkState.connected);
     final bad = Uint8List.fromList(antStatus16s)..[40] ^= 0xFF;
     await link.deliver(bad);
     await pumpEventQueue();
-    expect(service.stats.bytesReceived, before + bad.length);
+    expect(service.bytesReceivedTotal, before + bad.length);
+    expect(service.stats.bytesReceived, bad.length);
     expect(service.stats.badChecksum, greaterThan(0));
   });
 

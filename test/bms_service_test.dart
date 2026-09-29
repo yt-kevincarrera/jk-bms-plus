@@ -28,6 +28,8 @@ class FakeLink implements BmsLink {
   @override
   Stream<List<int>> get bytes => _bytes.stream;
   @override
+  Stream<List<int>> get writes => const Stream.empty();
+  @override
   Stream<BleLinkState> get state => _state.stream;
   @override
   Stream<BleLinkError> get errors => _errors.stream;

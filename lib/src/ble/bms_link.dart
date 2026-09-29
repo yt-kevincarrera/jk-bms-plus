@@ -61,6 +61,14 @@ abstract interface class BmsLink {
   /// Raw notification payloads, in arrival order.
   Stream<List<int>> get bytes;
 
+  /// Every frame written to the pack, once the write went through.
+  ///
+  /// So the console can show both sides of the conversation: a pack that
+  /// answers nothing is a different problem when it was never asked, and the
+  /// app had no way to show which. A transport that writes nothing (simulated,
+  /// captured bytes) never emits.
+  Stream<List<int>> get writes;
+
   Stream<BleLinkState> get state;
 
   Stream<BleLinkError> get errors;

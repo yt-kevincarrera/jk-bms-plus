@@ -27,6 +27,7 @@ class SwitchableLink implements BmsLink {
   BleTransport get real => _real;
 
   final _bytes = StreamController<List<int>>.broadcast();
+  final _writes = StreamController<List<int>>.broadcast();
   final _state = StreamController<BleLinkState>.broadcast();
   final _errors = StreamController<BleLinkError>.broadcast();
 
@@ -41,6 +42,8 @@ class SwitchableLink implements BmsLink {
 
   @override
   Stream<List<int>> get bytes => _bytes.stream;
+  @override
+  Stream<List<int>> get writes => _writes.stream;
   @override
   Stream<BleLinkState> get state => _state.stream;
   @override
@@ -111,6 +114,7 @@ class SwitchableLink implements BmsLink {
     _active = link;
     _subs.addAll([
       link.bytes.listen(_bytes.add),
+      link.writes.listen(_writes.add),
       link.state.listen(_state.add),
       link.errors.listen(_errors.add),
     ]);
@@ -125,6 +129,7 @@ class SwitchableLink implements BmsLink {
     await _simulator?.dispose();
     await _real.dispose();
     await _bytes.close();
+    await _writes.close();
     await _state.close();
     await _errors.close();
   }
@@ -135,6 +140,8 @@ class SwitchableLink implements BmsLink {
 class _Uninitialised implements BmsLink {
   @override
   Stream<List<int>> get bytes => const Stream.empty();
+  @override
+  Stream<List<int>> get writes => const Stream.empty();
   @override
   Stream<BleLinkState> get state => const Stream.empty();
   @override

@@ -5,6 +5,7 @@ import 'ble/bms_link.dart';
 import 'ble/link_script.dart';
 import 'ble/link_lost_alarm.dart';
 import 'ble/link_trouble.dart';
+import 'ble/link_traffic.dart';
 import 'ble/simulator/simulated_pack.dart';
 import 'ble/switchable_link.dart';
 import 'data/database.dart';
@@ -90,9 +91,12 @@ class BmsService {
   }) : _transport = transport ?? SwitchableLink(),
        _parser = parser,
        _locationFactory = locationFactory {
-    _assembler.onRejected = (_) => _statsController.add(stats);
+    _assembler.onRejected = _onJkRejected;
     _antAssembler.onRejected = _onAntRejected;
     _bytesSub = _transport.bytes.listen(_onBytes);
+    _writesSub = _transport.writes.listen(
+      (frame) => traffic.add(TrafficDirection.tx, frame),
+    );
     _stateSub = _transport.state.listen((s) {
       final was = lastLinkState;
       lastLinkState = s;
@@ -340,6 +344,7 @@ class BmsService {
   final _problemController = StreamController<String>.broadcast();
 
   late final StreamSubscription<List<int>> _bytesSub;
+  late final StreamSubscription<List<int>> _writesSub;
   late final StreamSubscription<BleLinkState> _stateSub;
   late final StreamSubscription<BleLinkError> _errorSub;
 
@@ -370,6 +375,15 @@ class BmsService {
   /// *after* a failed attempt, from a console that could not be opened while
   /// the attempt was running. Forty is a couple of failed connects' worth.
   final List<LinkNotice> recentNotices = [];
+
+  /// The bytes themselves, both ways, across connects, for the console.
+  ///
+  /// Like [recentNotices], never cleared on connect or disconnect: a failed
+  /// attempt ends in a disconnect, and what the pack sent during it is the
+  /// thing the console is opened to read. Recorded as the chunks arrive,
+  /// before anything decides what they are, so bytes no assembler could use
+  /// are there too.
+  final LinkTrafficLog traffic = LinkTrafficLog();
 
   void _remember(String text) {
     recentNotices.insert(0, LinkNotice(DateTime.now(), text));
@@ -414,6 +428,13 @@ class BmsService {
     antRejectedFrames = 0;
     lastDecodeError = null;
     recentProblems.clear();
+    // The frame tally too. It used to run for the life of the service while
+    // everything above restarted here, so the connect screen's evidence line
+    // could say "3000 frames ok · 0 cell info" about a pack that had sent
+    // nothing on this connection: the 3000 were the last pack's.
+    _assembler.stats.reset();
+    _antAssembler.stats.reset();
+    _bytesReceived = 0;
   }
 
   /// Last link state seen, so a screen built after the transition still shows
@@ -440,14 +461,15 @@ class BmsService {
   /// speak JK and have not been converted to the brand-neutral type yet.
   JkDeviceInfo? get jkDeviceInfo => _lastDeviceInfo?.jk;
   JkSettings? get lastSettings => _lastSettings;
-  /// Link quality counters: frame outcomes from the assembler the current
-  /// brand is read with, and bytes from the service's own total.
+  /// Link quality counters for this connection: frame outcomes from the
+  /// assembler the current brand is read with, and bytes from the service's
+  /// own count. All four restart on every connect, like [cellInfoFrames] and
+  /// the rest, so a line that prints them side by side describes one
+  /// connection.
   ///
   /// The byte count cannot come from an assembler. Each one counts only what
-  /// reached it, for the life of the service, so after a JK session an ANT
-  /// connection started below the JK figure; the connect screen, which
-  /// measures bytes against the total it saw before connecting, then reported
-  /// "0 bytes received" while an ANT was sending frames that failed their CRC.
+  /// reached it, so the chunk that switched the brand, eaten by the other
+  /// brand's probe, was missing from the new one's figure.
   /// One object, updated in place, so a screen holding it stays current.
   FrameStats get stats {
     final from =
@@ -462,9 +484,21 @@ class BmsService {
 
   final FrameStats _linkStats = FrameStats();
 
-  /// Every byte the link delivered, whichever brand it was read as, counted
-  /// before detection so the chunk that triggers a switch is counted too.
+  /// Every byte the link delivered on this connection, whichever brand it was
+  /// read as, counted before detection so the chunk that triggers a switch is
+  /// counted too.
   int _bytesReceived = 0;
+
+  /// Every byte the link has delivered since the service started, never
+  /// reset.
+  ///
+  /// For a caller that measures growth from a figure it took before calling
+  /// [connect]: the connect screen does, and a count that restarts inside
+  /// [connect] would put its baseline above everything the new pack sends.
+  /// After a JK session that is how an ANT sending frames that failed their
+  /// CRC was once reported as "0 bytes received".
+  int get bytesReceivedTotal => _bytesReceivedTotal;
+  int _bytesReceivedTotal = 0;
   int? get negotiatedMtu => _transport.negotiatedMtu;
 
   BmsSnapshot? _lastSnapshot;
@@ -524,6 +558,8 @@ class BmsService {
     // session would feed its JK frames to the ANT assembler and show nothing.
     _brandChosenByRider = false;
     _resetBrandEvidence();
+    // A connection like any other, so its counters start from nothing too.
+    _resetCounters();
     _useBrand(BmsBrand.jk);
     await link.useSimulator(scenario: scenario);
     // The simulated pack is a pack like any other as far as storage goes. It
@@ -906,6 +942,8 @@ class BmsService {
     // Counted before anything decides what the bytes are, so the evidence
     // that a pack is talking never depends on which brand it was taken for.
     _bytesReceived += chunk.length;
+    _bytesReceivedTotal += chunk.length;
+    traffic.add(TrafficDirection.rx, chunk);
     // The chunk that completed the other brand's frame was that frame's last
     // piece, already consumed by the probe. Handing it on as well would give
     // the newly chosen assembler a fragment with no head, which it can only
@@ -979,6 +1017,11 @@ class BmsService {
     _antAssembler.reset();
     _jkProbe.reset();
     _antProbe.reset();
+    // The brand read first threw away the new brand's bytes until the probe
+    // caught on, and wrote them down as its own rejections. They are worth
+    // having, but they must not leave the right brand less budget than a
+    // connection that started with it.
+    _rejectedNoted = 0;
     if (to == BmsBrand.ant) {
       // The JK timer asks with JK bytes. An ANT reads them as nothing, and a
       // pack that is being polled by its own script has no need of them.
@@ -1027,7 +1070,7 @@ class BmsService {
           // device-info request. The raw frame above is dropped until a pack
           // is active, so before then this row is the only trace of what the
           // pack said instead of the frames it was asked for.
-          _noteAntDiagnosis(
+          _noteDiagnosis(
             LinkEventKind.antDecodeFailed,
             'unrecognised fn=0x'
             '${frame.function.toRadixString(16).padLeft(2, '0')} '
@@ -1043,7 +1086,7 @@ class BmsService {
         if (decodeFailures == 1 || decodeFailures % 100 == 0) {
           _problem('Could not decode an ANT frame: ${e.message}');
         }
-        _noteAntDiagnosis(
+        _noteDiagnosis(
           LinkEventKind.antDecodeFailed,
           '${e.message} ${_hex(frame.bytes)}',
         );
@@ -1052,10 +1095,11 @@ class BmsService {
     _statsController.add(stats);
   }
 
-  /// Writes one ANT diagnosis row to LinkEvents, within this connection's
-  /// budget. The detail always ends in the frame's hex, as its last
-  /// space-separated token, so a backup can be replayed through the decoder.
-  void _noteAntDiagnosis(LinkEventKind kind, String detail) {
+  /// Writes one diagnosis row to LinkEvents, JK or ANT, within this
+  /// connection's budget. The detail always ends in the bytes' hex, as its
+  /// last space-separated token, so a backup can be replayed through the
+  /// decoder.
+  void _noteDiagnosis(LinkEventKind kind, String detail) {
     if (_rejectedNoted >= _rejectedNoteCap) return;
     _rejectedNoted++;
     unawaited(
@@ -1087,8 +1131,34 @@ class BmsService {
         RawBmsFrame.antRejected(r.bytes, DateTime.now().toUtc()),
       );
     }
-    _noteAntDiagnosis(
+    _noteDiagnosis(
       LinkEventKind.antFrameRejected,
+      '${r.reason.name} ${_hex(r.bytes)}',
+    );
+  }
+
+  /// Bytes the JK assembler threw away, written down the way ANT's are.
+  ///
+  /// JK had nothing like it: the assembler kept a count and dropped the
+  /// bytes, and a valid frame only reaches the raw-frame table once a pack is
+  /// active, which a pack that never decodes never becomes. A backup taken
+  /// after a failed JK connect held no byte the pack had sent.
+  ///
+  /// A failed checksum is written down whenever it happens, within the
+  /// budget: it is a frame arriving damaged. Bytes that never became a frame
+  /// are written down only until something on this connection has framed.
+  /// After that they are padding and the ends of frames a drop cut short,
+  /// which say nothing new, and noting them would spend the budget on every
+  /// healthy connection. Before it, they are the only trace of what a pack
+  /// that never decodes actually sent.
+  void _onJkRejected(JkRejected r) {
+    if (r.reason == FrameRejection.badChecksum) {
+      _statsController.add(stats);
+    } else if (_brandProved) {
+      return;
+    }
+    _noteDiagnosis(
+      LinkEventKind.jkFrameRejected,
       '${r.reason.name} ${_hex(r.bytes)}',
     );
   }
@@ -1111,7 +1181,7 @@ class BmsService {
           'exist (${reasons.join('; ')}). Not used; its bytes are kept.',
         );
       }
-      _noteAntDiagnosis(
+      _noteDiagnosis(
         LinkEventKind.antDecodeFailed,
         'implausible ${reasons.join('; ')} ${_hex(frame.bytes)}',
       );
@@ -1130,9 +1200,14 @@ class BmsService {
 
     final type = frame.type;
     if (type == null) {
-      _problem(
-        'Ignored a frame with unsupported record type '
-        '0x${frame.rawType.toRadixString(16).padLeft(2, '0')}.',
+      final code = frame.rawType.toRadixString(16).padLeft(2, '0');
+      _problem('Ignored a frame with unsupported record type 0x$code.');
+      // The raw frame above is dropped until a pack is active, and a pack
+      // that only ever sends this is never activated, so this row is the one
+      // trace of the frame it sent instead of the ones it was asked for.
+      _noteDiagnosis(
+        LinkEventKind.jkFrameUndecoded,
+        'unsupported type=0x$code ${_hex(frame.bytes)}',
       );
       return;
     }
@@ -1156,6 +1231,10 @@ class BmsService {
       }
     } on JkParseException catch (e) {
       _problem(e.message);
+      _noteDiagnosis(
+        LinkEventKind.jkFrameUndecoded,
+        '${e.message} ${_hex(frame.bytes)}',
+      );
     }
   }
 
@@ -2809,9 +2888,11 @@ class BmsService {
     await notifications.stop();
     await _stopLocation();
     await _bytesSub.cancel();
+    await _writesSub.cancel();
     await _stateSub.cancel();
     await _errorSub.cancel();
     await _transport.dispose();
+    await traffic.dispose();
     await _snapshotController.close();
     await _deviceInfoController.close();
     await _settingsController.close();

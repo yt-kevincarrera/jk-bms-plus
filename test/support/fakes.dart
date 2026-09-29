@@ -16,9 +16,15 @@ class FakeLink implements BmsLink {
   final _bytes = StreamController<List<int>>.broadcast();
   final _state = StreamController<BleLinkState>.broadcast();
   final _errors = StreamController<BleLinkError>.broadcast();
+  final _writes = StreamController<List<int>>.broadcast();
 
   @override
   Stream<List<int>> get bytes => _bytes.stream;
+  @override
+  Stream<List<int>> get writes => _writes.stream;
+
+  /// What the radio would report after a write went through.
+  void wrote(List<int> frame) => _writes.add(frame);
   @override
   Stream<BleLinkState> get state => _state.stream;
   @override
@@ -84,6 +90,7 @@ class FakeLink implements BmsLink {
   @override
   Future<void> dispose() async {
     await _bytes.close();
+    await _writes.close();
     await _state.close();
     await _errors.close();
   }

@@ -88,14 +88,63 @@ void main() {
       final corrupt = Uint8List.fromList(cellInfo24s[0]);
       corrupt[100] ^= 0xFF;
 
-      final rejections = <FrameRejection>[];
+      final rejections = <JkRejected>[];
       a.onRejected = rejections.add;
 
       final out = a.addChunk(corrupt);
       expect(out, isEmpty);
-      expect(rejections, [FrameRejection.badChecksum]);
+      expect(rejections.map((r) => r.reason), [FrameRejection.badChecksum]);
+      // The bytes come with it, so the frame can be written down whole.
+      expect(rejections.single.bytes, corrupt);
       expect(a.stats.badChecksum, 1);
       expect(a.stats.accepted, 0);
+    });
+
+    test('bytes with no preamble are handed over, not dropped silently', () {
+      // A pack that sends nothing JK at all used to leave no trace but a
+      // byte count. The last three bytes are kept back, because a preamble
+      // could be straddling the next chunk, and reported with it instead.
+      final a = build();
+      final rejections = <JkRejected>[];
+      a.onRejected = rejections.add;
+
+      a.addChunk([1, 2, 3, 4, 5, 6, 7, 8]);
+      expect(rejections.single.reason, FrameRejection.noPreamble);
+      expect(rejections.single.bytes, [1, 2, 3, 4, 5]);
+      expect(a.bufferedBytes, 3);
+      expect(a.stats.badChecksum, 0, reason: 'bytes are not a frame');
+    });
+
+    test('junk before a preamble and a truncated head are handed over', () {
+      final a = build();
+      final rejections = <JkRejected>[];
+      a.onRejected = rejections.add;
+
+      // In pieces, so the truncated head is still short of a whole frame
+      // when the next preamble shows up. Delivered together, the two add up
+      // to more than 300 bytes and the head is judged by its checksum.
+      a.addChunk([0x11, 0x22, ...cellInfo24s[0].sublist(0, 137)]);
+      a.addChunk(cellInfo24s[2].sublist(0, 100));
+      final out = a.addChunk(cellInfo24s[2].sublist(100));
+
+      expect(out, hasLength(1));
+      expect(rejections.map((r) => r.reason), [
+        FrameRejection.beforePreamble,
+        FrameRejection.truncated,
+      ]);
+      expect(rejections[0].bytes, [0x11, 0x22]);
+      expect(rejections[1].bytes, cellInfo24s[0].sublist(0, 137));
+    });
+
+    test('stats can be reset without touching the buffer', () {
+      final a = build();
+      a.addChunk(cellInfo24s[0]);
+      a.addChunk(cellInfo24s[1].sublist(0, 100));
+      a.stats.reset();
+      expect(a.stats.accepted, 0);
+      expect(a.stats.bytesReceived, 0);
+      expect(a.addChunk(cellInfo24s[1].sublist(100)), hasLength(1));
+      expect(a.stats.accepted, 1);
     });
 
     test('a corrupt frame costs exactly one frame, not the one after it', () {

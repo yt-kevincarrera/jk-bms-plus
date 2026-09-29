@@ -349,6 +349,11 @@ class BleTransport implements BmsLink {
   @override
   Stream<List<int>> get bytes => _bytesController.stream;
 
+  final _writesController = StreamController<List<int>>.broadcast();
+
+  @override
+  Stream<List<int>> get writes => _writesController.stream;
+
   @override
   Stream<BleLinkError> get errors => _errorController.stream;
 
@@ -1024,6 +1029,10 @@ class BleTransport implements BmsLink {
 
     try {
       await c.write(frame, withoutResponse: c.properties.writeWithoutResponse);
+      // After the write, not before: a write that failed says so through
+      // the errors stream, and showing its bytes as sent would claim
+      // something the radio never did.
+      if (!_writesController.isClosed) _writesController.add(frame);
     } on Exception catch (e) {
       _errorController.add(BleLinkError.from(e));
     }
@@ -1064,6 +1073,7 @@ class BleTransport implements BmsLink {
     await disconnect();
     await _stateController.close();
     await _bytesController.close();
+    await _writesController.close();
     await _errorController.close();
   }
 

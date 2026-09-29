@@ -102,4 +102,19 @@ enum LinkEventKind {
   /// Bytes starting AA 55 AA FF arrived: the pre-2021 ANT protocol, which the
   /// app does not read yet.
   oldAntProtocolSeen,
+
+  /// The JK assembler threw bytes away: a frame that failed its checksum, or,
+  /// before anything on the connection has framed, bytes that never became a
+  /// frame. Detail carries the reason and the hex, as [antFrameRejected]
+  /// does for ANT. Shares ANT's budget of 20 per connection.
+  ///
+  /// Exists because a JK that never decodes never becomes an active pack,
+  /// and raw frames are only kept for an active one: the connect that most
+  /// needed its bytes read afterwards was the one that kept none.
+  jkFrameRejected,
+
+  /// A checksum-valid JK frame whose record type the app has no decoder for,
+  /// or one the parser refused. Detail carries the type or the error, and the
+  /// hex.
+  jkFrameUndecoded,
 }

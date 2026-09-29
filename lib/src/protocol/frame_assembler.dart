@@ -22,8 +22,11 @@ class FrameAssembler {
   final BytesBuilder _buffer = BytesBuilder(copy: true);
   final FrameStats stats = FrameStats();
 
-  /// Called for every rejected frame, so the UI can show link quality.
-  void Function(FrameRejection reason)? onRejected;
+  /// Called for every rejected frame, so the UI can show link quality, and
+  /// for bytes dropped before they could become one, with the bytes, so they
+  /// can be written down. Only a bad checksum is counted in [stats]: the
+  /// rest were never a frame.
+  void Function(JkRejected rejected)? onRejected;
 
   /// Bytes currently held waiting for the rest of a frame. Exposed so tests
   /// and the System tab can confirm a bad link is not leaking memory.
@@ -52,15 +55,16 @@ class FrameAssembler {
         // No preamble anywhere. Keep only the last 3 bytes: a preamble could be
         // straddling the boundary with the next chunk.
         if (data.length > responsePreamble.length - 1) {
-          _replaceBuffer(
-            data.sublist(data.length - (responsePreamble.length - 1)),
-          );
+          final keep = data.length - (responsePreamble.length - 1);
+          _reject(FrameRejection.noPreamble, data.sublist(0, keep));
+          _replaceBuffer(data.sublist(keep));
         }
         return frames;
       }
 
       if (start > 0) {
         // Junk before the preamble (or the tail of a truncated frame). Drop it.
+        _reject(FrameRejection.beforePreamble, data.sublist(0, start));
         data = data.sublist(start);
         _replaceBuffer(data);
       }
@@ -70,6 +74,7 @@ class FrameAssembler {
         // have, the frame in front of it was truncated — skip to the new one.
         final next = _indexOfPreamble(data, responsePreamble.length);
         if (next != null) {
+          _reject(FrameRejection.truncated, data.sublist(0, next));
           _replaceBuffer(data.sublist(next));
           continue;
         }
@@ -86,7 +91,7 @@ class FrameAssembler {
 
       if (computed != declared) {
         stats.badChecksum++;
-        onRejected?.call(FrameRejection.badChecksum);
+        _reject(FrameRejection.badChecksum, candidate);
         // Resynchronise on the next preamble rather than blowing the whole
         // buffer away, so a single corrupt frame costs one frame, not two.
         final next = _indexOfPreamble(data, responsePreamble.length);
@@ -105,6 +110,9 @@ class FrameAssembler {
       _replaceBuffer(next == null ? Uint8List(0) : data.sublist(next));
     }
   }
+
+  void _reject(FrameRejection reason, Uint8List bytes) =>
+      onRejected?.call(JkRejected(reason, bytes));
 
   void _replaceBuffer(Uint8List data) {
     _buffer.clear();

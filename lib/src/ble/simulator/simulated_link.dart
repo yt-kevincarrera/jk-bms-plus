@@ -35,6 +35,10 @@ class SimulatedLink implements BmsLink {
 
   @override
   Stream<List<int>> get bytes => _bytes.stream;
+
+  /// Nothing, ever: the simulator streams on its own and is never written to.
+  @override
+  Stream<List<int>> get writes => const Stream.empty();
   @override
   Stream<BleLinkState> get state => _state.stream;
   @override
