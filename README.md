@@ -60,6 +60,11 @@ stored. Each says how many days of history is behind it.
 **Export.** Trips and readings as CSV, tracks as GPX, and the raw frames as hex
 so the history can be re-read if a byte offset here turns out to be wrong.
 
+**ANT BMS (2021 and later).** Read the same way as a JK, read-only: the app
+only ever sends the two ANT read requests. If a pack does not decode, connect
+for a minute, make a backup with raw frames and use it as a fixture in
+`test/ant_backup_replay_test.dart`.
+
 **Updates from inside the app.** There is no store, so the System tab asks
 GitHub whether a newer release exists and installs it if you say so. Nothing
 checks on a timer, nothing downloads on its own, and Android's own install
