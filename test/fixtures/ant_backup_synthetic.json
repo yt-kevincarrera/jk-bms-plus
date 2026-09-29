@@ -26,7 +26,14 @@
   "maintenance": [],
   "inspections": [],
   "baselines": [],
-  "linkEvents": [],
+  "linkEvents": [
+    {
+      "at": "2026-09-28T11:59:56.000Z",
+      "deviceId": "ANT1",
+      "kind": "antFrameRejected",
+      "detail": "badCrc 7ea11100008e05010210000000000000000080008001000000000000000000000000e40ce40ce50c1a0ce80ce70ce70ce60ce80ce70ce70ce70ce70ce70ce60ce90c0100020002000700a41403005b006400010100000076b010d5670e0fba324a000f00000010582e0200000000e90c1000e40c01000500e60c000080007a000f02f2fab98c3b00bbd85800da2d4300e8b649000543aa55"
+    }
+  ],
   "rawFrames": [
     {
       "deviceId": "ANT1",

@@ -15,6 +15,7 @@ void main() {
     int failures = 0,
     bool variantKnown = true,
     int rejected = 0,
+    int implausible = 0,
   }) => diagnoseWaiting(
     link: link,
     framesAccepted: accepted,
@@ -23,6 +24,7 @@ void main() {
     decodeFailures: failures,
     variantKnown: variantKnown,
     rejectedFrames: rejected,
+    implausibleFrames: implausible,
   );
 
   test('a link that is not up comes first, whatever else was seen', () {
@@ -77,6 +79,17 @@ void main() {
     expect(
       at(accepted: 10, cellInfo: 7, rejected: 3),
       WaitingReason.unexplained,
+    );
+  });
+
+  // An ANT status that decodes but fails plausibility is held back. There is
+  // no variant to pick for ANT, so it must not fall through to "everything
+  // worked": it is the pack's bytes not making sense, and says so.
+  test('an ANT whose readings are all held back as implausible is decoding '
+      'badly, not unexplained', () {
+    expect(
+      at(accepted: 10, cellInfo: 7, implausible: 7),
+      WaitingReason.decodeFailing,
     );
   });
 }

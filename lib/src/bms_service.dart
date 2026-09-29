@@ -727,9 +727,22 @@ class BmsService {
     // Strongest evidence first: what the rider just said, then what this pack
     // was last read as, then the advertised name. JK when nothing says
     // anything, because every pack this app knew before ANT was one.
-    final stored = (await repository?.device(deviceId))?.brand;
-    // A rider's answer that only repeats what the stored row already said is
-    // not a fresh claim, and the silence notice should not quote it back.
+    String? stored;
+    try {
+      stored = (await repository?.device(deviceId))?.brand;
+    } catch (e) {
+      // A database that cannot be read must not stop the pack from being
+      // read. The advertised name, then JK, still say something.
+      _problem('Could not read the stored brand for this pack: $e');
+    }
+    // The rider may have let go of this pack, or picked another one, while
+    // the stored row was being read. Connecting now would open a link
+    // nobody wants, or the wrong one.
+    if (_disconnectRequested || _pendingDeviceId != deviceId) return;
+    // The rider's answer only counts as the rider's claim for a pack with no
+    // stored brand. With a stored row it either repeats that row or
+    // overrules it; it is used either way, but the silence notice then
+    // speaks generally instead of quoting the rider back.
     _brandChosenByRider = brand != null && stored == null;
     _useBrand(
       brand ??
@@ -830,11 +843,12 @@ class BmsService {
       // likely the wrong brand, and saying so is the one hint that gets them
       // reading. A brand the app inferred gets the general explanation.
       final other = _brand == BmsBrand.ant ? 'JK' : 'ANT';
+      final article = _brand == BmsBrand.ant ? 'a' : 'an';
       _problem(
         _brandChosenByRider
             ? 'Connected, but no readings have arrived. You said this pack is '
-                  '${_brand.name.toUpperCase()}; if it is a $other, connect '
-                  'again and pick $other.'
+                  '${_brand.name.toUpperCase()}; if it is $article $other, '
+                  'connect again and pick $other.'
             : 'Connected, but no readings have arrived. Reading this BMS needs '
                   'no password, so this is not an authentication problem. The '
                   'usual causes are another client still holding the channel, '
@@ -1004,29 +1018,54 @@ class BmsService {
       try {
         if (frame.isStatus) {
           antStatusFrames++;
-          unawaited(_handleAntStatus(_antParser.parseStatus(frame)));
+          unawaited(_handleAntStatus(_antParser.parseStatus(frame), frame));
         } else if (frame.isDeviceInfo) {
           antInfoFrames++;
           _handleDeviceInfo(_antParser.parseDeviceInfo(frame));
+        } else {
+          // A valid frame this app does not read, such as a refusal of the
+          // device-info request. The raw frame above is dropped until a pack
+          // is active, so before then this row is the only trace of what the
+          // pack said instead of the frames it was asked for.
+          _noteAntDiagnosis(
+            LinkEventKind.antDecodeFailed,
+            'unrecognised fn=0x'
+            '${frame.function.toRadixString(16).padLeft(2, '0')} '
+            '${_hex(frame.bytes)}',
+          );
         }
       } on AntParseException catch (e) {
         decodeFailures++;
         lastDecodeError = e.message;
-        _problem('Could not decode an ANT frame: ${e.message}');
-        if (_rejectedNoted < _rejectedNoteCap) {
-          _rejectedNoted++;
-          unawaited(
-            repository?.note(
-                  LinkEventKind.antDecodeFailed,
-                  detail: '${e.message} ${_hex(frame.bytes)}',
-                  deviceId: activeDeviceId ?? _pendingDeviceId,
-                ) ??
-                Future.value(),
-          );
+        // Throttled like held-back frames: a pack whose every status fails
+        // to decode would otherwise post a line every two seconds and push
+        // every other notice out of the recent problems.
+        if (decodeFailures == 1 || decodeFailures % 100 == 0) {
+          _problem('Could not decode an ANT frame: ${e.message}');
         }
+        _noteAntDiagnosis(
+          LinkEventKind.antDecodeFailed,
+          '${e.message} ${_hex(frame.bytes)}',
+        );
       }
     }
     _statsController.add(stats);
+  }
+
+  /// Writes one ANT diagnosis row to LinkEvents, within this connection's
+  /// budget. The detail always ends in the frame's hex, as its last
+  /// space-separated token, so a backup can be replayed through the decoder.
+  void _noteAntDiagnosis(LinkEventKind kind, String detail) {
+    if (_rejectedNoted >= _rejectedNoteCap) return;
+    _rejectedNoted++;
+    unawaited(
+      repository?.note(
+            kind,
+            detail: detail,
+            deviceId: activeDeviceId ?? _pendingDeviceId,
+          ) ??
+          Future.value(),
+    );
   }
 
   /// A buffer the ANT assembler threw away.
@@ -1039,31 +1078,30 @@ class BmsService {
     antRejectedFrames++;
     lastDecodeError = r.reason.name;
     _statsController.add(stats);
-    if (_rejectedRawKept < _rejectedRawCap) {
+    // Counted only when there is a pack to file it under: the repository
+    // drops raw frames until then, and a budget spent on frames nobody kept
+    // would leave less for the ones that are.
+    if (activeDeviceId != null && _rejectedRawKept < _rejectedRawCap) {
       _rejectedRawKept++;
       repository?.addRawFrame(
         RawBmsFrame.antRejected(r.bytes, DateTime.now().toUtc()),
       );
     }
-    if (_rejectedNoted >= _rejectedNoteCap) return;
-    _rejectedNoted++;
-    unawaited(
-      repository?.note(
-            LinkEventKind.antFrameRejected,
-            detail: '${r.reason.name} ${_hex(r.bytes)}',
-            deviceId: activeDeviceId ?? _pendingDeviceId,
-          ) ??
-          Future.value(),
+    _noteAntDiagnosis(
+      LinkEventKind.antFrameRejected,
+      '${r.reason.name} ${_hex(r.bytes)}',
     );
   }
 
   static String _hex(List<int> b) =>
       b.map((x) => x.toRadixString(16).padLeft(2, '0')).join();
 
-  Future<void> _handleAntStatus(AntStatus status) async {
+  Future<void> _handleAntStatus(AntStatus status, AntFrame frame) async {
     // ANT has no framing to guess, so a reading that fails physics is not a
     // question of variant: it is a bad frame, and it is held back rather than
-    // shown. The raw bytes were already kept above.
+    // shown. Its raw frame is only stored once a pack is active, and a pack
+    // whose readings all fail never becomes active, so the bytes also go to
+    // LinkEvents, which keep them either way.
     final reasons = plausibility.reject(status.snapshot);
     if (reasons.isNotEmpty) {
       heldBackFrames++;
@@ -1073,6 +1111,10 @@ class BmsService {
           'exist (${reasons.join('; ')}). Not used; its bytes are kept.',
         );
       }
+      _noteAntDiagnosis(
+        LinkEventKind.antDecodeFailed,
+        'implausible ${reasons.join('; ')} ${_hex(frame.bytes)}',
+      );
       return;
     }
     _lastAntStatus = status;

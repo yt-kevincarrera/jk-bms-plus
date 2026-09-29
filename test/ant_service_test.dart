@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:drift/native.dart';
@@ -234,6 +235,95 @@ void main() {
     expect(service.recentProblems.first, contains('battery'));
   });
 
+  // A pack whose every reading fails plausibility never becomes active, and
+  // the repository keeps no raw frame without an active pack. The LinkEvents
+  // row is then the only copy of the bytes the decoder has to be fixed from.
+  test('an implausible ANT reading leaves its bytes in LinkEvents before the '
+      'pack is active', () async {
+    await service.connect('X', name: 'ANT-BLE16ZMUB');
+    link.announce(BleLinkState.connected);
+    final frame = antFrameWithCells(antStatus16s, 9999);
+    await link.deliver(frame);
+    await pumpEventQueue();
+    expect(service.activeDeviceId, isNull);
+    expect(service.heldBackFrames, 1);
+    final events = await service.repository!.recentLinkEvents();
+    final row = events.singleWhere(
+      (e) => e.kind == LinkEventKind.antDecodeFailed.name,
+    );
+    expect(row.detail, startsWith('implausible '));
+    expect(row.detail.split(' ').last, _hexOf(frame));
+  });
+
+  test('a valid ANT frame that is neither status nor device info is written '
+      'down with its function and bytes', () async {
+    await service.connect('X', name: 'ANT-BLE16ZMUB');
+    link.announce(BleLinkState.connected);
+    // A read reply for some other address, standing in for a refusal of the
+    // device-info request: CRC-valid, and nothing this app decodes.
+    final other = antFrame(0x12, 0x0000, const []);
+    await link.deliver(other);
+    await pumpEventQueue();
+    expect(link.framesHeard, 1);
+    final events = await service.repository!.recentLinkEvents();
+    final row = events.singleWhere(
+      (e) => e.kind == LinkEventKind.antDecodeFailed.name,
+    );
+    expect(row.detail, 'unrecognised fn=0x12 ${_hexOf(other)}');
+  });
+
+  test(
+    'rejected buffers before activation do not spend the raw-frame budget',
+    () async {
+      await service.connect('X', name: 'ANT-BLE16ZMUB');
+      link.announce(BleLinkState.connected);
+      final bad = Uint8List.fromList(antStatus16s)..[40] ^= 0xFF;
+      // More than the raw budget of 200, none of which could be stored.
+      for (var i = 0; i < 205; i++) {
+        await link.deliver(bad);
+      }
+      await link.deliver(antStatus16s);
+      await pumpEventQueue();
+      expect(service.activeDeviceId, 'X');
+      await repo.flush();
+      final before = await db.countRawFrames();
+      await link.deliver(bad);
+      await repo.flush();
+      expect(await db.countRawFrames(), before + 1);
+    },
+  );
+
+  test('a stored brand that cannot be read falls back to the name', () async {
+    final broken = _UnreadableRepo(database: db);
+    final own = FakeLink();
+    final s = BmsService(transport: own, locationFactory: StubLocation.new)
+      ..repository = broken;
+    addTearDown(s.dispose);
+    await s.connect('X', name: 'ANT-BLE16ZMUB');
+    expect(s.brand, BmsBrand.ant);
+    expect(own.scriptSet?.brand, BmsBrand.ant);
+    expect(s.recentProblems.first, contains('stored brand'));
+  });
+
+  test(
+    'a disconnect while the stored brand is read keeps the link closed',
+    () async {
+      final counting = _CountingLink();
+      final gated = _GatedRepo(database: db);
+      final s = BmsService(
+        transport: counting,
+        locationFactory: StubLocation.new,
+      )..repository = gated;
+      addTearDown(s.dispose);
+      final connecting = s.connect('X', name: 'ANT-BLE16ZMUB');
+      await pumpEventQueue();
+      await s.disconnect();
+      gated.gate.complete();
+      await connecting;
+      expect(counting.connects, 0);
+    },
+  );
+
   test('a link drop resets the ANT assembler', () async {
     await service.connect('X', name: 'ANT-BLE16ZMUB');
     link.announce(BleLinkState.connected);
@@ -290,7 +380,7 @@ void main() {
     await lonely.connect('X', name: 'Moto', brand: BmsBrand.ant);
     quiet.announce(BleLinkState.connected);
     await tester.pump(const Duration(seconds: 13));
-    expect(lonely.recentProblems.first, contains('JK'));
+    expect(lonely.recentProblems.first, contains('if it is a JK'));
     // Disposing awaits stream teardown that a fake clock never delivers.
     await tester.runAsync(lonely.dispose);
   });
@@ -301,6 +391,54 @@ void main() {
 class _NoRadio extends BleTransport {
   @override
   Future<void> connect(String deviceId) async {}
+}
+
+/// A repository whose device lookup fails, as a locked or damaged database
+/// would.
+class _UnreadableRepo extends BmsRepository {
+  _UnreadableRepo({required super.database});
+
+  @override
+  Future<Device?> device(String id) =>
+      Future.error(StateError('database is locked'));
+}
+
+/// A repository whose device lookup waits for the test to let it finish, so
+/// something can happen while connect() is waiting on it.
+class _GatedRepo extends BmsRepository {
+  _GatedRepo({required super.database});
+
+  final Completer<void> gate = Completer<void>();
+
+  @override
+  Future<Device?> device(String id) async {
+    await gate.future;
+    return super.device(id);
+  }
+}
+
+/// A fake link that counts connection attempts.
+class _CountingLink extends FakeLink {
+  int connects = 0;
+
+  @override
+  Future<void> connect(String deviceId) async => connects++;
+}
+
+String _hexOf(List<int> b) =>
+    b.map((x) => x.toRadixString(16).padLeft(2, '0')).join();
+
+/// A well-formed ANT frame for [function] and [address], CRC included.
+Uint8List antFrame(int function, int address, List<int> data) {
+  final b = Uint8List.fromList([
+    0x7E, 0xA1, function, address & 0xFF, address >> 8, data.length, //
+    ...data, 0, 0, 0xAA, 0x55,
+  ]);
+  final crcAt = 6 + data.length;
+  final crc = antCrc16(b, 1, crcAt);
+  b[crcAt] = crc & 0xFF;
+  b[crcAt + 1] = crc >> 8;
+  return b;
 }
 
 /// A copy of [f] with every cell set to [mv] and the CRC recomputed.

@@ -80,6 +80,9 @@ class _NowTabState extends State<NowTab> {
             decodeFailures: service.decodeFailures,
             variantKnown: true,
             rejectedFrames: service.antRejectedFrames,
+            // An ANT status held back is one that failed plausibility, which
+            // is the pack's bytes not making sense, not a variant to pick.
+            implausibleFrames: service.heldBackFrames,
           )
         : diagnoseWaiting(
             link: link,

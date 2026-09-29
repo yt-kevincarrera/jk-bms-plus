@@ -43,6 +43,12 @@ WaitingReason diagnoseWaiting({
   // or [decodeFailures] the way a JK cell info frame does. Left at its
   // default this changes nothing for JK, which never passes it.
   int rejectedFrames = 0,
+  // ANT readings that decoded but described a battery that could not exist,
+  // and were held back. For ANT that is a bad frame, not a missing variant,
+  // so it reads as frames failing to decode. Kept apart from
+  // [heldBackFrames], whose JK meaning is "waiting for a variant"; JK never
+  // passes this one.
+  int implausibleFrames = 0,
 }) {
   if (link != BleLinkState.connected) return WaitingReason.linkDown;
   if (framesAccepted == 0 && rejectedFrames == 0) return WaitingReason.noFrames;
@@ -55,6 +61,8 @@ WaitingReason diagnoseWaiting({
         : WaitingReason.onlyDeviceInfo;
   }
   if (!variantKnown && heldBackFrames > 0) return WaitingReason.variantUnknown;
-  if (decodeFailures > 0) return WaitingReason.decodeFailing;
+  if (decodeFailures > 0 || implausibleFrames > 0) {
+    return WaitingReason.decodeFailing;
+  }
   return WaitingReason.unexplained;
 }
