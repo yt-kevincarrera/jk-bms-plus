@@ -574,6 +574,96 @@ class AppL10nEn extends AppL10n {
   String get antBalancerTemp => 'Balancer temperature';
 
   @override
+  String antBatteryStateCode(String code) {
+    String _temp0 = intl.Intl.selectLogic(code, {
+      '0': 'Unknown',
+      '1': 'Idle',
+      '2': 'Charge',
+      '3': 'Discharge',
+      '4': 'Standby',
+      '5': 'Error',
+      'other': 'Unknown',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String antChargeMosfetCode(String code) {
+    String _temp0 = intl.Intl.selectLogic(code, {
+      '0': 'Off',
+      '1': 'On',
+      '2': 'Overcharge protection',
+      '3': 'Over current protection',
+      '4': 'Battery full',
+      '5': 'Total overpressure',
+      '6': 'Battery over temperature',
+      '7': 'MOSFET over temperature',
+      '8': 'Abnormal current',
+      '9': 'Balanced line dropped string',
+      '10': 'Motherboard over temperature',
+      '11': 'Reserved',
+      '12': 'Open failed',
+      '13': 'Discharge MOSFET abnormality',
+      '14': 'Waiting',
+      '15': 'Manually turned off',
+      '16': 'Two level exceed voltage',
+      '17': 'Low temperature protection',
+      '18': 'Voltage difference exceeded',
+      '19': 'Reserved',
+      '20': 'Self detect error',
+      'other': 'Unknown',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String antDischargeMosfetCode(String code) {
+    String _temp0 = intl.Intl.selectLogic(code, {
+      '0': 'Off',
+      '1': 'On',
+      '2': 'Overdischarge protection',
+      '3': 'Over current protection',
+      '4': 'Two current exceeded',
+      '5': 'Total pressure undervoltage',
+      '6': 'Battery over temperature',
+      '7': 'MOSFET over temperature',
+      '8': 'Abnormal current',
+      '9': 'Balanced line dropped string',
+      '10': 'Motherboard over temperature',
+      '11': 'Charge MOSFET on',
+      '12': 'Short circuit protection',
+      '13': 'Discharge MOSFET abnormality',
+      '14': 'Open failed',
+      '15': 'Manually turned off',
+      '16': 'Two level low voltage',
+      '17': 'Low temperature protection',
+      '18': 'Voltage difference exceeded',
+      '19': 'Self detect error',
+      'other': 'Unknown',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String antBalancerCode(String code) {
+    String _temp0 = intl.Intl.selectLogic(code, {
+      '0': 'Off',
+      '1': 'Exceeds the limit equilibrium',
+      '2': 'Charge differential pressure balance',
+      '3': 'Balanced over temperature',
+      '4': 'Automatic equalization',
+      '10': 'Motherboard over temperature',
+      'other': 'Unknown',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String antUnknownCode(String hex) {
+    return 'Unknown (0x$hex)';
+  }
+
+  @override
   String get systemConnectionTitle => 'Connection';
 
   @override

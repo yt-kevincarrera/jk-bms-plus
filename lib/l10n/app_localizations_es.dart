@@ -574,6 +574,96 @@ class AppL10nEs extends AppL10n {
   String get antBalancerTemp => 'Temperatura del balanceador';
 
   @override
+  String antBatteryStateCode(String code) {
+    String _temp0 = intl.Intl.selectLogic(code, {
+      '0': 'Desconocido',
+      '1': 'Inactiva',
+      '2': 'Cargando',
+      '3': 'Descargando',
+      '4': 'En espera',
+      '5': 'Error',
+      'other': 'Desconocido',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String antChargeMosfetCode(String code) {
+    String _temp0 = intl.Intl.selectLogic(code, {
+      '0': 'Apagado',
+      '1': 'Encendido',
+      '2': 'Protección por sobrecarga',
+      '3': 'Protección por sobrecorriente',
+      '4': 'Batería llena',
+      '5': 'Sobretensión del pack',
+      '6': 'Sobretemperatura de la batería',
+      '7': 'Sobretemperatura del MOSFET',
+      '8': 'Corriente anómala',
+      '9': 'Cable de balanceo desconectado',
+      '10': 'Sobretemperatura de la placa',
+      '11': 'Reservado',
+      '12': 'No se pudo encender',
+      '13': 'Fallo del MOSFET de descarga',
+      '14': 'En espera',
+      '15': 'Apagado manualmente',
+      '16': 'Sobretensión de segundo nivel',
+      '17': 'Protección por baja temperatura',
+      '18': 'Diferencia de voltaje excesiva',
+      '19': 'Reservado',
+      '20': 'Error de autodiagnóstico',
+      'other': 'Desconocido',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String antDischargeMosfetCode(String code) {
+    String _temp0 = intl.Intl.selectLogic(code, {
+      '0': 'Apagado',
+      '1': 'Encendido',
+      '2': 'Protección por sobredescarga',
+      '3': 'Protección por sobrecorriente',
+      '4': 'Sobrecorriente de segundo nivel',
+      '5': 'Subtensión del pack',
+      '6': 'Sobretemperatura de la batería',
+      '7': 'Sobretemperatura del MOSFET',
+      '8': 'Corriente anómala',
+      '9': 'Cable de balanceo desconectado',
+      '10': 'Sobretemperatura de la placa',
+      '11': 'MOSFET de carga encendido',
+      '12': 'Protección por cortocircuito',
+      '13': 'Fallo del MOSFET de descarga',
+      '14': 'No se pudo encender',
+      '15': 'Apagado manualmente',
+      '16': 'Subtensión de segundo nivel',
+      '17': 'Protección por baja temperatura',
+      '18': 'Diferencia de voltaje excesiva',
+      '19': 'Error de autodiagnóstico',
+      'other': 'Desconocido',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String antBalancerCode(String code) {
+    String _temp0 = intl.Intl.selectLogic(code, {
+      '0': 'Apagado',
+      '1': 'Balanceo por límite superado',
+      '2': 'Balanceo por diferencia de voltaje en carga',
+      '3': 'Sobretemperatura del balanceo',
+      '4': 'Balanceo automático',
+      '10': 'Sobretemperatura de la placa',
+      'other': 'Desconocido',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String antUnknownCode(String hex) {
+    return 'Desconocido (0x$hex)';
+  }
+
+  @override
   String get systemConnectionTitle => 'Conexión';
 
   @override

@@ -432,24 +432,43 @@ class _SystemTabState extends State<SystemTab> {
 
   /// What ANT reports that JK does not: MOSFET and balancer state in the
   /// pack's own vocabulary, and the balancer's temperature. Rebuilt from
-  /// every status frame, not just the one the snapshot stream carried, so it
-  /// never lags a fast-moving MOSFET code behind what the pack just did.
+  /// every plausible status, the same ones the readings come from: a status
+  /// held back as implausible never reaches it, so it cannot contradict the
+  /// numbers shown beside it.
   Widget _antStatusSection(AppL10n t, AntStatus st) => Section(
     title: t.antStatusTitle,
     children: [
       InfoRow(
         t.antBatteryState,
-        antText(antBatteryStateText, st.batteryState),
+        _antCode(
+          t,
+          antBatteryStateText,
+          t.antBatteryStateCode,
+          st.batteryState,
+        ),
       ),
       InfoRow(
         t.antChargeMosfet,
-        antText(antChargeMosfetText, st.chargeMosfetCode),
+        _antCode(
+          t,
+          antChargeMosfetText,
+          t.antChargeMosfetCode,
+          st.chargeMosfetCode,
+        ),
       ),
       InfoRow(
         t.antDischargeMosfet,
-        antText(antDischargeMosfetText, st.dischargeMosfetCode),
+        _antCode(
+          t,
+          antDischargeMosfetText,
+          t.antDischargeMosfetCode,
+          st.dischargeMosfetCode,
+        ),
       ),
-      InfoRow(t.antBalancer, antText(antBalancerText, st.balancerCode)),
+      InfoRow(
+        t.antBalancer,
+        _antCode(t, antBalancerText, t.antBalancerCode, st.balancerCode),
+      ),
       InfoRow(
         t.antBalancerTemp,
         '${st.balancerTemp.toStringAsFixed(0)} °C',
@@ -457,6 +476,18 @@ class _SystemTabState extends State<SystemTab> {
       ),
     ],
   );
+
+  /// An ANT state code in the rider's language. The English table stays the
+  /// authority on which codes exist, so the logs and this screen agree on
+  /// where the known codes end; past that, the code itself is shown.
+  static String _antCode(
+    AppL10n t,
+    List<String> table,
+    String Function(String code) text,
+    int code,
+  ) => code < table.length
+      ? text('$code')
+      : t.antUnknownCode(code.toRadixString(16).padLeft(2, '0'));
 
   Widget _proximitySection(AppL10n t) {
     final watcher = widget.proximity;

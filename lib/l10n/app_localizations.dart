@@ -1117,6 +1117,36 @@ abstract class AppL10n {
   /// **'Temperatura del balanceador'**
   String get antBalancerTemp;
 
+  /// No description provided for @antBatteryStateCode.
+  ///
+  /// In es, this message translates to:
+  /// **'{code, select, 0{Desconocido} 1{Inactiva} 2{Cargando} 3{Descargando} 4{En espera} 5{Error} other{Desconocido}}'**
+  String antBatteryStateCode(String code);
+
+  /// No description provided for @antChargeMosfetCode.
+  ///
+  /// In es, this message translates to:
+  /// **'{code, select, 0{Apagado} 1{Encendido} 2{Protección por sobrecarga} 3{Protección por sobrecorriente} 4{Batería llena} 5{Sobretensión del pack} 6{Sobretemperatura de la batería} 7{Sobretemperatura del MOSFET} 8{Corriente anómala} 9{Cable de balanceo desconectado} 10{Sobretemperatura de la placa} 11{Reservado} 12{No se pudo encender} 13{Fallo del MOSFET de descarga} 14{En espera} 15{Apagado manualmente} 16{Sobretensión de segundo nivel} 17{Protección por baja temperatura} 18{Diferencia de voltaje excesiva} 19{Reservado} 20{Error de autodiagnóstico} other{Desconocido}}'**
+  String antChargeMosfetCode(String code);
+
+  /// No description provided for @antDischargeMosfetCode.
+  ///
+  /// In es, this message translates to:
+  /// **'{code, select, 0{Apagado} 1{Encendido} 2{Protección por sobredescarga} 3{Protección por sobrecorriente} 4{Sobrecorriente de segundo nivel} 5{Subtensión del pack} 6{Sobretemperatura de la batería} 7{Sobretemperatura del MOSFET} 8{Corriente anómala} 9{Cable de balanceo desconectado} 10{Sobretemperatura de la placa} 11{MOSFET de carga encendido} 12{Protección por cortocircuito} 13{Fallo del MOSFET de descarga} 14{No se pudo encender} 15{Apagado manualmente} 16{Subtensión de segundo nivel} 17{Protección por baja temperatura} 18{Diferencia de voltaje excesiva} 19{Error de autodiagnóstico} other{Desconocido}}'**
+  String antDischargeMosfetCode(String code);
+
+  /// No description provided for @antBalancerCode.
+  ///
+  /// In es, this message translates to:
+  /// **'{code, select, 0{Apagado} 1{Balanceo por límite superado} 2{Balanceo por diferencia de voltaje en carga} 3{Sobretemperatura del balanceo} 4{Balanceo automático} 10{Sobretemperatura de la placa} other{Desconocido}}'**
+  String antBalancerCode(String code);
+
+  /// No description provided for @antUnknownCode.
+  ///
+  /// In es, this message translates to:
+  /// **'Desconocido (0x{hex})'**
+  String antUnknownCode(String hex);
+
   /// No description provided for @systemConnectionTitle.
   ///
   /// In es, this message translates to:

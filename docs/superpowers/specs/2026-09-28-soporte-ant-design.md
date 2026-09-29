@@ -345,7 +345,7 @@ MOSFET encendidos.
 ```
 
 Estado 14S/4T, 152 bytes, captura real. Esperado: 57.58 V, 0 A, SOC 96; una
-sonda lee -40 °C (`D8 FF`).
+sonda lee -40 °C (`D8 FF`), que es una entrada sin sonda conectada (§11.3).
 
 ```
 7E A1 11 00 00 8E 05 01 04 0E 02 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 11 10 11 10 11 10 11 10 11 10 11 10 11 10 11 10 11 10 11 10 11 10 11 10 11 10 11 10 1C 00 1C 00 D8 FF 1C 00 1C 00 1C 00 7E 16 00 00 60 00 64 00 01 02 00 00 80 C3 C9 01 4F 55 B3 01 08 53 00 00 00 00 00 00 6B 28 12 00 00 00 00 00 11 10 01 00 11 10 01 00 00 00 11 10 02 00 70 00 03 00 AC 02 F1 FA 7D 2E 00 00 94 77 00 00 DE 07 00 00 77 76 00 00 35 E2 AA 55
@@ -370,8 +370,9 @@ Casos:
 - **Ensamblador:** cada fixture entero, en trozos de 20 bytes y en trozos del
   MTU; el corte en la "U"; basura antes de `7E A1`; buffer que pasa de 192;
   CRC malo (se rechaza y se guarda como 0x00).
-- **Parser:** campo por campo contra los valores esperados; sonda -40 °C se
-  conserva como lectura (es plausible); corriente sin invertir.
+- **Parser:** campo por campo contra los valores esperados; una sonda a
+  exactamente -40 °C se marca como ausente (§11.3), oculta y sin alerta de
+  frío; corriente sin invertir.
 - **Alarmas:** cada fila de la tabla de §5.2 produce su bit; 0x00, 0x01, 0x0F
   y un código fuera de la tabla no producen ninguno.
 - **Servicio:** `FakeLink` en modo ANT hasta repository, historial y alertas;
