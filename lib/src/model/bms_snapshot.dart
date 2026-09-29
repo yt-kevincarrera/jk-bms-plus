@@ -112,28 +112,84 @@ class BmsSnapshot {
 
   static bool isAbsentProbe(double c) => (c - absentProbeCelsius).abs() < 0.05;
 
-  /// The probes that are actually wired up, with their position kept.
+  /// The probe slot that carries the MOSFET temperature again rather than a
+  /// battery probe, or null when none does.
+  ///
+  /// Measured, not assumed: on the rider's own JK-BD6A20S6P (JK02_32S) the
+  /// fifth slot reads exactly the MOSFET temperature in every captured frame
+  /// (30.0/30.0, 32.4/32.4, 36.0/36.0, 35.6/35.6) while the battery probes sit
+  /// a couple of degrees lower. Counted as a battery probe it doubled the
+  /// MOSFET on the thermal tab and let a warm switch raise "the pack is too
+  /// hot". The reference names that slot "temperature sensor 5" and gives no
+  /// hint it mirrors anything, so the rule is the evidence itself: on a
+  /// JK02_32S frame, slot 5 counts as the mirror when it equals the MOSFET to
+  /// the decimal the BMS reports.
+  ///
+  /// The cost, accepted: a board with a real fifth probe loses it for any
+  /// frame where it happens to read the same tenth of a degree as the MOSFET,
+  /// and gets it back on the next frame that differs. Losing a duplicate of a
+  /// reading still on screen is cheaper than inventing a battery probe.
+  int? get mosfetMirrorSlot {
+    const slot = 4;
+    final mosfet = mosfetTemp;
+    if (brand != BmsBrand.jk ||
+        variant != JkProtocolVariant.jk02_32s ||
+        mosfet == null ||
+        temperatures.length <= slot) {
+      return null;
+    }
+    return (temperatures[slot] - mosfet).abs() < 0.05 ? slot : null;
+  }
+
+  /// The battery probes that are actually wired up, with their position kept.
   ///
   /// Position matters: probe 3 reading nothing must not make probe 4 look like
-  /// probe 3. The index is the sensor number the BMS reported it at.
-  List<({int index, double celsius})> get connectedTemperatures => [
-        for (var i = 0; i < temperatures.length; i++)
-          if (isPlausibleTemperature(temperatures[i]))
-            (index: i, celsius: temperatures[i]),
-      ];
+  /// probe 3. The index is the sensor number the BMS reported it at. The slot
+  /// that only repeats the MOSFET ([mosfetMirrorSlot]) is not a probe and is
+  /// left out; the MOSFET is shown once, as itself.
+  List<({int index, double celsius})> get connectedTemperatures {
+    final mirror = mosfetMirrorSlot;
+    return [
+      for (var i = 0; i < temperatures.length; i++)
+        if (i != mirror && isPlausibleTemperature(temperatures[i]))
+          (index: i, celsius: temperatures[i]),
+    ];
+  }
 
-  /// Just the readings from probes that exist, for anything computing a
-  /// maximum, a minimum or an alert. Using the raw list would let a -200 C
-  /// non-reading trip a cold-battery warning.
-  List<double> get plausibleTemperatures =>
-      [for (final c in temperatures) if (isPlausibleTemperature(c)) c];
+  /// Just the readings from battery probes that exist, for anything computing
+  /// a maximum, a minimum or an alert about the pack. Using the raw list would
+  /// let a -200 C non-reading trip a cold-battery warning, and folding in the
+  /// MOSFET would call a warm switch a hot battery. The MOSFET is
+  /// [mosfetTemp], and anything about it says so.
+  List<double> get batteryTemperatures =>
+      [for (final p in connectedTemperatures) p.celsius];
+
+  /// The hottest battery probe, or null when no probe is fitted.
+  double? get hottestBatteryTemp {
+    final temps = batteryTemperatures;
+    return temps.isEmpty ? null : temps.reduce(math.max);
+  }
+
+  /// How many battery probe inputs the frame carries, fitted or not. The
+  /// MOSFET mirror slot is not an input.
+  int get probeInputCount =>
+      temperatures.length - (mosfetMirrorSlot == null ? 0 : 1);
 
   /// Probes the frame carried that are not wired to anything.
-
   List<int> get absentTemperatureProbes => [
         for (var i = 0; i < temperatures.length; i++)
           if (!isPlausibleTemperature(temperatures[i])) i,
       ];
+
+  /// A MOSFET reading worth a look, and one worth stopping for, in Celsius.
+  ///
+  /// Not the battery limits: the switches run hotter than the cells by
+  /// design, and their protection sits well above the cells' own. Past these
+  /// the BMS is still working, but it is the part that will cut the power
+  /// next. Where the BMS has stated its own MOSFET protection (a JK settings
+  /// frame does), the ride alert tracks that instead (see RideAlerts).
+  static const double mosfetWarmCelsius = 70;
+  static const double mosfetHotCelsius = 80;
 
   /// Raw bitmask at byte 182+offset.
   ///
@@ -289,6 +345,8 @@ class BmsSnapshot {
         'current': current,
         'power': power,
         'temperatures': temperatures,
+        'batteryTemperatures': batteryTemperatures,
+        'mosfetMirrorSlot': mosfetMirrorSlot,
         'temperatureSensorMask': temperatureSensorMask,
         'mosfetTemp': mosfetTemp,
         'soc': soc,

@@ -4641,4 +4641,43 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get alertTargetReachedShort => 'Llegó al objetivo que pusiste';
+
+  @override
+  String get alertBmsHot => 'El BMS está caliente';
+
+  @override
+  String get alertWhenBmsMosfet => 'El BMS (MOSFET)';
+
+  @override
+  String alertNotificationBodyBmsHot(String value) {
+    return 'El MOSFET del BMS está a $value °C. No es la batería: es la pieza que corta la corriente si sigue subiendo. Afloja y dale aire.';
+  }
+
+  @override
+  String statusBmsHotWatch(String temp) {
+    return 'BMS caliente: $temp °C';
+  }
+
+  @override
+  String statusBmsHotBad(String temp) {
+    return 'BMS demasiado caliente: $temp °C';
+  }
+
+  @override
+  String get adviceBmsHotTitle => 'El BMS está caliente';
+
+  @override
+  String adviceBmsHotBody(String temp) {
+    return 'Su MOSFET llegó a $temp °C. No es la batería, pero es la pieza que corta la corriente si sigue subiendo. Fíjate que el BMS tenga aire y no esté pegado a algo que dé calor.';
+  }
+
+  @override
+  String get evidenceMosfetTemp => 'MOSFET del BMS';
+
+  @override
+  String get thermalMirrorNote =>
+      'La sonda 5 de este BMS repite la temperatura del MOSFET, así que no se cuenta como sonda de la batería.';
+
+  @override
+  String get thermalLegendMosfet => 'MOSFET (sin sondas en la batería)';
 }

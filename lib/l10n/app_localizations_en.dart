@@ -4618,4 +4618,43 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get alertTargetReachedShort => 'Reached the level you set';
+
+  @override
+  String get alertBmsHot => 'The BMS is running hot';
+
+  @override
+  String get alertWhenBmsMosfet => 'The BMS (MOSFET)';
+
+  @override
+  String alertNotificationBodyBmsHot(String value) {
+    return 'The BMS MOSFET is at $value °C. Not the battery: it is the part that cuts the power if it keeps climbing. Ease off and give it air.';
+  }
+
+  @override
+  String statusBmsHotWatch(String temp) {
+    return 'BMS running warm: $temp °C';
+  }
+
+  @override
+  String statusBmsHotBad(String temp) {
+    return 'BMS too hot: $temp °C';
+  }
+
+  @override
+  String get adviceBmsHotTitle => 'The BMS is running hot';
+
+  @override
+  String adviceBmsHotBody(String temp) {
+    return 'Its MOSFET reached $temp °C. That is not the battery, but it is the part that cuts the power if it keeps climbing. Check the BMS has airflow and is not pressed against something warm.';
+  }
+
+  @override
+  String get evidenceMosfetTemp => 'BMS MOSFET';
+
+  @override
+  String get thermalMirrorNote =>
+      'Probe 5 on this BMS repeats the MOSFET temperature, so it is not counted as a battery probe.';
+
+  @override
+  String get thermalLegendMosfet => 'MOSFET (no battery probes)';
 }

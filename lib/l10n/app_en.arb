@@ -2899,5 +2899,43 @@
   "alertWhenRiding": "While riding",
   "alertWhenCharging": "While charging",
   "alertWhenTopOfCharge": "At the top of the charge",
-  "alertTargetReachedShort": "Reached the level you set"
+  "alertTargetReachedShort": "Reached the level you set",
+  "alertBmsHot": "The BMS is running hot",
+  "alertWhenBmsMosfet": "The BMS (MOSFET)",
+  "alertNotificationBodyBmsHot": "The BMS MOSFET is at {value} °C. Not the battery: it is the part that cuts the power if it keeps climbing. Ease off and give it air.",
+  "@alertNotificationBodyBmsHot": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "statusBmsHotWatch": "BMS running warm: {temp} °C",
+  "@statusBmsHotWatch": {
+    "placeholders": {
+      "temp": {
+        "type": "String"
+      }
+    }
+  },
+  "statusBmsHotBad": "BMS too hot: {temp} °C",
+  "@statusBmsHotBad": {
+    "placeholders": {
+      "temp": {
+        "type": "String"
+      }
+    }
+  },
+  "adviceBmsHotTitle": "The BMS is running hot",
+  "adviceBmsHotBody": "Its MOSFET reached {temp} °C. That is not the battery, but it is the part that cuts the power if it keeps climbing. Check the BMS has airflow and is not pressed against something warm.",
+  "@adviceBmsHotBody": {
+    "placeholders": {
+      "temp": {
+        "type": "String"
+      }
+    }
+  },
+  "evidenceMosfetTemp": "BMS MOSFET",
+  "thermalMirrorNote": "Probe 5 on this BMS repeats the MOSFET temperature, so it is not counted as a battery probe.",
+  "thermalLegendMosfet": "MOSFET (no battery probes)"
 }

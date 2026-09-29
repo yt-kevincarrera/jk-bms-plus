@@ -65,6 +65,7 @@ void main() {
     test('heat is heat, wherever it was found', () {
       for (final code in [
         AdviceCode.runningHot,
+        AdviceCode.bmsRunningHot,
         AdviceCode.inspectionHot,
         AdviceCode.configChargesWhenFrozen,
         AdviceCode.configColdCutoffOk,

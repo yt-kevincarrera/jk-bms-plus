@@ -177,12 +177,10 @@ class ChargeSessionRecorder {
     _endSoc = s.soc;
     _peakCurrent = math.max(_peakCurrent, s.current);
 
-    final temps = <double>[
-      ...s.plausibleTemperatures,
-      if (s.mosfetTemp != null) s.mosfetTemp!,
-    ];
-    if (temps.isNotEmpty) {
-      final hottest = temps.reduce(math.max);
+    // Battery probes only. The MOSFET runs hotter than the cells by design,
+    // and folding it in made every summary report the switch as the pack.
+    final hottest = s.hottestBatteryTemp;
+    if (hottest != null) {
       final before = _maxTemp;
       _maxTemp = before == null ? hottest : math.max(before, hottest);
     }

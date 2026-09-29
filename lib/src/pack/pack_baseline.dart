@@ -112,7 +112,7 @@ class PackBaseline {
     wireResistances: settings == null
         ? const []
         : List<double>.from(settings.connectionWireResistances),
-    temperatures: List<double>.from(snapshot.plausibleTemperatures),
+    temperatures: List<double>.from(snapshot.batteryTemperatures),
     packVoltage: snapshot.packVoltage,
     current: snapshot.current,
     soc: snapshot.soc,

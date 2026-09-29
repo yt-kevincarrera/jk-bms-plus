@@ -107,9 +107,11 @@ class ChargeAlerts {
       _charging = false;
     }
 
-    final temps = s.plausibleTemperatures;
-    if (temps.isNotEmpty &&
-        temps.reduce((a, b) => a > b ? a : b) >= hotWarn &&
+    // The battery, not the MOSFET: this is about the cells charging hot, and
+    // a warm switch next to cool cells is no reason to unplug.
+    final hottest = s.hottestBatteryTemp;
+    if (hottest != null &&
+        hottest >= hotWarn &&
         _raise(ChargeAlert.hotWhileCharging)) {
       out.add(ChargeAlert.hotWhileCharging);
     }

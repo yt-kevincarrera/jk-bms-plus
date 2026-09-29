@@ -782,6 +782,10 @@ String _statusMessage(AppL10n t, PackStatus status) {
       status.health == PackHealth.bad
           ? t.statusTempBad(v.toStringAsFixed(1))
           : t.statusTempWatch(v.toStringAsFixed(1)),
+    PackStatusReason.bmsHot =>
+      status.health == PackHealth.bad
+          ? t.statusBmsHotBad(v.toStringAsFixed(1))
+          : t.statusBmsHotWatch(v.toStringAsFixed(1)),
   };
 }
 
@@ -902,6 +906,7 @@ class _AlertBannerState extends State<_AlertBanner> {
     RideAlert.bmsFault => t.alertBmsFault,
     RideAlert.cellSpread => t.alertCellSpread,
     RideAlert.temperature => t.alertTemperature,
+    RideAlert.bmsHot => t.alertBmsHot,
     RideAlert.lowCharge => t.alertLowCharge,
     RideAlert.criticalCharge => t.alertCriticalCharge,
     RideAlert.cellNearCutoff => t.alertCellNearCutoff,

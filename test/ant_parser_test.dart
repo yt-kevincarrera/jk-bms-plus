@@ -77,7 +77,7 @@ void main() {
     test('an exact -40 degC is an unwired probe and is hidden', () {
       expect(s.temperatures[2], BmsSnapshot.absentProbeCelsius);
       expect(s.connectedTemperatures.map((t) => t.index), [0, 1, 3]);
-      expect(s.plausibleTemperatures, [28.0, 28.0, 28.0]);
+      expect(s.batteryTemperatures, [28.0, 28.0, 28.0]);
     });
     test('discharge MOSFET 0x02 is reported literally', () {
       expect(st.dischargeMosfetCode, 0x02);

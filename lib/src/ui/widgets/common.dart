@@ -476,8 +476,12 @@ enum PackStatusReason {
   /// The spread between the highest and lowest cell is wide.
   cellSpread,
 
-  /// Something is too hot.
+  /// A battery probe is too hot.
   temperature,
+
+  /// The BMS's MOSFET is too hot. Kept apart from [temperature] because it is
+  /// a different part with a different limit.
+  bmsHot,
 }
 
 /// The verdict every screen colours itself by, and the reason for it.
@@ -524,17 +528,26 @@ PackStatus packStatusOf(BmsSnapshot s) {
     );
   }
 
-  final temps = <double>[
-    ...s.temperatures,
-    if (s.mosfetTemp != null) s.mosfetTemp!,
-  ];
-  final hottest = temps.isEmpty ? 0.0 : temps.reduce(math.max);
+  // The battery and the BMS are judged apart. The MOSFET runs hotter than the
+  // cells by design, and folding it into one "hottest" told the rider a
+  // warm switch was a hot pack. The raw probe list is not used either: it
+  // carries the -200 C of an empty input and, on a JK02_32S, a copy of the
+  // MOSFET in slot 5.
+  final hottest = s.hottestBatteryTemp ?? double.negativeInfinity;
+  final mosfet = s.mosfetTemp ?? double.negativeInfinity;
 
   if (hottest > 55) {
     return PackStatus(
       health: PackHealth.bad,
       reason: PackStatusReason.temperature,
       value: hottest,
+    );
+  }
+  if (mosfet > BmsSnapshot.mosfetHotCelsius) {
+    return PackStatus(
+      health: PackHealth.bad,
+      reason: PackStatusReason.bmsHot,
+      value: mosfet,
     );
   }
   if (s.deltaCellVoltage > 0.10) {
@@ -549,6 +562,13 @@ PackStatus packStatusOf(BmsSnapshot s) {
       health: PackHealth.watch,
       reason: PackStatusReason.temperature,
       value: hottest,
+    );
+  }
+  if (mosfet > BmsSnapshot.mosfetWarmCelsius) {
+    return PackStatus(
+      health: PackHealth.watch,
+      reason: PackStatusReason.bmsHot,
+      value: mosfet,
     );
   }
   if (s.deltaCellVoltage > 0.04) {

@@ -592,12 +592,10 @@ class TripRecorder {
     if (s.current < 0) {
       _maxDischargeCurrent = math.max(_maxDischargeCurrent, -s.current);
     }
-    final temps = <double>[
-      ...s.plausibleTemperatures,
-      if (s.mosfetTemp != null) s.mosfetTemp!,
-    ];
-    if (temps.isNotEmpty) {
-      final hottest = temps.reduce(math.max);
+    // Battery probes only. The MOSFET runs hotter than the cells by design,
+    // and folding it in made every summary report the switch as the pack.
+    final hottest = s.hottestBatteryTemp;
+    if (hottest != null) {
       final before = _maxTemperature;
       _maxTemperature = before == null ? hottest : math.max(before, hottest);
     }

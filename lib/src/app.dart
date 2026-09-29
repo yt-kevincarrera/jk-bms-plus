@@ -267,15 +267,19 @@ class _JkBmsAppState extends State<JkBmsApp> {
                     (snapshot?.deltaCellVoltage ?? 0).toStringAsFixed(3),
                   ),
                 ),
+                // The value that tripped the alert: the hottest battery probe,
+                // which is what RideAlerts compares. The MOSFET has its own
+                // alert and its own words below.
                 RideAlert.temperature => (
                   t.alertTemperature,
                   t.alertNotificationBodyTemp(
-                    (snapshot?.plausibleTemperatures.isEmpty ?? true
-                            ? 0.0
-                            : snapshot!.plausibleTemperatures.reduce(
-                                (a, b) => a > b ? a : b,
-                              ))
-                        .toStringAsFixed(0),
+                    (snapshot?.hottestBatteryTemp ?? 0).toStringAsFixed(0),
+                  ),
+                ),
+                RideAlert.bmsHot => (
+                  t.alertBmsHot,
+                  t.alertNotificationBodyBmsHot(
+                    (snapshot?.mosfetTemp ?? 0).toStringAsFixed(0),
                   ),
                 ),
                 RideAlert.lowCharge => (
@@ -319,12 +323,7 @@ class _JkBmsAppState extends State<JkBmsApp> {
                 ChargeAlert.hotWhileCharging => (
                   t.chargeAlertHot,
                   t.alertNotificationBodyChargeHot(
-                    (snapshot?.plausibleTemperatures.isEmpty ?? true
-                            ? 0.0
-                            : snapshot!.plausibleTemperatures.reduce(
-                                (a, b) => a > b ? a : b,
-                              ))
-                        .toStringAsFixed(0),
+                    (snapshot?.hottestBatteryTemp ?? 0).toStringAsFixed(0),
                   ),
                 ),
                 ChargeAlert.spreadAtTop => (

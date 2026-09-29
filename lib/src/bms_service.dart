@@ -2155,6 +2155,9 @@ class BmsService {
       // battery's limit rather than a number picked here.
       dischargeLimitAmps: settings?.maxDischargeCurrent,
       chargeLimitAmps: settings?.maxChargeCurrent,
+      // Its own MOSFET protection, so the switch is warned about below the
+      // point where this board cuts the power.
+      mosfetOtpCelsius: settings?.mosfetOtp,
     );
     for (final alert in firing) {
       if (mutedAlerts.contains(alert.name)) continue;

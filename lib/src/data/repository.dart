@@ -61,10 +61,6 @@ class BmsRepository {
   void addSnapshot(BmsSnapshot s) {
     final device = activeDeviceId;
     if (device == null) return;
-    final temps = <double>[
-      ...s.plausibleTemperatures,
-      if (s.mosfetTemp != null) s.mosfetTemp!,
-    ];
     _pendingSnapshots.add(
       SnapshotsCompanion.insert(
         timestamp: s.timestamp,
@@ -82,9 +78,8 @@ class BmsRepository {
         deltaVolts: s.deltaCellVoltage,
         minCellVoltage: s.minCellVoltage,
         maxCellVoltage: s.maxCellVoltage,
-        maxTemperature: Value(
-          temps.isEmpty ? null : temps.reduce((a, b) => a > b ? a : b),
-        ),
+        // Battery probes only: the MOSFET has its own column.
+        maxTemperature: Value(s.hottestBatteryTemp),
         mosfetTemp: Value(s.mosfetTemp),
         warningsMask: s.warnings.raw,
         balancerActive: s.balancerActive,

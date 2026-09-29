@@ -7795,6 +7795,66 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Llegó al objetivo que pusiste'**
   String get alertTargetReachedShort;
+
+  /// No description provided for @alertBmsHot.
+  ///
+  /// In es, this message translates to:
+  /// **'El BMS está caliente'**
+  String get alertBmsHot;
+
+  /// No description provided for @alertWhenBmsMosfet.
+  ///
+  /// In es, this message translates to:
+  /// **'El BMS (MOSFET)'**
+  String get alertWhenBmsMosfet;
+
+  /// No description provided for @alertNotificationBodyBmsHot.
+  ///
+  /// In es, this message translates to:
+  /// **'El MOSFET del BMS está a {value} °C. No es la batería: es la pieza que corta la corriente si sigue subiendo. Afloja y dale aire.'**
+  String alertNotificationBodyBmsHot(String value);
+
+  /// No description provided for @statusBmsHotWatch.
+  ///
+  /// In es, this message translates to:
+  /// **'BMS caliente: {temp} °C'**
+  String statusBmsHotWatch(String temp);
+
+  /// No description provided for @statusBmsHotBad.
+  ///
+  /// In es, this message translates to:
+  /// **'BMS demasiado caliente: {temp} °C'**
+  String statusBmsHotBad(String temp);
+
+  /// No description provided for @adviceBmsHotTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'El BMS está caliente'**
+  String get adviceBmsHotTitle;
+
+  /// No description provided for @adviceBmsHotBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Su MOSFET llegó a {temp} °C. No es la batería, pero es la pieza que corta la corriente si sigue subiendo. Fíjate que el BMS tenga aire y no esté pegado a algo que dé calor.'**
+  String adviceBmsHotBody(String temp);
+
+  /// No description provided for @evidenceMosfetTemp.
+  ///
+  /// In es, this message translates to:
+  /// **'MOSFET del BMS'**
+  String get evidenceMosfetTemp;
+
+  /// No description provided for @thermalMirrorNote.
+  ///
+  /// In es, this message translates to:
+  /// **'La sonda 5 de este BMS repite la temperatura del MOSFET, así que no se cuenta como sonda de la batería.'**
+  String get thermalMirrorNote;
+
+  /// No description provided for @thermalLegendMosfet.
+  ///
+  /// In es, this message translates to:
+  /// **'MOSFET (sin sondas en la batería)'**
+  String get thermalLegendMosfet;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

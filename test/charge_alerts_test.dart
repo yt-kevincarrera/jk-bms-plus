@@ -76,6 +76,21 @@ void main() {
       expect(alerts, isNot(contains(ChargeAlert.hotWhileCharging)));
     });
 
+    test('a warm MOSFET next to cool cells is no reason to unplug', () {
+      // The alert is about the cells charging hot. A switch at 50 C is
+      // ordinary, and the cells here are at 25.
+      final a = ChargeAlerts();
+      final alerts = a.evaluate(
+        buildSnapshot(
+          soc: 70,
+          current: 12,
+          temperatures: [25.0, 24.0],
+          mosfetTemp: 50,
+        ),
+      );
+      expect(alerts, isNot(contains(ChargeAlert.hotWhileCharging)));
+    });
+
     test('flags a spread only up in the steep region', () {
       final a = ChargeAlerts();
 

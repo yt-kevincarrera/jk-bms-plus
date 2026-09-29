@@ -8,8 +8,14 @@ enum RideAlert {
   /// Cells have drifted far apart.
   cellSpread,
 
-  /// Something is too hot.
+  /// A battery probe is too hot.
   temperature,
+
+  /// The BMS's own MOSFET is too hot. Not the battery: a different part, a
+  /// different threshold and a different thing to do about it, and calling
+  /// it "the pack" had the rider stopping for a switch that runs hot by
+  /// design.
+  bmsHot,
 
   /// Charge is getting low.
   lowCharge,
@@ -55,6 +61,9 @@ class RideAlerts {
     this.criticalChargeWarn = 7,
     this.criticalChargeClear = 12,
     this.cellCutoffMargin = 0.10,
+    this.mosfetWarn = BmsSnapshot.mosfetHotCelsius,
+    this.mosfetOtpMargin = 10,
+    this.mosfetClearDrop = 5,
     this.nearLimitFraction = 0.95,
     this.nearLimitClearFraction = 0.85,
     this.minimumGap = const Duration(minutes: 2),
@@ -85,6 +94,23 @@ class RideAlerts {
   final double nearLimitFraction;
   final double nearLimitClearFraction;
 
+  /// Where the MOSFET alert trips when the BMS has not stated its own MOSFET
+  /// protection, and how far under that protection it trips when it has.
+  /// Clearing needs the MOSFET [mosfetClearDrop] degrees under the trip
+  /// point, so a reading hovering there does not chatter.
+  final double mosfetWarn;
+  final double mosfetOtpMargin;
+  final double mosfetClearDrop;
+
+  /// The MOSFET temperature this alert trips at, given the BMS's own MOSFET
+  /// protection when it reported one. A protection outside what a board
+  /// could plausibly be set to is ignored rather than trusted.
+  double mosfetTripFor(double? mosfetOtpCelsius) {
+    final otp = mosfetOtpCelsius;
+    if (otp != null && otp >= 50 && otp <= 150) return otp - mosfetOtpMargin;
+    return mosfetWarn;
+  }
+
   /// Even a genuinely new alert will not fire twice inside this window.
   final Duration minimumGap;
 
@@ -104,6 +130,7 @@ class RideAlerts {
     required double cutoffVoltagePerCell,
     double? dischargeLimitAmps,
     double? chargeLimitAmps,
+    double? mosfetOtpCelsius,
   }) {
     final firing = <RideAlert>[];
 
@@ -122,11 +149,11 @@ class RideAlerts {
       firing.add(alert);
     }
 
-    final temps = <double>[
-      ...s.plausibleTemperatures,
-      if (s.mosfetTemp != null) s.mosfetTemp!,
-    ];
-    final hottest = temps.isEmpty ? 0.0 : temps.reduce((a, b) => a > b ? a : b);
+    // Battery probes only. The MOSFET used to be folded in here, so a warm
+    // switch next to cool cells told the rider the pack was too hot to ride.
+    final hottest = s.hottestBatteryTemp;
+    final mosfet = s.mosfetTemp;
+    final mosfetTrip = mosfetTripFor(mosfetOtpCelsius);
 
     check(RideAlert.bmsFault, s.warnings.hasFault, !s.warnings.hasFault);
     check(
@@ -134,7 +161,16 @@ class RideAlerts {
       s.deltaCellVoltage > deltaWarn,
       s.deltaCellVoltage < deltaClear,
     );
-    check(RideAlert.temperature, hottest > tempWarn, hottest < tempClear);
+    check(
+      RideAlert.temperature,
+      hottest != null && hottest > tempWarn,
+      hottest == null || hottest < tempClear,
+    );
+    check(
+      RideAlert.bmsHot,
+      mosfet != null && mosfet >= mosfetTrip,
+      mosfet == null || mosfet < mosfetTrip - mosfetClearDrop,
+    );
     check(
       RideAlert.criticalCharge,
       s.soc <= criticalChargeWarn,

@@ -447,6 +447,10 @@ class _EvidenceRow extends StatelessWidget {
       t.evidenceHottestProbe,
       '${v.toStringAsFixed(1)} °C',
     ),
+    EvidenceKind.mosfetTemperature => (
+      t.evidenceMosfetTemp,
+      '${v.toStringAsFixed(1)} °C',
+    ),
     EvidenceKind.balanceStartVoltage => (
       t.evidenceBalanceStart,
       '${v.toStringAsFixed(2)} V',
@@ -578,6 +582,7 @@ String adviceTitle(AppL10n t, Advice advice) {
     AdviceCode.capacityBelowCatalogue => t.adviceCapacityBelowTitle,
     AdviceCode.noCapacityTestYet => t.adviceNoCapacityTestTitle,
     AdviceCode.runningHot => t.adviceRunningHotTitle,
+    AdviceCode.bmsRunningHot => t.adviceBmsHotTitle,
     AdviceCode.balancerNeverSeen => t.adviceBalancerNeverSeenTitle,
     AdviceCode.overvoltageSetHigh => t.adviceOvervoltageHighTitle,
     AdviceCode.rangeStillLearning => t.adviceRangeLearningTitle,
@@ -702,6 +707,7 @@ String adviceBody(AppL10n t, Advice advice) {
     ),
     AdviceCode.noCapacityTestYet => t.adviceNoCapacityTestBody,
     AdviceCode.runningHot => t.adviceRunningHotBody(v.toStringAsFixed(1)),
+    AdviceCode.bmsRunningHot => t.adviceBmsHotBody(v.toStringAsFixed(1)),
     AdviceCode.balancerNeverSeen => t.adviceBalancerNeverSeenBody(
       v.toStringAsFixed(2),
     ),

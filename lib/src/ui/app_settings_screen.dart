@@ -44,6 +44,7 @@ alertGroups(AppL10n t) => [
     heading: t.alertGroupHeat,
     items: [
       (name: RideAlert.temperature.name, label: t.alertWhenRiding),
+      (name: RideAlert.bmsHot.name, label: t.alertWhenBmsMosfet),
       (name: ChargeAlert.hotWhileCharging.name, label: t.alertWhenCharging),
     ],
   ),

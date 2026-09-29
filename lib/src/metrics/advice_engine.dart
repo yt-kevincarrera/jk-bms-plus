@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import '../model/bms_snapshot.dart';
 import '../model/jk_settings.dart';
 import 'cell_drift.dart';
@@ -73,8 +71,12 @@ enum AdviceCode {
   /// Nothing has ever been measured end to end.
   noCapacityTestYet,
 
-  /// The pack is running hot.
+  /// A battery probe is running hot.
   runningHot,
+
+  /// The BMS's MOSFET is running hot. Its own code, because it is not the
+  /// battery and the advice about it is not the advice about cells.
+  bmsRunningHot,
 
   /// The balancer has never been seen working despite a wide delta.
   balancerNeverSeen,
@@ -228,6 +230,7 @@ enum EvidenceKind {
   catalogueCapacity,
   capacityTests,
   hottestProbe,
+  mosfetTemperature,
   balanceStartVoltage,
   cellOvp,
   learnedKm,
@@ -339,6 +342,8 @@ class VerdictThresholds {
     this.catalogueShortfall = 0.12,
     this.hotWatchCelsius = 45,
     this.hotProblemCelsius = 55,
+    this.mosfetWatchCelsius = BmsSnapshot.mosfetWarmCelsius,
+    this.mosfetProblemCelsius = BmsSnapshot.mosfetHotCelsius,
     this.balancerDelta = 0.030,
     this.cellOvpMax = 4.22,
     this.strandedFraction = 0.08,
@@ -371,6 +376,11 @@ class VerdictThresholds {
 
   final double hotWatchCelsius;
   final double hotProblemCelsius;
+
+  /// The same two lines for the BMS's MOSFET, which runs hotter than the
+  /// cells by design.
+  final double mosfetWatchCelsius;
+  final double mosfetProblemCelsius;
 
   /// Delta above which a balancer that has never run is worth a remark.
   final double balancerDelta;
@@ -694,12 +704,11 @@ class AdviceEngine {
     }
 
     // --- Right now ---
-    final temps = <double>[
-      ...snapshot.plausibleTemperatures,
-      if (snapshot.mosfetTemp != null) snapshot.mosfetTemp!,
-    ];
-    if (temps.isNotEmpty) {
-      final hottest = temps.reduce(math.max);
+    // The battery and the BMS apart. "Heat is what ages a cell fastest" is
+    // about cells, and it used to be said about the MOSFET, which runs hotter
+    // than the cells by design.
+    final hottest = snapshot.hottestBatteryTemp;
+    if (hottest != null) {
       if (hottest > th.hotWatchCelsius) {
         advice.add(
           Advice(
@@ -712,6 +721,19 @@ class AdviceEngine {
           ),
         );
       }
+    }
+    final mosfet = snapshot.mosfetTemp;
+    if (mosfet != null && mosfet > th.mosfetWatchCelsius) {
+      advice.add(
+        Advice(
+          code: AdviceCode.bmsRunningHot,
+          level: mosfet > th.mosfetProblemCelsius
+              ? AdviceLevel.problem
+              : AdviceLevel.watch,
+          value: mosfet,
+          evidence: [Evidence(EvidenceKind.mosfetTemperature, value: mosfet)],
+        ),
+      );
     }
 
     // A balancer that has never been seen working while the pack sits wide open

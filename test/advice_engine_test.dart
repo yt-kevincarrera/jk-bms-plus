@@ -247,6 +247,27 @@ void main() {
       );
     });
 
+    test('a hot MOSFET is the BMS running hot, not the pack', () {
+      // "Heat is what ages a lithium cell fastest" used to be said about a
+      // MOSFET at 60 C next to cells at 25. The cells are fine; the switch
+      // gets its own line, and only once it is hot for a switch.
+      final ordinary = run(snapshot: snap(mosfetTemp: 60));
+      expect(has(ordinary, AdviceCode.runningHot), isFalse);
+      expect(has(ordinary, AdviceCode.bmsRunningHot), isFalse);
+
+      final warm = run(snapshot: snap(mosfetTemp: 75));
+      expect(has(warm, AdviceCode.runningHot), isFalse);
+      expect(
+        warm.firstWhere((a) => a.code == AdviceCode.bmsRunningHot).level,
+        AdviceLevel.watch,
+      );
+      final hot = run(snapshot: snap(mosfetTemp: 85));
+      expect(
+        hot.firstWhere((a) => a.code == AdviceCode.bmsRunningHot).level,
+        AdviceLevel.problem,
+      );
+    });
+
     test('flags a balancer that has never run and cannot', () {
       final cells = List.filled(20, 3.90);
       cells[6] = 3.84;

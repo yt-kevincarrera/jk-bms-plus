@@ -343,9 +343,9 @@ class InspectionSession {
         step: _step,
         current: s.current,
         cells: List<double>.from(s.cellVoltages),
-        maxTemperature: s.plausibleTemperatures.isEmpty
-            ? null
-            : s.plausibleTemperatures.reduce((a, b) => a > b ? a : b),
+        // Battery probes only: "the pack was hot at rest" must not be the
+        // MOSFET talking.
+        maxTemperature: s.hottestBatteryTemp,
         faults: [for (final w in s.warnings.faults) w.name],
       ),
     );

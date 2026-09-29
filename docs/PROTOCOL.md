@@ -93,16 +93,23 @@ MOSFET sensor and bits 1..5 for probes 1..5. The captured JK02_24S frames report
 readings (19.0, 19.1 and 21.0 °C).
 
 So either the polarity is inverted (it is a *present* mask) or the label is
-wrong. **Nothing is filtered on this field.** It is carried through raw as
-`BmsSnapshot.temperatureSensorMask`. Do not use it to hide readings until this
-is settled.
+wrong. The rider's JK02_32S reports `0xFF` with two probes fitted and two
+inputs empty, which fits neither reading. **Nothing is filtered on this
+field.** It is carried through raw as `BmsSnapshot.temperatureSensorMask`. Do
+not use it to hide readings until this is settled.
+
+It is one byte. Byte 183, right after it, is the heater flag; the parser used
+to read 182 as a u16 and so folded the heater into the mask (0x1FF instead of
+0xFF with the heater on).
 
 What *is* settled, measured on the real pack (JK-BD6A20S6P, sw 20.20, two
 probes fitted): **an input with no probe on it reads raw `-2000`, i.e.
 -200.0 °C.** The JK02_32S framing carries five probe inputs, and on this pack
 inputs 3 and 4 always carry the sentinel (the fifth slot repeats the MOSFET
-temperature on this firmware, which is worth knowing before trusting it as a
-sixth sensor). It is named
+temperature on this firmware, exactly, in every captured frame; the app treats
+slot 5 on a JK02_32S frame as that mirror whenever it equals the MOSFET to the
+tenth of a degree, see `BmsSnapshot.mosfetMirrorSlot`, and keeps it out of
+every battery figure). The sentinel is named
 `BmsSnapshot.absentProbeCelsius` and recognised in two places: the screens
 hide it, and the plausibility rules behind variant probing ignore it. The
 second was missing until 2026-09-11 and the prober rejected the pack's own

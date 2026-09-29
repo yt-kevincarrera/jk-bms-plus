@@ -66,6 +66,7 @@ AdviceSubject? subjectOf(AdviceCode code) => switch (code) {
 
   // --- Temperature: heat and cold, wherever they were found ---
   AdviceCode.runningHot ||
+  AdviceCode.bmsRunningHot ||
   AdviceCode.inspectionHot ||
   AdviceCode.configChargesWhenFrozen ||
   AdviceCode.configColdCutoffOk ||

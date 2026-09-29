@@ -3039,5 +3039,43 @@
   "alertWhenRiding": "Rodando",
   "alertWhenCharging": "Cargando",
   "alertWhenTopOfCharge": "Al final de la carga",
-  "alertTargetReachedShort": "Llegó al objetivo que pusiste"
+  "alertTargetReachedShort": "Llegó al objetivo que pusiste",
+  "alertBmsHot": "El BMS está caliente",
+  "alertWhenBmsMosfet": "El BMS (MOSFET)",
+  "alertNotificationBodyBmsHot": "El MOSFET del BMS está a {value} °C. No es la batería: es la pieza que corta la corriente si sigue subiendo. Afloja y dale aire.",
+  "@alertNotificationBodyBmsHot": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "statusBmsHotWatch": "BMS caliente: {temp} °C",
+  "@statusBmsHotWatch": {
+    "placeholders": {
+      "temp": {
+        "type": "String"
+      }
+    }
+  },
+  "statusBmsHotBad": "BMS demasiado caliente: {temp} °C",
+  "@statusBmsHotBad": {
+    "placeholders": {
+      "temp": {
+        "type": "String"
+      }
+    }
+  },
+  "adviceBmsHotTitle": "El BMS está caliente",
+  "adviceBmsHotBody": "Su MOSFET llegó a {temp} °C. No es la batería, pero es la pieza que corta la corriente si sigue subiendo. Fíjate que el BMS tenga aire y no esté pegado a algo que dé calor.",
+  "@adviceBmsHotBody": {
+    "placeholders": {
+      "temp": {
+        "type": "String"
+      }
+    }
+  },
+  "evidenceMosfetTemp": "MOSFET del BMS",
+  "thermalMirrorNote": "La sonda 5 de este BMS repite la temperatura del MOSFET, así que no se cuenta como sonda de la batería.",
+  "thermalLegendMosfet": "MOSFET (sin sondas en la batería)"
 }
