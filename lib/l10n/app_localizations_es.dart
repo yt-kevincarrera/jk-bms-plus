@@ -5415,4 +5415,35 @@ class AppL10nEs extends AppL10n {
   String nowChargePhase(String phase) {
     return 'fase: $phase';
   }
+
+  @override
+  String get profileBaselineNoteAdd => 'Añadir una nota';
+
+  @override
+  String get profileBaselineNoteEdit => 'Editar la nota';
+
+  @override
+  String get profileBaselineNoteTitle => 'Nota del día uno';
+
+  @override
+  String get profileBaselineNoteHint =>
+      'De dónde vino, qué dijo el vendedor, lo que costó.';
+
+  @override
+  String get profileBaselineRedo => 'Rehacer el día uno';
+
+  @override
+  String get profileBaselineRedoTitle => '¿Rehacer el día uno?';
+
+  @override
+  String profileBaselineRedoBody(String date) {
+    return 'Se borra el día uno guardado el $date y se guarda uno nuevo con la lectura y la configuración del BMS de ahora. Todo lo que la app compara «desde el día uno» vuelve a empezar hoy. La nota se conserva. No se puede deshacer, y conviene hacerlo con la batería en reposo.';
+  }
+
+  @override
+  String get profileBaselineRedoConfirm => 'Borrar y guardar el nuevo';
+
+  @override
+  String get profileBaselineRedone =>
+      'Día uno guardado de nuevo, con la lectura de ahora.';
 }

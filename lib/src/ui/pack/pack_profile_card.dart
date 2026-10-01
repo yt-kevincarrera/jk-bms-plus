@@ -28,6 +28,10 @@ class PackProfileCard extends StatefulWidget {
 class _PackProfileCardState extends State<PackProfileCard> {
   Device? _device;
   PackBaseline? _baseline;
+
+  /// The rider's words about day one. Stored with the baseline from the
+  /// start and never shown or editable anywhere.
+  String _note = '';
   bool _loading = true;
 
   @override
@@ -51,10 +55,12 @@ class _PackProfileCardState extends State<PackProfileCard> {
     }
     final device = await repo.device(id);
     final baseline = await repo.baseline(id);
+    final note = baseline == null ? '' : await repo.baselineNote(id);
     if (!mounted) return;
     setState(() {
       _device = device;
       _baseline = baseline;
+      _note = note;
       _loading = false;
     });
   }
@@ -109,6 +115,7 @@ class _PackProfileCardState extends State<PackProfileCard> {
               : _date(baseline.capturedAt),
           dim: baseline == null,
           valueColor: baseline == null ? null : AppTheme.good,
+          hint: _note.isEmpty ? null : _note,
           last: comparison == null,
         ),
         if (comparison != null) ..._sinceDayOne(t, comparison),
@@ -128,9 +135,93 @@ class _PackProfileCardState extends State<PackProfileCard> {
             ),
           ],
         ),
+        if (baseline != null) ...[
+          const SizedBox(height: 4),
+          Wrap(
+            spacing: 4,
+            children: [
+              TextButton.icon(
+                onPressed: () => _editNote(t),
+                icon: const Icon(Icons.notes_outlined, size: 18),
+                label: Text(
+                  _note.isEmpty
+                      ? t.profileBaselineNoteAdd
+                      : t.profileBaselineNoteEdit,
+                ),
+              ),
+              TextButton.icon(
+                // A new day one is captured from a live reading, so there
+                // has to be one.
+                onPressed: snapshot == null ? null : () => _redo(t, baseline),
+                icon: const Icon(Icons.restart_alt, size: 18),
+                label: Text(t.profileBaselineRedo),
+              ),
+            ],
+          ),
+        ],
         const SizedBox(height: 4),
       ],
     );
+  }
+
+  Future<void> _editNote(AppL10n t) async {
+    final repo = widget.service.repository;
+    final id = _device?.id;
+    if (repo == null || id == null) return;
+    // The dialog owns its text controller: disposed here, it was torn down
+    // while the closing animation still drew the field.
+    final saved = await showDialog<String>(
+      context: context,
+      builder: (context) => _NoteDialog(initial: _note, t: t),
+    );
+    if (saved == null) return;
+    await repo.setBaselineNote(id, saved);
+    await _load();
+  }
+
+  /// Throws the day one away and takes a new one from now, after saying so.
+  ///
+  /// For a pack whose first snapshot was taken at a bad moment (under load,
+  /// mid-charge, before a cell was replaced), which otherwise had no way out:
+  /// the baseline is written once and every later comparison is against it.
+  Future<void> _redo(AppL10n t, PackBaseline old) async {
+    final repo = widget.service.repository;
+    final id = _device?.id;
+    final snapshot = widget.service.lastSnapshot;
+    if (repo == null || id == null || snapshot == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(t.profileBaselineRedoTitle),
+        content: Text(
+          t.profileBaselineRedoBody(_date(old.capturedAt)),
+          style: const TextStyle(fontSize: 13, height: 1.45),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(t.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.bad),
+            child: Text(t.profileBaselineRedoConfirm),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    await repo.redoBaseline(
+      id,
+      PackBaseline.capture(
+        snapshot: snapshot,
+        settings: widget.service.lastSettings,
+        info: widget.service.lastDeviceInfo,
+      ),
+    );
+    await _load();
+    messenger.showSnackBar(SnackBar(content: Text(t.profileBaselineRedone)));
   }
 
   /// The part of the story a stored snapshot can honestly tell.
@@ -236,6 +327,58 @@ class _PackProfileCardState extends State<PackProfileCard> {
   static String _years(DateTime acquired) {
     final days = DateTime.now().difference(acquired.toLocal()).inDays;
     return (days / 365).toStringAsFixed(1);
+  }
+}
+
+/// Asks for the day-one note. Returns the new text, or null when cancelled.
+class _NoteDialog extends StatefulWidget {
+  const _NoteDialog({required this.initial, required this.t});
+
+  final String initial;
+  final AppL10n t;
+
+  @override
+  State<_NoteDialog> createState() => _NoteDialogState();
+}
+
+class _NoteDialogState extends State<_NoteDialog> {
+  late final TextEditingController _text = TextEditingController(
+    text: widget.initial,
+  );
+
+  @override
+  void dispose() {
+    _text.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = widget.t;
+    return AlertDialog(
+      title: Text(t.profileBaselineNoteTitle),
+      content: TextField(
+        controller: _text,
+        autofocus: true,
+        maxLines: 4,
+        minLines: 2,
+        textCapitalization: TextCapitalization.sentences,
+        decoration: InputDecoration(
+          hintText: t.profileBaselineNoteHint,
+          border: const OutlineInputBorder(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(t.cancel),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(_text.text.trim()),
+          child: Text(t.profileSave),
+        ),
+      ],
+    );
   }
 }
 

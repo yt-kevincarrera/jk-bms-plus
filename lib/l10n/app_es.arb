@@ -3614,5 +3614,21 @@
         "type": "String"
       }
     }
-  }
+  },
+  "profileBaselineNoteAdd": "Añadir una nota",
+  "profileBaselineNoteEdit": "Editar la nota",
+  "profileBaselineNoteTitle": "Nota del día uno",
+  "profileBaselineNoteHint": "De dónde vino, qué dijo el vendedor, lo que costó.",
+  "profileBaselineRedo": "Rehacer el día uno",
+  "profileBaselineRedoTitle": "¿Rehacer el día uno?",
+  "profileBaselineRedoBody": "Se borra el día uno guardado el {date} y se guarda uno nuevo con la lectura y la configuración del BMS de ahora. Todo lo que la app compara «desde el día uno» vuelve a empezar hoy. La nota se conserva. No se puede deshacer, y conviene hacerlo con la batería en reposo.",
+  "@profileBaselineRedoBody": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "profileBaselineRedoConfirm": "Borrar y guardar el nuevo",
+  "profileBaselineRedone": "Día uno guardado de nuevo, con la lectura de ahora."
 }

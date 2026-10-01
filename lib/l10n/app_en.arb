@@ -3284,5 +3284,21 @@
         "type": "String"
       }
     }
-  }
+  },
+  "profileBaselineNoteAdd": "Add a note",
+  "profileBaselineNoteEdit": "Edit the note",
+  "profileBaselineNoteTitle": "Day-one note",
+  "profileBaselineNoteHint": "Where it came from, what the seller said, what it cost.",
+  "profileBaselineRedo": "Redo day one",
+  "profileBaselineRedoTitle": "Redo day one?",
+  "profileBaselineRedoBody": "The day one saved on {date} is deleted and a new one is saved from the reading and the BMS settings as they are now. Everything the app compares \"since day one\" starts again today. The note is kept. This cannot be undone, and it is best done with the battery at rest.",
+  "@profileBaselineRedoBody": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "profileBaselineRedoConfirm": "Delete and save the new one",
+  "profileBaselineRedone": "Day one saved again, from the reading now."
 }

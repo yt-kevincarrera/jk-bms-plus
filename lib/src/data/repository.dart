@@ -931,6 +931,20 @@ class BmsRepository {
 
   Future<void> deleteBaseline(String deviceId) => db.deleteBaseline(deviceId);
 
+  /// Replaces the day-one baseline with [fresh], on the rider's say-so.
+  ///
+  /// The deliberate act the comment above promises, and the only way a
+  /// stored baseline is ever overwritten. The old one is deleted rather than
+  /// kept beside it: two day ones would make "since day one" ask which. The
+  /// rider's note stays, because it is about where the pack came from, which
+  /// a new reading does not change.
+  Future<void> redoBaseline(String deviceId, PackBaseline fresh) =>
+      db.transaction(() async {
+        final note = await baselineNote(deviceId);
+        await db.deleteBaseline(deviceId);
+        await saveBaseline(deviceId, fresh, note: note);
+      });
+
   /// A row written by a newer version, or a corrupted one, reads as no
   /// baseline rather than as a crash on the screen that asked for it.
   static PackBaseline? _decodeBaseline(Baseline? row) {

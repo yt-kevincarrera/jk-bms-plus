@@ -5386,4 +5386,35 @@ class AppL10nEn extends AppL10n {
   String nowChargePhase(String phase) {
     return 'phase: $phase';
   }
+
+  @override
+  String get profileBaselineNoteAdd => 'Add a note';
+
+  @override
+  String get profileBaselineNoteEdit => 'Edit the note';
+
+  @override
+  String get profileBaselineNoteTitle => 'Day-one note';
+
+  @override
+  String get profileBaselineNoteHint =>
+      'Where it came from, what the seller said, what it cost.';
+
+  @override
+  String get profileBaselineRedo => 'Redo day one';
+
+  @override
+  String get profileBaselineRedoTitle => 'Redo day one?';
+
+  @override
+  String profileBaselineRedoBody(String date) {
+    return 'The day one saved on $date is deleted and a new one is saved from the reading and the BMS settings as they are now. Everything the app compares \"since day one\" starts again today. The note is kept. This cannot be undone, and it is best done with the battery at rest.';
+  }
+
+  @override
+  String get profileBaselineRedoConfirm => 'Delete and save the new one';
+
+  @override
+  String get profileBaselineRedone =>
+      'Day one saved again, from the reading now.';
 }

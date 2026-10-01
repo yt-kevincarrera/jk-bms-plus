@@ -8999,6 +8999,60 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'fase: {phase}'**
   String nowChargePhase(String phase);
+
+  /// No description provided for @profileBaselineNoteAdd.
+  ///
+  /// In es, this message translates to:
+  /// **'Añadir una nota'**
+  String get profileBaselineNoteAdd;
+
+  /// No description provided for @profileBaselineNoteEdit.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar la nota'**
+  String get profileBaselineNoteEdit;
+
+  /// No description provided for @profileBaselineNoteTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Nota del día uno'**
+  String get profileBaselineNoteTitle;
+
+  /// No description provided for @profileBaselineNoteHint.
+  ///
+  /// In es, this message translates to:
+  /// **'De dónde vino, qué dijo el vendedor, lo que costó.'**
+  String get profileBaselineNoteHint;
+
+  /// No description provided for @profileBaselineRedo.
+  ///
+  /// In es, this message translates to:
+  /// **'Rehacer el día uno'**
+  String get profileBaselineRedo;
+
+  /// No description provided for @profileBaselineRedoTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Rehacer el día uno?'**
+  String get profileBaselineRedoTitle;
+
+  /// No description provided for @profileBaselineRedoBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Se borra el día uno guardado el {date} y se guarda uno nuevo con la lectura y la configuración del BMS de ahora. Todo lo que la app compara «desde el día uno» vuelve a empezar hoy. La nota se conserva. No se puede deshacer, y conviene hacerlo con la batería en reposo.'**
+  String profileBaselineRedoBody(String date);
+
+  /// No description provided for @profileBaselineRedoConfirm.
+  ///
+  /// In es, this message translates to:
+  /// **'Borrar y guardar el nuevo'**
+  String get profileBaselineRedoConfirm;
+
+  /// No description provided for @profileBaselineRedone.
+  ///
+  /// In es, this message translates to:
+  /// **'Día uno guardado de nuevo, con la lectura de ahora.'**
+  String get profileBaselineRedone;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {
