@@ -278,7 +278,7 @@ enum EvidenceKind {
   driftDeviation,
   driftRate,
   driftSamples,
-  driftSpanWeeks,
+  driftDays,
   // Inspection
   cellSag,
   medianSag,
@@ -1040,9 +1040,13 @@ class AdviceEngine {
     // analysis means "not enough readings", and that is not the same as "no
     // cell is drifting". Silence is the honest answer there.
     if (drift.isNotEmpty) {
-      final worst = drift.first;
-      final weeks = worst.spanDays / 7;
-      if (worst.isWorsening) {
+      // Every cell is judged, not just the first of the ranking: "no cell is
+      // drifting" has to be true of all of them, and "the lowest" has to be
+      // the lowest one, not the one whose gap happened to move fastest.
+      final sinking = CellDriftAnalysis.worstWorsening(drift);
+      final worst = sinking ?? CellDriftAnalysis.lowest(drift)!;
+      final days = worst.days.toDouble();
+      if (sinking != null) {
         out.add(
           Advice(
             code: AdviceCode.cellDrifting,
@@ -1050,7 +1054,7 @@ class AdviceEngine {
                 ? AdviceLevel.problem
                 : AdviceLevel.watch,
             cellIndex: worst.index + 1,
-            value: weeks,
+            value: days,
             evidence: [
               Evidence(
                 EvidenceKind.driftDeviation,
@@ -1065,7 +1069,7 @@ class AdviceEngine {
                 EvidenceKind.driftSamples,
                 value: worst.samples.toDouble(),
               ),
-              Evidence(EvidenceKind.driftSpanWeeks, value: weeks),
+              Evidence(EvidenceKind.driftDays, value: days),
             ],
           ),
         );
@@ -1074,7 +1078,7 @@ class AdviceEngine {
           Advice(
             code: AdviceCode.noCellDrifting,
             level: AdviceLevel.good,
-            value: weeks,
+            value: days,
             evidence: [
               Evidence(
                 EvidenceKind.driftDeviation,
@@ -1085,7 +1089,7 @@ class AdviceEngine {
                 EvidenceKind.driftSamples,
                 value: worst.samples.toDouble(),
               ),
-              Evidence(EvidenceKind.driftSpanWeeks, value: weeks),
+              Evidence(EvidenceKind.driftDays, value: days),
             ],
           ),
         );

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import '../data/database.dart';
 import 'capacity_endpoints.dart';
+import 'trip_learning.dart';
 
 /// One point on the consumption-over-time curve.
 class ConsumptionPoint {
@@ -67,17 +68,24 @@ class SagPoint {
 class LongTermAnalysis {
   const LongTermAnalysis();
 
-  /// Consumption per ride, oldest first, demo rides excluded.
+  /// Consumption per ride, oldest first: the rides the range learns from
+  /// ([TripLearning]), over a kilometre, at a figure a bike can produce.
   ///
-  /// This is the closest thing to a degradation signal available without a full
-  /// capacity test: the same bike over the same roads costing more watt-hours
-  /// per kilometre as the months pass.
-  List<ConsumptionPoint> consumptionOverTime(List<Trip> trips) {
+  /// Not a wear signal, and the screen no longer says it is: what a ride
+  /// costs moves with the route, the rider, the wind, the tyres and the
+  /// temperature far more than with the pack. Unmeasured rides and the ones
+  /// marked as an exception used to be plotted too, as zeros and outliers.
+  List<ConsumptionPoint> consumptionOverTime(
+    List<Trip> trips, {
+    double minWhPerKm = 5,
+    double maxWhPerKm = 100,
+  }) {
     final points = <ConsumptionPoint>[];
     for (final t in trips) {
-      if (t.demo || t.distanceKm < 1.0) continue;
+      if (t.demo || t.distanceKm < 1.0 || !TripLearning.teaches(t)) continue;
       final net = t.energyOutWh - t.energyInWh;
-      if (net <= 0) continue;
+      final whPerKm = net / t.distanceKm;
+      if (whPerKm < minWhPerKm || whPerKm > maxWhPerKm) continue;
       points.add(
         ConsumptionPoint(at: t.startedAt, whPerKm: net / t.distanceKm),
       );
@@ -86,34 +94,51 @@ class LongTermAnalysis {
     return points;
   }
 
-  /// Delta against charge level.
+  /// Delta against charge level, at rest and under load, never charging.
   ///
-  /// The shape is the diagnosis. A pack whose delta is flat across the range
-  /// but jumps near full has one cell with less capacity than the rest; a pack
-  /// whose delta rises with current has a resistance problem instead. Loaded
-  /// and resting points are kept apart so the two can be told from each other.
-  List<DeltaPoint> deltaAgainstCharge(List<Snapshot> snapshots) {
-    // Thinned to one point per half a percent of charge, per population. At
-    // 1 Hz a week of riding is half a million rows, and a scatter plot of all
-    // of them is a smear rather than a shape.
-    final buckets = <String, DeltaPoint>{};
+  /// The shape is the diagnosis, with one caution the screen has to carry:
+  /// the delta opens near both ends of the charge on almost any pack, because
+  /// that is where the voltage curve is steep and the smallest difference in
+  /// state between cells shows as millivolts. What tells something is the
+  /// resting line opening more than it used to, or opening across the middle
+  /// where the curve is flat, and the loaded line sitting well above the
+  /// resting one, which is resistance.
+  ///
+  /// Rest is under [restAmps] either way; under load is a discharge past
+  /// [loadAmps]. Everything else is left out, and charging above all: it used
+  /// to count as rest, and a charger pushing 10 A into a full pack is the one
+  /// time the delta peaks on every pack there is.
+  ///
+  /// One point per percent of charge, the median of the readings in it, and
+  /// only where there are [minPerBucket] of them. It used to keep the worst
+  /// reading per half percent, which plotted a pack's single worst moments
+  /// as if they were its shape.
+  List<DeltaPoint> deltaAgainstCharge(
+    List<Snapshot> snapshots, {
+    double restAmps = 1.0,
+    double loadAmps = 5.0,
+    int minPerBucket = 3,
+  }) {
+    final buckets = <(bool, int), List<double>>{};
     for (final s in snapshots) {
       if (s.soc <= 0) continue;
-      final loaded = s.current < -5;
-      final key = '${loaded ? 'L' : 'R'}${(s.soc * 2).round()}';
-      final existing = buckets[key];
-      // Keep the worst delta in each bucket: the question is how far apart the
-      // cells get, not where they sit on average.
-      if (existing == null || s.deltaVolts > existing.deltaVolts) {
-        buckets[key] = DeltaPoint(
-          soc: s.soc,
-          deltaVolts: s.deltaVolts,
-          underLoad: loaded,
-        );
-      }
+      final loaded = s.current <= -loadAmps;
+      final resting = s.current.abs() < restAmps;
+      if (!loaded && !resting) continue;
+      (buckets[(loaded, s.soc.round())] ??= []).add(s.deltaVolts);
     }
-    final points = buckets.values.toList()
-      ..sort((a, b) => a.soc.compareTo(b.soc));
+    final points = <DeltaPoint>[];
+    for (final MapEntry(key: (loaded, soc), value: deltas) in buckets.entries) {
+      if (deltas.length < minPerBucket) continue;
+      deltas.sort();
+      final m = deltas.length ~/ 2;
+      final median =
+          deltas.length.isOdd ? deltas[m] : (deltas[m - 1] + deltas[m]) / 2;
+      points.add(
+        DeltaPoint(soc: soc.toDouble(), deltaVolts: median, underLoad: loaded),
+      );
+    }
+    points.sort((a, b) => a.soc.compareTo(b.soc));
     return points;
   }
 

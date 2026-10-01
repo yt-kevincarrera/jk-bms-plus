@@ -2,7 +2,7 @@ import '../data/database.dart';
 import 'capacity_endpoints.dart';
 import 'degradation.dart';
 import 'pack_energy.dart';
-import 'range_estimator.dart';
+import 'trip_learning.dart';
 
 /// What can be said about one battery from what is on disk.
 ///
@@ -116,13 +116,8 @@ class PackSummary {
         ? last.cycleCapacityAh / forCycles
         : null;
 
-    final usable = trips
-        .where((t) => t.distanceKm >= 0.2 && t.energyOutWh > t.energyInWh)
-        .toList();
-    final estimator = RangeEstimator();
-    for (final t in usable) {
-      estimator.addSegment(wh: t.energyOutWh - t.energyInWh, km: t.distanceKm);
-    }
+    // The live service's rule, oldest first: see [TripLearning].
+    final estimator = TripLearning.estimatorFrom(trips);
 
     // The same trust rule as the live screen, so a pack whose only "best"
     // is a test with a hole in it does not win the comparison on it.

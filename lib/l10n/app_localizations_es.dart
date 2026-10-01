@@ -1399,11 +1399,12 @@ class AppL10nEs extends AppL10n {
   }
 
   @override
-  String get tripLearnedTooShort =>
-      'Demasiado corto para aprender algo. Hacen falta al menos 500 metros con consumo real.';
+  String tripLearnedTooShort(String m) {
+    return 'No se aprendió nada de este viaje: hacen falta al menos $m metros con la energía medida.';
+  }
 
   @override
-  String get tripLearnedRange => 'Autonomía ahora';
+  String get tripLearnedRange => 'Autonomía al terminar';
 
   @override
   String get tripLearnedTotalKm => 'Aprendido de';
@@ -1426,7 +1427,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String tripDeltaTip(String delta) {
-    return 'El delta llegó a $delta V bajo carga. Si en reposo las celdas están parejas, eso apunta a una conexión, no a una celda mala.';
+    return 'El delta máximo del viaje fue $delta V. Si en reposo las celdas están parejas, eso apunta a una conexión, no a una celda mala.';
   }
 
   @override
@@ -1619,7 +1620,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get trendsDeltaHint =>
-      'Esta es la distinta: a lo ancho va el nivel de carga, no el tiempo. Cada punto es una lectura, colocada según lo llena que estaba la batería y cuánto se separaban su celda más alta y su más baja en ese momento. Lo que importa es la forma. Plana en el medio con un pico cerca del lleno es una celda con menos capacidad que las demás. Una curva que en cambio sigue a la corriente, más alta con carga, es resistencia en algún punto, y casi siempre una conexión y no una celda.';
+      'A lo ancho va el nivel de carga, no el tiempo. Cada punto es la mediana del delta (la celda más alta menos la más baja) de las lecturas de los últimos 90 días a ese porcentaje de carga: una línea en reposo y otra descargando a más de 5 A. Las lecturas cargando no entran. Que se abra cerca de vacía y de llena es normal en casi cualquier pack, porque ahí la curva de voltaje es empinada. Lo que dice algo es la línea de reposo abriéndose en el medio, donde la curva es plana, o la de carga muy por encima de la de reposo: eso es resistencia, y casi siempre una conexión y no una celda.';
 
   @override
   String get trendsSagHint =>
@@ -2083,7 +2084,7 @@ class AppL10nEs extends AppL10n {
   String get offlineCycles => 'Ciclos que cuenta el BMS';
 
   @override
-  String get offlineWeakest => 'Celda más floja';
+  String get offlineWeakest => 'Celda más baja en reposo';
 
   @override
   String offlineWeakestValue(String index, String volts) {
@@ -2621,7 +2622,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String learnWhyNoEnergy(String n) {
-    return '$n grabaron distancia pero no energía saliendo de la batería. O fueron en remolque, o la batería reporta su corriente con el signo contrario al que esta app asume.';
+    return '$n se midieron, pero no salió energía neta de la batería. O fueron en remolque o casi todo cuesta abajo, o la batería reporta su corriente con el signo contrario al que esta app asume.';
   }
 
   @override
@@ -2653,7 +2654,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String learnWhyImplausible(String n) {
-    return '$n dieron un consumo que ninguna moto puede producir, así que se rechazaron. Eso es un fallo de esta app y no algo del manejo, y quedó arreglado en esta versión: los viajes grabados de aquí en adelante deberían salir bien. Los viejos no se pueden reparar, porque las lecturas que hacían falta nunca se guardaron.';
+    return '$n dieron un consumo que ninguna moto puede producir, así que se rechazaron. Eso fue un fallo de esta app y no algo del manejo, y está arreglado: los viajes grabados desde entonces deberían salir bien. Los viejos que conservan sus lecturas se pueden medir de nuevo con «Volver a medir» en su detalle.';
   }
 
   @override
@@ -2990,16 +2991,16 @@ class AppL10nEs extends AppL10n {
   }
 
   @override
-  String verdictCellDriftingBody(String weeks, String dev, String rate) {
-    return 'Lleva $weeks semanas alejándose: va $dev V por debajo de la media del pack y baja unos $rate V al mes. Coherente con una celda en camino de irse. Revísala antes de que el pack se apague en la calle.';
+  String verdictCellDriftingBody(String days, String dev, String rate) {
+    return 'En $days días con lecturas en reposo se ha ido separando: va $dev V por debajo de la media del pack y la tendencia es de unos $rate V más al mes. Coherente con una celda en camino de irse. Revísala antes de que el pack se apague en la calle.';
   }
 
   @override
   String get verdictNoCellDriftingTitle => 'Ninguna celda se está yendo';
 
   @override
-  String verdictNoCellDriftingBody(String weeks, String dev) {
-    return 'En $weeks semanas de lecturas en reposo ninguna celda se separa del resto. La peor va $dev V bajo la media y no empeora. Nada que hacer.';
+  String verdictNoCellDriftingBody(String days, String cell, String dev) {
+    return 'En $days días con lecturas en reposo, todas entre el 40 y el 80 % de carga, ninguna celda se separa del resto. La más baja, la $cell, va $dev V bajo la media y no empeora. Nada que hacer.';
   }
 
   @override
@@ -3125,7 +3126,7 @@ class AppL10nEs extends AppL10n {
   String get evidenceDriftSamples => 'Lecturas en reposo analizadas';
 
   @override
-  String get evidenceDriftSpanWeeks => 'Semanas observadas';
+  String get evidenceDriftDays => 'Días con lecturas en reposo';
 
   @override
   String get verdictTitle => 'Veredicto';
@@ -4469,7 +4470,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String representativeDone(String km) {
-    return 'Listo. Tu autonomía sigue en $km km.';
+    return 'Listo. Tu autonomía queda en $km km.';
   }
 
   @override
@@ -5144,4 +5145,27 @@ class AppL10nEs extends AppL10n {
   @override
   String get autoTripPocketAlways =>
       'Ubicación permitida todo el tiempo: el viaje puede empezar con el móvil en el bolsillo aunque la app se haya reconectado sola.';
+
+  @override
+  String offlineWeakestRestValue(String index, String pct, String count) {
+    return 'celda $index, la más baja en el $pct % de $count lecturas en reposo del último mes';
+  }
+
+  @override
+  String get offlineLowestLastReading => 'Celda más baja en la última lectura';
+
+  @override
+  String historyAverageOf(String used, String total) {
+    return 'de $used de $total viajes: los medidos que cuentan para la autonomía';
+  }
+
+  @override
+  String learnWhyUnmeasured(String n) {
+    return '$n no se pudieron medir: la conexión con la batería se cortó durante buena parte del viaje y no quedaron lecturas para saber cuánta energía salió. No es algo del manejo. Si el viaje conserva lecturas, «Volver a medir» en su detalle lo intenta otra vez.';
+  }
+
+  @override
+  String learnWhyExcluded(String n) {
+    return '$n los marcaste como una excepción, así que no cuentan.';
+  }
 }

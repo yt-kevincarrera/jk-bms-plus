@@ -484,10 +484,7 @@ class _EvidenceRow extends StatelessWidget {
       '${volts(v)} / ${t.evidencePerMonth}',
     ),
     EvidenceKind.driftSamples => (t.evidenceDriftSamples, whole(v)),
-    EvidenceKind.driftSpanWeeks => (
-      t.evidenceDriftSpanWeeks,
-      v.toStringAsFixed(1),
-    ),
+    EvidenceKind.driftDays => (t.evidenceDriftDays, whole(v)),
     EvidenceKind.cellSag => (t.evidenceCellSag('${e.cell ?? 0}'), volts(v)),
     EvidenceKind.medianSag => (t.evidenceMedianSag, volts(v)),
     EvidenceKind.currentStep => (
@@ -726,6 +723,7 @@ String adviceBody(AppL10n t, Advice advice) {
     ),
     AdviceCode.noCellDrifting => t.verdictNoCellDriftingBody(
       v.toStringAsFixed(0),
+      '${advice.evidence.where((e) => e.kind == EvidenceKind.driftDeviation).firstOrNull?.cell ?? '?'}',
       f(EvidenceKind.driftDeviation, 3),
     ),
     AdviceCode.rangeNow => t.verdictRangeNowBody(

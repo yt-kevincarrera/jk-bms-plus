@@ -24,6 +24,8 @@ void main() {
     double inWh = 0,
     bool unfinished = false,
     int dayOffset = 0,
+    String? energySource,
+    bool? representative,
   }) async {
     final start = DateTime.utc(2026, 9, 1).add(Duration(days: dayOffset));
     final id = await db.insertTrip(
@@ -46,6 +48,8 @@ void main() {
         maxDeltaVolts: 0.02,
         climbM: 20,
         descentM: 20,
+        energySource: Value(energySource),
+        representative: Value(representative),
       ),
     );
     expect(id, greaterThan(0));
@@ -161,9 +165,41 @@ void main() {
 
       final r = await report();
       expect(
-        r.noDistance + r.noEnergyOut + r.implausible + r.used,
+        r.noDistance +
+            r.noEnergyOut +
+            r.implausible +
+            r.unmeasured +
+            r.excluded +
+            r.used,
         r.considered,
       );
+    });
+
+    test('a ride the link dropped on is unmeasured, not a sign fault',
+        () async {
+      // Stored with no energy on purpose. It used to be counted with the
+      // rides that drew nothing, under a sentence about trailers and a
+      // reversed current sign, when the cause was the link.
+      for (var i = 0; i < 3; i++) {
+        await ride(
+          km: 6,
+          outWh: 0,
+          energySource: 'partialCoulombCount',
+          dayOffset: i,
+        );
+      }
+      final r = await report();
+      expect(r.unmeasured, 3);
+      expect(r.noEnergyOut, 0);
+      expect(r.blocker, LearningBlocker.unmeasured);
+    });
+
+    test('a ride marked as an exception is not counted as used', () async {
+      // The estimator is never given it, so "used" must not claim it.
+      await ride(km: 6, outWh: 108, representative: false);
+      final r = await report();
+      expect(r.used, 0);
+      expect(r.excluded, 1);
     });
   });
 }

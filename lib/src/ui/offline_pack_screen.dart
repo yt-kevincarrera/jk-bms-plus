@@ -11,6 +11,7 @@ import '../metrics/degradation.dart';
 import '../metrics/pack_energy.dart';
 import '../metrics/range_estimator.dart';
 import '../metrics/range_outlook.dart';
+import '../metrics/trip_learning.dart';
 import '../pack/chemistry.dart';
 import '../pack/pack_baseline.dart';
 import '../metrics/maintenance.dart';
@@ -62,6 +63,10 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
   DateTime? _firstAt;
   int _readingCount = 0;
   List<CellDrift> _driftRanking = const [];
+
+  /// The cell lowest most often at rest over the last month, if any resting
+  /// reading was stored.
+  LowestCellTally? _lowest;
 
   /// The learned consumption behind the range figures, kept so the verdicts
   /// can cite it.
@@ -116,13 +121,12 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
     final maintenance = await MaintenanceLog(repo.db).forPack(id);
 
     // The range is rebuilt from this pack's own rides rather than read off the
-    // live service, which knows only about whatever is connected.
-    final estimator = RangeEstimator();
-    for (final t in trips.where(
-      (t) => t.distanceKm >= 0.2 && t.energyOutWh > t.energyInWh,
-    )) {
-      estimator.addSegment(wh: t.energyOutWh - t.energyInWh, km: t.distanceKm);
-    }
+    // live service, which knows only about whatever is connected, and by the
+    // live service's own rule. It used to feed the rides newest first to an
+    // estimator that weights the later ones, so the oldest ride dominated,
+    // and it kept the rides marked as an exception: marking one here changed
+    // nothing, while the confirmation said the range had moved.
+    final estimator = TripLearning.estimatorFrom(trips);
 
     // Both figures, built exactly as the live screen builds them. This screen
     // used to quote one range with a label that did not say which question it
@@ -208,6 +212,7 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
       _firstAt = oldest;
       _readingCount = totalReadings;
       _driftRanking = const CellDriftAnalysis().analyse(readings);
+      _lowest = const CellDriftAnalysis().mostOftenLowest(readings);
       _maintenance = maintenance;
       _outlook = outlook;
       _estimator = estimator;
@@ -323,10 +328,12 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
     );
     final lost = wear.lostFraction;
 
-    // Which cell sat lowest in the last reading. Not the same as the one that
-    // is always lowest, but it is what the stored row can answer.
+    // Which cell sat lowest in the last reading: only a fallback now, said as
+    // what it is. The last reading may have been under load, where the cell
+    // with the most resistance sags lowest, and calling that "the weakest
+    // cell" claimed a diagnosis from one sample.
     (int, double)? weakest;
-    if (last != null) {
+    if (_lowest == null && last != null) {
       final cells = decodeCellVoltages(last.cellVoltagesJson);
       if (cells.isNotEmpty) {
         var idx = 0;
@@ -419,9 +426,18 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
             // Hidden rather than 0 when the BMS keeps no counter (an ANT).
             if (last.cycleCount != null)
               InfoRow(t.offlineCycles, last.cycleCount!.toStringAsFixed(0)),
-            if (weakest != null)
+            if (_lowest case final low?)
               InfoRow(
                 t.offlineWeakest,
+                t.offlineWeakestRestValue(
+                  '${low.index + 1}',
+                  (low.share * 100).toStringAsFixed(0),
+                  '${low.readings}',
+                ),
+              )
+            else if (weakest != null)
+              InfoRow(
+                t.offlineLowestLastReading,
                 t.offlineWeakestValue(
                   '${weakest.$1 + 1}',
                   weakest.$2.toStringAsFixed(3),

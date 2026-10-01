@@ -6,6 +6,7 @@ import '../../bms_service.dart';
 import '../../data/database.dart';
 import '../../data/repository.dart';
 import '../../metrics/learning_report.dart';
+import '../../metrics/trip_learning.dart';
 import '../theme.dart';
 import '../widgets/representative_question.dart';
 import '../widgets/trip_card.dart';
@@ -58,7 +59,19 @@ class HistoryTab extends StatelessWidget {
         final finished = trips.where((tr) => tr.distanceKm > 0).toList();
 
         final totalKm = finished.fold<double>(0, (a, tr) => a + tr.distanceKm);
-        final totalWh = finished.fold<double>(
+        // Energy only from rides whose energy was measured: a ride the link
+        // dropped on is stored with nothing, and adding its nothing in is a
+        // total that reads lower than what the pack gave.
+        final totalWh = finished
+            .where(TripLearning.isMeasured)
+            .fold<double>(0, (a, tr) => a + (tr.energyOutWh - tr.energyInWh));
+        // The average over the rides the range learns from, and no others.
+        // It used to divide all the energy by all the kilometres, so every
+        // unmeasured ride added distance with no energy and pulled the
+        // figure down, and a ride marked as an exception still counted.
+        final learning = TripLearning.forLearning(finished);
+        final learnKm = learning.fold<double>(0, (a, tr) => a + tr.distanceKm);
+        final learnWh = learning.fold<double>(
           0,
           (a, tr) => a + (tr.energyOutWh - tr.energyInWh),
         );
@@ -91,10 +104,16 @@ class HistoryTab extends StatelessWidget {
                 ),
                 InfoRow(
                   t.historyAverage,
-                  totalKm < 0.5
+                  learnKm < 0.5
                       ? '--'
-                      : '${(totalWh / totalKm).toStringAsFixed(1)} Wh/km',
-                  dim: totalKm < 0.5,
+                      : '${(learnWh / learnKm).toStringAsFixed(1)} Wh/km',
+                  dim: learnKm < 0.5,
+                  hint: learning.length == finished.length
+                      ? null
+                      : t.historyAverageOf(
+                          '${learning.length}',
+                          '${finished.length}',
+                        ),
                   last: true,
                 ),
               ],

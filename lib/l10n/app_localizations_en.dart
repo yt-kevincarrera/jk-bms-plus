@@ -1394,11 +1394,12 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String get tripLearnedTooShort =>
-      'Too short to learn anything. It needs at least 500 metres with real consumption.';
+  String tripLearnedTooShort(String m) {
+    return 'Nothing was learned from this ride: it takes at least $m metres with the energy measured.';
+  }
 
   @override
-  String get tripLearnedRange => 'Range now';
+  String get tripLearnedRange => 'Range at the end';
 
   @override
   String get tripLearnedTotalKm => 'Learned from';
@@ -1421,7 +1422,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String tripDeltaTip(String delta) {
-    return 'The delta reached $delta V under load. If the cells are even at rest, that points at a connection rather than a bad cell.';
+    return 'The ride\'s largest delta was $delta V. If the cells are even at rest, that points at a connection rather than a bad cell.';
   }
 
   @override
@@ -1614,7 +1615,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get trendsDeltaHint =>
-      'The odd one out: sideways is the charge level, not time. Each dot is one reading, placed by how full the pack was and how far apart its highest and lowest cell were at that moment. What matters is the shape. Flat across the middle with a spike near full is one cell with less capacity than the rest. A curve that follows the current instead, higher under load, is resistance somewhere, and almost always a connection rather than a cell.';
+      'Across is the charge level, not time. Each point is the median delta (highest cell minus lowest) of the last 90 days\' readings at that charge: one line at rest and one discharging at more than 5 A. Readings taken while charging are left out. The delta opening near empty and near full is normal on almost any pack, because the voltage curve is steep there. What says something is the resting line opening across the middle, where the curve is flat, or the loaded line sitting well above the resting one: that is resistance, and nearly always a connection rather than a cell.';
 
   @override
   String get trendsSagHint =>
@@ -2074,7 +2075,7 @@ class AppL10nEn extends AppL10n {
   String get offlineCycles => 'Cycles the BMS counts';
 
   @override
-  String get offlineWeakest => 'Weakest cell';
+  String get offlineWeakest => 'Lowest cell at rest';
 
   @override
   String offlineWeakestValue(String index, String volts) {
@@ -2611,7 +2612,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String learnWhyNoEnergy(String n) {
-    return '$n recorded distance but no energy leaving the pack. Either they were spent on a trailer, or the pack reports its current with the opposite sign to the one this app assumes.';
+    return '$n were measured, but no net energy left the pack. Either they were spent on a trailer or nearly all downhill, or the pack reports its current with the opposite sign to the one this app assumes.';
   }
 
   @override
@@ -2642,7 +2643,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String learnWhyImplausible(String n) {
-    return '$n came out at a consumption no motorcycle could produce, so they were refused. That is a fault in this app rather than anything about the riding, and it was fixed in this version: rides recorded from here should read correctly. The old ones cannot be repaired, because the readings they needed were never stored.';
+    return '$n came out at a consumption no motorcycle could produce, so they were refused. That was a fault in this app rather than anything about the riding, and it is fixed: rides recorded since should read correctly. Old ones that still have their readings can be measured again with “Measure again” in their detail.';
   }
 
   @override
@@ -2976,16 +2977,16 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String verdictCellDriftingBody(String weeks, String dev, String rate) {
-    return 'For $weeks weeks it has been drifting: $dev V under the pack average and falling about $rate V a month. Consistent with a cell on its way out. Look at it before the pack shuts down in the street.';
+  String verdictCellDriftingBody(String days, String dev, String rate) {
+    return 'Over $days days of resting readings it has been pulling away: $dev V under the pack average, and the trend is about $rate V more a month. Consistent with a cell on its way out. Look at it before the pack shuts down in the street.';
   }
 
   @override
   String get verdictNoCellDriftingTitle => 'No cell is going';
 
   @override
-  String verdictNoCellDriftingBody(String weeks, String dev) {
-    return 'Over $weeks weeks of resting readings no cell is pulling away from the rest. The worst sits $dev V under the average and is not getting worse. Nothing to do.';
+  String verdictNoCellDriftingBody(String days, String cell, String dev) {
+    return 'Over $days days of resting readings, all between 40 and 80 % charge, no cell is pulling away from the rest. The lowest, cell $cell, sits $dev V under the average and is not getting worse. Nothing to do.';
   }
 
   @override
@@ -3111,7 +3112,7 @@ class AppL10nEn extends AppL10n {
   String get evidenceDriftSamples => 'Resting readings analysed';
 
   @override
-  String get evidenceDriftSpanWeeks => 'Weeks observed';
+  String get evidenceDriftDays => 'Days with resting readings';
 
   @override
   String get verdictTitle => 'Verdict';
@@ -4448,7 +4449,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String representativeDone(String km) {
-    return 'Done. Your range stays at $km km.';
+    return 'Done. Your range is now $km km.';
   }
 
   @override
@@ -5119,4 +5120,27 @@ class AppL10nEn extends AppL10n {
   @override
   String get autoTripPocketAlways =>
       'Location allowed all the time: a ride can start with the phone in a pocket even after the app reconnected by itself.';
+
+  @override
+  String offlineWeakestRestValue(String index, String pct, String count) {
+    return 'cell $index, lowest in $pct % of $count resting readings over the last month';
+  }
+
+  @override
+  String get offlineLowestLastReading => 'Lowest cell in the last reading';
+
+  @override
+  String historyAverageOf(String used, String total) {
+    return 'from $used of $total rides: the measured ones that count towards the range';
+  }
+
+  @override
+  String learnWhyUnmeasured(String n) {
+    return '$n could not be measured: the link to the pack dropped for much of the ride and there were no readings left to tell how much energy came out. That is not about the riding. If the ride kept readings, “Measure again” in its detail tries once more.';
+  }
+
+  @override
+  String learnWhyExcluded(String n) {
+    return '$n you marked as an exception, so they do not count.';
+  }
 }

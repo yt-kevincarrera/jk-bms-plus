@@ -9,6 +9,7 @@ import '../inspection/inspection_series.dart';
 import '../metrics/capacity_cycle_detector.dart';
 import '../metrics/capacity_endpoints.dart';
 import '../metrics/trip_energy_repair.dart';
+import '../metrics/trip_learning.dart';
 import '../metrics/trip_recorder.dart';
 import '../model/bms_snapshot.dart';
 import '../protocol/bms_brand.dart';
@@ -492,30 +493,11 @@ class BmsRepository {
   /// 2 Wh/km -- but 4.3 is not absurd in the abstract, only against this bike,
   /// and a threshold tuned to catch it would be a guess. The row already knows
   /// it was never measured properly; asking it is a fact rather than a guess.
-  static const Set<String> _unmeasuredSources = {
-    'partialCoulombCount',
-    'unmeasurable',
-    'unmeasurableBracketed',
-  };
-
-  Future<List<Trip>> tripsForLearning(String deviceId) async {
-    final all = await db.recentTrips(deviceId, limit: 500);
-    final usable =
-        all
-            .where(
-              (t) =>
-                  t.distanceKm >= 0.2 &&
-                  t.energyOutWh > t.energyInWh &&
-                  !_unmeasuredSources.contains(t.energySource) &&
-                  // Null is not false: a ride nobody was asked about counts,
-                  // which keeps the behaviour of every ride recorded before
-                  // the question existed. Only an explicit no takes one out.
-                  t.representative != false,
-            )
-            .toList()
-          ..sort((a, b) => a.startedAt.compareTo(b.startedAt));
-    return usable;
-  }
+  ///
+  /// The rule itself lives in [TripLearning], so every screen that learns a
+  /// range from stored rides learns the same one.
+  Future<List<Trip>> tripsForLearning(String deviceId) async =>
+      TripLearning.forLearning(await db.recentTrips(deviceId, limit: 500));
 
   /// Notes something the app decided, for explaining a ride afterwards.
   ///

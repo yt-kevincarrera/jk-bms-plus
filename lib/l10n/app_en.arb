@@ -736,8 +736,8 @@
       }
     }
   },
-  "tripLearnedTooShort": "Too short to learn anything. It needs at least 500 metres with real consumption.",
-  "tripLearnedRange": "Range now",
+  "tripLearnedTooShort": "Nothing was learned from this ride: it takes at least {m} metres with the energy measured.",
+  "tripLearnedRange": "Range at the end",
   "tripLearnedTotalKm": "Learned from",
   "tripLearnedConfidence": "Confidence",
   "tripDeepDischargeTip": "This ride took the charge a long way down, which is exactly what helps most: the more of the battery a ride covers, the less room for error is left in the estimate.",
@@ -750,7 +750,7 @@
       }
     }
   },
-  "tripDeltaTip": "The delta reached {delta} V under load. If the cells are even at rest, that points at a connection rather than a bad cell.",
+  "tripDeltaTip": "The ride's largest delta was {delta} V. If the cells are even at rest, that points at a connection rather than a bad cell.",
   "@tripDeltaTip": {
     "placeholders": {
       "delta": {
@@ -860,7 +860,7 @@
   },
   "trendsLegendLoaded": "Under load",
   "trendsLegendResting": "At rest",
-  "trendsDeltaHint": "The odd one out: sideways is the charge level, not time. Each dot is one reading, placed by how full the pack was and how far apart its highest and lowest cell were at that moment. What matters is the shape. Flat across the middle with a spike near full is one cell with less capacity than the rest. A curve that follows the current instead, higher under load, is resistance somewhere, and almost always a connection rather than a cell.",
+  "trendsDeltaHint": "Across is the charge level, not time. Each point is the median delta (highest cell minus lowest) of the last 90 days' readings at that charge: one line at rest and one discharging at more than 5 A. Readings taken while charging are left out. The delta opening near empty and near full is normal on almost any pack, because the voltage curve is steep there. What says something is the resting line opening across the middle, where the curve is flat, or the loaded line sitting well above the resting one: that is resistance, and nearly always a connection rather than a cell.",
   "trendsSagHint": "How many milliohms of internal resistance each ride implies, worked out from how far the voltage fell for the current drawn. Oldest on the left. Rising resistance is the first thing to go on an ageing pack and shows up long before capacity does, so a climb here is an early warning rather than a verdict. A sudden jump is usually a connection, not the cells.",
   "alertTitle": "Alert",
   "alertBmsFault": "The BMS raised an alarm",
@@ -1125,7 +1125,7 @@
   },
   "offlineSoh": "Health the BMS claims",
   "offlineCycles": "Cycles the BMS counts",
-  "offlineWeakest": "Weakest cell",
+  "offlineWeakest": "Lowest cell at rest",
   "offlineWeakestValue": "cell {index}, {volts} V",
   "@offlineWeakestValue": {
     "placeholders": {
@@ -1446,7 +1446,7 @@
   "learnWhyTitle": "Why nothing has been learned",
   "learnWhyCount": "{used} of {considered} recorded rides were usable.",
   "learnWhyShort": "{n} were under 200 m, which is too short to divide by: a wobble in the GPS over that distance produces a consumption figure in the hundreds.",
-  "learnWhyNoEnergy": "{n} recorded distance but no energy leaving the pack. Either they were spent on a trailer, or the pack reports its current with the opposite sign to the one this app assumes.",
+  "learnWhyNoEnergy": "{n} were measured, but no net energy left the pack. Either they were spent on a trailer or nearly all downhill, or the pack reports its current with the opposite sign to the one this app assumes.",
   "learnWhySignWarning": "If it is the sign, it would also be disabling trip energy, consumption and the capacity scan, while every live reading still looks correct. Worth checking: while riding, the current on the live screen should be negative.",
   "learnWhyNeedMore": "It learns from the first ride over 200 m that draws energy. Nothing else to do.",
   "trendsIntro": "Four charts, and the useful thing about each one is its slope, not its height. A number that sits still is a healthy pack; a number that drifts in one direction over months is the pack telling you something.",
@@ -1454,7 +1454,7 @@
   "trendsCapacityHint": "One dot per full discharge measured, oldest on the left: cells at the top to a cell at the cutoff, watched the whole way, with no charge in the middle. Height is the amp-hours that came out that time. This is the only real measure of wear here, and it is the slowest to fill in: expect it to go down a little each year and be suspicious of a sudden drop.",
   "trendsAxisTime": "left to right: oldest to newest",
   "trendsAxisCharge": "left to right: empty to full",
-  "learnWhyImplausible": "{n} came out at a consumption no motorcycle could produce, so they were refused. That is a fault in this app rather than anything about the riding, and it was fixed in this version: rides recorded from here should read correctly. The old ones cannot be repaired, because the readings they needed were never stored.",
+  "learnWhyImplausible": "{n} came out at a consumption no motorcycle could produce, so they were refused. That was a fault in this app rather than anything about the riding, and it is fixed: rides recorded since should read correctly. Old ones that still have their readings can be measured again with “Measure again” in their detail.",
   "connectCouldNotSearch": "The radio never confirmed the search started, so nothing was actually looked for. Usually Bluetooth still waking up just after launch. Try again.",
   "backupShare": "Send it somewhere instead",
   "backupSaveDialog": "Where to put the copy",
@@ -1661,7 +1661,7 @@
       }
     }
   },
-  "verdictCellDriftingBody": "For {weeks} weeks it has been drifting: {dev} V under the pack average and falling about {rate} V a month. Consistent with a cell on its way out. Look at it before the pack shuts down in the street.",
+  "verdictCellDriftingBody": "Over {days} days of resting readings it has been pulling away: {dev} V under the pack average, and the trend is about {rate} V more a month. Consistent with a cell on its way out. Look at it before the pack shuts down in the street.",
   "@verdictCellDriftingBody": {
     "placeholders": {
       "weeks": {
@@ -1676,7 +1676,7 @@
     }
   },
   "verdictNoCellDriftingTitle": "No cell is going",
-  "verdictNoCellDriftingBody": "Over {weeks} weeks of resting readings no cell is pulling away from the rest. The worst sits {dev} V under the average and is not getting worse. Nothing to do.",
+  "verdictNoCellDriftingBody": "Over {days} days of resting readings, all between 40 and 80 % charge, no cell is pulling away from the rest. The lowest, cell {cell}, sits {dev} V under the average and is not getting worse. Nothing to do.",
   "@verdictNoCellDriftingBody": {
     "placeholders": {
       "weeks": {
@@ -1789,7 +1789,7 @@
   "evidenceDriftRate": "Rate of separation",
   "evidencePerMonth": "month",
   "evidenceDriftSamples": "Resting readings analysed",
-  "evidenceDriftSpanWeeks": "Weeks observed",
+  "evidenceDriftDays": "Days with resting readings",
   "verdictTitle": "Verdict",
   "demoScenarioInspection": "Inspection rehearsal",
   "demoScenarioInspectionDesc": "Quiet 35 s, lights 20 s, hard pull 8 s, then released. Cell 7 is the weak one.",
@@ -2799,7 +2799,7 @@
   },
   "representativeYes": "That's normal",
   "representativeNo": "That was an exception",
-  "representativeDone": "Done. Your range stays at {km} km.",
+  "representativeDone": "Done. Your range is now {km} km.",
   "@representativeDone": {
     "placeholders": {
       "km": {
@@ -3187,5 +3187,10 @@
   "autoTripPocketWhileInUse": "With the phone in a pocket this works while the notification the app put up when you connected with the screen on is still there. If Android closes it, or the app reconnects by itself with the screen off, the GPS only answers with location allowed all the time, and without the GPS no ride starts.",
   "autoTripPocketAllowAlways": "Allow location all the time",
   "autoTripPocketSettingsHint": "In the app's settings, open Permissions, Location, and choose “Allow all the time”.",
-  "autoTripPocketAlways": "Location allowed all the time: a ride can start with the phone in a pocket even after the app reconnected by itself."
+  "autoTripPocketAlways": "Location allowed all the time: a ride can start with the phone in a pocket even after the app reconnected by itself.",
+  "offlineWeakestRestValue": "cell {index}, lowest in {pct} % of {count} resting readings over the last month",
+  "offlineLowestLastReading": "Lowest cell in the last reading",
+  "historyAverageOf": "from {used} of {total} rides: the measured ones that count towards the range",
+  "learnWhyUnmeasured": "{n} could not be measured: the link to the pack dropped for much of the ride and there were no readings left to tell how much energy came out. That is not about the riding. If the ride kept readings, “Measure again” in its detail tries once more.",
+  "learnWhyExcluded": "{n} you marked as an exception, so they do not count."
 }

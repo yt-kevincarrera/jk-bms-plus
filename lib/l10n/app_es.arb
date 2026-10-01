@@ -736,8 +736,15 @@
       }
     }
   },
-  "tripLearnedTooShort": "Demasiado corto para aprender algo. Hacen falta al menos 500 metros con consumo real.",
-  "tripLearnedRange": "Autonomía ahora",
+  "tripLearnedTooShort": "No se aprendió nada de este viaje: hacen falta al menos {m} metros con la energía medida.",
+  "@tripLearnedTooShort": {
+    "placeholders": {
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "tripLearnedRange": "Autonomía al terminar",
   "tripLearnedTotalKm": "Aprendido de",
   "tripLearnedConfidence": "Confianza",
   "tripDeepDischargeTip": "Este viaje bajó mucho la carga, y eso es justamente lo que más ayuda: cuanto más rango de la batería recorre un viaje, menos margen de error queda en el cálculo.",
@@ -750,7 +757,7 @@
       }
     }
   },
-  "tripDeltaTip": "El delta llegó a {delta} V bajo carga. Si en reposo las celdas están parejas, eso apunta a una conexión, no a una celda mala.",
+  "tripDeltaTip": "El delta máximo del viaje fue {delta} V. Si en reposo las celdas están parejas, eso apunta a una conexión, no a una celda mala.",
   "@tripDeltaTip": {
     "placeholders": {
       "delta": {
@@ -860,7 +867,7 @@
   },
   "trendsLegendLoaded": "Bajo carga",
   "trendsLegendResting": "En reposo",
-  "trendsDeltaHint": "Esta es la distinta: a lo ancho va el nivel de carga, no el tiempo. Cada punto es una lectura, colocada según lo llena que estaba la batería y cuánto se separaban su celda más alta y su más baja en ese momento. Lo que importa es la forma. Plana en el medio con un pico cerca del lleno es una celda con menos capacidad que las demás. Una curva que en cambio sigue a la corriente, más alta con carga, es resistencia en algún punto, y casi siempre una conexión y no una celda.",
+  "trendsDeltaHint": "A lo ancho va el nivel de carga, no el tiempo. Cada punto es la mediana del delta (la celda más alta menos la más baja) de las lecturas de los últimos 90 días a ese porcentaje de carga: una línea en reposo y otra descargando a más de 5 A. Las lecturas cargando no entran. Que se abra cerca de vacía y de llena es normal en casi cualquier pack, porque ahí la curva de voltaje es empinada. Lo que dice algo es la línea de reposo abriéndose en el medio, donde la curva es plana, o la de carga muy por encima de la de reposo: eso es resistencia, y casi siempre una conexión y no una celda.",
   "trendsSagHint": "Cuántos miliohmios de resistencia interna implica cada viaje, sacado de cuánto cayó el voltaje para la corriente que se pidió. El más viejo a la izquierda. La resistencia subiendo es lo primero que se degrada en una batería y se nota mucho antes que la pérdida de capacidad, así que una subida aquí es un aviso temprano y no un veredicto. Un salto de golpe casi siempre es una conexión, no las celdas.",
   "alertTitle": "Aviso",
   "alertBmsFault": "El BMS levantó una alarma",
@@ -1125,7 +1132,7 @@
   },
   "offlineSoh": "Salud que reporta el BMS",
   "offlineCycles": "Ciclos que cuenta el BMS",
-  "offlineWeakest": "Celda más floja",
+  "offlineWeakest": "Celda más baja en reposo",
   "offlineWeakestValue": "celda {index}, {volts} V",
   "@offlineWeakestValue": {
     "placeholders": {
@@ -1503,7 +1510,7 @@
       }
     }
   },
-  "learnWhyNoEnergy": "{n} grabaron distancia pero no energía saliendo de la batería. O fueron en remolque, o la batería reporta su corriente con el signo contrario al que esta app asume.",
+  "learnWhyNoEnergy": "{n} se midieron, pero no salió energía neta de la batería. O fueron en remolque o casi todo cuesta abajo, o la batería reporta su corriente con el signo contrario al que esta app asume.",
   "@learnWhyNoEnergy": {
     "placeholders": {
       "n": {
@@ -1518,7 +1525,7 @@
   "trendsCapacityHint": "Un punto por descarga completa medida, la más vieja a la izquierda: de celdas arriba a celda en el corte, vigilada entera y sin carga en medio. La altura es los amperios-hora que salieron esa vez. Es la única medida real de desgaste que hay aquí, y la más lenta en llenarse: espera que baje un poco cada año, y desconfía de una caída de golpe.",
   "trendsAxisTime": "de izquierda a derecha: del más viejo al más nuevo",
   "trendsAxisCharge": "de izquierda a derecha: de vacía a llena",
-  "learnWhyImplausible": "{n} dieron un consumo que ninguna moto puede producir, así que se rechazaron. Eso es un fallo de esta app y no algo del manejo, y quedó arreglado en esta versión: los viajes grabados de aquí en adelante deberían salir bien. Los viejos no se pueden reparar, porque las lecturas que hacían falta nunca se guardaron.",
+  "learnWhyImplausible": "{n} dieron un consumo que ninguna moto puede producir, así que se rechazaron. Eso fue un fallo de esta app y no algo del manejo, y está arreglado: los viajes grabados desde entonces deberían salir bien. Los viejos que conservan sus lecturas se pueden medir de nuevo con «Volver a medir» en su detalle.",
   "@learnWhyImplausible": {
     "placeholders": {
       "n": {
@@ -1763,10 +1770,10 @@
       }
     }
   },
-  "verdictCellDriftingBody": "Lleva {weeks} semanas alejándose: va {dev} V por debajo de la media del pack y baja unos {rate} V al mes. Coherente con una celda en camino de irse. Revísala antes de que el pack se apague en la calle.",
+  "verdictCellDriftingBody": "En {days} días con lecturas en reposo se ha ido separando: va {dev} V por debajo de la media del pack y la tendencia es de unos {rate} V más al mes. Coherente con una celda en camino de irse. Revísala antes de que el pack se apague en la calle.",
   "@verdictCellDriftingBody": {
     "placeholders": {
-      "weeks": {
+      "days": {
         "type": "String"
       },
       "dev": {
@@ -1778,10 +1785,13 @@
     }
   },
   "verdictNoCellDriftingTitle": "Ninguna celda se está yendo",
-  "verdictNoCellDriftingBody": "En {weeks} semanas de lecturas en reposo ninguna celda se separa del resto. La peor va {dev} V bajo la media y no empeora. Nada que hacer.",
+  "verdictNoCellDriftingBody": "En {days} días con lecturas en reposo, todas entre el 40 y el 80 % de carga, ninguna celda se separa del resto. La más baja, la {cell}, va {dev} V bajo la media y no empeora. Nada que hacer.",
   "@verdictNoCellDriftingBody": {
     "placeholders": {
-      "weeks": {
+      "days": {
+        "type": "String"
+      },
+      "cell": {
         "type": "String"
       },
       "dev": {
@@ -1891,7 +1901,7 @@
   "evidenceDriftRate": "Ritmo de separación",
   "evidencePerMonth": "mes",
   "evidenceDriftSamples": "Lecturas en reposo analizadas",
-  "evidenceDriftSpanWeeks": "Semanas observadas",
+  "evidenceDriftDays": "Días con lecturas en reposo",
   "verdictTitle": "Veredicto",
   "demoScenarioInspection": "Ensayo de inspección",
   "demoScenarioInspectionDesc": "35 s quieta, luces 20 s, tirón fuerte 8 s y suelta. La celda 7 es la débil.",
@@ -2941,7 +2951,7 @@
   },
   "representativeYes": "Es normal",
   "representativeNo": "Fue una excepción",
-  "representativeDone": "Listo. Tu autonomía sigue en {km} km.",
+  "representativeDone": "Listo. Tu autonomía queda en {km} km.",
   "@representativeDone": {
     "placeholders": {
       "km": {
@@ -3435,5 +3445,47 @@
   "autoTripPocketWhileInUse": "Con el móvil en el bolsillo funciona mientras siga puesta la notificación que la app abrió al conectar con la pantalla encendida. Si Android la cierra, o la app se reconecta sola con la pantalla apagada, el GPS solo responde con la ubicación permitida todo el tiempo, y sin GPS el viaje no empieza.",
   "autoTripPocketAllowAlways": "Permitir la ubicación todo el tiempo",
   "autoTripPocketSettingsHint": "En los ajustes de la app, entra en Permisos, Ubicación, y elige «Permitir todo el tiempo».",
-  "autoTripPocketAlways": "Ubicación permitida todo el tiempo: el viaje puede empezar con el móvil en el bolsillo aunque la app se haya reconectado sola."
+  "autoTripPocketAlways": "Ubicación permitida todo el tiempo: el viaje puede empezar con el móvil en el bolsillo aunque la app se haya reconectado sola.",
+  "offlineWeakestRestValue": "celda {index}, la más baja en el {pct} % de {count} lecturas en reposo del último mes",
+  "@offlineWeakestRestValue": {
+    "placeholders": {
+      "index": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineLowestLastReading": "Celda más baja en la última lectura",
+  "historyAverageOf": "de {used} de {total} viajes: los medidos que cuentan para la autonomía",
+  "@historyAverageOf": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "learnWhyUnmeasured": "{n} no se pudieron medir: la conexión con la batería se cortó durante buena parte del viaje y no quedaron lecturas para saber cuánta energía salió. No es algo del manejo. Si el viaje conserva lecturas, «Volver a medir» en su detalle lo intenta otra vez.",
+  "@learnWhyUnmeasured": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "learnWhyExcluded": "{n} los marcaste como una excepción, así que no cuentan.",
+  "@learnWhyExcluded": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  }
 }
