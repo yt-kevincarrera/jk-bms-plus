@@ -116,6 +116,11 @@ enum AdviceCode {
   /// Every cell sagged about the same: nothing giving up under load.
   inspectionSagUniform,
 
+  /// The cells moved together, but the pull was too small for that to rule
+  /// out a bad cell: the least fault this current could show is bigger than
+  /// the one the test looks for.
+  inspectionSagUnresolved,
+
   /// Cells sat apart with no current flowing.
   inspectionRestDeltaWide,
 
@@ -130,6 +135,10 @@ enum AdviceCode {
 
   /// Every cell climbed back at about the same pace.
   inspectionRecoveryOk,
+
+  /// The cells climbed back, but at this little load any cell would have:
+  /// the recovery says nothing either way.
+  inspectionRecoveryNotDiscriminating,
 
   /// The pack was hot during the test.
   inspectionHot,
@@ -277,6 +286,22 @@ enum EvidenceKind {
   medianRecoverySeconds,
   alarmCount,
   peakCurrent,
+
+  /// The spread of the cells' median resting voltages in an inspection. Not
+  /// [restingDelta], which is the widest spread seen on a live connection.
+  inspectionRestDelta,
+
+  /// The worst cell's extra sag over the median, divided by the current.
+  excessResistance,
+
+  /// The least extra resistance the pull could have shown.
+  detectionFloor,
+
+  /// The load was a charger. A flag: it carries no value.
+  loadWasCharge,
+
+  /// Which inspection step a figure was seen in, by the step's index.
+  seenDuringStep,
   // Repeated inspections. Each is a figure from an earlier run, carrying the
   // date it was measured on so the sentence can say when.
   runCount,

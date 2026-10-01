@@ -523,6 +523,31 @@ class _EvidenceRow extends StatelessWidget {
       t.evidencePeakCurrent,
       '${v.toStringAsFixed(1)} A',
     ),
+    EvidenceKind.inspectionRestDelta => (
+      t.evidenceInspectionRestDelta,
+      volts(v),
+    ),
+    EvidenceKind.excessResistance => (
+      t.evidenceExcessResistance('${e.cell ?? 0}'),
+      '${(v * 1000).toStringAsFixed(1)} mΩ',
+    ),
+    EvidenceKind.detectionFloor => (
+      t.evidenceDetectionFloor,
+      '${(v * 1000).toStringAsFixed(1)} mΩ',
+    ),
+    EvidenceKind.loadWasCharge => (
+      t.evidenceLoadWasCharge,
+      t.evidenceLoadCharger,
+    ),
+    EvidenceKind.seenDuringStep => (
+      t.evidenceSeenDuringStep,
+      switch (v.round()) {
+        0 => t.evidenceStepRest,
+        1 => t.evidenceStepLight,
+        2 => t.evidenceStepHeavy,
+        _ => t.evidenceStepRecovery,
+      },
+    ),
     EvidenceKind.runCount => (t.evidenceRunCount, whole(v)),
     EvidenceKind.timesSameCell => (
       t.evidenceTimesSameCell('${e.cell ?? 0}'),
@@ -591,8 +616,15 @@ String adviceTitle(AppL10n t, Advice advice) {
     AdviceCode.configNothingFlagged => t.adviceConfigNothingFlaggedTitle,
     AdviceCode.rangeStillLearning => t.adviceRangeLearningTitle,
     AdviceCode.imbalanceCostingRange => t.adviceImbalanceCostingTitle,
-    AdviceCode.inspectionCellSagging => t.verdictInspCellSaggingTitle('$cell'),
-    AdviceCode.inspectionSagUniform => t.verdictInspSagUniformTitle,
+    AdviceCode.inspectionCellSagging =>
+      _charged(advice)
+          ? t.verdictInspCellRisingTitle('$cell')
+          : t.verdictInspCellSaggingTitle('$cell'),
+    AdviceCode.inspectionSagUniform =>
+      _charged(advice)
+          ? t.verdictInspSagUniformChargeTitle
+          : t.verdictInspSagUniformTitle,
+    AdviceCode.inspectionSagUnresolved => t.verdictInspSagUnresolvedTitle,
     AdviceCode.inspectionRestDeltaWide => t.verdictInspRestDeltaWideTitle,
     AdviceCode.inspectionRestDeltaOk => t.verdictInspRestDeltaOkTitle,
     AdviceCode.inspectionWeakUnderLightLoad => t.verdictInspWeakLightTitle(
@@ -602,6 +634,8 @@ String adviceTitle(AppL10n t, Advice advice) {
       '$cell',
     ),
     AdviceCode.inspectionRecoveryOk => t.verdictInspRecoveryOkTitle,
+    AdviceCode.inspectionRecoveryNotDiscriminating =>
+      t.verdictInspRecoveryNotDiscriminatingTitle,
     AdviceCode.inspectionHot => t.verdictInspHotTitle,
     AdviceCode.inspectionAlarmsSeen => t.verdictInspAlarmsTitle,
     AdviceCode.inspectionCountersEditable => t.verdictInspCountersTitle,
@@ -644,6 +678,17 @@ String adviceTitle(AppL10n t, Advice advice) {
     AdviceCode.configLooksSane => t.verdictConfigLooksSaneTitle,
   };
 }
+
+/// Whether an inspection finding was measured under a charger, so its words
+/// say the cells rose rather than fell.
+bool _charged(Advice advice) =>
+    advice.evidence.any((e) => e.kind == EvidenceKind.loadWasCharge);
+
+/// Milliohms, from an evidence figure in ohms.
+String _milliohms(Advice advice, EvidenceKind kind) =>
+    ((advice.evidence.where((e) => e.kind == kind).firstOrNull?.value ?? 0) *
+            1000)
+        .toStringAsFixed(1);
 
 /// One evidence figure of an advice, formatted, or zero when it carries none.
 String _fact(Advice advice, EvidenceKind kind, int digits) =>
@@ -736,11 +781,31 @@ String adviceBody(AppL10n t, Advice advice) {
     AdviceCode.imbalanceCostingRange => t.adviceImbalanceCostingBody(
       v.toStringAsFixed(0),
     ),
-    AdviceCode.inspectionCellSagging => t.verdictInspCellSaggingBody(
-      v.toStringAsFixed(3),
-    ),
-    AdviceCode.inspectionSagUniform => t.verdictInspSagUniformBody(
-      v.toStringAsFixed(3),
+    AdviceCode.inspectionCellSagging =>
+      _charged(advice)
+          ? t.verdictInspCellRisingBody(
+              v.toStringAsFixed(3),
+              _milliohms(advice, EvidenceKind.excessResistance),
+            )
+          : t.verdictInspCellSaggingBody(
+              v.toStringAsFixed(3),
+              _milliohms(advice, EvidenceKind.excessResistance),
+            ),
+    AdviceCode.inspectionSagUniform =>
+      _charged(advice)
+          ? t.verdictInspSagUniformChargeBody(
+              f(EvidenceKind.currentStep, 1),
+              v.toStringAsFixed(3),
+              _milliohms(advice, EvidenceKind.detectionFloor),
+            )
+          : t.verdictInspSagUniformBody(
+              f(EvidenceKind.currentStep, 1),
+              v.toStringAsFixed(3),
+              _milliohms(advice, EvidenceKind.detectionFloor),
+            ),
+    AdviceCode.inspectionSagUnresolved => t.verdictInspSagUnresolvedBody(
+      f(EvidenceKind.currentStep, 1),
+      (v * 1000).toStringAsFixed(1),
     ),
     AdviceCode.inspectionRestDeltaWide => t.verdictInspRestDeltaWideBody(
       v.toStringAsFixed(3),
@@ -759,7 +824,18 @@ String adviceBody(AppL10n t, Advice advice) {
     AdviceCode.inspectionRecoveryOk => t.verdictInspRecoveryOkBody(
       v.toStringAsFixed(0),
     ),
-    AdviceCode.inspectionHot => t.verdictInspHotBody(v.toStringAsFixed(0)),
+    AdviceCode.inspectionRecoveryNotDiscriminating =>
+      t.verdictInspRecoveryNotDiscriminatingBody(
+        v.toStringAsFixed(0),
+        f(EvidenceKind.currentStep, 1),
+      ),
+    AdviceCode.inspectionHot => switch (fact(EvidenceKind.seenDuringStep)) {
+      null => t.verdictInspHotBody(v.toStringAsFixed(0)),
+      final step when step < 2 => t.verdictInspHotRestBody(
+        v.toStringAsFixed(0),
+      ),
+      _ => t.verdictInspHotLoadBody(v.toStringAsFixed(0)),
+    },
     AdviceCode.inspectionAlarmsSeen => t.verdictInspAlarmsBody(
       v.toStringAsFixed(0),
     ),

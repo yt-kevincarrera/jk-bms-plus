@@ -114,6 +114,8 @@ AdviceSubject? subjectOf(AdviceCode code) => switch (code) {
 
   // --- Not about the battery: how much this measurement is worth ---
   AdviceCode.inspectionNoHeavyLoad ||
+  AdviceCode.inspectionSagUnresolved ||
+  AdviceCode.inspectionRecoveryNotDiscriminating ||
   AdviceCode.inspectionRepeatLoadDiffers ||
   AdviceCode.inspectionRepeatCountersReset => null,
 };

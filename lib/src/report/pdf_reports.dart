@@ -9,6 +9,7 @@ import '../inspection/inspection_series.dart';
 import '../pack/chemistry.dart';
 import '../metrics/advice_engine.dart';
 import '../metrics/maintenance.dart';
+import '../ui/inspection/inspection_texts.dart';
 import '../ui/widgets/advice_list.dart';
 import 'report_data.dart';
 
@@ -810,15 +811,8 @@ class PdfReports {
     AdviceLevel.info => _faint,
   };
 
-  static String _caveatText(AppL10n t, InspectionCaveat c) => switch (c) {
-    InspectionCaveat.noHeavyLoad => t.inspectionCaveatNoHeavyLoad,
-    InspectionCaveat.noLightLoad => t.inspectionCaveatNoLightLoad,
-    InspectionCaveat.restNoisy => t.inspectionCaveatRestNoisy,
-    InspectionCaveat.noRecovery => t.inspectionCaveatNoRecovery,
-    InspectionCaveat.currentStepTooSmall => t.inspectionCaveatStepTooSmall,
-    InspectionCaveat.fewReadings => t.inspectionCaveatFewReadings,
-    InspectionCaveat.heavyWasCharge => t.inspectionCaveatHeavyWasCharge,
-  };
+  static String _caveatText(AppL10n t, InspectionCaveat c) =>
+      inspectionCaveatText(t, c);
 
   /// The stored kind is an enum name, which is fine in a database and no use
   /// on a printed page.

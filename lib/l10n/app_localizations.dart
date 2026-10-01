@@ -5536,8 +5536,8 @@ abstract class AppL10n {
   /// No description provided for @inspectionFidelityNote.
   ///
   /// In es, this message translates to:
-  /// **'Un test rápido detecta la estafa obvia y la celda mala; no mide capacidad real. Para capacidad real hace falta una descarga completa.'**
-  String get inspectionFidelityNote;
+  /// **'Un test rápido detecta la celda que se aparta de las demás bajo carga (a la carga de esta prueba, desde unos {floor} mΩ de resistencia de más) y la estafa obvia; no mide capacidad real. Para capacidad real hace falta una descarga completa.'**
+  String inspectionFidelityNote(String floor);
 
   /// No description provided for @inspectionCaveatsTitle.
   ///
@@ -5757,8 +5757,8 @@ abstract class AppL10n {
   /// No description provided for @verdictInspCellSaggingBody.
   ///
   /// In es, this message translates to:
-  /// **'Bajo la carga fuerte cayó {excess} V más que la mediana del pack. Coherente con una celda gastada o con una conexión mala en esa celda. Es la razón principal para no pagar el precio pedido sin más pruebas.'**
-  String verdictInspCellSaggingBody(String excess);
+  /// **'Bajo la carga fuerte cayó {excess} V más que la mediana del pack: unos {ohms} mΩ de resistencia de más. Coherente con una celda gastada o con una conexión mala en esa celda. Es la razón principal para no pagar el precio pedido sin más pruebas.'**
+  String verdictInspCellSaggingBody(String excess, String ohms);
 
   /// No description provided for @verdictInspSagUniformTitle.
   ///
@@ -5769,8 +5769,8 @@ abstract class AppL10n {
   /// No description provided for @verdictInspSagUniformBody.
   ///
   /// In es, this message translates to:
-  /// **'Bajo la carga fuerte la peor celda cayó solo {excess} V más que la mediana. Ninguna se rinde antes que las demás.'**
-  String verdictInspSagUniformBody(String excess);
+  /// **'Con la carga fuerte ({amps} A) la peor celda cayó solo {excess} V más que la mediana. A esta corriente ya se distinguiría una celda con unos {floor} mΩ de resistencia de más, y ninguna se rinde antes que las demás.'**
+  String verdictInspSagUniformBody(String amps, String excess, String floor);
 
   /// No description provided for @verdictInspRestDeltaWideTitle.
   ///
@@ -5805,7 +5805,7 @@ abstract class AppL10n {
   /// No description provided for @verdictInspWeakLightBody.
   ///
   /// In es, this message translates to:
-  /// **'Con solo las luces ({amps} A) cayó {extra} V más que las demás. Una celda que se rinde con uno o dos amperios es una celda muy cansada.'**
+  /// **'Con solo las luces ({amps} A) cayó {extra} V más que las demás. Una celda que se rinde con la carga de las luces (menos de un amperio) es una celda muy cansada.'**
   String verdictInspWeakLightBody(String amps, String extra);
 
   /// No description provided for @verdictInspSlowRecoveryTitle.
@@ -5817,7 +5817,7 @@ abstract class AppL10n {
   /// No description provided for @verdictInspSlowRecoveryBody.
   ///
   /// In es, this message translates to:
-  /// **'Tardó {extra} s más que la mediana en volver a su voltaje de reposo tras soltar la carga, o no volvió. Las celdas cansadas rebotan lento; es un indicador poco mirado y muy bueno.'**
+  /// **'Tardó {extra} s más que la mediana en volver a su voltaje de reposo tras soltar la carga, o no volvió. Las celdas cansadas rebotan lento.'**
   String verdictInspSlowRecoveryBody(String extra);
 
   /// No description provided for @verdictInspRecoveryOkTitle.
@@ -5829,7 +5829,7 @@ abstract class AppL10n {
   /// No description provided for @verdictInspRecoveryOkBody.
   ///
   /// In es, this message translates to:
-  /// **'Tras soltar la carga las celdas volvieron a su reposo en unos {seconds} s, todas al mismo paso.'**
+  /// **'Tras soltar la carga las celdas volvieron a su reposo en unos {seconds} s, todas al mismo paso. Después de un tirón así de fuerte, la recuperación es un indicador poco mirado y muy bueno.'**
   String verdictInspRecoveryOkBody(String seconds);
 
   /// No description provided for @verdictInspHotTitle.
@@ -5841,7 +5841,7 @@ abstract class AppL10n {
   /// No description provided for @verdictInspHotBody.
   ///
   /// In es, this message translates to:
-  /// **'Llegó a {temp} °C durante el test. Un pack caliente en reposo o con poca carga no es normal.'**
+  /// **'Llegó a {temp} °C durante el test. Para una prueba de unos minutos es mucho: pregunta de dónde viene ese calor.'**
   String verdictInspHotBody(String temp);
 
   /// No description provided for @verdictInspAlarmsTitle.
@@ -5877,7 +5877,7 @@ abstract class AppL10n {
   /// No description provided for @verdictInspNoHeavyLoadBody.
   ///
   /// In es, this message translates to:
-  /// **'La corriente máxima vista fue {amps} A. Sin un tirón fuerte no se puede medir cuánto cae cada celda, que es donde sale la verdad. Repite con la rueda al aire o 50 metros en la moto.'**
+  /// **'La corriente máxima vista fue {amps} A. Sin un tirón fuerte sostenido unos segundos no se puede medir cuánto cae cada celda, que es donde sale la verdad. Repite rodando con carga real (una cuesta o acelerar fuerte), o con el cargador.'**
   String verdictInspNoHeavyLoadBody(String amps);
 
   /// No description provided for @evidenceCellSag.
@@ -8191,6 +8191,184 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'La app solo tiene permiso de ubicación aproximada, y con eso no se puede medir un viaje: cada posición viene con cientos de metros de error. Activa \"Usar ubicación precisa\" en Ajustes > Aplicaciones > JK BMS + > Permisos > Ubicación, y vuelve a empezar el viaje.'**
   String get locationApproximateOnly;
+
+  /// No description provided for @inspectionCaveatRecoveryNoLoad.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin carga fuerte tampoco hay recuperación que medir.'**
+  String get inspectionCaveatRecoveryNoLoad;
+
+  /// No description provided for @inspectionCaveatEndedBeforeLoad.
+  ///
+  /// In es, this message translates to:
+  /// **'La prueba se terminó antes de la carga: ni la caída por celda ni la recuperación se midieron.'**
+  String get inspectionCaveatEndedBeforeLoad;
+
+  /// No description provided for @inspectionCaveatEndedBeforeRecovery.
+  ///
+  /// In es, this message translates to:
+  /// **'La prueba se terminó mientras las celdas volvían: la recuperación no se midió.'**
+  String get inspectionCaveatEndedBeforeRecovery;
+
+  /// No description provided for @inspectionCaveatRecoveryLinkGap.
+  ///
+  /// In es, this message translates to:
+  /// **'Se cortó la conexión con el BMS mientras las celdas volvían: la recuperación no se midió, porque el tiempo habría sido el del corte.'**
+  String get inspectionCaveatRecoveryLinkGap;
+
+  /// No description provided for @inspectionCaveatLinkGaps.
+  ///
+  /// In es, this message translates to:
+  /// **'La conexión con el BMS se cortó durante la prueba. Los pasos en los que cayó el corte volvieron a contar desde cero.'**
+  String get inspectionCaveatLinkGaps;
+
+  /// No description provided for @verdictInspCellRisingTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'La celda {cell} sube mucho más que las demás'**
+  String verdictInspCellRisingTitle(String cell);
+
+  /// No description provided for @verdictInspCellRisingBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Con el cargador subió {excess} V más que la mediana del pack: unos {ohms} mΩ de resistencia de más. Coherente con una celda gastada o con una conexión mala en esa celda. Es la razón principal para no pagar el precio pedido sin más pruebas.'**
+  String verdictInspCellRisingBody(String excess, String ohms);
+
+  /// No description provided for @verdictInspSagUniformChargeTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Todas las celdas suben parejo'**
+  String get verdictInspSagUniformChargeTitle;
+
+  /// No description provided for @verdictInspSagUniformChargeBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Con el cargador ({amps} A) la celda que más subió lo hizo solo {excess} V más que la mediana. A esta corriente ya se distinguiría una celda con unos {floor} mΩ de resistencia de más, y ninguna se aparta de las demás.'**
+  String verdictInspSagUniformChargeBody(
+    String amps,
+    String excess,
+    String floor,
+  );
+
+  /// No description provided for @verdictInspSagUnresolvedTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Carga insuficiente para descartar una celda mala'**
+  String get verdictInspSagUnresolvedTitle;
+
+  /// No description provided for @verdictInspSagUnresolvedBody.
+  ///
+  /// In es, this message translates to:
+  /// **'A esta carga ({amps} A) no se distingue una celda con menos de {floor} mΩ extra, y una celda mala puede tener menos que eso. Las celdas se movieron parejas, pero con tan poca corriente eso no descarta nada. Repite rodando con carga real (una cuesta o acelerar fuerte), o con el cargador.'**
+  String verdictInspSagUnresolvedBody(String amps, String floor);
+
+  /// No description provided for @verdictInspRecoveryNotDiscriminatingTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Con esta carga la recuperación no dice nada'**
+  String get verdictInspRecoveryNotDiscriminatingTitle;
+
+  /// No description provided for @verdictInspRecoveryNotDiscriminatingBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Las celdas volvieron a su reposo en unos {seconds} s. Con esta carga ({amps} A) la recuperación no discrimina: una celda cansada vuelve casi tan rápido como una buena. Para que cuente hace falta un tirón de al menos un tercio de la capacidad del pack.'**
+  String verdictInspRecoveryNotDiscriminatingBody(String seconds, String amps);
+
+  /// No description provided for @verdictInspHotRestBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegó a {temp} °C en reposo o con solo las luces. Un pack caliente sin carga no es normal: o venía de un uso fuerte justo antes, o algo dentro se calienta solo.'**
+  String verdictInspHotRestBody(String temp);
+
+  /// No description provided for @verdictInspHotLoadBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegó a {temp} °C durante la carga fuerte o justo después. Un tirón de unos segundos no calienta tanto un pack sano: o ya venía caliente, o algo se calienta de más bajo carga.'**
+  String verdictInspHotLoadBody(String temp);
+
+  /// No description provided for @evidenceInspectionRestDelta.
+  ///
+  /// In es, this message translates to:
+  /// **'Delta en reposo (mediana de cada celda en reposo)'**
+  String get evidenceInspectionRestDelta;
+
+  /// No description provided for @evidenceExcessResistance.
+  ///
+  /// In es, this message translates to:
+  /// **'Resistencia de más, celda {cell}'**
+  String evidenceExcessResistance(String cell);
+
+  /// No description provided for @evidenceDetectionFloor.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo mínimo que se distingue a esta carga'**
+  String get evidenceDetectionFloor;
+
+  /// No description provided for @evidenceLoadWasCharge.
+  ///
+  /// In es, this message translates to:
+  /// **'Carga usada'**
+  String get evidenceLoadWasCharge;
+
+  /// No description provided for @evidenceLoadCharger.
+  ///
+  /// In es, this message translates to:
+  /// **'el cargador'**
+  String get evidenceLoadCharger;
+
+  /// No description provided for @evidenceSeenDuringStep.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuándo se vio'**
+  String get evidenceSeenDuringStep;
+
+  /// No description provided for @evidenceStepRest.
+  ///
+  /// In es, this message translates to:
+  /// **'en reposo'**
+  String get evidenceStepRest;
+
+  /// No description provided for @evidenceStepLight.
+  ///
+  /// In es, this message translates to:
+  /// **'con las luces'**
+  String get evidenceStepLight;
+
+  /// No description provided for @evidenceStepHeavy.
+  ///
+  /// In es, this message translates to:
+  /// **'con la carga fuerte'**
+  String get evidenceStepHeavy;
+
+  /// No description provided for @evidenceStepRecovery.
+  ///
+  /// In es, this message translates to:
+  /// **'al soltar la carga'**
+  String get evidenceStepRecovery;
+
+  /// No description provided for @inspectionFidelityNoteUnmeasured.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin una carga suficiente este test no ha podido buscar la celda mala: lo de arriba es solo lo que se ve en reposo. Tampoco mide capacidad real; para eso hace falta una descarga completa.'**
+  String get inspectionFidelityNoteUnmeasured;
+
+  /// No description provided for @inspectionLightUnresolved.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin veredicto: la carga no bastó para descartar una celda mala'**
+  String get inspectionLightUnresolved;
+
+  /// No description provided for @inspectionUnresolvedBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Hubo carga, pero poca: a esa corriente una celda mala puede moverse igual que las buenas, así que aquí no hay nada sobre esta batería ni a favor ni en contra. Repítelo con más corriente: rodando con carga real (una cuesta o acelerar fuerte), o con el cargador.'**
+  String get inspectionUnresolvedBody;
+
+  /// No description provided for @inspectionLightUnmeasuredShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin veredicto'**
+  String get inspectionLightUnmeasuredShort;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

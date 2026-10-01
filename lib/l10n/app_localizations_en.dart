@@ -3234,8 +3234,9 @@ class AppL10nEn extends AppL10n {
       'Per-cell sag under load is where this test gets its answer, and no load big enough ever arrived, so there is nothing here about this battery either way. Run it again and give it one of these: ride fifty metres accelerating properly, or hold the rear brake on the stand and open the throttle, or plug the charger in for half a minute. A wheel spinning free in the air is not a load: there is nothing for the motor to push against, so the current stays near zero however hard you twist it.';
 
   @override
-  String get inspectionFidelityNote =>
-      'A quick test catches the obvious scam and the bad cell; it does not measure real capacity. Real capacity takes a full discharge.';
+  String inspectionFidelityNote(String floor) {
+    return 'A quick test catches the cell that breaks away from the others under load (at this test\'s load, from about $floor mΩ of extra resistance) and the obvious scam; it does not measure real capacity. Real capacity takes a full discharge.';
+  }
 
   @override
   String get inspectionCaveatsTitle => 'What this test could not see';
@@ -3364,16 +3365,16 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String verdictInspCellSaggingBody(String excess) {
-    return 'Under the hard pull it dropped $excess V more than the pack median. Consistent with a worn cell or a bad connection at that cell. This is the main reason not to pay the asking price without more tests.';
+  String verdictInspCellSaggingBody(String excess, String ohms) {
+    return 'Under the hard pull it dropped $excess V more than the pack median: about $ohms mΩ of extra resistance. Consistent with a worn cell or a bad connection at that cell. This is the main reason not to pay the asking price without more tests.';
   }
 
   @override
   String get verdictInspSagUniformTitle => 'Every cell sags evenly';
 
   @override
-  String verdictInspSagUniformBody(String excess) {
-    return 'Under the hard pull the worst cell dropped only $excess V more than the median. None gives up before the others.';
+  String verdictInspSagUniformBody(String amps, String excess, String floor) {
+    return 'Under the hard pull ($amps A) the worst cell dropped only $excess V more than the median. At this current a cell with about $floor mΩ of extra resistance would already stand out, and none gives up before the others.';
   }
 
   @override
@@ -3399,7 +3400,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String verdictInspWeakLightBody(String amps, String extra) {
-    return 'With only the lights on ($amps A) it dropped $extra V more than the rest. A cell that gives up at one or two amps is a very tired cell.';
+    return 'With only the lights on ($amps A) it dropped $extra V more than the rest. A cell that gives up under the lights\' load (less than an amp) is a very tired cell.';
   }
 
   @override
@@ -3409,7 +3410,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String verdictInspSlowRecoveryBody(String extra) {
-    return 'It took $extra s longer than the median to return to its resting voltage after the load, or never did. Tired cells rebound slowly; it is a rarely watched and very good sign.';
+    return 'It took $extra s longer than the median to return to its resting voltage after the load, or never did. Tired cells rebound slowly.';
   }
 
   @override
@@ -3417,7 +3418,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String verdictInspRecoveryOkBody(String seconds) {
-    return 'After the load the cells were back at rest in about $seconds s, all at the same pace.';
+    return 'After the load the cells were back at rest in about $seconds s, all at the same pace. After a pull this hard, recovery is a rarely watched and very good sign.';
   }
 
   @override
@@ -3425,7 +3426,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String verdictInspHotBody(String temp) {
-    return 'It reached $temp °C during the test. A pack that is hot at rest or under light load is not normal.';
+    return 'It reached $temp °C during the test. For a test of a few minutes that is a lot: ask where the heat comes from.';
   }
 
   @override
@@ -3450,7 +3451,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String verdictInspNoHeavyLoadBody(String amps) {
-    return 'The highest current seen was $amps A. Without a hard pull there is no way to measure how far each cell drops, which is where the truth comes out. Repeat with the wheel in the air or 50 metres on the bike.';
+    return 'The highest current seen was $amps A. Without a hard pull held for a few seconds there is no way to measure how far each cell drops, which is where the truth comes out. Repeat riding under real load (a hill or hard acceleration), or with the charger.';
   }
 
   @override
@@ -4891,4 +4892,122 @@ class AppL10nEn extends AppL10n {
   @override
   String get locationApproximateOnly =>
       'The app only has approximate location, which cannot measure a ride: every position is hundreds of metres off. Turn on \"Use precise location\" in Settings > Apps > JK BMS + > Permissions > Location, then start the ride again.';
+
+  @override
+  String get inspectionCaveatRecoveryNoLoad =>
+      'With no hard pull there was no recovery to measure either.';
+
+  @override
+  String get inspectionCaveatEndedBeforeLoad =>
+      'The test was ended before the load: neither per-cell sag nor recovery was measured.';
+
+  @override
+  String get inspectionCaveatEndedBeforeRecovery =>
+      'The test was ended while the cells were climbing back: recovery was not measured.';
+
+  @override
+  String get inspectionCaveatRecoveryLinkGap =>
+      'The link to the BMS dropped while the cells were climbing back: recovery was not measured, because the time would have been the outage\'s.';
+
+  @override
+  String get inspectionCaveatLinkGaps =>
+      'The link to the BMS dropped during the test. The steps it dropped in started counting again from zero.';
+
+  @override
+  String verdictInspCellRisingTitle(String cell) {
+    return 'Cell $cell rises far more than the rest';
+  }
+
+  @override
+  String verdictInspCellRisingBody(String excess, String ohms) {
+    return 'On the charger it rose $excess V more than the pack median: about $ohms mΩ of extra resistance. Consistent with a worn cell or a bad connection at that cell. This is the main reason not to pay the asking price without more tests.';
+  }
+
+  @override
+  String get verdictInspSagUniformChargeTitle => 'Every cell rises evenly';
+
+  @override
+  String verdictInspSagUniformChargeBody(
+    String amps,
+    String excess,
+    String floor,
+  ) {
+    return 'On the charger ($amps A) the cell that rose most went only $excess V above the median. At this current a cell with about $floor mΩ of extra resistance would already stand out, and none breaks away from the others.';
+  }
+
+  @override
+  String get verdictInspSagUnresolvedTitle =>
+      'Too little load to rule out a bad cell';
+
+  @override
+  String verdictInspSagUnresolvedBody(String amps, String floor) {
+    return 'At this load ($amps A) a cell with less than $floor mΩ extra cannot be told apart, and a bad cell can have less than that. The cells moved together, but with so little current that rules nothing out. Repeat riding under real load (a hill or hard acceleration), or with the charger.';
+  }
+
+  @override
+  String get verdictInspRecoveryNotDiscriminatingTitle =>
+      'At this load recovery says nothing';
+
+  @override
+  String verdictInspRecoveryNotDiscriminatingBody(String seconds, String amps) {
+    return 'The cells were back at rest in about $seconds s. At this load ($amps A) recovery does not discriminate: a tired cell comes back almost as fast as a good one. For it to count the pull has to be at least a third of the pack\'s capacity.';
+  }
+
+  @override
+  String verdictInspHotRestBody(String temp) {
+    return 'It reached $temp °C at rest or with only the lights on. A pack that is hot with no load is not normal: either it came straight off hard use, or something inside heats up by itself.';
+  }
+
+  @override
+  String verdictInspHotLoadBody(String temp) {
+    return 'It reached $temp °C during the hard pull or just after. A pull of a few seconds does not heat a healthy pack that much: either it was already hot, or something heats up too much under load.';
+  }
+
+  @override
+  String get evidenceInspectionRestDelta =>
+      'Delta at rest (each cell\'s median at rest)';
+
+  @override
+  String evidenceExcessResistance(String cell) {
+    return 'Extra resistance, cell $cell';
+  }
+
+  @override
+  String get evidenceDetectionFloor => 'Least that stands out at this load';
+
+  @override
+  String get evidenceLoadWasCharge => 'Load used';
+
+  @override
+  String get evidenceLoadCharger => 'the charger';
+
+  @override
+  String get evidenceSeenDuringStep => 'When it was seen';
+
+  @override
+  String get evidenceStepRest => 'at rest';
+
+  @override
+  String get evidenceStepLight => 'with the lights on';
+
+  @override
+  String get evidenceStepHeavy => 'under the hard pull';
+
+  @override
+  String get evidenceStepRecovery => 'after the load let go';
+
+  @override
+  String get inspectionFidelityNoteUnmeasured =>
+      'Without enough load this test could not look for the bad cell: what is above is only what shows at rest. It does not measure real capacity either; that takes a full discharge.';
+
+  @override
+  String get inspectionLightUnresolved =>
+      'No verdict: the load was too small to rule out a bad cell';
+
+  @override
+  String get inspectionUnresolvedBody =>
+      'There was a load, but a small one: at that current a bad cell can move just like the good ones, so there is nothing here about this battery either way. Run it again with more current: riding under real load (a hill or hard acceleration), or with the charger.';
+
+  @override
+  String get inspectionLightUnmeasuredShort => 'No verdict';
 }

@@ -3248,8 +3248,9 @@ class AppL10nEs extends AppL10n {
       'Este test saca su respuesta de la caída por celda bajo carga, y nunca llegó una carga suficiente, así que aquí no hay nada sobre esta batería ni a favor ni en contra. Repítelo y dale una de estas: rodar cincuenta metros acelerando de verdad, o apretar el freno trasero en el caballete y abrir gas, o enchufar el cargador medio minuto. La rueda girando al aire no es carga: el motor no tiene contra qué empujar, así que la corriente se queda casi en cero por mucho que gires el puño.';
 
   @override
-  String get inspectionFidelityNote =>
-      'Un test rápido detecta la estafa obvia y la celda mala; no mide capacidad real. Para capacidad real hace falta una descarga completa.';
+  String inspectionFidelityNote(String floor) {
+    return 'Un test rápido detecta la celda que se aparta de las demás bajo carga (a la carga de esta prueba, desde unos $floor mΩ de resistencia de más) y la estafa obvia; no mide capacidad real. Para capacidad real hace falta una descarga completa.';
+  }
 
   @override
   String get inspectionCaveatsTitle => 'Lo que este test no pudo ver';
@@ -3381,16 +3382,16 @@ class AppL10nEs extends AppL10n {
   }
 
   @override
-  String verdictInspCellSaggingBody(String excess) {
-    return 'Bajo la carga fuerte cayó $excess V más que la mediana del pack. Coherente con una celda gastada o con una conexión mala en esa celda. Es la razón principal para no pagar el precio pedido sin más pruebas.';
+  String verdictInspCellSaggingBody(String excess, String ohms) {
+    return 'Bajo la carga fuerte cayó $excess V más que la mediana del pack: unos $ohms mΩ de resistencia de más. Coherente con una celda gastada o con una conexión mala en esa celda. Es la razón principal para no pagar el precio pedido sin más pruebas.';
   }
 
   @override
   String get verdictInspSagUniformTitle => 'Todas las celdas caen parejo';
 
   @override
-  String verdictInspSagUniformBody(String excess) {
-    return 'Bajo la carga fuerte la peor celda cayó solo $excess V más que la mediana. Ninguna se rinde antes que las demás.';
+  String verdictInspSagUniformBody(String amps, String excess, String floor) {
+    return 'Con la carga fuerte ($amps A) la peor celda cayó solo $excess V más que la mediana. A esta corriente ya se distinguiría una celda con unos $floor mΩ de resistencia de más, y ninguna se rinde antes que las demás.';
   }
 
   @override
@@ -3417,7 +3418,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String verdictInspWeakLightBody(String amps, String extra) {
-    return 'Con solo las luces ($amps A) cayó $extra V más que las demás. Una celda que se rinde con uno o dos amperios es una celda muy cansada.';
+    return 'Con solo las luces ($amps A) cayó $extra V más que las demás. Una celda que se rinde con la carga de las luces (menos de un amperio) es una celda muy cansada.';
   }
 
   @override
@@ -3427,7 +3428,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String verdictInspSlowRecoveryBody(String extra) {
-    return 'Tardó $extra s más que la mediana en volver a su voltaje de reposo tras soltar la carga, o no volvió. Las celdas cansadas rebotan lento; es un indicador poco mirado y muy bueno.';
+    return 'Tardó $extra s más que la mediana en volver a su voltaje de reposo tras soltar la carga, o no volvió. Las celdas cansadas rebotan lento.';
   }
 
   @override
@@ -3435,7 +3436,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String verdictInspRecoveryOkBody(String seconds) {
-    return 'Tras soltar la carga las celdas volvieron a su reposo en unos $seconds s, todas al mismo paso.';
+    return 'Tras soltar la carga las celdas volvieron a su reposo en unos $seconds s, todas al mismo paso. Después de un tirón así de fuerte, la recuperación es un indicador poco mirado y muy bueno.';
   }
 
   @override
@@ -3443,7 +3444,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String verdictInspHotBody(String temp) {
-    return 'Llegó a $temp °C durante el test. Un pack caliente en reposo o con poca carga no es normal.';
+    return 'Llegó a $temp °C durante el test. Para una prueba de unos minutos es mucho: pregunta de dónde viene ese calor.';
   }
 
   @override
@@ -3469,7 +3470,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String verdictInspNoHeavyLoadBody(String amps) {
-    return 'La corriente máxima vista fue $amps A. Sin un tirón fuerte no se puede medir cuánto cae cada celda, que es donde sale la verdad. Repite con la rueda al aire o 50 metros en la moto.';
+    return 'La corriente máxima vista fue $amps A. Sin un tirón fuerte sostenido unos segundos no se puede medir cuánto cae cada celda, que es donde sale la verdad. Repite rodando con carga real (una cuesta o acelerar fuerte), o con el cargador.';
   }
 
   @override
@@ -4914,4 +4915,124 @@ class AppL10nEs extends AppL10n {
   @override
   String get locationApproximateOnly =>
       'La app solo tiene permiso de ubicación aproximada, y con eso no se puede medir un viaje: cada posición viene con cientos de metros de error. Activa \"Usar ubicación precisa\" en Ajustes > Aplicaciones > JK BMS + > Permisos > Ubicación, y vuelve a empezar el viaje.';
+
+  @override
+  String get inspectionCaveatRecoveryNoLoad =>
+      'Sin carga fuerte tampoco hay recuperación que medir.';
+
+  @override
+  String get inspectionCaveatEndedBeforeLoad =>
+      'La prueba se terminó antes de la carga: ni la caída por celda ni la recuperación se midieron.';
+
+  @override
+  String get inspectionCaveatEndedBeforeRecovery =>
+      'La prueba se terminó mientras las celdas volvían: la recuperación no se midió.';
+
+  @override
+  String get inspectionCaveatRecoveryLinkGap =>
+      'Se cortó la conexión con el BMS mientras las celdas volvían: la recuperación no se midió, porque el tiempo habría sido el del corte.';
+
+  @override
+  String get inspectionCaveatLinkGaps =>
+      'La conexión con el BMS se cortó durante la prueba. Los pasos en los que cayó el corte volvieron a contar desde cero.';
+
+  @override
+  String verdictInspCellRisingTitle(String cell) {
+    return 'La celda $cell sube mucho más que las demás';
+  }
+
+  @override
+  String verdictInspCellRisingBody(String excess, String ohms) {
+    return 'Con el cargador subió $excess V más que la mediana del pack: unos $ohms mΩ de resistencia de más. Coherente con una celda gastada o con una conexión mala en esa celda. Es la razón principal para no pagar el precio pedido sin más pruebas.';
+  }
+
+  @override
+  String get verdictInspSagUniformChargeTitle =>
+      'Todas las celdas suben parejo';
+
+  @override
+  String verdictInspSagUniformChargeBody(
+    String amps,
+    String excess,
+    String floor,
+  ) {
+    return 'Con el cargador ($amps A) la celda que más subió lo hizo solo $excess V más que la mediana. A esta corriente ya se distinguiría una celda con unos $floor mΩ de resistencia de más, y ninguna se aparta de las demás.';
+  }
+
+  @override
+  String get verdictInspSagUnresolvedTitle =>
+      'Carga insuficiente para descartar una celda mala';
+
+  @override
+  String verdictInspSagUnresolvedBody(String amps, String floor) {
+    return 'A esta carga ($amps A) no se distingue una celda con menos de $floor mΩ extra, y una celda mala puede tener menos que eso. Las celdas se movieron parejas, pero con tan poca corriente eso no descarta nada. Repite rodando con carga real (una cuesta o acelerar fuerte), o con el cargador.';
+  }
+
+  @override
+  String get verdictInspRecoveryNotDiscriminatingTitle =>
+      'Con esta carga la recuperación no dice nada';
+
+  @override
+  String verdictInspRecoveryNotDiscriminatingBody(String seconds, String amps) {
+    return 'Las celdas volvieron a su reposo en unos $seconds s. Con esta carga ($amps A) la recuperación no discrimina: una celda cansada vuelve casi tan rápido como una buena. Para que cuente hace falta un tirón de al menos un tercio de la capacidad del pack.';
+  }
+
+  @override
+  String verdictInspHotRestBody(String temp) {
+    return 'Llegó a $temp °C en reposo o con solo las luces. Un pack caliente sin carga no es normal: o venía de un uso fuerte justo antes, o algo dentro se calienta solo.';
+  }
+
+  @override
+  String verdictInspHotLoadBody(String temp) {
+    return 'Llegó a $temp °C durante la carga fuerte o justo después. Un tirón de unos segundos no calienta tanto un pack sano: o ya venía caliente, o algo se calienta de más bajo carga.';
+  }
+
+  @override
+  String get evidenceInspectionRestDelta =>
+      'Delta en reposo (mediana de cada celda en reposo)';
+
+  @override
+  String evidenceExcessResistance(String cell) {
+    return 'Resistencia de más, celda $cell';
+  }
+
+  @override
+  String get evidenceDetectionFloor =>
+      'Lo mínimo que se distingue a esta carga';
+
+  @override
+  String get evidenceLoadWasCharge => 'Carga usada';
+
+  @override
+  String get evidenceLoadCharger => 'el cargador';
+
+  @override
+  String get evidenceSeenDuringStep => 'Cuándo se vio';
+
+  @override
+  String get evidenceStepRest => 'en reposo';
+
+  @override
+  String get evidenceStepLight => 'con las luces';
+
+  @override
+  String get evidenceStepHeavy => 'con la carga fuerte';
+
+  @override
+  String get evidenceStepRecovery => 'al soltar la carga';
+
+  @override
+  String get inspectionFidelityNoteUnmeasured =>
+      'Sin una carga suficiente este test no ha podido buscar la celda mala: lo de arriba es solo lo que se ve en reposo. Tampoco mide capacidad real; para eso hace falta una descarga completa.';
+
+  @override
+  String get inspectionLightUnresolved =>
+      'Sin veredicto: la carga no bastó para descartar una celda mala';
+
+  @override
+  String get inspectionUnresolvedBody =>
+      'Hubo carga, pero poca: a esa corriente una celda mala puede moverse igual que las buenas, así que aquí no hay nada sobre esta batería ni a favor ni en contra. Repítelo con más corriente: rodando con carga real (una cuesta o acelerar fuerte), o con el cargador.';
+
+  @override
+  String get inspectionLightUnmeasuredShort => 'Sin veredicto';
 }

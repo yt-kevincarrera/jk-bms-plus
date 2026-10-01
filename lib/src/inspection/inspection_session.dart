@@ -45,8 +45,12 @@ class InspectionThresholds {
     this.recoverySettleVolts = 0.005,
     this.stepTimeoutSeconds = 120,
     this.minimumStepAmps = 3.0,
-    this.sagWatchVolts = 0.040,
-    this.sagProblemVolts = 0.080,
+    this.sagWatchOhms = 0.0015,
+    this.sagProblemOhms = 0.0030,
+    this.sagResolutionVolts = 0.005,
+    this.linkGapSeconds = 3.0,
+    this.minimumStepReadings = 5,
+    this.recoveryDiscriminatesCRate = 0.3,
     this.lightSagWatchVolts = 0.030,
     this.restDeltaWatchVolts = 0.030,
     this.restDeltaProblemVolts = 0.060,
@@ -112,11 +116,49 @@ class InspectionThresholds {
   /// is noise rather than a measurement.
   final double minimumStepAmps;
 
-  /// A cell sagging this much more than the median under the hard pull is
-  /// worth a look, and this much more is a problem. VERIFY against real
-  /// packs before trusting either.
-  final double sagWatchVolts;
-  final double sagProblemVolts;
+  /// A cell with this much more resistance than the median cell is worth a
+  /// look, and this much more is a problem.
+  ///
+  /// In ohms, not volts, and that is the fix. These used to be 40 and 80 mV
+  /// of extra sag, figures chosen when the hard pull was a flat 15 A. When the
+  /// pull became a tenth of C, a 40 Ah pack passed on 4 A, and at 4 A a cell
+  /// needs 10 mOhm of extra resistance before it sags 40 mV more than the
+  /// others: three or four times what a healthy cell group of this kind has
+  /// in total. So a plainly bad cell came out "all cells sag evenly", green.
+  /// The same extra sag means four times the fault at a quarter of the
+  /// current, and only a resistance says the same thing at any current.
+  ///
+  /// The measured pack sits near 3 mOhm per cell group (17 mV at 5.5 A on
+  /// the real recording), so these are half again and double what a healthy
+  /// group carries, on top of it.
+  final double sagWatchOhms;
+  final double sagProblemOhms;
+
+  /// The smallest difference in sag between two cells this test can tell
+  /// from noise.
+  ///
+  /// The real pack reports its cells in steps of about 2.5 mV, flickering
+  /// between neighbouring values at rest, and the worst of twenty such cells
+  /// sits a few millivolts above the median from noise alone. Divided by the
+  /// current that was pulled, this is the detection floor in ohms: the least
+  /// extra resistance a cell can have and still stand out at that load.
+  final double sagResolutionVolts;
+
+  /// Two readings further apart than this have a dropped link between them.
+  ///
+  /// The real link drops for long stretches, and the first reading back after
+  /// a thirty-second hole is thirty seconds after the last one. Timing a step
+  /// across that hole completes it on one or two readings, and times a
+  /// cell's recovery as the length of the outage.
+  final double linkGapSeconds;
+
+  /// The fewest readings a step may complete on, whatever the clock says.
+  final int minimumStepReadings;
+
+  /// Recovery only tells cells apart when the load was at least this share
+  /// of the pack's capacity. Below it every cell, good or tired, is back
+  /// within a few millivolts almost at once.
+  final double recoveryDiscriminatesCRate;
 
   /// A cell that falls this far behind the median with only the lights on
   /// has almost nothing asked of it and is already giving up.
@@ -228,8 +270,11 @@ class InspectionSample {
 /// deserves the same arithmetic every time.
 ///
 /// Pure Dart, no timers. Time is read off the snapshots' phone timestamps,
-/// so the whole flow can be tested with synthetic readings and so a link
-/// that stalls does not silently advance a step nothing was measured in.
+/// so the whole flow can be tested with synthetic readings. A link that
+/// stalls does not advance a step nothing was measured in: a hole longer
+/// than [InspectionThresholds.linkGapSeconds] between two readings restarts
+/// whatever clock was running, and every step also needs a minimum number
+/// of readings, not only a minimum time.
 class InspectionSession {
   InspectionSession({this.thresholds = InspectionThresholds.defaults});
 
@@ -245,8 +290,19 @@ class InspectionSession {
   /// When the step's condition began being met continuously, or null.
   DateTime? _heldSince;
 
+  /// Readings since [_heldSince], so a step cannot complete on the clock
+  /// alone across two readings.
+  int _heldFrames = 0;
+
   /// When the hard pull was released, for the recovery clock.
   DateTime? _releasedAt;
+  int _releasedFrames = 0;
+
+  /// How many times the link went quiet for longer than a gap.
+  int _gaps = 0;
+
+  /// The step the rider ended the test in, when they ended it early.
+  InspectionStep? _endedEarlyIn;
 
   double _peakDischargeAmps = 0;
   BmsSnapshot? _last;
@@ -290,6 +346,14 @@ class InspectionSession {
 
   double get peakDischargeAmps => _peakDischargeAmps;
 
+  /// Holes in the link the session saw while it was running.
+  int get linkGaps => _gaps;
+
+  /// Where "end now" was tapped, or null when the test ran its course. The
+  /// verdict says "the test ended before the load" rather than "the load was
+  /// never released" about a load that never came.
+  InspectionStep? get endedEarlyIn => _endedEarlyIn;
+
   /// What the screen should say right now.
   InspectionPrompt? get prompt {
     final last = _last;
@@ -332,7 +396,22 @@ class InspectionSession {
     if (_step == InspectionStep.done) return false;
     _startedAt ??= s.timestamp;
     _stepStartedAt ??= s.timestamp;
+    final previous = _last;
     _last = s;
+
+    // A hole in the link. Whatever was being held was not seen being held,
+    // so its clock starts again from this reading: the first frame back after
+    // a forty-second drop used to complete a five-second step on its own, and
+    // stand in for forty seconds of a recovery nobody watched.
+    if (previous != null &&
+        s.timestamp.difference(previous.timestamp).inMilliseconds >
+            thresholds.linkGapSeconds * 1000) {
+      _gaps++;
+      _heldSince = null;
+      _heldFrames = 0;
+      _releasedAt = null;
+      _releasedFrames = 0;
+    }
 
     final amps = _dischargeAmps(s);
     if (amps > _peakDischargeAmps) _peakDischargeAmps = amps;
@@ -361,7 +440,7 @@ class InspectionSession {
         // against, so a bike with something already on the pack is not asked
         // for a load on top of a rest of zero it never had.
         if (amps < th.restCurrentAmps) _restLevelAmps = amps;
-        if (_heldForSeconds(s) >= th.restSeconds) {
+        if (_held(s, th.restSeconds)) {
           _advance(s, InspectionStep.lightLoad);
         }
       case InspectionStep.lightLoad:
@@ -373,17 +452,21 @@ class InspectionSession {
           break;
         }
         _track(s, met: amps >= lightLoadAmps);
-        if (_heldForSeconds(s) >= th.lightLoadSeconds) {
+        if (_held(s, th.lightLoadSeconds)) {
           _advance(s, InspectionStep.heavyLoad);
         } else if (_timedOut(s)) {
           _skip(s, InspectionStep.heavyLoad);
         }
       case InspectionStep.heavyLoad:
         _track(s, met: amps >= heavyLoadAmps);
-        if (_heldForSeconds(s) >= th.heavyLoadSeconds) {
+        if (_held(s, th.heavyLoadSeconds)) {
           _advance(s, InspectionStep.recovery);
         } else if (_timedOut(s)) {
-          _skip(s, InspectionStep.recovery);
+          // No hard pull means nothing to recover from. Walking on into the
+          // recovery step anyway timed the cells "climbing back" from a load
+          // they never had, and the verdict praised a recovery of 0 s.
+          _skipHeavy(s);
+          return true;
         }
       case InspectionStep.recovery:
         // The recovery clock runs from the moment the load is gone. Load
@@ -391,11 +474,14 @@ class InspectionSession {
         // somebody is still pulling on it.
         if (amps < th.restCurrentAmps) {
           _releasedAt ??= s.timestamp;
+          _releasedFrames++;
         } else {
           _releasedAt = null;
+          _releasedFrames = 0;
         }
         final released = _releasedAt;
         if (released != null &&
+            _releasedFrames >= th.minimumStepReadings &&
             s.timestamp.difference(released).inSeconds >= th.recoverySeconds) {
           _advance(s, InspectionStep.done);
           return true;
@@ -419,6 +505,10 @@ class InspectionSession {
   void skipStep() {
     final last = _last;
     if (_step == InspectionStep.done || last == null) return;
+    if (_step == InspectionStep.heavyLoad) {
+      _skipHeavy(last);
+      return;
+    }
     _skip(last, _next(_step));
   }
 
@@ -426,6 +516,7 @@ class InspectionSession {
   /// such rather than guessed.
   void abortToDone() {
     if (_step == InspectionStep.done) return;
+    _endedEarlyIn = _step;
     for (var s = _step; s != InspectionStep.done; s = _next(s)) {
       _skipped.add(s);
     }
@@ -449,15 +540,20 @@ class InspectionSession {
   void _track(BmsSnapshot s, {required bool met}) {
     if (met) {
       _heldSince ??= s.timestamp;
+      _heldFrames++;
     } else {
       _heldSince = null;
+      _heldFrames = 0;
     }
   }
 
-  double _heldForSeconds(BmsSnapshot s) {
+  /// Whether the step's condition has been held for [seconds] and over
+  /// enough readings to have been seen being held.
+  bool _held(BmsSnapshot s, int seconds) {
     final since = _heldSince;
-    if (since == null) return 0;
-    return s.timestamp.difference(since).inMilliseconds / 1000;
+    if (since == null) return false;
+    return _heldFrames >= thresholds.minimumStepReadings &&
+        s.timestamp.difference(since).inMilliseconds / 1000 >= seconds;
   }
 
   bool _timedOut(BmsSnapshot s) {
@@ -471,12 +567,23 @@ class InspectionSession {
     _step = to;
     _stepStartedAt = s.timestamp;
     _heldSince = null;
+    _heldFrames = 0;
     _releasedAt = null;
+    _releasedFrames = 0;
   }
 
   void _skip(BmsSnapshot s, InspectionStep to) {
     _skipped.add(_step);
     _advance(s, to);
+  }
+
+  /// The hard pull never happened: the recovery after it cannot happen
+  /// either, so both are recorded as not measured and the test ends.
+  void _skipHeavy(BmsSnapshot s) {
+    _skipped
+      ..add(InspectionStep.heavyLoad)
+      ..add(InspectionStep.recovery);
+    _advance(s, InspectionStep.done);
   }
 
   static InspectionStep _next(InspectionStep s) => switch (s) {

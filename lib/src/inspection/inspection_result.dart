@@ -42,6 +42,25 @@ enum InspectionCaveat {
   /// The load was never released, so nothing recovered.
   noRecovery,
 
+  /// No hard pull happened, so there was nothing to recover from. Kept apart
+  /// from [noRecovery]: "the load was never released" about a load that never
+  /// came is a sentence about something that did not happen.
+  recoveryNoLoad,
+
+  /// The rider ended the test before the hard pull.
+  endedBeforeLoad,
+
+  /// The rider ended the test while the cells were still climbing back.
+  endedBeforeRecovery,
+
+  /// The link dropped while the cells were climbing back, so the times are
+  /// the length of the outage rather than anything the cells did.
+  recoveryLinkGap,
+
+  /// The link dropped at least once during the test. The steps it fell in
+  /// started their clocks again, and the verdict says so.
+  linkGaps,
+
   /// The step between rest and load was too small for a resistance figure.
   currentStepTooSmall,
 
@@ -120,6 +139,7 @@ class ReportedFigures {
     this.softwareVersion = '',
     this.cycleCount,
     this.configuredCapacityAh,
+    this.cycleCapacityAh,
     this.soc,
     this.soh,
   });
@@ -128,7 +148,14 @@ class ReportedFigures {
   final String serialNumber;
   final String softwareVersion;
   final int? cycleCount;
+
+  /// What the BMS is configured to hold, as the status frame reports it.
   final double? configuredCapacityAh;
+
+  /// Every amp-hour the BMS has counted through the pack, ever. Like the
+  /// cycle count it only goes up by itself, and unlike it an ANT keeps one.
+  /// Null on runs saved before it was recorded.
+  final double? cycleCapacityAh;
   final double? soc;
   final double? soh;
 
@@ -138,6 +165,9 @@ class ReportedFigures {
     'sw': softwareVersion,
     'cycles': cycleCount,
     'capAh': configuredCapacityAh,
+    // Left out when unknown rather than written as null, so a certificate
+    // payload from a run without it reads exactly as it did before.
+    if (cycleCapacityAh != null) 'cycAh': cycleCapacityAh,
     'soc': soc,
     'soh': soh,
   };
@@ -148,6 +178,7 @@ class ReportedFigures {
     softwareVersion: (m['sw'] as String?) ?? '',
     cycleCount: (m['cycles'] as num?)?.toInt(),
     configuredCapacityAh: (m['capAh'] as num?)?.toDouble(),
+    cycleCapacityAh: (m['cycAh'] as num?)?.toDouble(),
     soc: (m['soc'] as num?)?.toDouble(),
     soh: (m['soh'] as num?)?.toDouble(),
   );
@@ -169,9 +200,11 @@ class InspectionResult {
     this.medianResistanceOhms,
     this.medianRecoverySeconds,
     this.maxTemperature,
+    this.maxTemperatureStep,
     this.faultsSeen = const [],
     this.durationSeconds = 0,
     this.readings = 0,
+    this.simulated,
   });
 
   final DateTime at;
@@ -189,13 +222,21 @@ class InspectionResult {
   /// The biggest draw seen at any point.
   final double peakDischargeAmps;
 
-  /// Mean draw in the hard-pull window minus rest: what the sag was over.
+  /// Typical draw in the held hard-pull window minus rest: what the sag was
+  /// over. The median of the held window; runs saved by older versions carry
+  /// the mean of every reading above the bar instead.
   final double currentStepAmps;
 
   final double? medianHeavySagVolts;
   final double? medianResistanceOhms;
   final double? medianRecoverySeconds;
+
+  /// The hottest battery probe reading of the test. Battery probes only.
   final double? maxTemperature;
+
+  /// The step that hottest reading was taken in, so the sentence about it
+  /// can say when. Null on runs saved before it was recorded.
+  final InspectionStep? maxTemperatureStep;
 
   /// Fault names active at any point during the test, deduplicated.
   final List<String> faultsSeen;
@@ -205,7 +246,34 @@ class InspectionResult {
   final int durationSeconds;
   final int readings;
 
+  /// Whether the pack under test was the app's own simulator.
+  ///
+  /// Null on runs, and certificates, made before it was recorded: unknown,
+  /// not "real". A rehearsal against the demo pack produces a perfectly
+  /// ordinary looking result, and before this was carried a signed
+  /// certificate of the simulator verified exactly like one of a battery.
+  final bool? simulated;
+
   bool get hasHeavyLoad => !caveats.contains(InspectionCaveat.noHeavyLoad);
+
+  /// The hard pull was a charger, so the cells rose instead of falling.
+  bool get heavyWasCharge => caveats.contains(InspectionCaveat.heavyWasCharge);
+
+  /// The worst cell's extra sag over the median, as a resistance: the extra
+  /// sag divided by the current it was pulled at. The same figure means the
+  /// same fault whatever the pull was, which millivolts do not.
+  double? get worstExcessOhms {
+    final excess = worstSagExcess;
+    if (excess == null || currentStepAmps <= 0) return null;
+    return excess / currentStepAmps;
+  }
+
+  /// The least extra resistance a cell could have had and still stood out
+  /// from noise at the current this test pulled.
+  double? detectionFloorOhms(double resolutionVolts) =>
+      currentStepAmps <= 0 || !hasHeavyLoad
+      ? null
+      : resolutionVolts / currentStepAmps;
 
   int get cellCount => cells.length;
 
@@ -254,11 +322,13 @@ class InspectionResult {
         ? null
         : _r(medianRecoverySeconds!, 1),
     'maxT': maxTemperature == null ? null : _r(maxTemperature!, 1),
+    if (maxTemperatureStep != null) 'maxTStep': maxTemperatureStep!.name,
     'faults': faultsSeen,
     'caveats': [for (final c in caveats) c.name],
     'reported': reported.toJson(),
     'seconds': durationSeconds,
     'readings': readings,
+    if (simulated != null) 'demo': simulated,
   };
 
   static InspectionResult fromJson(Map<String, Object?> m) => InspectionResult(
@@ -276,6 +346,9 @@ class InspectionResult {
     medianResistanceOhms: (m['medIr'] as num?)?.toDouble(),
     medianRecoverySeconds: (m['medRec'] as num?)?.toDouble(),
     maxTemperature: (m['maxT'] as num?)?.toDouble(),
+    maxTemperatureStep: InspectionStep.values
+        .where((s) => s.name == m['maxTStep'])
+        .firstOrNull,
     faultsSeen: [
       for (final f in (m['faults'] as List<dynamic>?) ?? []) f as String,
     ],
@@ -291,6 +364,7 @@ class InspectionResult {
     ),
     durationSeconds: ((m['seconds'] as num?) ?? 0).toInt(),
     readings: ((m['readings'] as num?) ?? 0).toInt(),
+    simulated: m['demo'] as bool?,
   );
 }
 
@@ -308,6 +382,7 @@ class InspectionAnalysis {
   InspectionResult compute(
     InspectionSession session, {
     ReportedFigures reported = const ReportedFigures(),
+    bool? simulated,
   }) {
     final th = thresholds;
     final samples = session.samples;
@@ -323,6 +398,7 @@ class InspectionAnalysis {
         currentStepAmps: 0,
         caveats: const [InspectionCaveat.fewReadings],
         reported: reported,
+        simulated: simulated,
       );
     }
 
@@ -332,6 +408,9 @@ class InspectionAnalysis {
         .toList();
     if (consistent.length < 10) caveats.add(InspectionCaveat.fewReadings);
 
+    final gaps = _gapsBetween(consistent, 0, consistent.length - 1, th);
+    if (gaps > 0) caveats.add(InspectionCaveat.linkGaps);
+
     // --- Rest: the quiet readings of the rest step ---
     var rest = consistent
         .where(
@@ -340,7 +419,7 @@ class InspectionAnalysis {
               s.current.abs() < th.restCurrentAmps,
         )
         .toList();
-    if (rest.length < 5) {
+    if (rest.length < th.minimumStepReadings) {
       // Not enough quiet: fall back to the quietest readings anywhere, and
       // say so.
       caveats.add(InspectionCaveat.restNoisy);
@@ -364,7 +443,7 @@ class InspectionAnalysis {
         .toList();
     List<double>? lightSag;
     double? lightAmps;
-    if (light.isNotEmpty &&
+    if (light.length >= th.minimumStepReadings &&
         !session.skippedSteps.contains(InspectionStep.lightLoad)) {
       final lightCells = _medianPerCell(light, cellCount);
       lightSag = [
@@ -375,51 +454,73 @@ class InspectionAnalysis {
       caveats.add(InspectionCaveat.noLightLoad);
     }
 
-    // --- Heavy load: the held window is the tail of the heavy step ---
-    final heavy = consistent
-        .where(
-          (s) =>
-              s.step == InspectionStep.heavyLoad &&
-              s.current.abs() >= session.heavyLoadAmps,
-        )
-        .toList();
+    // --- Heavy load: the held window, and only the held window ---
+    //
+    // The tail of the heavy step over which the current stayed above the bar
+    // without a break and without a hole in the link: the readings the step
+    // actually completed on. Every reading above the bar used to count, so
+    // the two readings of a wheel spinning down on a stand at 14 A sat in
+    // the same window as the pull itself.
+    final window = session.skippedSteps.contains(InspectionStep.heavyLoad)
+        ? null
+        : _heldWindow(consistent, session.heavyLoadAmps, th);
     List<double>? heavySag;
     List<double?>? resistance;
     var stepAmps = 0.0;
     double? medianSag;
     double? medianIr;
     var heavyWasCharge = false;
-    if (heavy.isNotEmpty &&
-        !session.skippedSteps.contains(InspectionStep.heavyLoad)) {
+    if (window != null) {
+      final held = consistent.sublist(window.$1, window.$2 + 1);
       // Which way the current was flowing. The PRD offers a charger as the
-      // load for a vendor with no room to ride, and the step accepts one, but
-      // this arithmetic did not: it took each cell's *lowest* reading under
-      // load, which under charge is roughly where it started. Every cell then
-      // came out with no sag and no resistance, and a pack nobody had loaded
-      // came out perfect.
-      //
-      // A charge moves a cell the other way for the same reason a discharge
-      // moves it: current through the same internal resistance. So the
-      // measurement is the size of the excursion, taken on the side the
-      // current puts it.
-      heavyWasCharge = _mean(heavy.map((s) => s.current)) > 0;
-      final heavyExtreme = List<double>.generate(
-        cellCount,
-        (i) => heavy
-            .map((s) => s.cells[i])
-            .reduce(heavyWasCharge ? math.max : math.min),
-      );
+      // load for a vendor with no room to ride, and a charge moves a cell the
+      // other way for the same reason a discharge moves it: current through
+      // the same internal resistance. So the measurement is the size of the
+      // excursion, taken on the side the current puts it.
+      heavyWasCharge = _median([for (final s in held) s.current]) > 0;
+      if (heavyWasCharge) caveats.add(InspectionCaveat.heavyWasCharge);
+      double sagOf(InspectionSample s, int i) => heavyWasCharge
+          ? s.cells[i] - restCells[i]
+          : restCells[i] - s.cells[i];
+
+      // Each cell's sag is the median of its own sag reading by reading, not
+      // its single lowest reading. The lowest of each cell came from whichever
+      // frame happened to catch it lowest, so twenty cells were compared at
+      // twenty different instants and one glitched frame set a cell's figure
+      // by itself.
       heavySag = [
         for (var i = 0; i < cellCount; i++)
-          heavyWasCharge
-              ? heavyExtreme[i] - restCells[i]
-              : restCells[i] - heavyExtreme[i],
+          _median([for (final s in held) sagOf(s, i)]),
       ];
       medianSag = _median(heavySag);
-      if (heavyWasCharge) caveats.add(InspectionCaveat.heavyWasCharge);
-      stepAmps = _mean(heavy.map((s) => s.current.abs())) - restAmps;
+      stepAmps = _median([for (final s in held) s.current.abs() - restAmps]);
+
       if (stepAmps >= th.minimumStepAmps) {
-        resistance = [for (final sag in heavySag) math.max(0, sag) / stepAmps];
+        // Resistance is worked out frame by frame, each frame's sag over that
+        // frame's own current, and only on frames whose current is fresh. The
+        // BMS repeats a current value across consecutive frames while the
+        // cell voltages move on, so a repeated current is often an old figure
+        // paired with new voltages: the current and the cells in one snapshot
+        // are not always the same instant. When the current never changes at
+        // all (a charger holding its setpoint) the repeat is the load holding
+        // steady, and every frame counts.
+        var paired = [
+          for (var k = window.$1; k <= window.$2; k++)
+            if (k == 0 || consistent[k].current != consistent[k - 1].current)
+              consistent[k],
+        ];
+        if (paired.length < 3) paired = held;
+        resistance = [
+          for (var i = 0; i < cellCount; i++)
+            math.max(
+              0.0,
+              _median([
+                for (final s in paired)
+                  if (s.current.abs() - restAmps > 0)
+                    sagOf(s, i) / (s.current.abs() - restAmps),
+              ]),
+            ),
+        ];
         medianIr = _median(resistance.whereType<double>().toList());
       } else {
         caveats.add(InspectionCaveat.currentStepTooSmall);
@@ -428,51 +529,50 @@ class InspectionAnalysis {
       caveats.add(InspectionCaveat.noHeavyLoad);
     }
 
+    // Ended by the rider before the load: one sentence that says so, instead
+    // of "the load was never released" about a load that never came.
+    final endedIn = session.endedEarlyIn;
+    final endedBeforeLoad =
+        heavySag == null &&
+        (endedIn == InspectionStep.rest ||
+            endedIn == InspectionStep.lightLoad ||
+            endedIn == InspectionStep.heavyLoad);
+    if (endedBeforeLoad) caveats.add(InspectionCaveat.endedBeforeLoad);
+
     // --- Recovery: time for each cell to climb back after release ---
+    //
+    // Only after a hard pull that was actually measured. Without one the
+    // cells are timed climbing back to where they already are, every one of
+    // them makes it in 0 s, and the verdict praised an even recovery from a
+    // load nobody applied.
     List<double?>? recovery;
     List<bool>? recovered;
     double? medianRecovery;
-    final release = _releaseMoment(consistent, th);
-    if (release != null &&
-        !session.skippedSteps.contains(InspectionStep.recovery)) {
-      final after = consistent
-          .where(
-            (s) =>
-                s.step == InspectionStep.recovery &&
-                !s.at.isBefore(release) &&
-                s.current.abs() < th.restCurrentAmps,
-          )
-          .toList();
-      if (after.length >= 3) {
-        recovery = List<double?>.filled(cellCount, null);
-        recovered = List<bool>.filled(cellCount, false);
-        for (var i = 0; i < cellCount; i++) {
-          // Back to within a whisker of where it rested, from whichever side
-          // the load pushed it. One-sided on purpose: a cell that overshoots
-          // past rest has plainly recovered. Under a charge that side is the
-          // other one, and testing the discharge side there would call every
-          // cell recovered on the first reading, since they are all still
-          // above rest at that point.
-          final target = heavyWasCharge
-              ? restCells[i] + th.recoverySettleVolts
-              : restCells[i] - th.recoverySettleVolts;
-          for (final s in after) {
-            if (heavyWasCharge ? s.cells[i] <= target : s.cells[i] >= target) {
-              recovery[i] = s.at.difference(release).inMilliseconds / 1000;
-              recovered[i] = true;
-              break;
-            }
-          }
-          // Never got there: time it at the end of the window, flagged.
-          recovery[i] ??=
-              after.last.at.difference(release).inMilliseconds / 1000;
-        }
-        medianRecovery = _median(recovery.whereType<double>().toList());
-      } else {
-        caveats.add(InspectionCaveat.noRecovery);
-      }
+    if (heavySag == null) {
+      if (!endedBeforeLoad) caveats.add(InspectionCaveat.recoveryNoLoad);
+    } else if (session.skippedSteps.contains(InspectionStep.recovery)) {
+      caveats.add(
+        endedIn == InspectionStep.recovery
+            ? InspectionCaveat.endedBeforeRecovery
+            : InspectionCaveat.noRecovery,
+      );
     } else {
-      caveats.add(InspectionCaveat.noRecovery);
+      final (outcome, times, back) = _recovery(
+        consistent,
+        restCells,
+        heavyWasCharge,
+        th,
+      );
+      switch (outcome) {
+        case _Recovery.tooFew:
+          caveats.add(InspectionCaveat.noRecovery);
+        case _Recovery.linkGap:
+          caveats.add(InspectionCaveat.recoveryLinkGap);
+        case _Recovery.measured:
+          recovery = times;
+          recovered = back;
+          medianRecovery = _median(times!.whereType<double>().toList());
+      }
     }
 
     final cells = <CellInspection>[
@@ -488,7 +588,13 @@ class InspectionAnalysis {
         ),
     ];
 
-    final temps = consistent.map((s) => s.maxTemperature).whereType<double>();
+    InspectionSample? hottest;
+    for (final s in consistent) {
+      final t = s.maxTemperature;
+      if (t != null && (hottest == null || t > hottest.maxTemperature!)) {
+        hottest = s;
+      }
+    }
     final faults = <String>{for (final s in consistent) ...s.faults}.toList()
       ..sort();
 
@@ -503,27 +609,134 @@ class InspectionAnalysis {
       medianHeavySagVolts: medianSag,
       medianResistanceOhms: medianIr,
       medianRecoverySeconds: medianRecovery,
-      maxTemperature: temps.isEmpty ? null : temps.reduce(math.max),
+      maxTemperature: hottest?.maxTemperature,
+      maxTemperatureStep: hottest?.step,
       faultsSeen: faults,
       caveats: caveats,
       reported: reported,
       durationSeconds: samples.last.at.difference(samples.first.at).inSeconds,
       readings: samples.length,
+      simulated: simulated,
     );
   }
 
-  /// The first quiet reading of the recovery step.
-  static DateTime? _releaseMoment(
-    List<InspectionSample> samples,
+  /// The held window of the hard pull, as first and last index into
+  /// [rows], or null when there is none worth measuring.
+  ///
+  /// The last unbroken run of heavy-step readings at or above the bar: the
+  /// run the step completed on. A hole in the link breaks a run the same way
+  /// a dip below the bar does, because nothing was seen in between.
+  (int, int)? _heldWindow(
+    List<InspectionSample> rows,
+    double bar,
     InspectionThresholds th,
   ) {
-    for (final s in samples) {
-      if (s.step == InspectionStep.recovery &&
-          s.current.abs() < th.restCurrentAmps) {
-        return s.at;
+    (int, int)? last;
+    int? start;
+    for (var k = 0; k < rows.length; k++) {
+      final s = rows[k];
+      final above =
+          s.step == InspectionStep.heavyLoad && s.current.abs() >= bar;
+      final broken = start != null && _isGap(rows[k - 1], s, th);
+      if (start != null && (!above || broken)) {
+        last = (start, k - 1);
+        start = null;
+      }
+      if (above) start ??= k;
+    }
+    if (start != null) last = (start, rows.length - 1);
+    if (last == null || last.$2 - last.$1 + 1 < th.minimumStepReadings) {
+      return null;
+    }
+    return last;
+  }
+
+  /// Times each cell back to its resting voltage after the load let go.
+  (_Recovery, List<double?>?, List<bool>?) _recovery(
+    List<InspectionSample> rows,
+    List<double> restCells,
+    bool heavyWasCharge,
+    InspectionThresholds th,
+  ) {
+    // The release is the first quiet reading after the last time the load
+    // was on. Load coming back during recovery restarts it, as the session's
+    // own clock does.
+    var first = -1;
+    var last = -1;
+    for (var k = 0; k < rows.length; k++) {
+      final s = rows[k];
+      if (s.step != InspectionStep.recovery) continue;
+      last = k;
+      if (s.current.abs() >= th.restCurrentAmps) {
+        first = -1;
+      } else if (first < 0) {
+        first = k;
       }
     }
-    return null;
+    if (first < 0 || last - first + 1 < th.minimumStepReadings) {
+      return (_Recovery.tooFew, null, null);
+    }
+    // A hole right at the release hides when the load let go, and every time
+    // measured from the first reading back is short by however long it was.
+    if (first > 0 && _isGap(rows[first - 1], rows[first], th)) {
+      return (_Recovery.linkGap, null, null);
+    }
+
+    final release = rows[first].at;
+    final cellCount = restCells.length;
+    final times = List<double?>.filled(cellCount, null);
+    final back = List<bool>.filled(cellCount, false);
+    var settledAt = first;
+    for (var i = 0; i < cellCount; i++) {
+      // Back to within a whisker of where it rested, from whichever side the
+      // load pushed it. One-sided on purpose: a cell that overshoots past
+      // rest has plainly recovered. Under a charge that side is the other
+      // one, and testing the discharge side there would call every cell
+      // recovered on the first reading, since they are all still above rest
+      // at that point.
+      final target = heavyWasCharge
+          ? restCells[i] + th.recoverySettleVolts
+          : restCells[i] - th.recoverySettleVolts;
+      for (var k = first; k <= last; k++) {
+        final v = rows[k].cells[i];
+        if (heavyWasCharge ? v <= target : v >= target) {
+          times[i] = rows[k].at.difference(release).inMilliseconds / 1000;
+          back[i] = true;
+          if (k > settledAt) settledAt = k;
+          break;
+        }
+      }
+      if (!back[i]) {
+        // Never got there: time it at the end of the window, flagged.
+        times[i] = rows[last].at.difference(release).inMilliseconds / 1000;
+        settledAt = last;
+      }
+    }
+    // A hole before the slowest cell was back means at least one time is the
+    // length of the outage. After it, nothing measured was affected.
+    if (_gapsBetween(rows, first, settledAt, th) > 0) {
+      return (_Recovery.linkGap, null, null);
+    }
+    return (_Recovery.measured, times, back);
+  }
+
+  static bool _isGap(
+    InspectionSample a,
+    InspectionSample b,
+    InspectionThresholds th,
+  ) => b.at.difference(a.at).inMilliseconds > th.linkGapSeconds * 1000;
+
+  static int _gapsBetween(
+    List<InspectionSample> rows,
+    int from,
+    int to,
+    InspectionThresholds th,
+  ) {
+    var n = 0;
+    for (var k = from + 1; k <= to && k < rows.length; k++) {
+      if (_isGap(rows[k - 1], rows[k], th)) n++;
+    }
+    return n;
   }
 
   static List<double> _medianPerCell(List<InspectionSample> rows, int n) {
@@ -552,6 +765,16 @@ class InspectionAnalysis {
     }
     return n == 0 ? 0 : sum / n;
   }
+}
+
+enum _Recovery {
+  measured,
+
+  /// Too few quiet readings after release to time anything.
+  tooFew,
+
+  /// The link dropped where it mattered.
+  linkGap,
 }
 
 double _r(double v, int digits) => double.parse(v.toStringAsFixed(digits));

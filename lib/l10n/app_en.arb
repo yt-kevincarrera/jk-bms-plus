@@ -1862,7 +1862,7 @@
   "inspectionLightProblem": "Don't buy blind: there is a problem",
   "inspectionLightUnmeasured": "No verdict: the pack was never loaded",
   "inspectionUnmeasuredBody": "Per-cell sag under load is where this test gets its answer, and no load big enough ever arrived, so there is nothing here about this battery either way. Run it again and give it one of these: ride fifty metres accelerating properly, or hold the rear brake on the stand and open the throttle, or plug the charger in for half a minute. A wheel spinning free in the air is not a load: there is nothing for the motor to push against, so the current stays near zero however hard you twist it.",
-  "inspectionFidelityNote": "A quick test catches the obvious scam and the bad cell; it does not measure real capacity. Real capacity takes a full discharge.",
+  "inspectionFidelityNote": "A quick test catches the cell that breaks away from the others under load (at this test's load, from about {floor} mΩ of extra resistance) and the obvious scam; it does not measure real capacity. Real capacity takes a full discharge.",
   "inspectionCaveatsTitle": "What this test could not see",
   "inspectionCaveatNoHeavyLoad": "No hard pull: per-cell sag could not be measured.",
   "inspectionCaveatHeavyWasCharge": "The load was a charger, so the cells were lifted rather than pulled down. The arithmetic is the same; the direction is not.",
@@ -1928,7 +1928,7 @@
       }
     }
   },
-  "verdictInspCellSaggingBody": "Under the hard pull it dropped {excess} V more than the pack median. Consistent with a worn cell or a bad connection at that cell. This is the main reason not to pay the asking price without more tests.",
+  "verdictInspCellSaggingBody": "Under the hard pull it dropped {excess} V more than the pack median: about {ohms} mΩ of extra resistance. Consistent with a worn cell or a bad connection at that cell. This is the main reason not to pay the asking price without more tests.",
   "@verdictInspCellSaggingBody": {
     "placeholders": {
       "excess": {
@@ -1937,7 +1937,7 @@
     }
   },
   "verdictInspSagUniformTitle": "Every cell sags evenly",
-  "verdictInspSagUniformBody": "Under the hard pull the worst cell dropped only {excess} V more than the median. None gives up before the others.",
+  "verdictInspSagUniformBody": "Under the hard pull ({amps} A) the worst cell dropped only {excess} V more than the median. At this current a cell with about {floor} mΩ of extra resistance would already stand out, and none gives up before the others.",
   "@verdictInspSagUniformBody": {
     "placeholders": {
       "excess": {
@@ -1974,7 +1974,7 @@
       }
     }
   },
-  "verdictInspWeakLightBody": "With only the lights on ({amps} A) it dropped {extra} V more than the rest. A cell that gives up at one or two amps is a very tired cell.",
+  "verdictInspWeakLightBody": "With only the lights on ({amps} A) it dropped {extra} V more than the rest. A cell that gives up under the lights' load (less than an amp) is a very tired cell.",
   "@verdictInspWeakLightBody": {
     "placeholders": {
       "amps": {
@@ -1993,7 +1993,7 @@
       }
     }
   },
-  "verdictInspSlowRecoveryBody": "It took {extra} s longer than the median to return to its resting voltage after the load, or never did. Tired cells rebound slowly; it is a rarely watched and very good sign.",
+  "verdictInspSlowRecoveryBody": "It took {extra} s longer than the median to return to its resting voltage after the load, or never did. Tired cells rebound slowly.",
   "@verdictInspSlowRecoveryBody": {
     "placeholders": {
       "extra": {
@@ -2002,7 +2002,7 @@
     }
   },
   "verdictInspRecoveryOkTitle": "Even recovery",
-  "verdictInspRecoveryOkBody": "After the load the cells were back at rest in about {seconds} s, all at the same pace.",
+  "verdictInspRecoveryOkBody": "After the load the cells were back at rest in about {seconds} s, all at the same pace. After a pull this hard, recovery is a rarely watched and very good sign.",
   "@verdictInspRecoveryOkBody": {
     "placeholders": {
       "seconds": {
@@ -2011,7 +2011,7 @@
     }
   },
   "verdictInspHotTitle": "The pack was hot",
-  "verdictInspHotBody": "It reached {temp} °C during the test. A pack that is hot at rest or under light load is not normal.",
+  "verdictInspHotBody": "It reached {temp} °C during the test. For a test of a few minutes that is a lot: ask where the heat comes from.",
   "@verdictInspHotBody": {
     "placeholders": {
       "temp": {
@@ -2038,7 +2038,7 @@
     }
   },
   "verdictInspNoHeavyLoadTitle": "No hard pull: reduced fidelity",
-  "verdictInspNoHeavyLoadBody": "The highest current seen was {amps} A. Without a hard pull there is no way to measure how far each cell drops, which is where the truth comes out. Repeat with the wheel in the air or 50 metres on the bike.",
+  "verdictInspNoHeavyLoadBody": "The highest current seen was {amps} A. Without a hard pull held for a few seconds there is no way to measure how far each cell drops, which is where the truth comes out. Repeat riding under real load (a hill or hard acceleration), or with the charger.",
   "@verdictInspNoHeavyLoadBody": {
     "placeholders": {
       "amps": {
@@ -3129,5 +3129,34 @@
   "stuckResetRunning": "Restarting the app's Bluetooth connection…",
   "consoleReportAttempts": "Connect attempts, newest first",
   "tripNoGpsFixes": "No GPS is coming in, so this ride is not measuring distance or speed. The app is retrying. If it stays like this, open the app for a moment with the screen on and check that location is on.",
-  "locationApproximateOnly": "The app only has approximate location, which cannot measure a ride: every position is hundreds of metres off. Turn on \"Use precise location\" in Settings > Apps > JK BMS + > Permissions > Location, then start the ride again."
+  "locationApproximateOnly": "The app only has approximate location, which cannot measure a ride: every position is hundreds of metres off. Turn on \"Use precise location\" in Settings > Apps > JK BMS + > Permissions > Location, then start the ride again.",
+  "inspectionCaveatRecoveryNoLoad": "With no hard pull there was no recovery to measure either.",
+  "inspectionCaveatEndedBeforeLoad": "The test was ended before the load: neither per-cell sag nor recovery was measured.",
+  "inspectionCaveatEndedBeforeRecovery": "The test was ended while the cells were climbing back: recovery was not measured.",
+  "inspectionCaveatRecoveryLinkGap": "The link to the BMS dropped while the cells were climbing back: recovery was not measured, because the time would have been the outage's.",
+  "inspectionCaveatLinkGaps": "The link to the BMS dropped during the test. The steps it dropped in started counting again from zero.",
+  "verdictInspCellRisingTitle": "Cell {cell} rises far more than the rest",
+  "verdictInspCellRisingBody": "On the charger it rose {excess} V more than the pack median: about {ohms} mΩ of extra resistance. Consistent with a worn cell or a bad connection at that cell. This is the main reason not to pay the asking price without more tests.",
+  "verdictInspSagUniformChargeTitle": "Every cell rises evenly",
+  "verdictInspSagUniformChargeBody": "On the charger ({amps} A) the cell that rose most went only {excess} V above the median. At this current a cell with about {floor} mΩ of extra resistance would already stand out, and none breaks away from the others.",
+  "verdictInspSagUnresolvedTitle": "Too little load to rule out a bad cell",
+  "verdictInspSagUnresolvedBody": "At this load ({amps} A) a cell with less than {floor} mΩ extra cannot be told apart, and a bad cell can have less than that. The cells moved together, but with so little current that rules nothing out. Repeat riding under real load (a hill or hard acceleration), or with the charger.",
+  "verdictInspRecoveryNotDiscriminatingTitle": "At this load recovery says nothing",
+  "verdictInspRecoveryNotDiscriminatingBody": "The cells were back at rest in about {seconds} s. At this load ({amps} A) recovery does not discriminate: a tired cell comes back almost as fast as a good one. For it to count the pull has to be at least a third of the pack's capacity.",
+  "verdictInspHotRestBody": "It reached {temp} °C at rest or with only the lights on. A pack that is hot with no load is not normal: either it came straight off hard use, or something inside heats up by itself.",
+  "verdictInspHotLoadBody": "It reached {temp} °C during the hard pull or just after. A pull of a few seconds does not heat a healthy pack that much: either it was already hot, or something heats up too much under load.",
+  "evidenceInspectionRestDelta": "Delta at rest (each cell's median at rest)",
+  "evidenceExcessResistance": "Extra resistance, cell {cell}",
+  "evidenceDetectionFloor": "Least that stands out at this load",
+  "evidenceLoadWasCharge": "Load used",
+  "evidenceLoadCharger": "the charger",
+  "evidenceSeenDuringStep": "When it was seen",
+  "evidenceStepRest": "at rest",
+  "evidenceStepLight": "with the lights on",
+  "evidenceStepHeavy": "under the hard pull",
+  "evidenceStepRecovery": "after the load let go",
+  "inspectionFidelityNoteUnmeasured": "Without enough load this test could not look for the bad cell: what is above is only what shows at rest. It does not measure real capacity either; that takes a full discharge.",
+  "inspectionLightUnresolved": "No verdict: the load was too small to rule out a bad cell",
+  "inspectionUnresolvedBody": "There was a load, but a small one: at that current a bad cell can move just like the good ones, so there is nothing here about this battery either way. Run it again with more current: riding under real load (a hill or hard acceleration), or with the charger.",
+  "inspectionLightUnmeasuredShort": "No verdict"
 }

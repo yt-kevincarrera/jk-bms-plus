@@ -20,6 +20,7 @@ import '../license_scope.dart';
 import '../theme.dart';
 import '../widgets/advice_list.dart';
 import '../widgets/common.dart';
+import 'inspection_texts.dart';
 
 /// The traffic light, three sentences, the fidelity, and a save button.
 ///
@@ -129,14 +130,12 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
     final r = widget.result;
     final light = _verdicts.light(r);
     final advice = _verdicts.evaluate(r);
-    final (headline, tone) = switch (light) {
-      InspectionLight.good => (t.inspectionLightGood, AppTheme.good),
-      InspectionLight.watch => (t.inspectionLightWatch, AppTheme.watch),
-      InspectionLight.problem => (t.inspectionLightProblem, AppTheme.bad),
-      InspectionLight.unmeasured => (
-        t.inspectionLightUnmeasured,
-        AppTheme.textFaint,
-      ),
+    final headline = inspectionHeadline(t, light, r, verdicts: _verdicts);
+    final tone = switch (light) {
+      InspectionLight.good => AppTheme.good,
+      InspectionLight.watch => AppTheme.watch,
+      InspectionLight.problem => AppTheme.bad,
+      InspectionLight.unmeasured => AppTheme.textFaint,
     };
 
     return Scaffold(
@@ -211,7 +210,7 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
                     border: Border.all(color: AppTheme.watch),
                   ),
                   child: Text(
-                    t.inspectionUnmeasuredBody,
+                    inspectionUnmeasuredText(t, r, verdicts: _verdicts),
                     style: const TextStyle(
                       fontSize: 12.5,
                       height: 1.45,
@@ -234,7 +233,7 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 6),
                       child: Text(
-                        _caveat(t, c),
+                        inspectionCaveatText(t, c),
                         style: const TextStyle(
                           fontSize: 12.5,
                           height: 1.45,
@@ -248,7 +247,7 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 4, 20, 6),
               child: Text(
-                t.inspectionFidelityNote,
+                inspectionFidelityText(t, light, r, verdicts: _verdicts),
                 style: const TextStyle(
                   fontSize: 12,
                   height: 1.45,
@@ -647,8 +646,8 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
                     style: cell.copyWith(
                       color:
                           c.index == worstSag &&
-                              (r.worstSagExcess ?? 0) >=
-                                  _verdicts.thresholds.sagWatchVolts
+                              (r.worstExcessOhms ?? 0) >=
+                                  _verdicts.thresholds.sagWatchOhms
                           ? AppTheme.watch
                           : null,
                     ),
@@ -719,16 +718,6 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
       ],
     );
   }
-
-  static String _caveat(AppL10n t, InspectionCaveat c) => switch (c) {
-    InspectionCaveat.noHeavyLoad => t.inspectionCaveatNoHeavyLoad,
-    InspectionCaveat.noLightLoad => t.inspectionCaveatNoLightLoad,
-    InspectionCaveat.restNoisy => t.inspectionCaveatRestNoisy,
-    InspectionCaveat.noRecovery => t.inspectionCaveatNoRecovery,
-    InspectionCaveat.currentStepTooSmall => t.inspectionCaveatStepTooSmall,
-    InspectionCaveat.fewReadings => t.inspectionCaveatFewReadings,
-    InspectionCaveat.heavyWasCharge => t.inspectionCaveatHeavyWasCharge,
-  };
 
   static String _date(DateTime utc) {
     final d = utc.toLocal();
