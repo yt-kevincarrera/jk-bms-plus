@@ -185,7 +185,14 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
             ),
             ProGate(
               feature: Feature.backupExportImport,
-              child: BackupCard(service: widget.service),
+              child: BackupCard(
+                service: widget.service,
+                settings: widget.settings,
+                onSettingsRestored: () {
+                  _pushThresholds();
+                  if (mounted) setState(() {});
+                },
+              ),
             ),
             // Rides had ended up inside the charging section, along with the
             // link and the screen. Four of that section's five controls had

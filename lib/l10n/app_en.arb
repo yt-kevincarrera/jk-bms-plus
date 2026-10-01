@@ -913,10 +913,10 @@
   "exportTitle": "Export",
   "exportIntro": "Data you cannot get out is not really yours.",
   "exportTrips": "Trips (CSV)",
-  "exportReadings": "Last week of readings (CSV)",
-  "exportFrames": "Last day of raw frames",
+  "exportReadings": "Readings (CSV)",
+  "exportFrames": "Raw frames (hex)",
   "exportTrack": "Track (GPX)",
-  "exportDone": "Saved to {path}",
+  "exportDone": "Ready to share: {path}",
   "@exportDone": {
     "placeholders": {
       "path": {
@@ -1188,7 +1188,7 @@
   "thermalProbeAbsent": "not connected",
   "thermalAbsentNote": "Unconnected probes report impossible values, around -200 C. That is not cold, it is nothing wired to that input. They are shown separately so they cannot skew the maximum or trip an alert.",
   "backupTitle": "Backup",
-  "backupIntro": "The whole database in one file, and back again. The CSV and GPX exports are for reading the data elsewhere; this is for not losing it. If you change phones or lose one, this is the only thing that brings back months of readings, the rides with their tracks, and the raw frames.",
+  "backupIntro": "The whole database in one file, and back again. The CSV and GPX exports are for reading the data elsewhere; this is for not losing it. It brings back the packs, the rides with their tracks, the capacity tests, the maintenance log, the inspections, the link log and the readings as the phone stores them: in full for the last month and one a minute before that. Raw frames are only kept for 30 days, so the copy carries at most those. It also carries your alert, charging, ride and screen settings. It does not carry the licence or the update token, which belong to this phone.",
   "backupExport": "Save a copy of everything",
   "backupExportLight": "Save a smaller copy, without raw frames",
   "backupImport": "Restore from a file",
@@ -1456,7 +1456,7 @@
   "trendsAxisCharge": "left to right: empty to full",
   "learnWhyImplausible": "{n} came out at a consumption no motorcycle could produce, so they were refused. That was a fault in this app rather than anything about the riding, and it is fixed: rides recorded since should read correctly. Old ones that still have their readings can be measured again with “Measure again” in their detail.",
   "connectCouldNotSearch": "The radio never confirmed the search started, so nothing was actually looked for. Usually Bluetooth still waking up just after launch. Try again.",
-  "backupShare": "Send it somewhere instead",
+  "backupShare": "Send the small copy, without raw frames, to another app",
   "backupSaveDialog": "Where to put the copy",
   "backupSaved": "Saved as {name}.",
   "rangeFull": "On a full pack",
@@ -3210,5 +3210,14 @@
   "orphansDiscardConfirmBody": "{count} rows stored with no pack assigned are deleted for good. This cannot be undone.",
   "tripEnergySoFarOffline": "{wh} Wh until the link dropped",
   "tripReadingAgeSeconds": "{s} s ago",
-  "tripReadingAgeMinutes": "{m} min ago"
+  "tripReadingAgeMinutes": "{m} min ago",
+  "backupExportFailed": "Could not make the copy: {reason}",
+  "exportShared": "Sent.",
+  "exportRange": "Readings and frames from:",
+  "exportRangeDay": "1 day",
+  "exportRangeWeek": "7 days",
+  "exportRangeMonth": "30 days",
+  "exportRangeAll": "All",
+  "exportRangeNote": "Raw frames are kept for 30 days, so “All” brings at most those. Readings older than a month are stored one a minute.",
+  "tripExportGpx": "Export track (GPX)"
 }

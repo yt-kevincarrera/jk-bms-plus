@@ -60,6 +60,11 @@ class SystemTab extends StatefulWidget {
 }
 
 class _SystemTabState extends State<SystemTab> {
+  /// How far back the readings and frames exports reach. It used to be a
+  /// week of readings and a day of frames, fixed, and a problem from last
+  /// month could not be exported at all.
+  Duration _exportRange = const Duration(days: 7);
+
   final List<StreamSubscription<Object?>> _subs = [];
   final List<String> _problems = [];
   BmsDeviceInfo? _info;
@@ -692,16 +697,24 @@ class _SystemTabState extends State<SystemTab> {
         // Exported files land in the app's private directory, which is a place
         // nobody can reach from a file manager. Handing them straight to the
         // share sheet is what actually makes the data portable.
-        await SharePlus.instance.share(
+        final result = await SharePlus.instance.share(
           ShareParams(
             files: [XFile(file.path)],
             fileNameOverrides: [p.basename(file.path)],
           ),
         );
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.exportDone(p.basename(file.path)))),
-        );
+        // What happened to it, as far as Android says. It used to say "saved
+        // in" a path nobody can open, whether or not anything was shared.
+        final message = switch (result.status) {
+          ShareResultStatus.success => t.exportShared,
+          ShareResultStatus.dismissed => null,
+          ShareResultStatus.unavailable => t.exportDone(p.basename(file.path)),
+        };
+        if (message == null) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
       } on Exception catch (_) {
         if (!mounted) return;
         ScaffoldMessenger.of(
@@ -730,15 +743,51 @@ class _SystemTabState extends State<SystemTab> {
           icon: const Icon(Icons.table_chart_outlined, size: 18),
           label: Text(t.exportTrips),
         ),
+        Padding(
+          padding: const EdgeInsets.only(top: 8, bottom: 4),
+          child: Text(
+            t.exportRange,
+            style: const TextStyle(fontSize: 12, color: AppTheme.textFaint),
+          ),
+        ),
+        Wrap(
+          spacing: 8,
+          children: [
+            for (final (days, label) in [
+              (1, t.exportRangeDay),
+              (7, t.exportRangeWeek),
+              (30, t.exportRangeMonth),
+              (36500, t.exportRangeAll),
+            ])
+              ChoiceChip(
+                label: Text(label),
+                selected: _exportRange.inDays == days,
+                onSelected: (_) =>
+                    setState(() => _exportRange = Duration(days: days)),
+              ),
+          ],
+        ),
         TextButton.icon(
-          onPressed: () => run(() => exporter.exportReadings(device)),
+          onPressed: () => run(
+            () => exporter.exportReadings(device, since: _exportRange),
+          ),
           icon: const Icon(Icons.show_chart, size: 18),
           label: Text(t.exportReadings),
         ),
         TextButton.icon(
-          onPressed: () => run(() => exporter.exportRawFrames(device)),
+          onPressed: () => run(
+            () => exporter.exportRawFrames(device, since: _exportRange),
+          ),
           icon: const Icon(Icons.data_object, size: 18),
           label: Text(t.exportFrames),
+        ),
+        Text(
+          t.exportRangeNote,
+          style: const TextStyle(
+            fontSize: 11,
+            height: 1.4,
+            color: AppTheme.textFaint,
+          ),
         ),
         const SizedBox(height: 6),
       ],

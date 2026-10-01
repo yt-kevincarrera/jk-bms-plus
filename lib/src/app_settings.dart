@@ -301,6 +301,62 @@ class AppSettings extends ChangeNotifier {
     lowCharge: defaultLowChargeWarn,
   );
 
+  /// The rider's own settings, for a backup.
+  ///
+  /// Only what the rider chose. Not the update token, which is a credential,
+  /// nor the update check's bookkeeping, which belongs to this install, nor
+  /// the licence, which is bound to this phone and kept elsewhere.
+  Map<String, Object?> toBackup() => {
+    'hapticAlerts': hapticAlerts,
+    'recordRawFrames': recordRawFrames,
+    'chargeTargetSoc': chargeTargetSoc,
+    'chargeWatchEnabled': chargeWatchEnabled,
+    'mutedAlerts': mutedAlerts.toList()..sort(),
+    'autoTripEnabled': autoTripEnabled,
+    'screenAwake': screenAwake.name,
+    'linkWatchEnabled': linkWatchEnabled,
+    'notifyAlerts': notifyAlerts,
+    'alertDeltaWarn': alertDeltaWarn,
+    'alertTempWarn': alertTempWarn,
+    'alertLowChargeWarn': alertLowChargeWarn,
+  };
+
+  /// Puts back what [toBackup] wrote. A key that is missing or of the wrong
+  /// type is left as it is: a hand-edited or older file restores what it can.
+  Future<void> restoreBackup(Map<String, dynamic> m) async {
+    bool? flag(String k) => m[k] is bool ? m[k] as bool : null;
+    double? number(String k) => m[k] is num ? (m[k] as num).toDouble() : null;
+
+    if (flag('hapticAlerts') case final v?) await setHapticAlerts(v);
+    if (flag('recordRawFrames') case final v?) await setRecordRawFrames(v);
+    if (m.containsKey('chargeTargetSoc')) {
+      // Null is an answer here: the rider switched the target off.
+      final v = m['chargeTargetSoc'];
+      if (v == null || v is num) {
+        await setChargeTarget(v == null ? null : (v as num).toDouble());
+      }
+    }
+    if (flag('chargeWatchEnabled') case final v?) await setChargeWatch(v);
+    final muted = m['mutedAlerts'];
+    if (muted is List) {
+      final wanted = {for (final x in muted) if (x is String) x};
+      for (final name in {...mutedAlerts, ...wanted}) {
+        await setAlertMuted(name, wanted.contains(name));
+      }
+    }
+    if (flag('autoTripEnabled') case final v?) await setAutoTrip(v);
+    if (m['screenAwake'] is String) {
+      await setScreenAwake(ScreenAwake.parse(m['screenAwake'] as String));
+    }
+    if (flag('linkWatchEnabled') case final v?) await setLinkWatch(v);
+    if (flag('notifyAlerts') case final v?) await setNotifyAlerts(v);
+    await setAlertThresholds(
+      delta: number('alertDeltaWarn'),
+      temperature: number('alertTempWarn'),
+      lowCharge: number('alertLowChargeWarn'),
+    );
+  }
+
   Future<void> _writeDouble(String key, double value) async {
     try {
       final prefs = await SharedPreferences.getInstance();

@@ -2980,13 +2980,13 @@ abstract class AppL10n {
   /// No description provided for @exportReadings.
   ///
   /// In es, this message translates to:
-  /// **'Lecturas de la última semana (CSV)'**
+  /// **'Lecturas (CSV)'**
   String get exportReadings;
 
   /// No description provided for @exportFrames.
   ///
   /// In es, this message translates to:
-  /// **'Frames crudos del último día'**
+  /// **'Frames crudos (hex)'**
   String get exportFrames;
 
   /// No description provided for @exportTrack.
@@ -2998,7 +2998,7 @@ abstract class AppL10n {
   /// No description provided for @exportDone.
   ///
   /// In es, this message translates to:
-  /// **'Guardado en {path}'**
+  /// **'Listo para compartir: {path}'**
   String exportDone(String path);
 
   /// No description provided for @exportFailed.
@@ -3742,7 +3742,7 @@ abstract class AppL10n {
   /// No description provided for @backupIntro.
   ///
   /// In es, this message translates to:
-  /// **'Toda la base de datos en un archivo, y de vuelta. Las exportaciones a CSV y GPX son para leer los datos en otro sitio; esto es para no perderlos. Si cambias de teléfono o lo pierdes, es lo único que trae de vuelta meses de lecturas, los viajes con su recorrido y los frames crudos.'**
+  /// **'Toda la base de datos en un archivo, y de vuelta. Las exportaciones a CSV y GPX son para leer los datos en otro sitio; esto es para no perderlos. Trae de vuelta las baterías, los viajes con su recorrido, las pruebas de capacidad, el mantenimiento, las inspecciones, el registro de la conexión y las lecturas tal como están guardadas en el teléfono: completas las del último mes y una por minuto las más viejas. Los frames crudos solo se guardan 30 días, así que la copia lleva como mucho esos. También lleva tus ajustes de alertas, carga, viajes y pantalla. No lleva la licencia ni el token de actualizaciones, que son de este teléfono.'**
   String get backupIntro;
 
   /// No description provided for @backupExport.
@@ -4582,7 +4582,7 @@ abstract class AppL10n {
   /// No description provided for @backupShare.
   ///
   /// In es, this message translates to:
-  /// **'Enviarla a otro lugar'**
+  /// **'Enviar la copia pequeña, sin frames crudos, a otra app'**
   String get backupShare;
 
   /// No description provided for @backupSaveDialog.
@@ -8681,6 +8681,60 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'hace {m} min'**
   String tripReadingAgeMinutes(String m);
+
+  /// No description provided for @backupExportFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo hacer la copia: {reason}'**
+  String backupExportFailed(String reason);
+
+  /// No description provided for @exportShared.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviado.'**
+  String get exportShared;
+
+  /// No description provided for @exportRange.
+  ///
+  /// In es, this message translates to:
+  /// **'Lecturas y frames de:'**
+  String get exportRange;
+
+  /// No description provided for @exportRangeDay.
+  ///
+  /// In es, this message translates to:
+  /// **'1 día'**
+  String get exportRangeDay;
+
+  /// No description provided for @exportRangeWeek.
+  ///
+  /// In es, this message translates to:
+  /// **'7 días'**
+  String get exportRangeWeek;
+
+  /// No description provided for @exportRangeMonth.
+  ///
+  /// In es, this message translates to:
+  /// **'30 días'**
+  String get exportRangeMonth;
+
+  /// No description provided for @exportRangeAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Todo'**
+  String get exportRangeAll;
+
+  /// No description provided for @exportRangeNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Los frames crudos se guardan 30 días, así que «Todo» trae como mucho esos. Las lecturas de más de un mes están guardadas una por minuto.'**
+  String get exportRangeNote;
+
+  /// No description provided for @tripExportGpx.
+  ///
+  /// In es, this message translates to:
+  /// **'Exportar recorrido (GPX)'**
+  String get tripExportGpx;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

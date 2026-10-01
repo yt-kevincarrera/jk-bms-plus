@@ -44,7 +44,16 @@ class BackupCodec {
   /// [into] is where it lands. Injected rather than always asking the platform
   /// for the documents directory, so the round trip can be tested without a
   /// device attached: a backup nobody has ever restored is not a backup.
-  Future<File> export({bool includeRawFrames = true, Directory? into}) async {
+  ///
+  /// [preferences] is the rider's own settings, as [AppSettings.toBackup]
+  /// writes them, travelling in the same file so a new phone does not start
+  /// with every threshold and muted alert back at its default. Never the
+  /// licence or the update token: those belong to one install.
+  Future<File> export({
+    bool includeRawFrames = true,
+    Directory? into,
+    Map<String, Object?>? preferences,
+  }) async {
     final devices = await db.allDevices();
     final trips = await db.allTripsForBackup();
     final points = await db.allTripPointsForBackup();
@@ -79,6 +88,7 @@ class BackupCodec {
       // half of a bug report that cannot be reconstructed from anything else.
       'linkEvents': events.map(_linkEvent).toList(),
       'rawFrames': frames.map(_frame).toList(),
+      'preferences': ?preferences,
     };
 
     final dir = into ?? await getApplicationDocumentsDirectory();
@@ -277,6 +287,9 @@ class BackupCodec {
       inspections: inspections.length,
       baselines: baselines.length,
       exportedAt: _time(decoded['exportedAt']),
+      preferences: decoded['preferences'] is Map<String, dynamic>
+          ? decoded['preferences'] as Map<String, dynamic>
+          : null,
     );
   }
 
@@ -596,6 +609,7 @@ class BackupImportResult {
     this.inspections = 0,
     this.baselines = 0,
     this.exportedAt,
+    this.preferences,
   });
 
   final int devices;
@@ -608,6 +622,10 @@ class BackupImportResult {
   final int inspections;
   final int baselines;
   final DateTime? exportedAt;
+
+  /// The settings the backup carried, for [AppSettings.restoreBackup], or
+  /// null for a backup from before they travelled.
+  final Map<String, dynamic>? preferences;
 }
 
 /// The file is not a backup this app can read.

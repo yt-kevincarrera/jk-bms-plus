@@ -1,9 +1,12 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
+import 'package:share_plus/share_plus.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../bms_service.dart';
 import '../data/database.dart';
+import '../data/exporter.dart';
 import '../data/repository.dart';
 import '../metrics/trip_learning.dart';
 import '../metrics/trip_recorder.dart';
@@ -305,10 +308,46 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                 const SizedBox(height: 6),
               ],
             ),
+            // The track, to open in any map tool. The exporter had no caller
+            // at all while the README advertised it.
+            FutureBuilder<List<TripPoint>>(
+              future: _points,
+              builder: (context, snap) {
+                if ((snap.data ?? const []).isEmpty) {
+                  return const SizedBox.shrink();
+                }
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _exportGpx(t),
+                      icon: const Icon(Icons.route_outlined, size: 18),
+                      label: Text(t.tripExportGpx),
+                    ),
+                  ),
+                );
+              },
+            ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _exportGpx(AppL10n t) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final file = await BmsExporter(repository).exportTrack(trip.id);
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          fileNameOverrides: [p.basename(file.path)],
+        ),
+      );
+    } on Exception catch (_) {
+      messenger.showSnackBar(SnackBar(content: Text(t.exportFailed)));
+    }
   }
 
   static String _date(DateTime utc) {

@@ -1719,17 +1719,17 @@ class AppL10nEs extends AppL10n {
   String get exportTrips => 'Viajes (CSV)';
 
   @override
-  String get exportReadings => 'Lecturas de la última semana (CSV)';
+  String get exportReadings => 'Lecturas (CSV)';
 
   @override
-  String get exportFrames => 'Frames crudos del último día';
+  String get exportFrames => 'Frames crudos (hex)';
 
   @override
   String get exportTrack => 'Recorrido (GPX)';
 
   @override
   String exportDone(String path) {
-    return 'Guardado en $path';
+    return 'Listo para compartir: $path';
   }
 
   @override
@@ -2158,7 +2158,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get backupIntro =>
-      'Toda la base de datos en un archivo, y de vuelta. Las exportaciones a CSV y GPX son para leer los datos en otro sitio; esto es para no perderlos. Si cambias de teléfono o lo pierdes, es lo único que trae de vuelta meses de lecturas, los viajes con su recorrido y los frames crudos.';
+      'Toda la base de datos en un archivo, y de vuelta. Las exportaciones a CSV y GPX son para leer los datos en otro sitio; esto es para no perderlos. Trae de vuelta las baterías, los viajes con su recorrido, las pruebas de capacidad, el mantenimiento, las inspecciones, el registro de la conexión y las lecturas tal como están guardadas en el teléfono: completas las del último mes y una por minuto las más viejas. Los frames crudos solo se guardan 30 días, así que la copia lleva como mucho esos. También lleva tus ajustes de alertas, carga, viajes y pantalla. No lleva la licencia ni el token de actualizaciones, que son de este teléfono.';
 
   @override
   String get backupExport => 'Guardar copia de todo';
@@ -2662,7 +2662,8 @@ class AppL10nEs extends AppL10n {
       'La radio nunca confirmó que la búsqueda empezara, así que en realidad no se buscó nada. Normalmente es el Bluetooth despertando justo al abrir la app. Prueba otra vez.';
 
   @override
-  String get backupShare => 'Enviarla a otro lugar';
+  String get backupShare =>
+      'Enviar la copia pequeña, sin frames crudos, a otra app';
 
   @override
   String get backupSaveDialog => 'Dónde guardar la copia';
@@ -5236,4 +5237,34 @@ class AppL10nEs extends AppL10n {
   String tripReadingAgeMinutes(String m) {
     return 'hace $m min';
   }
+
+  @override
+  String backupExportFailed(String reason) {
+    return 'No se pudo hacer la copia: $reason';
+  }
+
+  @override
+  String get exportShared => 'Enviado.';
+
+  @override
+  String get exportRange => 'Lecturas y frames de:';
+
+  @override
+  String get exportRangeDay => '1 día';
+
+  @override
+  String get exportRangeWeek => '7 días';
+
+  @override
+  String get exportRangeMonth => '30 días';
+
+  @override
+  String get exportRangeAll => 'Todo';
+
+  @override
+  String get exportRangeNote =>
+      'Los frames crudos se guardan 30 días, así que «Todo» trae como mucho esos. Las lecturas de más de un mes están guardadas una por minuto.';
+
+  @override
+  String get tripExportGpx => 'Exportar recorrido (GPX)';
 }

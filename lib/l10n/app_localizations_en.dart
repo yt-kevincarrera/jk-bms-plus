@@ -1713,17 +1713,17 @@ class AppL10nEn extends AppL10n {
   String get exportTrips => 'Trips (CSV)';
 
   @override
-  String get exportReadings => 'Last week of readings (CSV)';
+  String get exportReadings => 'Readings (CSV)';
 
   @override
-  String get exportFrames => 'Last day of raw frames';
+  String get exportFrames => 'Raw frames (hex)';
 
   @override
   String get exportTrack => 'Track (GPX)';
 
   @override
   String exportDone(String path) {
-    return 'Saved to $path';
+    return 'Ready to share: $path';
   }
 
   @override
@@ -2149,7 +2149,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get backupIntro =>
-      'The whole database in one file, and back again. The CSV and GPX exports are for reading the data elsewhere; this is for not losing it. If you change phones or lose one, this is the only thing that brings back months of readings, the rides with their tracks, and the raw frames.';
+      'The whole database in one file, and back again. The CSV and GPX exports are for reading the data elsewhere; this is for not losing it. It brings back the packs, the rides with their tracks, the capacity tests, the maintenance log, the inspections, the link log and the readings as the phone stores them: in full for the last month and one a minute before that. Raw frames are only kept for 30 days, so the copy carries at most those. It also carries your alert, charging, ride and screen settings. It does not carry the licence or the update token, which belong to this phone.';
 
   @override
   String get backupExport => 'Save a copy of everything';
@@ -2652,7 +2652,8 @@ class AppL10nEn extends AppL10n {
       'The radio never confirmed the search started, so nothing was actually looked for. Usually Bluetooth still waking up just after launch. Try again.';
 
   @override
-  String get backupShare => 'Send it somewhere instead';
+  String get backupShare =>
+      'Send the small copy, without raw frames, to another app';
 
   @override
   String get backupSaveDialog => 'Where to put the copy';
@@ -5213,4 +5214,34 @@ class AppL10nEn extends AppL10n {
   String tripReadingAgeMinutes(String m) {
     return '$m min ago';
   }
+
+  @override
+  String backupExportFailed(String reason) {
+    return 'Could not make the copy: $reason';
+  }
+
+  @override
+  String get exportShared => 'Sent.';
+
+  @override
+  String get exportRange => 'Readings and frames from:';
+
+  @override
+  String get exportRangeDay => '1 day';
+
+  @override
+  String get exportRangeWeek => '7 days';
+
+  @override
+  String get exportRangeMonth => '30 days';
+
+  @override
+  String get exportRangeAll => 'All';
+
+  @override
+  String get exportRangeNote =>
+      'Raw frames are kept for 30 days, so “All” brings at most those. Readings older than a month are stored one a minute.';
+
+  @override
+  String get tripExportGpx => 'Export track (GPX)';
 }
