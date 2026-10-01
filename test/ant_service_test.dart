@@ -10,6 +10,7 @@ import 'package:jk_bms/src/data/database.dart';
 import 'package:jk_bms/src/data/link_event.dart';
 import 'package:jk_bms/src/data/repository.dart';
 import 'package:jk_bms/src/protocol/ant_crc.dart';
+import 'package:jk_bms/src/pack/chemistry.dart';
 import 'package:jk_bms/src/protocol/bms_brand.dart';
 
 import 'fixtures/ant_frames.dart';
@@ -81,6 +82,11 @@ void main() {
     await pumpEventQueue();
     expect(service.activeDevice?.catalogueCapacityAh, closeTo(280, 1e-6));
     expect(service.activeDevice?.catalogueFromBms, isTrue);
+    // Borrowed, so nothing may compare against it as what was sold, and the
+    // full-pack range says it rests on the BMS's setting.
+    expect(service.catalogueFromBms, isTrue);
+    expect(service.advertisedCapacityAh, isNull);
+    expect(service.catalogueCapacityAh, closeTo(280, 1e-6));
   });
 
   test('the brand is stored on the pack', () async {
@@ -205,13 +211,17 @@ void main() {
     await link.deliver(deviceInfoFrames[1]);
     await link.deliver(cellInfo24s[0]);
     await pumpEventQueue();
-    final before = service.stats.bytesReceived;
+    // The baseline is the lifetime total, which the connect screen takes for
+    // exactly this reason. The per-connection figure restarts on connect,
+    // so it cannot be measured against a number taken before it.
+    final before = service.bytesReceivedTotal;
     await service.connect('ANT1', name: 'ANT-BLE16ZMUB');
     link.announce(BleLinkState.connected);
     final bad = Uint8List.fromList(antStatus16s)..[40] ^= 0xFF;
     await link.deliver(bad);
     await pumpEventQueue();
-    expect(service.stats.bytesReceived, before + bad.length);
+    expect(service.bytesReceivedTotal, before + bad.length);
+    expect(service.stats.bytesReceived, bad.length);
     expect(service.stats.badChecksum, greaterThan(0));
   });
 
@@ -223,6 +233,121 @@ void main() {
     await pumpEventQueue();
     expect(service.brand, BmsBrand.ant);
     expect(service.stats.bytesReceived, before + antStatus16s.length);
+  });
+
+  test("an ANT states no cutoff, so the chemistry's usual one is used, "
+      'and marked assumed', () async {
+    // It used to be a flat 3.0 V for any pack without a settings frame,
+    // quoted in the alert as "the BMS cutoff". An ANT never sends settings.
+    await service.connect('ANT1', name: 'ANT-BLE16ZMUB');
+    link.announce(BleLinkState.connected);
+    await link.deliver(antStatus16s);
+    await pumpEventQueue();
+    expect(service.activeDeviceId, 'ANT1');
+    expect(service.cutoffIsAssumed, isTrue);
+    // Cells at 3.3 V say nothing about the chemistry, and nobody has.
+    expect(service.cutoffChemistry, CellChemistry.unknown);
+    expect(service.cutoffVoltagePerCell, ChemistryLimits.unknownCutoffVolts);
+
+    await repo.setPackProfile('ANT1', chemistry: 'lfp');
+    service.activeDevice = await repo.db.device('ANT1');
+    expect(service.cutoffChemistry, CellChemistry.lfp);
+    expect(service.cutoffVoltagePerCell, ChemistryLimits.lfp.typicalCutoffVolts);
+    expect(service.cutoffIsAssumed, isTrue);
+  });
+
+  test('energy left is priced by the same chemistry, from the charge level',
+      () async {
+    // The one function every Wh and range figure goes through. With the
+    // chemistry declared, it is the LFP curve's mean below this charge, not
+    // the pack voltage of the moment and not a fixed 3.7 V a cell.
+    await service.connect('ANT1', name: 'ANT-BLE16ZMUB');
+    link.announce(BleLinkState.connected);
+    await link.deliver(antStatus16s);
+    await pumpEventQueue();
+    await repo.setPackProfile('ANT1', chemistry: 'lfp');
+    service.activeDevice = await repo.db.device('ANT1');
+
+    final s = service.lastSnapshot!;
+    final energy = service.energyOf(s);
+    expect(energy.meanCellVolts, OcvCurve.lfp.meanVoltsBelow(s.soc));
+    expect(
+      energy.grossWh,
+      closeTo(s.remainingCapacityAh * s.cellCount * energy.meanCellVolts, 1e-6),
+    );
+  });
+
+  group('an ANT whose current runs against its own state', () {
+    // The parser reverses the field, measured on one real pack. The state
+    // byte is the witness for any other: charging at a clearly negative
+    // current, three frames running, means the pack reports the other way.
+    Future<List<double>> feed(List<Uint8List> frames) async {
+      await service.connect('ANT1', name: 'ANT-BLE16ZMUB');
+      link.announce(BleLinkState.connected);
+      final seen = <double>[];
+      final sub = service.snapshots.listen((s) => seen.add(s.current));
+      for (final f in frames) {
+        await link.deliver(f);
+        await pumpEventQueue();
+      }
+      await sub.cancel();
+      return seen;
+    }
+
+    test('is reversed from the frame that settles it, and said once',
+        () async {
+      final charging = antFrameWithState(0x02, -6.0);
+      final seen = await feed([charging, charging, charging, charging]);
+      // The first two are taken as they come; the third settles it.
+      expect(seen, [-6.0, -6.0, 6.0, 6.0]);
+      expect(service.lastAntStatus!.snapshot.current, 6.0);
+      expect(service.lastSnapshot!.isCharging, isTrue);
+      expect(
+        service.recentProblems.where((p) => p.contains('opposite sign')),
+        hasLength(1),
+      );
+      final events = await service.repository!.recentLinkEvents();
+      final rows = events.where(
+        (e) => e.kind == LinkEventKind.antCurrentSignInverted.name,
+      );
+      expect(rows, hasLength(1));
+      expect(rows.single.detail, contains('Charge'));
+    });
+
+    test("the rider's 20S pack: a longer frame reads, charging positive",
+        () async {
+      // Every status frame this pack sent was refused as the wrong size,
+      // and the connect ended in "no readings have arrived".
+      final seen = await feed([
+        antStatus20s4tCharging,
+        antStatus20s4tCharging,
+        antStatus20s4tCharging,
+        antStatus20s4tCharging,
+      ]);
+      expect(seen, everyElement(closeTo(5.1, 1e-9)));
+      expect(service.decodeFailures, 0);
+      expect(service.lastSnapshot!.cellCount, 20);
+      final events = await service.repository!.recentLinkEvents();
+      expect(
+        events.where(
+          (e) => e.kind == LinkEventKind.antCurrentSignInverted.name,
+        ),
+        isEmpty,
+      );
+    });
+
+    test('and a pack whose state agrees is left alone', () async {
+      final charging = antFrameWithState(0x02, 6.0);
+      final seen = await feed([charging, charging, charging, charging]);
+      expect(seen, everyElement(6.0));
+      final events = await service.repository!.recentLinkEvents();
+      expect(
+        events.where(
+          (e) => e.kind == LinkEventKind.antCurrentSignInverted.name,
+        ),
+        isEmpty,
+      );
+    });
   });
 
   test('an implausible ANT reading feeds nothing', () async {
@@ -423,6 +548,22 @@ class _CountingLink extends FakeLink {
 
   @override
   Future<void> connect(String deviceId) async => connects++;
+}
+
+/// A copy of the 16S fixture with its battery state byte and current set, and
+/// the CRC recomputed. Current is at 40+o, o = 2 * (16 cells + 2 probes).
+/// [amps] is what the parser reads out, so the field gets its negation: an
+/// ANT reports charge as negative and the parser reverses it.
+Uint8List antFrameWithState(int state, double amps) {
+  final b = Uint8List.fromList(antStatus16s);
+  b[7] = state;
+  final raw = (-amps * 10).round() & 0xFFFF;
+  b[40 + 36] = raw & 0xFF;
+  b[41 + 36] = raw >> 8;
+  final crc = antCrc16(b, 1, b.length - 4);
+  b[b.length - 4] = crc & 0xFF;
+  b[b.length - 3] = crc >> 8;
+  return b;
 }
 
 String _hexOf(List<int> b) =>

@@ -23,6 +23,7 @@ class RangeOutlook {
     required this.confidence,
     required this.hasLearned,
     this.fullFromMeasuredCapacity = false,
+    this.fullFromBmsConfig = false,
   });
 
   /// Kilometres left at the current charge.
@@ -48,6 +49,11 @@ class RangeOutlook {
   /// who knows which they are looking at.
   final bool fullFromMeasuredCapacity;
 
+  /// Whether [fullKm] rests on the capacity configured in the BMS, adopted as
+  /// the catalogue figure because the rider has not stated one. Neither a
+  /// measurement nor what the pack was sold as, and the screen has to say so.
+  final bool fullFromBmsConfig;
+
   static const RangeOutlook unknown = RangeOutlook(
     confidence: RangeConfidence.low,
     hasLearned: false,
@@ -55,9 +61,10 @@ class RangeOutlook {
 
   /// Builds both figures.
   ///
-  /// [usableWhNow] comes from [RangeEstimator.usableWh] against the live
-  /// reading. [fullCapacityAh] is the best figure available for what the pack
-  /// holds when full, and [fullPackVoltage] the voltage it sits at there.
+  /// [usableWhNow] is PackEnergy.usableWh for the live reading.
+  /// [fullCapacityAh] is the best figure available for what the pack holds
+  /// when full, and [fullPackVoltage] the mean voltage a full discharge is
+  /// delivered at (PackEnergy.fullPackVoltage), not the voltage at the top.
   ///
   /// The full-pack figure deliberately does *not* scale the current one by
   /// charge. Usable energy is not linear in percent near the cutoff, and the
@@ -70,6 +77,7 @@ class RangeOutlook {
     double? fullPackVoltage,
     double usableFraction = 1,
     bool capacityWasMeasured = false,
+    bool capacityFromBmsConfig = false,
   }) {
     if (!estimator.hasLearned) {
       // No learned consumption means no range worth quoting, at any charge.
@@ -107,6 +115,7 @@ class RangeOutlook {
       confidence: estimator.confidence,
       hasLearned: true,
       fullFromMeasuredCapacity: capacityWasMeasured,
+      fullFromBmsConfig: !capacityWasMeasured && capacityFromBmsConfig,
     );
   }
 }

@@ -62,7 +62,7 @@ void main() {
       // Physical first, merely claimed last. Without a stable tie-break the
       // cards would shuffle between readings of the same pack.
       final grouped = groupAdvice([
-        _a(AdviceCode.cycleCounterInflated, AdviceLevel.watch),
+        _a(AdviceCode.cycleCounterDisagrees, AdviceLevel.watch),
         _a(AdviceCode.imbalanceAtRest, AdviceLevel.watch),
         _a(AdviceCode.noCapacityTestYet, AdviceLevel.watch),
       ]);

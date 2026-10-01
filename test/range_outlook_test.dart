@@ -219,5 +219,32 @@ void main() {
       );
       expect(o.fullKm, isNull);
     });
+
+    test('a full-pack range off the BMS setting says so, a measured one not',
+        () {
+      // The catalogue figure is filled from the BMS's configured capacity
+      // when the rider has not stated one. That is neither the advert nor a
+      // measurement, and the line under the range has to say which it is.
+      final borrowed = RangeOutlook.from(
+        estimator: learned(),
+        usableWhNow: 600,
+        fullCapacityAh: 40,
+        fullPackVoltage: 74,
+        capacityFromBmsConfig: true,
+      );
+      expect(borrowed.fullFromBmsConfig, isTrue);
+      expect(borrowed.fullFromMeasuredCapacity, isFalse);
+
+      final measured = RangeOutlook.from(
+        estimator: learned(),
+        usableWhNow: 600,
+        fullCapacityAh: 38,
+        fullPackVoltage: 74,
+        capacityWasMeasured: true,
+        capacityFromBmsConfig: true,
+      );
+      expect(measured.fullFromBmsConfig, isFalse);
+      expect(measured.fullFromMeasuredCapacity, isTrue);
+    });
   });
 }

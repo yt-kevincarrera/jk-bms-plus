@@ -7,6 +7,8 @@ import 'package:jk_bms/src/data/repository.dart';
 import 'package:jk_bms/src/protocol/bms_brand.dart';
 import 'package:sqlite3/sqlite3.dart';
 
+import 'fixtures/schema_v15_rides.dart';
+
 /// The schema exactly as version 14 shipped: everything the from < 15 step
 /// has to add the brand column to, and nothing it should touch twice.
 ///
@@ -45,6 +47,10 @@ Database _populatedV14() {
   final raw = sqlite3.openInMemory();
   raw.execute(_v14Devices);
   raw.execute(_v14RawFrames);
+  // Unchanged by 15, and rebuilt by the step after it, which runs too.
+  for (final table in v15RideTables) {
+    raw.execute(table);
+  }
 
   final now = _epoch(DateTime.utc(2026, 9, 1));
   raw.execute(

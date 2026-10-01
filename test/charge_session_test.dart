@@ -165,18 +165,43 @@ void main() {
       expect(report!.balancerWorkedSeconds, greaterThan(1000));
     });
 
-    test('does not integrate across a long gap', () {
+    test('bridges a long gap on the BMS counter, and says how long', () {
       final r = ChargeSessionRecorder();
       r.addSnapshot(snap(t0, soc: 40));
       // An hour of silence: the app was closed.
       r.addSnapshot(snap(t0.add(const Duration(hours: 1)), soc: 80));
       final report = r.addSnapshot(
-        snap(t0.add(const Duration(hours: 1, minutes: 1)), current: 0, soc: 80),
+        snap(t0.add(const Duration(hours: 1, seconds: 20)), current: 0, soc: 80),
       );
 
-      // Charge did move, so there is a report, but no invented amp-hours.
+      // Not an hour at 12 A invented from one reading, and not the nothing
+      // it used to report either: what the BMS counted in, 40 % of 45 Ah,
+      // with the hour on the record so the card can say who counted it.
       expect(report, isNotNull);
-      expect(report!.ahIn, closeTo(0, 0.01));
+      expect(report!.ahIn, closeTo(18, 0.05));
+      expect(report.gapSeconds, 3600);
+    });
+
+    test('survives being written down and read back', () {
+      final r = ChargeSessionRecorder();
+      var at = t0;
+      r.addSnapshot(snap(at, soc: 30));
+      for (var i = 0; i < 40; i++) {
+        at = at.add(const Duration(seconds: 30));
+        r.addSnapshot(snap(at, soc: 30 + i * 1.5, baseCell: 3.9 + i * 0.006));
+      }
+      final report = r.addSnapshot(
+        snap(at.add(const Duration(seconds: 30)), current: 0, soc: 90),
+      )!;
+      final back = ChargeReport.tryParse(report.toJson())!;
+      expect(back.startedAt, report.startedAt);
+      expect(back.ahIn, report.ahIn);
+      expect(back.strongCellAtTop, report.strongCellAtTop);
+      expect(back.weakCellAtTop, report.weakCellAtTop);
+      expect(back.reachedTop, report.reachedTop);
+      expect(back.maxTemperature, report.maxTemperature);
+      expect(ChargeReport.tryParse('not json'), isNull);
+      expect(ChargeReport.tryParse(null), isNull);
     });
   });
 }

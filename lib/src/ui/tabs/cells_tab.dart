@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../bms_service.dart';
+import '../../metrics/advice_engine.dart';
+import '../../metrics/weak_cell_ranking.dart';
 import '../../model/bms_snapshot.dart';
+import '../../protocol/ant_constants.dart';
+import '../../protocol/bms_brand.dart';
+import '../cell_history_screen.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/gauges.dart';
@@ -29,7 +34,15 @@ class CellsTab extends StatelessWidget {
     }
 
     final avg = s.averageCellVoltage;
-    final balancing = s.inferredBalancingCells;
+    final hasResistances = s.cellResistances?.isNotEmpty ?? false;
+    // The BMS's own list where it gives one (an ANT does), the inference
+    // from the cell voltages where it does not (a JK).
+    final balancing = s.balancingCells;
+    final reported = s.reportedBalancingCells;
+    final ant = s.brand == BmsBrand.ant ? service.lastAntStatus : null;
+    // An ANT balancer stopped by heat is not "idle" and is not "working".
+    final stoppedByHeat =
+        ant != null && antBalancerFaultCodes.contains(ant.balancerCode);
 
     return ListView(
       padding: const EdgeInsets.only(bottom: 28),
@@ -101,7 +114,8 @@ class CellsTab extends StatelessWidget {
               color: _cellColour(s, i + 1, s.cellVoltages[i] - avg),
               balancing: i < balancing.length && balancing[i],
               isExtreme: i + 1 == s.minCellIndex || i + 1 == s.maxCellIndex,
-              resistance: s.cellResistances != null && i < s.cellResistances!.length
+              resistance:
+                  s.cellResistances != null && i < s.cellResistances!.length
                   ? s.cellResistances![i]
                   : null,
             ),
@@ -109,8 +123,13 @@ class CellsTab extends StatelessWidget {
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
+          // The figure under each tile is what JK reports per cell, which is
+          // the balance lead and its connection. Unlabelled it read as the
+          // cell's own resistance.
           child: Text(
-            t.cellsDeviationHint,
+            hasResistances
+                ? '${t.cellsDeviationHint} ${t.cellsResistanceNote}'
+                : t.cellsDeviationHint,
             style: const TextStyle(
               fontSize: 11.5,
               height: 1.4,
@@ -118,15 +137,60 @@ class CellsTab extends StatelessWidget {
             ),
           ),
         ),
+        // The grid is this instant. How the cells moved against each other
+        // through the last ride or charge is on disk, and this is the way in.
+        if (service.repository case final repo?)
+          if (service.activeDeviceId case final id?)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => CellHistoryScreen(
+                        repository: repo,
+                        deviceId: id,
+                        packName: service.activeDevice?.name.isNotEmpty == true
+                            ? service.activeDevice!.name
+                            : id,
+                      ),
+                    ),
+                  ),
+                  icon: const Icon(Icons.stacked_line_chart, size: 18),
+                  label: Text(t.cellHistoryOpen),
+                ),
+              ),
+            ),
         Section(
           title: t.balancingTitle,
           trailing: Pill(
-            s.balancerActive ? t.balancerWorking : t.balancerIdle,
-            color: s.balancerActive ? AppTheme.cool : AppTheme.textFaint,
+            s.balancerActive
+                ? t.balancerWorking
+                : stoppedByHeat
+                ? t.balancerStoppedByHeat
+                : t.balancerIdle,
+            color: s.balancerActive
+                ? AppTheme.cool
+                : stoppedByHeat
+                ? AppTheme.bad
+                : AppTheme.textFaint,
             icon: s.balancerActive ? Icons.bolt : null,
           ),
-          intro: t.balanceActiveNote,
+          // Said of a JK, which is an active balancer. An ANT's balancer can
+          // be either kind and the frame does not say, so nothing is claimed.
+          intro: s.brand == BmsBrand.jk ? t.balanceActiveNote : null,
           children: [
+            if (ant != null)
+              InfoRow(
+                t.antBalancer,
+                ant.balancerCode < antBalancerText.length
+                    ? t.antBalancerCode('${ant.balancerCode}')
+                    : t.antUnknownCode(
+                        ant.balancerCode.toRadixString(16).padLeft(2, '0'),
+                      ),
+                valueColor: stoppedByHeat ? AppTheme.bad : null,
+              ),
             if (s.balanceCurrent != null)
               InfoRow(
                 t.balanceCurrent,
@@ -134,62 +198,77 @@ class CellsTab extends StatelessWidget {
                 valueColor: s.balancerActive ? AppTheme.cool : null,
               ),
             if (s.balancingAction != null)
-              InfoRow(
-                t.balanceDirection,
-                switch (s.balancingAction!) {
-                  0x01 => t.balanceDirectionCharge,
-                  0x02 => t.balanceDirectionDischarge,
-                  _ => t.balanceDirectionOff,
-                },
-                dim: s.balancingAction == 0,
-              ),
-            InfoRow(t.balanceWhichCells, t.balanceWhichCellsValue, dim: true),
-            InfoRow(t.balanceRanking, t.needsDatabase, dim: true, last: true),
-          ],
-        ),
-        Section(
-          title: t.resistanceTitle,
-          children: [
-            InfoRow(t.resistanceSource, t.resistanceSourceValue, dim: true),
+              InfoRow(t.balanceDirection, switch (s.balancingAction!) {
+                0x01 => t.balanceDirectionCharge,
+                0x02 => t.balanceDirectionDischarge,
+                _ => t.balanceDirectionOff,
+              }, dim: s.balancingAction == 0),
             InfoRow(
-              t.resistanceEstimated,
-              t.needsSteps,
-              dim: true,
-              // ANT reports no wire-resistance warning mask, so the row below
-              // never appears for it, and this one has to close the section
-              // instead of leaving it with no last row at all.
-              last: s.wireResistanceWarningMask == null,
+              t.balanceWhichCells,
+              reported == null
+                  ? t.balanceWhichCellsValue
+                  : reported.contains(true)
+                  ? t.balanceWhichCellsReported(
+                      [
+                        for (var i = 0; i < reported.length; i++)
+                          if (reported[i]) '${i + 1}',
+                      ].join(', '),
+                    )
+                  : t.balanceWhichCellsNoneReported,
+              dim: reported == null || !reported.contains(true),
             ),
-            if (s.wireResistanceWarningMask != null)
-              InfoRow(
-                t.resistanceWireWarnings,
-                s.wireResistanceWarningMask == 0
-                    ? t.none
-                    : '0x${s.wireResistanceWarningMask!.toRadixString(16)}',
-                valueColor:
-                    s.wireResistanceWarningMask == 0 ? null : AppTheme.watch,
-                last: true,
-              ),
+            // Which cells were clearly the lowest at rest over the last
+            // month, from the stored readings. It used to count only the
+            // current connection, loaded readings included, so it started
+            // from nothing every time and ranked lead resistance alongside
+            // charge.
+            WeakCellRankingRow(service: service),
           ],
         ),
+        // An "estimated internal resistance" row used to sit here reading
+        // "needs current steps" for ever: nothing computes it. An ANT reports
+        // neither lead resistances nor their warnings, so it gets no section.
+        if (hasResistances || s.wireResistanceWarningMask != null)
+          Section(
+            title: t.resistanceTitle,
+            children: [
+              InfoRow(
+                t.resistanceSource,
+                t.resistanceSourceValue,
+                dim: true,
+                last: s.wireResistanceWarningMask == null,
+              ),
+              if (s.wireResistanceWarningMask != null)
+                InfoRow(
+                  t.resistanceWireWarnings,
+                  s.wireResistanceWarningMask == 0
+                      ? t.none
+                      : '0x${s.wireResistanceWarningMask!.toRadixString(16)}',
+                  valueColor: s.wireResistanceWarningMask == 0
+                      ? null
+                      : AppTheme.watch,
+                  last: true,
+                ),
+            ],
+          ),
       ],
     );
   }
 
   Widget _extremeLine(IconData icon, Color colour, String text) => Row(
-        children: [
-          Icon(icon, size: 13, color: colour),
-          const SizedBox(width: 6),
-          Text(
-            text,
-            style: const TextStyle(
-              fontSize: 12.5,
-              color: AppTheme.textSecondary,
-              fontFeatures: AppTheme.tabular,
-            ),
-          ),
-        ],
-      );
+    children: [
+      Icon(icon, size: 13, color: colour),
+      const SizedBox(width: 6),
+      Text(
+        text,
+        style: const TextStyle(
+          fontSize: 12.5,
+          color: AppTheme.textSecondary,
+          fontFeatures: AppTheme.tabular,
+        ),
+      ),
+    ],
+  );
 
   /// Colour for the delta readout, where any value is a magnitude rather than a
   /// direction.
@@ -212,5 +291,71 @@ class CellsTab extends StatelessWidget {
     if (oneBased == s.maxCellIndex) return AppTheme.cool;
     if (deviation.abs() > _watchDeviation) return AppTheme.watch;
     return AppTheme.textPrimary;
+  }
+}
+
+/// The weak-cell ranking row, read from the stored month rather than the
+/// connection. Loads once per pack: a ranking over thirty days does not move
+/// in the minutes a tab stays open.
+class WeakCellRankingRow extends StatefulWidget {
+  const WeakCellRankingRow({required this.service, super.key});
+
+  final BmsService service;
+
+  @override
+  State<WeakCellRankingRow> createState() => _WeakCellRankingRowState();
+}
+
+class _WeakCellRankingRowState extends State<WeakCellRankingRow> {
+  String? _device;
+  Future<WeakCellRanking>? _ranking;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final repo = widget.service.repository;
+    final device = widget.service.activeDeviceId;
+    if (device != _device) {
+      _device = device;
+      _ranking = repo == null || device == null
+          ? null
+          : repo.weakCellRanking(device);
+    }
+    final needed = VerdictThresholds.defaults.weakCellMinReadings;
+    return FutureBuilder<WeakCellRanking>(
+      future: _ranking,
+      builder: (context, snap) {
+        final r = snap.data;
+        if (r == null) {
+          return InfoRow(
+            t.balanceRanking,
+            _ranking == null ? t.balanceRankingNeedsHistory : '...',
+            dim: true,
+            last: true,
+          );
+        }
+        if (!r.isEnough(needed)) {
+          return InfoRow(
+            t.balanceRanking,
+            t.balanceRankingNeedsHistory,
+            dim: true,
+            hint: t.balanceRankingProgress('${r.readings}', '$needed'),
+            last: true,
+          );
+        }
+        return InfoRow(
+          t.balanceRanking,
+          [
+            for (final e in r.top)
+              t.balanceRankingEntry(
+                '${e.cell}',
+                (e.share * 100).toStringAsFixed(0),
+              ),
+          ].join(',  '),
+          hint: t.balanceRankingBasis('${r.readings}'),
+          last: true,
+        );
+      },
+    );
   }
 }

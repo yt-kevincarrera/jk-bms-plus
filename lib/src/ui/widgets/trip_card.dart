@@ -4,6 +4,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../bms_service.dart';
 import '../../data/database.dart';
 import '../../data/repository.dart';
+import '../../metrics/trip_learning.dart';
 import '../theme.dart';
 import '../trip_detail_screen.dart';
 import 'pro_gate.dart';
@@ -40,9 +41,19 @@ class TripCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final whPerKm = trip.distanceKm < 0.2
+    // The stored zero of a ride the link dropped on is not a ride that cost
+    // nothing, and it read "0 Wh/km" here.
+    final measured = TripLearning.isMeasured(trip);
+    final net = trip.energyOutWh - trip.energyInWh;
+    final whPerKm = trip.distanceKm < 0.2 || !measured || net <= 0
         ? null
-        : (trip.energyOutWh - trip.energyInWh) / trip.distanceKm;
+        : net / trip.distanceKm;
+    // The charge used is read from the first and last readings that arrived;
+    // with the link down for part of the ride those can be well inside it.
+    final socUsed = (trip.startSoc - trip.endSoc).toStringAsFixed(0);
+    final soc = TripLearning.socIsPartial(trip.energySource)
+        ? '≈ $socUsed %'
+        : '$socUsed %';
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -123,31 +134,42 @@ class TripCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 14),
-                          Text(
-                            whPerKm == null ? '--' : whPerKm.toStringAsFixed(0),
-                            style: AppTheme.readout(24),
-                          ),
-                          const SizedBox(width: 3),
-                          const Text(
-                            'Wh/km',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppTheme.textSecondary,
+                          if (!measured)
+                            Text(
+                              t.tripNotMeasured,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: AppTheme.textFaint,
+                              ),
+                            )
+                          else ...[
+                            Text(
+                              whPerKm == null
+                                  ? '--'
+                                  : whPerKm.toStringAsFixed(0),
+                              style: AppTheme.readout(24),
                             ),
-                          ),
+                            const SizedBox(width: 3),
+                            const Text(
+                              'Wh/km',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppTheme.textSecondary,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                       const SizedBox(height: 6),
                       Text(
                         '${_duration(trip.movingSeconds)} / '
                         '${_duration(trip.totalSeconds)}  ·  '
-                        '${trip.maxSpeedKmh.toStringAsFixed(0)} km/h  ·  '
                         // No climb figure here any more. The uphill and
                         // downhill distances that replaced it are worked out
                         // from the track, and a list of cards is the one place
                         // that cannot afford to read a thousand points per row
                         // to fill in one line of small print.
-                        '${(trip.startSoc - trip.endSoc).toStringAsFixed(0)} %',
+                        '${trip.maxSpeedKmh.toStringAsFixed(0)} km/h  ·  $soc',
                         style: const TextStyle(
                           fontSize: 11.5,
                           color: AppTheme.textSecondary,

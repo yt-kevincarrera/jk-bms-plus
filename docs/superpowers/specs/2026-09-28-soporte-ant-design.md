@@ -109,19 +109,25 @@ Todo little-endian. `T` = byte 8 (sondas de temperatura), `N` = byte 9
 | 44+o | 2 | u16 | % | SOH | `soh` |
 | 46+o | 1 | u8 | enum | MOSFET de carga (1 = encendido; resto = motivo) | `chargeMosfetOn`, alarmas |
 | 47+o | 1 | u8 | enum | MOSFET de descarga | `dischargeMosfetOn`, alarmas |
-| 48+o | 1 | u8 | enum | Balanceador (0 apagado) | `balancerActive` = distinto de 0 |
+| 48+o | 1 | u8 | enum | Balanceador (0 apagado) | `balancerActive` solo con 1 o 2 (balanceo en curso) o máscara de 70+o no nula; 3 y 0x0A son fallos por temperatura, 4 es "encendido" |
 | 50+o | 4 | u32 | 1e-6 Ah | Capacidad total | `nominalCapacityAh` |
 | 54+o | 4 | u32 | 1e-6 Ah | Capacidad restante | `remainingCapacityAh` |
 | 58+o | 4 | u32 | 0.001 Ah | Ah de ciclo acumulados | `cycleCapacityAh` |
 | 62+o | 4 | i32 | 1 W | Potencia | (se deriva, no se guarda) |
 | 66+o | 4 | u32 | s | Tiempo total | `totalRuntimeSeconds` |
-| 70+o | 4 | u32 | | Celdas balanceando (bit por celda) | (consola) |
+| 70+o | 4 | u32 | | Celdas balanceando (bit por celda) | `balancingCellMask`: qué celdas muestra la pestaña de celdas |
 | 74+o..84+o | | | | Máx/mín/delta/promedio de celda | se derivan de `cellVoltages` |
 | 94+o | 2 | u16 | enum | Tipo de batería 0xFAF1..4 | (consola) |
 
-La convención de corriente coincide con la de la app: en el JK real la descarga
-es negativa (backup 2026-09-02) y el fixture ANT de 16S da +0.3 A con estado
-"carga". El parser **no invierte** el signo; un test lo fija.
+La convención de corriente **no está verificada en un ANT real**. En el JK real
+la descarga es negativa (backup 2026-09-02), pero el fixture ANT de 16S da
++0.3 A con el byte de estado en 0x01, "reposo", no "carga": no prueba nada
+sobre el signo. Todas las capturas ANT son de packs en reposo. El parser toma
+positivo como carga y **no invierte** el signo; el servicio lo contrasta con el
+byte de estado (`AntCurrentSign`): si el estado dice carga y la corriente es
+claramente negativa, o descarga con corriente positiva, durante tres tramas
+seguidas, invierte el signo de ese pack desde entonces, y lo deja escrito una
+vez en los avisos y en `LinkEvents` (`antCurrentSignInverted`).
 
 Textos de los enums de MOSFET y balanceador: tablas completas en
 `ant_bms_ble.cpp` (`CHARGE_MOSFET_STATUS`, `DISCHARGE_MOSFET_STATUS`,
@@ -418,10 +424,11 @@ Las siguientes precisiones refinan la especificación aprobada tras leer el cód
 4. **Sin número de serie es `''`**, la convención existente
    `Devices.serialNumber`, no nulo.
 
-5. **`Snapshots.cycleCount` permanece no nulo en la DB**; las filas de ANT
-   almacenan 0 allí (recrear la tabla más grande para hacerla nullable no vale
-   la pena). El `BmsSnapshot.cycleCount` activo es nulo para ANT y nada en
-   pantalla lee la columna almacenada.
+5. **`Snapshots.cycleCount` es nulo para ANT** (esquema 16). Primero se
+   decidió dejar la columna no nula con 0, suponiendo que nada la leía, pero sí
+   se leía: la pantalla del pack sin conexión, la comparación de packs y la
+   exportación mostraban "0 ciclos". La migración 16 la hace nullable y borra
+   los 0 de relleno de los ANT ya guardados.
 
 6. **El diagnóstico también va a `LinkEvents`.** Las tramas crudas solo se
    guardan una vez que un pack está activo (primera lectura decodificada), por

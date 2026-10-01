@@ -1,3 +1,5 @@
+import '../model/bms_snapshot.dart';
+import 'capacity_endpoints.dart';
 import 'soc_trust.dart';
 
 /// How long until the pack is full.
@@ -6,7 +8,40 @@ class ChargeEta {
     required this.remaining,
     required this.isTapering,
     this.socLooksOptimistic = false,
+    this.nearlyFull = false,
   });
+
+  /// The counter says full but the charger is still pushing more than a
+  /// tapered current. Not "full": the last of a charge is exactly where
+  /// current still flowing means it is not done. Said as "nearly full", with
+  /// no minutes, because the counter has nothing left to divide.
+  final bool nearlyFull;
+
+  /// [remaining] as the screen shows it: to five minutes, or ten past an
+  /// hour, and never under five. The inputs are one frame's current, which
+  /// the BMS repeats across frames, and a whole-number percentage from a
+  /// counter; a minute-precise answer from them was precision the numbers
+  /// never had.
+  static Duration rounded(Duration d) {
+    final step = d > const Duration(hours: 1) ? 10 : 5;
+    final minutes = (d.inSeconds / 60 / step).round() * step;
+    return Duration(minutes: minutes < 5 ? 5 : minutes);
+  }
+
+  /// The charging current to estimate from: the mean over the distinct
+  /// readings of the last minute. The BMS repeats a current value across
+  /// consecutive frames, so a plain mean over frames weights whichever
+  /// value happened to be repeated most; runs of the same value count once.
+  static double? smoothedCurrent(List<BmsSnapshot> recent) {
+    if (recent.isEmpty) return null;
+    final distinct = <double>[];
+    for (final s in recent) {
+      if (distinct.isEmpty || distinct.last != s.current) {
+        distinct.add(s.current);
+      }
+    }
+    return distinct.reduce((a, b) => a + b) / distinct.length;
+  }
 
   /// Time left, or null when it cannot honestly be worked out.
   final Duration? remaining;
@@ -40,8 +75,10 @@ class ChargeEta {
 /// towards nothing, and the remaining time stretches: a pack that says twelve
 /// minutes at 92% can genuinely take forty.
 ///
-/// So the taper is modelled rather than ignored, and the result is flagged as
-/// an estimate in the tail so the number is not read as a promise.
+/// So the taper is modelled rather than ignored, and the result is always
+/// shown as approximate and rounded ([ChargeEta.rounded]) so the number is
+/// not read as a promise. It used to say "approx." only above 90 %, and give
+/// minutes off one frame's current the rest of the time.
 ///
 /// The state of charge this all hangs off is not a measurement. The BMS
 /// integrates amps over time against the capacity somebody typed into it, so
@@ -105,7 +142,18 @@ class ChargeEtaEstimator {
       );
     }
 
+    // "Full" off the counter only once the current has tapered too. On an
+    // ANT, which never gives the counter anything to be checked against, the
+    // counter reached 99.5 % with amps still going in and the screen said
+    // the pack was full.
     if (fraction >= fullAt) {
+      if (current > CapacityEndpoints.taperAmpsFor(capacityAh)) {
+        return const ChargeEta(
+          remaining: null,
+          isTapering: true,
+          nearlyFull: true,
+        );
+      }
       return const ChargeEta(remaining: Duration.zero, isTapering: true);
     }
 

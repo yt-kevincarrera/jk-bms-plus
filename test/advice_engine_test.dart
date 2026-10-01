@@ -103,6 +103,10 @@ List<Advice> run({
   JkSettings? config,
   double? restingDelta,
   double? loadedDelta,
+  int? restingDeltaCell,
+  int? loadedDeltaCell,
+  // A session that has pulled real current, unless a test says otherwise.
+  int heavyLoadFrames = 5,
   Map<int, int> weakCellCounts = const {},
   bool balancerEverSeen = true,
   int capacityTestCount = 1,
@@ -124,6 +128,9 @@ List<Advice> run({
     settings: config,
     restingDelta: restingDelta,
     loadedDelta: loadedDelta,
+    restingDeltaCell: restingDeltaCell,
+    loadedDeltaCell: loadedDeltaCell,
+    heavyLoadFrames: heavyLoadFrames,
     weakCellCounts: weakCellCounts,
     balancerEverSeen: balancerEverSeen,
     capacityTestCount: capacityTestCount,
@@ -191,7 +198,80 @@ void main() {
       final advice = run(
         snapshot: snap(cycles: 200, cycleCapacityAh: 2025),
       );
-      expect(has(advice, AdviceCode.cycleCounterInflated), isTrue);
+      expect(has(advice, AdviceCode.cycleCounterDisagrees), isTrue);
+    });
+
+    test('flags a cycle counter that reads low, too', () {
+      // The one real pack this was checked on read lower every time. Which
+      // way a firmware errs is not something to assume.
+      final advice = run(snapshot: snap(cycles: 20, cycleCapacityAh: 2025));
+      expect(has(advice, AdviceCode.cycleCounterDisagrees), isTrue);
+      expect(has(advice, AdviceCode.bmsClaimsConsistent), isFalse);
+    });
+
+    test('says the cycle counter holds up when it was checkable', () {
+      // 63 counted against 63 equivalent, on a pack with cycles enough.
+      final advice = run(snapshot: snap(cycles: 63, cycleCapacityAh: 2843.5));
+      expect(has(advice, AdviceCode.cycleCounterDisagrees), isFalse);
+      expect(has(advice, AdviceCode.bmsClaimsConsistent), isTrue);
+    });
+
+    test('says nothing good about the counters on a young pack', () {
+      // Three cycles in, nothing about them can be checked, and mid-range
+      // the charge counter cannot be either.
+      final advice = run(snapshot: snap(cycles: 3, cycleCapacityAh: 125));
+      expect(has(advice, AdviceCode.bmsClaimsConsistent), isFalse);
+    });
+
+    test('names the cell that was lowest at rest, not the one lowest now', () {
+      final cells = List.filled(20, 3.90);
+      cells[2] = 3.85;
+      final advice = run(
+        snapshot: snap(cells: cells),
+        restingDelta: 0.045,
+        restingDeltaCell: 12,
+      );
+      final item = advice.firstWhere(
+        (a) => a.code == AdviceCode.imbalanceAtRest,
+      );
+      expect(item.cellIndex, 12);
+    });
+
+    test('names the cell that opened under load', () {
+      final advice = run(
+        restingDelta: 0.010,
+        loadedDelta: 0.080,
+        loadedDeltaCell: 9,
+      );
+      final item = advice.firstWhere(
+        (a) => a.code == AdviceCode.imbalanceUnderLoad,
+      );
+      expect(item.cellIndex, 9);
+    });
+
+    test('temperature checked and fine is said, with probes to check', () {
+      expect(has(run(), AdviceCode.temperatureOk), isTrue);
+      expect(
+        has(run(snapshot: snap(temperatures: const [50])), AdviceCode.temperatureOk),
+        isFalse,
+      );
+      // No battery probe, nothing to say: the MOSFET is not the battery.
+      expect(
+        has(run(snapshot: snap(temperatures: const [])), AdviceCode.temperatureOk),
+        isFalse,
+      );
+    });
+
+    test('the charge limit checked and fine is said once settings arrive', () {
+      expect(has(run(), AdviceCode.configNothingFlagged), isFalse);
+      expect(
+        has(run(config: settings(cellOvp: 4.2)), AdviceCode.configNothingFlagged),
+        isTrue,
+      );
+      expect(
+        has(run(config: settings(cellOvp: 4.3)), AdviceCode.configNothingFlagged),
+        isFalse,
+      );
     });
 
     test('flags a health figure stuck at a hundred', () {
@@ -247,6 +327,27 @@ void main() {
       );
     });
 
+    test('a hot MOSFET is the BMS running hot, not the pack', () {
+      // "Heat is what ages a lithium cell fastest" used to be said about a
+      // MOSFET at 60 C next to cells at 25. The cells are fine; the switch
+      // gets its own line, and only once it is hot for a switch.
+      final ordinary = run(snapshot: snap(mosfetTemp: 60));
+      expect(has(ordinary, AdviceCode.runningHot), isFalse);
+      expect(has(ordinary, AdviceCode.bmsRunningHot), isFalse);
+
+      final warm = run(snapshot: snap(mosfetTemp: 75));
+      expect(has(warm, AdviceCode.runningHot), isFalse);
+      expect(
+        warm.firstWhere((a) => a.code == AdviceCode.bmsRunningHot).level,
+        AdviceLevel.watch,
+      );
+      final hot = run(snapshot: snap(mosfetTemp: 85));
+      expect(
+        hot.firstWhere((a) => a.code == AdviceCode.bmsRunningHot).level,
+        AdviceLevel.problem,
+      );
+    });
+
     test('flags a balancer that has never run and cannot', () {
       final cells = List.filled(20, 3.90);
       cells[6] = 3.84;
@@ -255,6 +356,8 @@ void main() {
         // Start voltage sits above where these cells ever get.
         config: settings(balanceStart: 4.0),
         balancerEverSeen: false,
+        // Judged at rest, not on the live spread, which includes sag.
+        restingDelta: 0.06,
       );
       expect(has(advice, AdviceCode.balancerNeverSeen), isTrue);
     });

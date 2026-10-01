@@ -21,13 +21,15 @@ void main() {
     DateTime.utc(2026, 4, 1),
   ];
 
-  group('placing an event on a chart plotted by index', () {
+  // The charts plot days since their first point now, not the point index,
+  // so these positions are in days (updated from the index-based ones).
+  group('placing an event on a chart plotted against time', () {
     test('lands exactly on a reading it shares a date with', () {
       final markers = ChartMarkers.place(
         pointDates: dates,
         events: [event(DateTime.utc(2026, 2, 1))],
       );
-      expect(markers.single.x, closeTo(1.0, 0.0001));
+      expect(markers.single.x, closeTo(31, 0.0001));
     });
 
     test('lands between the two readings that bracket it', () {
@@ -38,9 +40,9 @@ void main() {
         pointDates: dates,
         events: [DateTime.utc(2026, 2, 15)].map(event).toList(),
       );
-      expect(markers.single.x, greaterThan(1.0));
-      expect(markers.single.x, lessThan(2.0));
-      expect(markers.single.x, closeTo(1.5, 0.05));
+      expect(markers.single.x, greaterThan(31));
+      expect(markers.single.x, lessThan(59));
+      expect(markers.single.x, closeTo(45, 0.0001));
     });
 
     test('lands on the first and last readings', () {
@@ -49,7 +51,7 @@ void main() {
         events: [event(dates.first), event(dates.last)],
       );
       expect(markers.first.x, closeTo(0, 0.0001));
-      expect(markers.last.x, closeTo(3, 0.0001));
+      expect(markers.last.x, closeTo(90, 0.0001));
     });
 
     test('keeps what kind it was', () {

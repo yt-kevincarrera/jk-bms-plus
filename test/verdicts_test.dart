@@ -123,11 +123,14 @@ void main() {
           changeVoltsPerMonth: 0.012,
           samples: 120,
           spanDays: 21,
+          days: 12,
         ),
       ];
       final v = only(engine.headlines(drift: drift), AdviceCode.cellDrifting);
       expect(v.cellIndex, 11, reason: '1-based on the label');
-      expect(v.value, closeTo(3, 0.01), reason: 'weeks');
+      // The days that had resting readings, not the span: three weeks with
+      // readings on twelve of their days is twelve days of data.
+      expect(v.value, 12, reason: 'days with data');
       expect(v.level, AdviceLevel.watch);
       expect(
         v.evidence.firstWhere((e) => e.kind == EvidenceKind.driftRate).value,
@@ -161,11 +164,64 @@ void main() {
           changeVoltsPerMonth: 0.0005,
           samples: 90,
           spanDays: 28,
+          days: 9,
         ),
       ];
       final v = only(engine.headlines(drift: drift), AdviceCode.noCellDrifting);
       expect(v.level, AdviceLevel.good);
-      expect(v.value, closeTo(4, 0.01));
+      expect(v.value, 9);
+    });
+
+    test('a cell sinking is found even when another changes faster', () {
+      // Only the first of the ranking used to be asked, and a fast mover
+      // inside a small gap made the verdict "no cell is drifting".
+      final drift = [
+        const CellDrift(
+          index: 2,
+          currentDeviationVolts: 0.006,
+          earlyDeviationVolts: 0.000,
+          changeVoltsPerMonth: 0.009,
+          samples: 90,
+          days: 9,
+        ),
+        const CellDrift(
+          index: 7,
+          currentDeviationVolts: 0.028,
+          earlyDeviationVolts: 0.020,
+          changeVoltsPerMonth: 0.006,
+          samples: 90,
+          days: 9,
+        ),
+      ];
+      final v = only(engine.headlines(drift: drift), AdviceCode.cellDrifting);
+      expect(v.cellIndex, 8);
+    });
+
+    test('"the lowest" quoted with no drift is the lowest cell', () {
+      final drift = [
+        const CellDrift(
+          index: 2,
+          currentDeviationVolts: 0.003,
+          earlyDeviationVolts: 0.000,
+          changeVoltsPerMonth: 0.002,
+          samples: 90,
+          days: 9,
+        ),
+        const CellDrift(
+          index: 7,
+          currentDeviationVolts: 0.008,
+          earlyDeviationVolts: 0.008,
+          changeVoltsPerMonth: 0.000,
+          samples: 90,
+          days: 9,
+        ),
+      ];
+      final v = only(engine.headlines(drift: drift), AdviceCode.noCellDrifting);
+      final dev = v.evidence.firstWhere(
+        (e) => e.kind == EvidenceKind.driftDeviation,
+      );
+      expect(dev.cell, 8);
+      expect(dev.value, 0.008);
     });
 
     test(
@@ -217,11 +273,30 @@ void main() {
   group('delta under load', () {
     test('a delta that does not open under load is said to be normal', () {
       final v = only(
-        engine.headlines(restingDelta: 0.012, loadedDelta: 0.030),
+        engine.headlines(
+          restingDelta: 0.012,
+          loadedDelta: 0.030,
+          heavyLoadFrames: 5,
+        ),
         AdviceCode.deltaUnderLoadNormal,
       );
       expect(v.level, AdviceLevel.good);
       expect(v.evidence, hasLength(2));
+    });
+
+    test('after only light loads it says only that', () {
+      // "Nothing resistive to chase" used to rest on a single 10 A reading.
+      // A bad connection only shows at a load that can open it.
+      final all = engine.headlines(
+        restingDelta: 0.012,
+        loadedDelta: 0.030,
+        heavyLoadFrames: 2,
+      );
+      expect(has(all, AdviceCode.deltaUnderLoadNormal), isFalse);
+      expect(
+        only(all, AdviceCode.deltaUnderLightLoadNormal).level,
+        AdviceLevel.good,
+      );
     });
 
     test('is not said about a session that never pulled current', () {
@@ -298,10 +373,11 @@ void main() {
         estimator: RangeEstimator(),
         restingDelta: 0.010,
         loadedDelta: 0.020,
+        heavyLoadFrames: 5,
       );
       expect(all.first.level, AdviceLevel.problem);
       expect(all.last.level, AdviceLevel.good);
-      expect(all.last.code, AdviceCode.deltaUnderLoadNormal);
+      expect(has(all, AdviceCode.deltaUnderLoadNormal), isTrue);
     });
 
     test('the live evaluation and the offline headlines agree', () {

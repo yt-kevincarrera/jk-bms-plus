@@ -30,9 +30,11 @@ void main() {
     });
     test('pack, current, charge', () {
       expect(s.packVoltage, closeTo(52.84, 1e-9));
-      // Positive while charging, same as the app's convention: not inverted.
-      expect(s.current, closeTo(0.3, 1e-9));
-      expect(s.isCharging, isTrue);
+      // The field says +0.3 and the parser reverses it, as it does for every
+      // ANT (see the 20S charging capture below). Idle (0x01), so this frame
+      // says nothing about the sign itself.
+      expect(st.batteryState, 0x01);
+      expect(s.current, closeTo(-0.3, 1e-9));
       expect(s.soc, 91);
       expect(s.soh, 100);
     });
@@ -61,6 +63,42 @@ void main() {
     });
   });
 
+  group("20S / 4T, the rider's pack charging, 14 bytes longer", () {
+    test('decodes although the frame is longer than the fields read', () {
+      final st = p.parseStatus(frame(antStatus20s4tCharging));
+      final s = st.snapshot;
+      expect(antStatus20s4tCharging.length, 178);
+      expect(s.cellCount, 20);
+      expect(s.cellVoltages.first, closeTo(3.689, 1e-9));
+      expect(s.cellVoltages.last, closeTo(3.689, 1e-9));
+      expect(s.packVoltage, closeTo(73.78, 1e-9));
+      expect(s.soc, 48);
+      expect(s.soh, 100);
+      expect(s.nominalCapacityAh, closeTo(45.0, 1e-6));
+      expect(s.remainingCapacityAh, closeTo(21.626934, 1e-6));
+      expect(s.temperatures, [30.0, 30.0, 30.0, 30.0]);
+      expect(s.mosfetTemp, 32.0);
+      expect(st.balancerTemp, 33.0);
+      expect(s.chargeMosfetOn, isTrue);
+      expect(s.dischargeMosfetOn, isTrue);
+    });
+
+    test('charging reads positive, as on a JK', () {
+      final st = p.parseStatus(frame(antStatus20s4tCharging));
+      expect(st.batteryState, 0x02);
+      expect(st.snapshot.current, closeTo(5.1, 1e-9));
+      expect(st.snapshot.isCharging, isTrue);
+    });
+
+    test('a frame shorter than its fields is still refused', () {
+      final short = antStatus20s4tCharging.sublist(0, 150);
+      expect(
+        () => p.parseStatus(frame(short)),
+        throwsA(isA<AntParseException>()),
+      );
+    });
+  });
+
   group('14S / 4T real capture', () {
     final st = p.parseStatus(frame(antStatus14s4t));
     final s = st.snapshot;
@@ -77,12 +115,66 @@ void main() {
     test('an exact -40 degC is an unwired probe and is hidden', () {
       expect(s.temperatures[2], BmsSnapshot.absentProbeCelsius);
       expect(s.connectedTemperatures.map((t) => t.index), [0, 1, 3]);
-      expect(s.plausibleTemperatures, [28.0, 28.0, 28.0]);
+      expect(s.batteryTemperatures, [28.0, 28.0, 28.0]);
     });
     test('discharge MOSFET 0x02 is reported literally', () {
       expect(st.dischargeMosfetCode, 0x02);
       expect(s.dischargeMosfetOn, isFalse);
       expect(s.warnings.active, {BmsWarning.cellUndervoltage});
+    });
+  });
+
+  group('the balancer, as the BMS describes it', () {
+    // The 16S fixture: 16 cells, 2 probes, so o = 36. Balancer code at
+    // 48+o = 84, cell bitmask at 70+o = 106..109.
+    AntStatus withBalancer(int code, {int mask = 0}) {
+      final b = Uint8List.fromList(antStatus16s);
+      b[84] = code;
+      for (var i = 0; i < 4; i++) {
+        b[106 + i] = (mask >> (8 * i)) & 0xFF;
+      }
+      return p.parseStatus(frame(b));
+    }
+
+    test('balancing codes with cells named are working, on those cells', () {
+      final st = withBalancer(0x02, mask: (1 << 2) | (1 << 7));
+      expect(st.snapshot.balancerActive, isTrue);
+      expect(st.snapshot.balancingCellsReported, isTrue);
+      final cells = st.snapshot.balancingCells;
+      expect(
+        [for (var i = 0; i < cells.length; i++) if (cells[i]) i + 1],
+        [3, 8],
+      );
+    });
+
+    test('a balancer stopped by heat is not working', () {
+      // Codes 3 and 0x0A are the balancer over temperature: faults. It used
+      // to be "anything but 0 is working".
+      for (final code in [0x03, 0x0A]) {
+        final st = withBalancer(code);
+        expect(st.snapshot.balancerActive, isFalse, reason: '$code');
+        expect(st.balancerCode, code);
+      }
+    });
+
+    test('switched on and waiting is not balancing', () {
+      // Code 4, "automatic equalization", is the balancer enabled, which the
+      // reference maps to its switch, not to charge moving.
+      expect(withBalancer(0x04).snapshot.balancerActive, isFalse);
+    });
+
+    test('but a bitmask naming cells is balancing whatever the code', () {
+      final st = withBalancer(0x04, mask: 1);
+      expect(st.snapshot.balancerActive, isTrue);
+      expect(st.snapshot.balancingCells.first, isTrue);
+    });
+
+    test('with nothing named, no cell is shown as balancing', () {
+      // The inference from voltages is for a BMS that does not say. An ANT
+      // says, and "none" is its answer.
+      final st = withBalancer(0x01);
+      expect(st.snapshot.balancerActive, isTrue);
+      expect(st.snapshot.balancingCells, everyElement(isFalse));
     });
   });
 

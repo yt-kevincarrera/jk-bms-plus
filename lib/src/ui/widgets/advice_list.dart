@@ -447,6 +447,10 @@ class _EvidenceRow extends StatelessWidget {
       t.evidenceHottestProbe,
       '${v.toStringAsFixed(1)} °C',
     ),
+    EvidenceKind.mosfetTemperature => (
+      t.evidenceMosfetTemp,
+      '${v.toStringAsFixed(1)} °C',
+    ),
     EvidenceKind.balanceStartVoltage => (
       t.evidenceBalanceStart,
       '${v.toStringAsFixed(2)} V',
@@ -480,10 +484,7 @@ class _EvidenceRow extends StatelessWidget {
       '${volts(v)} / ${t.evidencePerMonth}',
     ),
     EvidenceKind.driftSamples => (t.evidenceDriftSamples, whole(v)),
-    EvidenceKind.driftSpanWeeks => (
-      t.evidenceDriftSpanWeeks,
-      v.toStringAsFixed(1),
-    ),
+    EvidenceKind.driftDays => (t.evidenceDriftDays, whole(v)),
     EvidenceKind.cellSag => (t.evidenceCellSag('${e.cell ?? 0}'), volts(v)),
     EvidenceKind.medianSag => (t.evidenceMedianSag, volts(v)),
     EvidenceKind.currentStep => (
@@ -519,6 +520,31 @@ class _EvidenceRow extends StatelessWidget {
       t.evidencePeakCurrent,
       '${v.toStringAsFixed(1)} A',
     ),
+    EvidenceKind.inspectionRestDelta => (
+      t.evidenceInspectionRestDelta,
+      volts(v),
+    ),
+    EvidenceKind.excessResistance => (
+      t.evidenceExcessResistance('${e.cell ?? 0}'),
+      '${(v * 1000).toStringAsFixed(1)} mΩ',
+    ),
+    EvidenceKind.detectionFloor => (
+      t.evidenceDetectionFloor,
+      '${(v * 1000).toStringAsFixed(1)} mΩ',
+    ),
+    EvidenceKind.loadWasCharge => (
+      t.evidenceLoadWasCharge,
+      t.evidenceLoadCharger,
+    ),
+    EvidenceKind.seenDuringStep => (
+      t.evidenceSeenDuringStep,
+      switch (v.round()) {
+        0 => t.evidenceStepRest,
+        1 => t.evidenceStepLight,
+        2 => t.evidenceStepHeavy,
+        _ => t.evidenceStepRecovery,
+      },
+    ),
     EvidenceKind.runCount => (t.evidenceRunCount, whole(v)),
     EvidenceKind.timesSameCell => (
       t.evidenceTimesSameCell('${e.cell ?? 0}'),
@@ -545,6 +571,11 @@ class _EvidenceRow extends StatelessWidget {
       t.evidencePreviousConfiguredCapacity(_date(e.at)),
       ah(v),
     ),
+    EvidenceKind.previousCycleCapacity => (
+      t.evidencePreviousCycleCapacity(_date(e.at)),
+      ah(v),
+    ),
+    EvidenceKind.cycleCapacity => (t.evidenceCycleCapacity, ah(v)),
     EvidenceKind.previousPeakCurrent => (
       t.evidencePreviousPeakCurrent(_date(e.at)),
       '${v.toStringAsFixed(1)} A',
@@ -568,22 +599,34 @@ String adviceTitle(AppL10n t, Advice advice) {
     AdviceCode.noCellDrifting => t.verdictNoCellDriftingTitle,
     AdviceCode.rangeNow => t.verdictRangeNowTitle(v.toStringAsFixed(0)),
     AdviceCode.deltaUnderLoadNormal => t.verdictDeltaNormalTitle,
+    AdviceCode.deltaUnderLightLoadNormal => t.verdictDeltaLightTitle,
     AdviceCode.imbalanceAtRest => t.adviceImbalanceAtRestTitle,
     AdviceCode.imbalanceUnderLoad => t.adviceImbalanceUnderLoadTitle,
     AdviceCode.weakCellDominant => t.adviceWeakCellTitle,
-    AdviceCode.cycleCounterInflated => t.adviceCycleInflatedTitle,
+    AdviceCode.cycleCounterDisagrees => t.adviceCycleMismatchTitle,
+    AdviceCode.bmsClaimsConsistent => t.adviceBmsClaimsOkTitle,
     AdviceCode.socCounterAhead => t.adviceSocCounterAheadTitle,
     AdviceCode.socCounterBehind => t.adviceSocCounterBehindTitle,
     AdviceCode.healthFigureDecorative => t.adviceHealthDecorativeTitle,
     AdviceCode.capacityBelowCatalogue => t.adviceCapacityBelowTitle,
     AdviceCode.noCapacityTestYet => t.adviceNoCapacityTestTitle,
     AdviceCode.runningHot => t.adviceRunningHotTitle,
+    AdviceCode.bmsRunningHot => t.adviceBmsHotTitle,
+    AdviceCode.temperatureOk => t.adviceTemperatureOkTitle,
     AdviceCode.balancerNeverSeen => t.adviceBalancerNeverSeenTitle,
     AdviceCode.overvoltageSetHigh => t.adviceOvervoltageHighTitle,
+    AdviceCode.configNothingFlagged => t.adviceConfigNothingFlaggedTitle,
     AdviceCode.rangeStillLearning => t.adviceRangeLearningTitle,
     AdviceCode.imbalanceCostingRange => t.adviceImbalanceCostingTitle,
-    AdviceCode.inspectionCellSagging => t.verdictInspCellSaggingTitle('$cell'),
-    AdviceCode.inspectionSagUniform => t.verdictInspSagUniformTitle,
+    AdviceCode.inspectionCellSagging =>
+      _charged(advice)
+          ? t.verdictInspCellRisingTitle('$cell')
+          : t.verdictInspCellSaggingTitle('$cell'),
+    AdviceCode.inspectionSagUniform =>
+      _charged(advice)
+          ? t.verdictInspSagUniformChargeTitle
+          : t.verdictInspSagUniformTitle,
+    AdviceCode.inspectionSagUnresolved => t.verdictInspSagUnresolvedTitle,
     AdviceCode.inspectionRestDeltaWide => t.verdictInspRestDeltaWideTitle,
     AdviceCode.inspectionRestDeltaOk => t.verdictInspRestDeltaOkTitle,
     AdviceCode.inspectionWeakUnderLightLoad => t.verdictInspWeakLightTitle(
@@ -593,6 +636,8 @@ String adviceTitle(AppL10n t, Advice advice) {
       '$cell',
     ),
     AdviceCode.inspectionRecoveryOk => t.verdictInspRecoveryOkTitle,
+    AdviceCode.inspectionRecoveryNotDiscriminating =>
+      t.verdictInspRecoveryNotDiscriminatingTitle,
     AdviceCode.inspectionHot => t.verdictInspHotTitle,
     AdviceCode.inspectionAlarmsSeen => t.verdictInspAlarmsTitle,
     AdviceCode.inspectionCountersEditable => t.verdictInspCountersTitle,
@@ -606,6 +651,8 @@ String adviceTitle(AppL10n t, Advice advice) {
       '$cell',
     ),
     AdviceCode.inspectionRepeatWorse => t.verdictInspRepeatWorseTitle,
+    AdviceCode.inspectionRepeatConfigChanged =>
+      t.verdictInspRepeatConfigChangedTitle,
     AdviceCode.inspectionRepeatSteady => t.verdictInspRepeatSteadyTitle,
     AdviceCode.inspectionRepeatCountersReset =>
       t.verdictInspRepeatCountersResetTitle,
@@ -617,6 +664,8 @@ String adviceTitle(AppL10n t, Advice advice) {
     AdviceCode.configUvpLow => t.verdictConfigUvpLowTitle,
     AdviceCode.configChargesWhenFrozen => t.verdictConfigChargesWhenFrozenTitle,
     AdviceCode.configColdCutoffOk => t.verdictConfigColdCutoffOkTitle,
+    AdviceCode.configColdCutoffMarginal =>
+      t.verdictConfigColdCutoffMarginalTitle,
     AdviceCode.configChargeHotLimit => t.verdictConfigChargeHotLimitTitle,
     AdviceCode.configDischargeHotLimit => t.verdictConfigDischargeHotLimitTitle,
     AdviceCode.configCapacityDisagrees => t.verdictConfigCapacityDisagreesTitle,
@@ -633,6 +682,17 @@ String adviceTitle(AppL10n t, Advice advice) {
     AdviceCode.configLooksSane => t.verdictConfigLooksSaneTitle,
   };
 }
+
+/// Whether an inspection finding was measured under a charger, so its words
+/// say the cells rose rather than fell.
+bool _charged(Advice advice) =>
+    advice.evidence.any((e) => e.kind == EvidenceKind.loadWasCharge);
+
+/// Milliohms, from an evidence figure in ohms.
+String _milliohms(Advice advice, EvidenceKind kind) =>
+    ((advice.evidence.where((e) => e.kind == kind).firstOrNull?.value ?? 0) *
+            1000)
+        .toStringAsFixed(1);
 
 /// One evidence figure of an advice, formatted, or zero when it carries none.
 String _fact(Advice advice, EvidenceKind kind, int digits) =>
@@ -663,6 +723,7 @@ String adviceBody(AppL10n t, Advice advice) {
     ),
     AdviceCode.noCellDrifting => t.verdictNoCellDriftingBody(
       v.toStringAsFixed(0),
+      '${advice.evidence.where((e) => e.kind == EvidenceKind.driftDeviation).firstOrNull?.cell ?? '?'}',
       f(EvidenceKind.driftDeviation, 3),
     ),
     AdviceCode.rangeNow => t.verdictRangeNowBody(
@@ -670,6 +731,10 @@ String adviceBody(AppL10n t, Advice advice) {
       f(EvidenceKind.learnedKm, 0),
     ),
     AdviceCode.deltaUnderLoadNormal => t.verdictDeltaNormalBody(
+      f(EvidenceKind.loadedDelta, 3),
+      f(EvidenceKind.restingDelta, 3),
+    ),
+    AdviceCode.deltaUnderLightLoadNormal => t.verdictDeltaLightBody(
       f(EvidenceKind.loadedDelta, 3),
       f(EvidenceKind.restingDelta, 3),
     ),
@@ -685,9 +750,11 @@ String adviceBody(AppL10n t, Advice advice) {
       cell,
       v.toStringAsFixed(0),
     ),
-    AdviceCode.cycleCounterInflated => t.adviceCycleInflatedBody(
-      v.toStringAsFixed(1),
+    AdviceCode.cycleCounterDisagrees => t.adviceCycleMismatchBody(
+      f(EvidenceKind.reportedCycles, 0),
+      f(EvidenceKind.equivalentCycles, 1),
     ),
+    AdviceCode.bmsClaimsConsistent => t.adviceBmsClaimsOkBody,
     AdviceCode.socCounterAhead => t.adviceSocCounterAheadBody(
       v.toStringAsFixed(2),
       f(EvidenceKind.reportedSoc, 0),
@@ -702,10 +769,15 @@ String adviceBody(AppL10n t, Advice advice) {
     ),
     AdviceCode.noCapacityTestYet => t.adviceNoCapacityTestBody,
     AdviceCode.runningHot => t.adviceRunningHotBody(v.toStringAsFixed(1)),
+    AdviceCode.bmsRunningHot => t.adviceBmsHotBody(v.toStringAsFixed(1)),
+    AdviceCode.temperatureOk => t.adviceTemperatureOkBody(v.toStringAsFixed(0)),
     AdviceCode.balancerNeverSeen => t.adviceBalancerNeverSeenBody(
       v.toStringAsFixed(2),
     ),
     AdviceCode.overvoltageSetHigh => t.adviceOvervoltageHighBody(
+      v.toStringAsFixed(2),
+    ),
+    AdviceCode.configNothingFlagged => t.adviceConfigNothingFlaggedBody(
       v.toStringAsFixed(2),
     ),
     AdviceCode.rangeStillLearning => t.adviceRangeLearningBody(
@@ -714,11 +786,31 @@ String adviceBody(AppL10n t, Advice advice) {
     AdviceCode.imbalanceCostingRange => t.adviceImbalanceCostingBody(
       v.toStringAsFixed(0),
     ),
-    AdviceCode.inspectionCellSagging => t.verdictInspCellSaggingBody(
-      v.toStringAsFixed(3),
-    ),
-    AdviceCode.inspectionSagUniform => t.verdictInspSagUniformBody(
-      v.toStringAsFixed(3),
+    AdviceCode.inspectionCellSagging =>
+      _charged(advice)
+          ? t.verdictInspCellRisingBody(
+              v.toStringAsFixed(3),
+              _milliohms(advice, EvidenceKind.excessResistance),
+            )
+          : t.verdictInspCellSaggingBody(
+              v.toStringAsFixed(3),
+              _milliohms(advice, EvidenceKind.excessResistance),
+            ),
+    AdviceCode.inspectionSagUniform =>
+      _charged(advice)
+          ? t.verdictInspSagUniformChargeBody(
+              f(EvidenceKind.currentStep, 1),
+              v.toStringAsFixed(3),
+              _milliohms(advice, EvidenceKind.detectionFloor),
+            )
+          : t.verdictInspSagUniformBody(
+              f(EvidenceKind.currentStep, 1),
+              v.toStringAsFixed(3),
+              _milliohms(advice, EvidenceKind.detectionFloor),
+            ),
+    AdviceCode.inspectionSagUnresolved => t.verdictInspSagUnresolvedBody(
+      f(EvidenceKind.currentStep, 1),
+      (v * 1000).toStringAsFixed(1),
     ),
     AdviceCode.inspectionRestDeltaWide => t.verdictInspRestDeltaWideBody(
       v.toStringAsFixed(3),
@@ -737,7 +829,18 @@ String adviceBody(AppL10n t, Advice advice) {
     AdviceCode.inspectionRecoveryOk => t.verdictInspRecoveryOkBody(
       v.toStringAsFixed(0),
     ),
-    AdviceCode.inspectionHot => t.verdictInspHotBody(v.toStringAsFixed(0)),
+    AdviceCode.inspectionRecoveryNotDiscriminating =>
+      t.verdictInspRecoveryNotDiscriminatingBody(
+        v.toStringAsFixed(0),
+        f(EvidenceKind.currentStep, 1),
+      ),
+    AdviceCode.inspectionHot => switch (fact(EvidenceKind.seenDuringStep)) {
+      null => t.verdictInspHotBody(v.toStringAsFixed(0)),
+      final step when step < 2 => t.verdictInspHotRestBody(
+        v.toStringAsFixed(0),
+      ),
+      _ => t.verdictInspHotLoadBody(v.toStringAsFixed(0)),
+    },
     AdviceCode.inspectionAlarmsSeen => t.verdictInspAlarmsBody(
       v.toStringAsFixed(0),
     ),
@@ -753,6 +856,8 @@ String adviceBody(AppL10n t, Advice advice) {
       '$cell',
     ),
     AdviceCode.inspectionRepeatWorse => t.verdictInspRepeatWorseBody,
+    AdviceCode.inspectionRepeatConfigChanged =>
+      t.verdictInspRepeatConfigChangedBody,
     AdviceCode.inspectionRepeatSteady => t.verdictInspRepeatSteadyBody,
     AdviceCode.inspectionRepeatCountersReset =>
       t.verdictInspRepeatCountersResetBody,
@@ -780,6 +885,11 @@ String adviceBody(AppL10n t, Advice advice) {
     AdviceCode.configColdCutoffOk => t.verdictConfigColdCutoffOkBody(
       v.toStringAsFixed(0),
     ),
+    AdviceCode.configColdCutoffMarginal =>
+      t.verdictConfigColdCutoffMarginalBody(
+        v.toStringAsFixed(0),
+        f(EvidenceKind.safeLimit, 0),
+      ),
     AdviceCode.configChargeHotLimit => t.verdictConfigChargeHotLimitBody(
       v.toStringAsFixed(0),
       f(EvidenceKind.safeLimit, 0),

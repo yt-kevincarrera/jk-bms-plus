@@ -38,7 +38,10 @@ enum Feature {
   /// A signed seller certificate. Consumes a credit.
   sellerCertificate,
 
-  /// Unlimited packs on record, the workshop's own logo on the PDFs.
+  /// The workshop's own name, contact line and logo at the top of the PDFs.
+  ///
+  /// It used to promise unlimited packs as well. There is no limit on packs
+  /// for anyone, at any tier, so that was never something this unlocked.
   workshopExtras,
 }
 

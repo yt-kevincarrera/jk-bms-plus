@@ -40,10 +40,13 @@ class PackBaseline {
   /// Every cell, in order, as they read on day one.
   final List<double> cellVoltages;
 
-  /// Internal resistance per cell as the BMS estimates it. The figure the
-  /// PRD calls the initial IR: worth having because a cell's resistance
-  /// climbing is the earliest sign of it going, and a number with nothing to
-  /// compare it against says very little.
+  /// The per-cell resistance a JK reports, which is the resistance of each
+  /// cell's balance lead and its connection, not the cell's internal
+  /// resistance: some 350 mOhm on a real pack, a hundred times what a cell
+  /// has. Still worth keeping from day one, because one lead's figure
+  /// climbing away from where it started is a connection going bad, and a
+  /// number with nothing to compare it against says very little. Empty on an
+  /// ANT, which reports none.
   final List<double> cellResistances;
 
   /// Resistance of each cell's wiring, as configured or measured by the BMS.
@@ -112,7 +115,7 @@ class PackBaseline {
     wireResistances: settings == null
         ? const []
         : List<double>.from(settings.connectionWireResistances),
-    temperatures: List<double>.from(snapshot.plausibleTemperatures),
+    temperatures: List<double>.from(snapshot.batteryTemperatures),
     packVoltage: snapshot.packVoltage,
     current: snapshot.current,
     soc: snapshot.soc,
@@ -216,6 +219,8 @@ class BaselineComparison {
     required this.thenDeltaVolts,
     required this.nowDeltaVolts,
     this.comparable = true,
+    this.configCompared = false,
+    this.sameChargeLevel = true,
     this.thenCycleCount,
     this.nowCycleCount,
   });
@@ -228,6 +233,23 @@ class BaselineComparison {
 
   /// Settings that are not what they were on day one.
   final List<ConfigChange> configChanged;
+
+  /// Whether the settings were actually compared: false while no settings
+  /// frame has arrived, on a BMS that never sends one, and when the day-one
+  /// snapshot holds no configuration. An empty [configChanged] only means
+  /// "unchanged" when this is true; it used to print "same as day one" for
+  /// comparisons that were never made, on every printed sheet.
+  final bool configCompared;
+
+  /// Whether both readings were taken at about the same charge (within
+  /// [sameChargeLevelPoints]). How far a cell sits from the average depends
+  /// on where on the curve the pack is: a cell with less capacity sits level
+  /// in the middle and falls away near empty, so a deviation at 80% against
+  /// one at 30% is two points on a curve, not a drift. False, too, when
+  /// either charge level is unknown.
+  final bool sameChargeLevel;
+
+  static const double sameChargeLevelPoints = 10;
 
   final double thenDeltaVolts;
   final double nowDeltaVolts;
@@ -252,8 +274,11 @@ class BaselineComparison {
 
   /// The cell that has fallen furthest behind the pack since day one, or null
   /// when nobody has moved enough to be worth naming.
+  ///
+  /// Null, too, when the two readings were at different charge levels: see
+  /// [sameChargeLevel].
   CellSince? get worstDrift {
-    if (cells.isEmpty) return null;
+    if (cells.isEmpty || !sameChargeLevel) return null;
     final worst = cells.first;
     return worst.driftVolts <= -driftFloorVolts ? worst : null;
   }
@@ -316,6 +341,7 @@ class BaselineComparison {
     // baseline's own way of saying "not captured".
     cellResistances: List<double>.from(now.cellResistances ?? const []),
     current: now.current,
+    soc: now.soc,
     cycleCount: now.cycleCount,
     settings: settings,
   );
@@ -332,6 +358,7 @@ class BaselineComparison {
     required DateTime at,
     required List<double> cells,
     required double current,
+    double? soc,
     List<double> cellResistances = const [],
     int? cycleCount,
     JkSettings? settings,
@@ -343,6 +370,8 @@ class BaselineComparison {
     // pretending cell 9 of sixteen is cell 9 of twenty would invent a fault.
     if (thenCells.length != nowCells.length) return null;
 
+    final compared = settings != null && baseline.config.isNotEmpty;
+    final thenSoc = baseline.soc;
     final thenAverage = baseline.averageCellVoltage;
     final nowAverage = nowCells.reduce((a, b) => a + b) / nowCells.length;
 
@@ -365,9 +394,14 @@ class BaselineComparison {
       baseline: baseline,
       at: at,
       cells: since,
-      configChanged: settings == null || baseline.config.isEmpty
-          ? const []
-          : configChanges(baseline.config, PackConfig.from(settings)),
+      configChanged: compared
+          ? configChanges(baseline.config, PackConfig.from(settings))
+          : const [],
+      configCompared: compared,
+      sameChargeLevel:
+          thenSoc != null &&
+          soc != null &&
+          (thenSoc - soc).abs() <= sameChargeLevelPoints,
       thenDeltaVolts: baseline.deltaVolts,
       nowDeltaVolts: nowCells.reduce(math.max) - nowCells.reduce(math.min),
       comparable:

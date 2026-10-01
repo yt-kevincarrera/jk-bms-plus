@@ -177,7 +177,9 @@ void main() {
       expect(summary.socUsed, 4);
       expect(summary.socPerKm, isNotNull);
       expect(summary.maxDischargeCurrent, 10);
-      expect(summary.maxTemperature, 30);
+      // The hottest battery probe (25), not the MOSFET (30): the ride's peak
+      // temperature is a claim about the cells.
+      expect(summary.maxTemperature, 25);
       expect(summary.distanceKm, greaterThan(0.5));
       expect(r.state, TripState.idle);
     });

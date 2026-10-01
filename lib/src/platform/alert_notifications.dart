@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 /// The notifications that are meant to interrupt.
@@ -7,7 +8,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 /// Separate from [LiveNotification] on purpose, and not just for tidiness.
 /// That one is the foreground service: a quiet, low-importance readout that
 /// sits in the shade for the length of a ride and must never make a sound.
-/// This one is the opposite — a cell going out of range at three in the
+/// This one is the opposite: a cell going out of range at three in the
 /// morning while the pack charges in the garage is exactly the thing worth
 /// waking somebody for, and Android will only do that from a channel created
 /// with high importance in the first place. A channel's importance is fixed
@@ -23,25 +24,66 @@ class AlertNotifications {
 
   final FlutterLocalNotificationsPlugin _plugin;
 
-  static const String channelId = 'jk_bms_alerts';
+  /// The channel that vibrates. A new id, because a channel's vibration is
+  /// fixed when it is created just like its importance, and the old
+  /// `jk_bms_alerts` channel was created without any: the in-app haptic buzz
+  /// needs a visible view, so with the screen off or the phone in a pocket
+  /// the "vibrate with alerts" setting did nothing at all.
+  static const String channelId = 'jk_bms_alerts_vibrate';
+
+  /// The same, for a rider who switched vibration off: Android will not
+  /// silence one notification on a vibrating channel, so it takes a second.
+  static const String quietChannelId = 'jk_bms_alerts_quiet';
+
+  /// The channel every earlier version created. Removed, so the phone's
+  /// notification settings do not list a channel nothing posts to.
+  static const String _legacyChannelId = 'jk_bms_alerts';
+
+  /// Short, strong, short: distinct from a message tone, felt through a
+  /// pocket.
+  static final Int64List vibrationPattern = Int64List.fromList([
+    0,
+    400,
+    200,
+    400,
+  ]);
 
   /// Away from the foreground service's id, which is 5510.
   static const int _baseId = 5600;
 
   bool _ready = false;
+  bool _permissionDenied = false;
 
   /// Whether the last attempt to set up or post worked. Read by the settings
   /// screen so a refused permission can be said out loud rather than leaving
   /// the rider believing alerts will arrive.
   bool get isReady => _ready;
 
-  /// Creates the channel and asks for permission. Safe to call repeatedly.
+  /// True when Android said no to notifications, as opposed to anything
+  /// else going wrong.
+  bool get permissionDenied => _permissionDenied;
+
+  /// Whether notifications will reach the rider, from Android's two answers:
+  /// the one to the permission request and whether notifications are enabled
+  /// for the app at all. Either may be null on an Android that has no such
+  /// question to ask (before 13 there is no runtime permission), and null is
+  /// not a refusal. A refusal is.
+  ///
+  /// It used to ignore both: the request's answer was thrown away and the
+  /// channel called ready, so a refusal never reached the settings screen,
+  /// which went on promising alerts that Android was dropping.
+  @visibleForTesting
+  static bool notificationsAllowed({bool? requested, bool? enabled}) =>
+      requested != false && enabled != false;
+
+  /// Creates the channels and asks for permission. Safe to call repeatedly.
   ///
   /// Returns false when notifications will not reach the rider, for whatever
   /// reason. Callers are expected to carry on regardless.
   Future<bool> ensureReady({
     required String channelName,
     required String channelDescription,
+    String? quietChannelName,
   }) async {
     if (_ready) return true;
     if (!Platform.isAndroid && !Platform.isIOS) return false;
@@ -66,12 +108,37 @@ class AlertNotifications {
             // The whole point of this class. A charge finishing overnight or
             // a cell falling off a cliff has to be able to light the screen.
             importance: Importance.high,
+            enableVibration: true,
+            vibrationPattern: vibrationPattern,
           ),
         );
-        // Android 13 and later. A refusal is an answer: the app carries on
-        // with banners and haptics and does not ask again.
-        await android.requestNotificationsPermission();
+        await android.createNotificationChannel(
+          AndroidNotificationChannel(
+            quietChannelId,
+            quietChannelName ?? channelName,
+            description: channelDescription,
+            importance: Importance.high,
+            enableVibration: false,
+          ),
+        );
+        try {
+          await android.deleteNotificationChannel(channelId: _legacyChannelId);
+        } on Object {
+          // Nothing to remove on a fresh install.
+        }
+        // Android 13 and later. The answer is kept: a refusal means nothing
+        // posted here will be seen, and the screen has to say so.
+        final requested = await android.requestNotificationsPermission();
+        final enabled = await android.areNotificationsEnabled();
+        final allowed = notificationsAllowed(
+          requested: requested,
+          enabled: enabled,
+        );
+        _permissionDenied = !allowed;
+        _ready = allowed;
+        return allowed;
       }
+      _permissionDenied = false;
       _ready = true;
       return true;
     } on Object {
@@ -84,24 +151,30 @@ class AlertNotifications {
   ///
   /// [key] is the alert's own name, so the same alert firing twice replaces
   /// its own notification instead of stacking a pile of them in the shade.
+  /// [vibrate] picks the channel: the rider's "vibrate with alerts" setting,
+  /// which is what makes a pocketed phone buzz.
   Future<void> show({
     required String key,
     required String title,
     required String body,
     bool critical = false,
+    bool vibrate = true,
   }) async {
     if (!_ready) return;
     try {
+      final channel = vibrate ? channelId : quietChannelId;
       await _plugin.show(
         id: _idFor(key),
         title: title,
         body: body,
         notificationDetails: NotificationDetails(
           android: AndroidNotificationDetails(
-            channelId,
-            channelId,
+            channel,
+            channel,
             importance: Importance.high,
             priority: critical ? Priority.max : Priority.high,
+            enableVibration: vibrate,
+            vibrationPattern: vibrate ? vibrationPattern : null,
             // A pack fault is worth a second look at the lock screen; a
             // charge finishing is not worth a permanent one.
             category: critical

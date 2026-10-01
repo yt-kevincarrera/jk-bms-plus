@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 import 'package:share_plus/share_plus.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../../app_settings.dart';
 import '../../bms_service.dart';
 import '../../data/backup.dart';
 import '../theme.dart';
@@ -18,9 +19,22 @@ import 'common.dart';
 /// is the one that answers "the phone is gone". Everything the app is built on
 /// is accumulated over months and lives in a single file with no copy.
 class BackupCard extends StatefulWidget {
-  const BackupCard({required this.service, super.key});
+  const BackupCard({
+    required this.service,
+    this.settings,
+    this.onSettingsRestored,
+    super.key,
+  });
 
   final BmsService service;
+
+  /// The rider's settings, which travel in the backup and come back with it.
+  /// Null leaves them out both ways.
+  final AppSettings? settings;
+
+  /// Called after a restore put settings back, so they reach the running
+  /// service and not only the next launch.
+  final VoidCallback? onSettingsRestored;
 
   @override
   State<BackupCard> createState() => _BackupCardState();
@@ -132,6 +146,8 @@ class _BackupCardState extends State<BackupCard> {
           icon: const Icon(Icons.download, size: 18),
           label: Text(t.backupExportLight),
         ),
+        // The light copy, and said so: the label used to read as the same
+        // backup sent somewhere else, and it is the one without raw frames.
         TextButton.icon(
           onPressed: _busy
               ? null
@@ -175,7 +191,10 @@ class _BackupCardState extends State<BackupCard> {
       _message = null;
     });
     try {
-      final file = await BackupCodec(db).export(includeRawFrames: withFrames);
+      final file = await BackupCodec(db).export(
+        includeRawFrames: withFrames,
+        preferences: widget.settings?.toBackup(),
+      );
       final name = p.basename(file.path);
 
       if (share) {
@@ -199,7 +218,8 @@ class _BackupCardState extends State<BackupCard> {
       if (mounted) {
         setState(() {
           _failed = true;
-          _message = t.backupFailed('$e');
+          // Not "could not restore": this was a copy being made.
+          _message = t.backupExportFailed('$e');
         });
       }
     } finally {
@@ -229,6 +249,12 @@ class _BackupCardState extends State<BackupCard> {
       // Everything derived from history has to be rebuilt: the range estimate
       // is held in memory and would otherwise ignore every restored ride.
       await widget.service.relearnRangeFromTrips();
+      final prefs = result.preferences;
+      final settings = widget.settings;
+      if (prefs != null && settings != null) {
+        await settings.restoreBackup(prefs);
+        widget.onSettingsRestored?.call();
+      }
       if (mounted) {
         setState(() {
           _failed = false;

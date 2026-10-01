@@ -9,8 +9,11 @@ import 'common.dart';
 
 /// Checking for, fetching and installing a new build.
 ///
-/// Every step is a button. Nothing here happens on its own — an app that can
-/// install packages is the last place to put helpful automatic behaviour.
+/// Every step that fetches or installs is a button: an app that can install
+/// packages is the last place to put helpful automatic behaviour. The one
+/// thing that happens on its own is the check: once a day the connect screen
+/// asks GitHub whether there is a newer release and, if so, asks the rider
+/// ([ConnectScreen]'s quiet check). Nothing is downloaded without a tap.
 class UpdateCard extends StatefulWidget {
   const UpdateCard({required this.service, required this.settings, super.key});
 

@@ -18,6 +18,7 @@ class RecordingAlerts extends AlertNotifications {
   Future<bool> ensureReady({
     required String channelName,
     required String channelDescription,
+    String? quietChannelName,
   }) async => true;
 
   @override
@@ -26,6 +27,7 @@ class RecordingAlerts extends AlertNotifications {
     required String title,
     required String body,
     bool critical = false,
+    bool vibrate = true,
   }) async => shown.add(key);
 
   @override

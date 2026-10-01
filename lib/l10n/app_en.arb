@@ -2,7 +2,7 @@
   "@@locale": "en",
   "appTitle": "JK BMS +",
   "connectTitle": "Connect",
-  "connectOneConnectionWarning": "The JK BMS accepts one Bluetooth connection at a time. Close the official JK app before connecting here.",
+  "connectOneConnectionWarning": "The BMS accepts one Bluetooth connection at a time. Close your BMS's official app before connecting here.",
   "connectScan": "Scan for a BMS",
   "connectScanning": "Scanning",
   "connectScanFinished": "Scan finished",
@@ -16,7 +16,7 @@
       }
     }
   },
-  "connectNothingFoundHelp": "Nothing turned up. It is almost always one of these:\n\n• The official JK app is connected to the BMS. While it is, the BMS stops advertising and no other phone can see it. Close it fully.\n• The pack is asleep. Switch the bike on or move it to wake it.\n• You are too far away. Get closer to the pack.",
+  "connectNothingFoundHelp": "Nothing turned up. It is almost always one of these:\n\n• Your BMS's official app is connected to it. While it is, the BMS stops advertising and no other phone can see it. Close it fully.\n• The pack is asleep. Switch the bike on or move it to wake it.\n• You are too far away. Get closer to the pack.",
   "connectCancelScan": "Cancel scan",
   "connectNoDevices": "No BMS found yet",
   "connectLocationOff": "The phone's location is switched off. Android returns no Bluetooth scan results without it, even with the permission granted: it reports zero devices and says nothing. Turn it on and scan again.",
@@ -37,7 +37,7 @@
       }
     }
   },
-  "tapStackSaturated": "That is {count} failed attempts in a row. By now the problem is the phone's Bluetooth, not the pack, and another attempt only makes it worse. Switch Bluetooth off and on; if it persists, restart the phone. Then tap Disconnect or search again to retry.",
+  "tapStackSaturated": "That is {count} failed attempts in a row. By now the problem is the phone's Bluetooth, not the pack, and another attempt only makes it worse. Follow the steps in the card above, then search again to retry.",
   "@tapStackSaturated": {
     "placeholders": {
       "count": {
@@ -45,7 +45,6 @@
       }
     }
   },
-  "tapHeldByPhone": "The phone already has a connection to this pack open that this app does not own. Either another app holds it, or it was stranded by an earlier attempt. No attempt from here will win it: close the other app, or restart the phone's Bluetooth.",
   "tileConnected": "Connected. Tap to go back to its screens.",
   "tileCooling": "Paused for {seconds} s after a failed attempt",
   "@tileCooling": {
@@ -113,13 +112,11 @@
   "discharging": "discharging",
   "resting": "at rest",
   "sessionTitle": "This session",
-  "sessionEnergy": "Energy through pack",
+  "sessionEnergy": "Energy taken out of the pack",
   "sessionDistance": "Distance",
   "sessionWhPerKm": "Wh per km",
   "sessionSamples": "Samples buffered",
   "needsGps": "needs an active trip",
-  "needsDatabase": "needs more history",
-  "needsSteps": "needs current steps",
   "packTitle": "Pack",
   "packRemaining": "Remaining",
   "packRemainingValue": "{remaining} of {nominal} Ah",
@@ -136,7 +133,7 @@
   "packCycles": "Cycles",
   "packSoh": "Health",
   "packSag": "Sag under load",
-  "packSagNoBaseline": "no resting reading yet",
+  "packSagNoBaseline": "no recent resting reading to compare with",
   "packMosfets": "MOSFETs",
   "mosfetChargeOn": "charge on",
   "mosfetChargeOff": "charge off",
@@ -179,11 +176,10 @@
   "balanceActiveNote": "This BMS is an active balancer: it moves charge between cells rather than burning it off in resistors, so it can work at far higher currents than a passive one.",
   "balanceWhichCells": "Which cells",
   "balanceWhichCellsValue": "inferred, the BMS does not report it",
-  "balanceRanking": "Weak-cell ranking",
-  "resistanceTitle": "Resistance",
+  "balanceRanking": "Most often the lowest",
+  "resistanceTitle": "Balance leads",
   "resistanceSource": "Source",
-  "resistanceSourceValue": "the BMS's own wire measurement",
-  "resistanceEstimated": "Estimated internal resistance",
+  "resistanceSourceValue": "the BMS's own measurement of each balance lead, not of the cell",
   "resistanceWireWarnings": "Wire resistance warnings",
   "none": "none",
   "thermalProbe": "Probe {index}",
@@ -225,14 +221,10 @@
   "on": "on",
   "off": "off",
   "thermalMaskNote": "The bitmask is shown raw and no reading is hidden because of it. The reference implementation calls it an \"absent\" sensor mask, but real captures set bits for probes that are plainly working. See docs/PROTOCOL.md.",
-  "historyEmptyTitle": "Nothing recorded yet",
-  "historyEmptyBody": "Trips you record are stored with their track, and the degradation curves draw themselves over the weeks.",
-  "historyWhatGoesHere": "WHAT WILL LIVE HERE",
-  "historyItemCapacity": "Measured capacity per cycle, and the degradation curve it draws over months",
+  "historyItemCapacity": "Capacity measured on each full discharge, and how it changes over months",
   "historyItemTrips": "Trip list with distance, Wh and Wh/km",
-  "historyItemDelta": "Delta plotted against pack voltage, which is where a short cell gives itself away",
-  "historyItemSag": "Sag at a given current, and how it worsens over time",
-  "historyItemBalance": "Which cells the balancer works hardest on",
+  "historyItemDelta": "Delta against charge level, which is where a short cell gives itself away",
+  "historyItemSag": "Apparent resistance of each ride, from how far the voltage dropped for the current drawn",
   "systemDeviceTitle": "Device",
   "systemModel": "Model",
   "systemHardware": "Hardware",
@@ -312,11 +304,11 @@
   "systemFramesUnsupported": "Unsupported type",
   "systemAcceptRate": "Accept rate",
   "systemBytesReceived": "Bytes received",
-  "systemSettingsTitle": "BMS settings (read-only)",
+  "systemSettingsTitle": "BMS settings",
   "settingsNotExposed": "This BMS does not expose its configuration to the app.",
   "systemNotices": "Notices",
   "systemRawConsole": "Raw frame console",
-  "systemReadOnlyNote": "This app never writes settings to the BMS. Everything above is read-only.",
+  "systemReadOnlyNote": "With the write permission off, the app changes nothing on the BMS: everything above is read-only.",
   "systemLanguageTitle": "Language",
   "systemLanguageSpanish": "Español",
   "systemLanguageEnglish": "English",
@@ -343,20 +335,41 @@
   "consolePaused": "Paused",
   "consoleCopy": "Copy log",
   "consoleCopied": "Log copied",
+  "consoleViewDecoded": "Decoded",
+  "consoleViewBytes": "Bytes",
+  "consoleCopyAll": "Copy everything for diagnosis",
+  "consoleCopiedAll": "Copied: counters, notices, log and bytes",
+  "consoleLiveFromHere": "--- live from here ---",
+  "consoleNoBytes": "No bytes have crossed the link since the app was opened.",
+  "consoleBytesLegend": "← received from the BMS · → written by the app. Kept across connections.",
+  "consoleThisConnection": "This connection",
+  "consoleLastReading": "last reading {seconds} s ago",
+  "@consoleLastReading": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "consoleReportTitle": "Raw frame console",
+  "consoleReportNotices": "Notices, oldest first",
+  "consoleReportDecoded": "Decoded log",
+  "consoleReportBytes": "Bytes, oldest first",
+  "systemCountersThisConnection": "Frames and bytes count from the last connect. Drops, time disconnected and prods count from when the app was opened.",
   "tabHealth": "Health",
   "healthTitle": "What the manufacturer would rather not show you",
   "healthIntro": "These come from what the BMS already reports, cross-checked against itself. None of them is a figure the manufacturer publishes.",
   "healthRealCapacity": "Implied real capacity",
-  "healthRealCapacityHint": "Remaining divided by reported charge. If it sits well under the configured nominal, the pack has lost capacity or the coulomb counter has drifted.",
+  "healthRealCapacityHint": "With no capacity tests, the figure above is the capacity configured in the BMS: the BMS works out remaining Ah as charge times that capacity, so dividing one by the other hands it back unchanged. It says nothing about wear; that needs a full discharge measured.",
   "healthClaimedCapacity": "Nominal configured in the BMS",
   "healthSpecCapacity": "Catalogue capacity",
   "healthCapacityLoss": "Loss against catalogue",
   "healthEquivalentCycles": "Full-equivalent cycles",
-  "healthEquivalentCyclesHint": "Total Ah put through the pack divided by its nominal capacity. The BMS cycle counter adds up partial charges, so it almost always flatters the pack.",
+  "healthEquivalentCyclesHint": "Total Ah the BMS counted through the pack, divided by its configured capacity. The BMS's own cycle counter can sit above or below this: it counts in whole numbers and each firmware decides what a cycle is.",
   "healthReportedCycles": "Cycles the BMS reports",
   "healthCycleInflation": "Counter inflation",
   "healthImbalanceLoss": "Capacity lost to imbalance",
-  "healthImbalanceHint": "The pack cuts off when the lowest cell hits its limit, not when the average does. Today's delta translates into the Ah left stranded in every other cell.",
+  "healthImbalanceHint": "The pack cuts off when the lowest cell hits its limit, not when the average does. It is measured with the cells at rest: the lowest cell's voltage and the average's go through the chemistry's typical curve to a charge level, and the difference becomes the energy left stranded in the others. Under load or on the charger it is not worked out, because sag or the charger's push would read as imbalance. On LFP, on the flat part of the curve, the voltage does not say how much charge there is, so not there either.",
   "healthWeakestCell": "The cell in charge",
   "healthWeakestCellValue": "cell {index}",
   "@healthWeakestCellValue": {
@@ -379,7 +392,7 @@
   "healthSohReported": "Health the BMS reports",
   "healthSohSuspect": "Plenty of firmwares leave this number fixed and never recompute it. Treat it as decorative until you see it move.",
   "healthNeedsHistoryTitle": "Needs history",
-  "healthNeedsHistoryBody": "Measured degradation, estimated remaining life and how sag evolves all need months of stored readings. They fill in on their own as you ride.",
+  "healthNeedsHistoryBody": "Measured degradation needs at least two full discharges. A cell drifting and how sag evolves need weeks of stored readings. What comes from rides and readings fills in on its own; capacity does not: every point is a full discharge.",
   "healthNotEnoughData": "not enough data",
   "healthCapacityUnavailable": "At very low or very high charge this calculation turns into noise, so it is not shown.",
   "rangeLearning": "learning",
@@ -404,7 +417,7 @@
     }
   },
   "rangeUsableEnergy": "Usable energy",
-  "rangeUsableHint": "Discounts what the lowest cell strands: the pack cuts off when that cell hits its limit, not when the average does.",
+  "rangeUsableHint": "The energy left is the remaining Ah the BMS reports times the mean voltage they will come out at down to cutoff, read off the typical curve for the pack's chemistry. Not times the voltage of this moment, which rises on the charger and drops when you accelerate. Then what the lowest cell strands is taken off. With the chemistry unknown, a figure on the low side is used. The curves are typical for each chemistry, not measured on this pack.",
   "rangeNeedsGps": "Distance comes from the phone's GPS while a trip is recording. The BMS does not report position: the protocol has GPS lock bits, but no coordinate fields at all.",
   "rangeDemoNote": "In demo mode the distance is simulated too, so you can watch how the estimator behaves.",
   "systemPasscode": "Passcode the BMS hands out",
@@ -457,9 +470,9 @@
   "healthVerdictWatch": "The pack has lost some capacity",
   "healthVerdictBad": "The pack is fairly worn",
   "healthHowCalculated": "How these are worked out",
-  "healthCardCapacity": "Real capacity",
+  "healthCardCapacity": "Remaining per the BMS",
   "healthCardLoss": "Loss",
-  "healthCardCycles": "Real cycles",
+  "healthCardCycles": "Equivalent cycles (per the BMS)",
   "healthCardUsable": "Usable energy",
   "healthCardConsumption": "Consumption",
   "healthCardLearnedKm": "Kilometres learned",
@@ -483,7 +496,7 @@
   "tripEnergyIn": "Recovered",
   "tripSocUsed": "Charge used",
   "tripSocPerKm": "Charge per km",
-  "tripSag": "Worst sag",
+  "tripResistance": "Pack resistance (approx.)",
   "tripMaxCurrent": "Peak current",
   "tripMaxTemp": "Peak temperature",
   "tripMaxDelta": "Worst delta",
@@ -530,7 +543,7 @@
   "adviceTitle": "What I would do about this",
   "adviceNone": "Nothing to flag. The pack is behaving.",
   "adviceImbalanceAtRestTitle": "The cells sit apart even at rest",
-  "adviceImbalanceAtRestBody": "With the bike still, the delta reaches {delta} V. With no current involved that is not resistance: the cells simply hold different amounts of charge. Charge to full and leave it sitting for a few hours so the balancer can work; if several charges do not close it, cell {cell} has less capacity than the rest.",
+  "adviceImbalanceAtRestBody": "With the bike standing still the delta reaches {delta} V, and the lowest then was cell {cell}. With no current flowing that is not resistance: the cells hold different amounts of charge. Let it charge to the top and rest for a few hours so the balancer can work; if several charges do not close it, that cell has less capacity than the rest.",
   "@adviceImbalanceAtRestBody": {
     "placeholders": {
       "delta": {
@@ -542,7 +555,7 @@
     }
   },
   "adviceImbalanceUnderLoadTitle": "The delta only opens under current",
-  "adviceImbalanceUnderLoadBody": "At rest the cells are even, but under load they spread {delta} V further apart. That is resistance, and nine times out of ten it is a loose or corroded connection rather than a bad cell. Check the bolt and busbar on cell {cell} before replacing anything.",
+  "adviceImbalanceUnderLoadBody": "At rest the cells sit together, but under load they spread {delta} V further, over several readings. That is resistance: it can be a connection or a cell with more of it than the others. Check the connection of cell {cell} first, the lowest at that load: it is the cheapest thing to rule out.",
   "@adviceImbalanceUnderLoadBody": {
     "placeholders": {
       "delta": {
@@ -554,22 +567,13 @@
     }
   },
   "adviceWeakCellTitle": "It is always the same cell",
-  "adviceWeakCellBody": "Cell {cell} has been the lowest in {percent}% of readings. That is not noise: this is the cell that sets your real range and reaches cutoff first.",
+  "adviceWeakCellBody": "Cell {cell} was clearly the lowest in {percent}% of the readings that count: with the cells at least 10 mV apart, no tie, and a repeated reading counted once. That cell sets your real range and reaches cutoff first.",
   "@adviceWeakCellBody": {
     "placeholders": {
       "cell": {
         "type": "int"
       },
       "percent": {
-        "type": "String"
-      }
-    }
-  },
-  "adviceCycleInflatedTitle": "The cycle counter flatters the pack",
-  "adviceCycleInflatedBody": "The BMS claims {factor} times more cycles than the charge actually put through the pack justifies. It counts partial charges as whole ones. If you are buying or selling a pack, the honest number is the equivalent-cycle figure.",
-  "@adviceCycleInflatedBody": {
-    "placeholders": {
-      "factor": {
         "type": "String"
       }
     }
@@ -621,7 +625,7 @@
     }
   },
   "adviceBalancerNeverSeenTitle": "The balancer has never started",
-  "adviceBalancerNeverSeenBody": "The cells are uneven but the balancer has not worked all session. Either it is switched off, or its start voltage ({voltage} V) sits above where your cells ever reach. Check it in the BMS settings with the official app: this app writes nothing.",
+  "adviceBalancerNeverSeenBody": "The cells sit apart at rest but the balancer has not worked since the pack connected. Either it is switched off, or its start voltage ({voltage} V) is above where your cells get to. The start voltage is changed with the BMS's official app. The balancer switch can be turned on from System, under BMS settings, if you turn on the write permission in Settings; with the permission off, this app changes nothing on the BMS.",
   "@adviceBalancerNeverSeenBody": {
     "placeholders": {
       "voltage": {
@@ -648,7 +652,7 @@
     }
   },
   "adviceImbalanceCostingTitle": "The imbalance is costing you range",
-  "adviceImbalanceCostingBody": "{percent}% of the energy the pack still holds is stranded above cutoff, because the lowest cell gets there before the others. Closing the delta gives those kilometres back without replacing a single cell.",
+  "adviceImbalanceCostingBody": "{percent}% of the energy the pack still holds is stranded above cutoff, because the lowest cell gets there before the others. If the delta is imbalance rather than capacity, balancing gets it back; if the cell holds less, it does not.",
   "@adviceImbalanceCostingBody": {
     "placeholders": {
       "percent": {
@@ -732,8 +736,8 @@
       }
     }
   },
-  "tripLearnedTooShort": "Too short to learn anything. It needs at least 500 metres with real consumption.",
-  "tripLearnedRange": "Range now",
+  "tripLearnedTooShort": "Nothing was learned from this ride: it takes at least {m} metres with the energy measured.",
+  "tripLearnedRange": "Range at the end",
   "tripLearnedTotalKm": "Learned from",
   "tripLearnedConfidence": "Confidence",
   "tripDeepDischargeTip": "This ride took the charge a long way down, which is exactly what helps most: the more of the battery a ride covers, the less room for error is left in the estimate.",
@@ -746,7 +750,7 @@
       }
     }
   },
-  "tripDeltaTip": "The delta reached {delta} V under load. If the cells are even at rest, that points at a connection rather than a bad cell.",
+  "tripDeltaTip": "The ride's largest delta was {delta} V. If the cells are even at rest, that points at a connection rather than a bad cell.",
   "@tripDeltaTip": {
     "placeholders": {
       "delta": {
@@ -768,18 +772,18 @@
   "tripNotificationChannelDesc": "Keeps a trip recording with the screen off or another app open.",
   "tripNotificationDenied": "Without notification permission the trip stops when you leave the app. It can be enabled in Android settings.",
   "proximityTitle": "Connect when I get close",
-  "proximityBody": "While this is on, the app looks for your BMS every half minute and connects on its own the moment it appears. Meant to be left on for a stretch while a new battery is being calibrated, not forever: while it is connected the official JK app cannot get in, and scanning costs some phone battery.",
+  "proximityBody": "While this is on, the app looks for your BMS every half minute and connects on its own the moment it appears. Meant to be left on for a stretch while a new battery is being calibrated, not forever: while it is connected your BMS's official app cannot get in, and scanning costs some phone battery.",
   "proximityLimit": "Works with the app open or backgrounded. If Android kills the process it stops looking until you open it again.",
   "proximityRemembered": "Watching for",
   "proximityNoDevice": "Connect to your BMS once and it will be remembered here.",
   "proximityFound": "BMS found, connecting",
   "proximityScanning": "looking",
   "capacityTitle": "Capacity test",
-  "capacityIntro": "The one real measurement in this app. Everything else is arithmetic on what the BMS says about itself; this counts the amp-hours that actually come out between full and cutoff, and compares them with what you were sold.",
+  "capacityIntro": "The one real measurement in this app. It counts the amp-hours that come out from the highest cell at the top, with the charger already letting go, to the lowest cell at the cutoff or the BMS cutting. The cells mark both ends, not the BMS percentage: that percentage is worked out against the configured capacity, and measuring with it would only hand that setting back.",
   "capacityStart": "Start test",
   "capacityAbort": "Cancel test",
   "capacityRunning": "measuring",
-  "capacityNotFull": "Charge the pack to the top first. Starting half full would only measure part of it, and the result would come out short.",
+  "capacityNotFull": "Charge the pack to the top first. The test starts when the highest cell is at the top and the charger is down to a trickle, not when the BMS says 100 %. Starting half full would only measure part of it.",
   "capacityNoReadings": "Connect the BMS first.",
   "capacityDrawn": "Drawn so far",
   "capacityProgress": "Progress",
@@ -790,9 +794,9 @@
   "capacityCost": "Note: running the pack to cutoff costs cycles. Worth doing occasionally to measure, not as a habit.",
   "capacityNone": "You have not measured the capacity yet",
   "capacityHistory": "Measurements",
-  "capacityAutoNote": "You do not have to remember anything: the app reads back the stored readings and takes any complete discharge that already happened as a measurement. The button is for doing one deliberately, with live progress.",
+  "capacityAutoNote": "You do not have to remember anything: the app reads back the stored readings and takes any complete discharge that already happened as a measurement: cells at the top to a cell at the cutoff, with no charge and no long hole in the middle. The button is for doing one deliberately, with live progress.",
   "capacityAutoTag": "found",
-  "capacityGapWarning": "{minutes} min of it went unwatched, so the figure reads low.",
+  "capacityGapWarning": "{minutes} min of it went unwatched, so it does not count as a capacity measurement.",
   "@capacityGapWarning": {
     "placeholders": {
       "minutes": {
@@ -820,19 +824,22 @@
   "chargeWeakCell": "Cell falling behind",
   "chargeBalancerTime": "Balancer working",
   "chargeNeverReachedTop": "This charge never got above 4.0 V per cell, so it says nothing about imbalance. It has to reach the top to be useful.",
-  "chargeOpensAtTop": "The cells were even and came apart at the end. That pattern is capacity mismatch rather than a loose connection: cell {cell} fills before the others.",
+  "chargeOpensAtTop": "The cells were even and came apart at the end. That pattern is capacity mismatch rather than a loose connection: cell {cell} fills before the others, and cell {weak} is the one furthest behind.",
   "@chargeOpensAtTop": {
     "placeholders": {
       "cell": {
         "type": "int"
+      },
+      "weak": {
+        "type": "int"
       }
     }
   },
-  "chargeNone": "No charge has been recorded yet",
+  "chargeNone": "No charge of this pack has been recorded yet. One is recorded when the app is connected while it charges.",
   "trendsTitle": "Over time",
   "trendsConsumption": "Consumption per ride",
   "trendsCapacity": "Measured capacity",
-  "trendsSag": "Sag under load",
+  "trendsSag": "Apparent pack resistance",
   "trendsDeltaVsCharge": "Delta against charge",
   "trendsSpan": "{days} days of history",
   "@trendsSpan": {
@@ -853,8 +860,8 @@
   },
   "trendsLegendLoaded": "Under load",
   "trendsLegendResting": "At rest",
-  "trendsDeltaHint": "The odd one out: sideways is the charge level, not time. Each dot is one reading, placed by how full the pack was and how far apart its highest and lowest cell were at that moment. What matters is the shape. Flat across the middle with a spike near full is one cell with less capacity than the rest. A curve that follows the current instead, higher under load, is resistance somewhere, and almost always a connection rather than a cell.",
-  "trendsSagHint": "How many milliohms of internal resistance each ride implies, worked out from how far the voltage fell for the current drawn. Oldest on the left. Rising resistance is the first thing to go on an ageing pack and shows up long before capacity does, so a climb here is an early warning rather than a verdict. A sudden jump is usually a connection, not the cells.",
+  "trendsDeltaHint": "Across is the charge level, not time. Each point is the median delta (highest cell minus lowest) of the last 90 days' readings at that charge: one line at rest and one discharging at more than 5 A. Readings taken while charging are left out. The delta opening near empty and near full is normal on almost any pack, because the voltage curve is steep there. What says something is the resting line opening across the middle, where the curve is flat, or the loaded line sitting well above the resting one: that is resistance, and nearly always a connection rather than a cell.",
+  "trendsSagHint": "One dot per ride: the pack's apparent resistance, worked out from how the voltage moved over the stretches where the current swung quickly, the median of those stretches. It includes the wiring and the BMS, and it is approximate, because a reading's current and voltage are not always the same instant. What counts is the trend: a slow climb over months is wear; a sudden jump is nearly always a connection. Rides with few such stretches have no dot.",
   "alertTitle": "Alert",
   "alertBmsFault": "The BMS raised an alarm",
   "alertCellSpread": "The cells have drifted far apart",
@@ -864,9 +871,9 @@
   "alertCellNearCutoff": "A cell is close to cutoff",
   "settingsTitle": "Settings",
   "settingsCatalogue": "Catalogue capacity",
-  "settingsCatalogueHint": "What the label on the pack claims. Health is measured against this number, so it is worth getting right.",
+  "settingsCatalogueHint": "What the label on the pack claims. It is used for two things: comparing it with what the pack really measures in a capacity test, and working out the full-pack range while nothing has been measured. Wear is not measured against this number but against the pack's own best full discharge.",
   "catalogueUnset": "Not set",
-  "catalogueUnsetHint": "Nobody has said how many amp-hours this battery was sold as, and the app does not invent one. Until you set it, health and degradation cannot be worked out: there is nothing to measure them against.",
+  "catalogueUnsetHint": "Nobody has said how many amp-hours this battery was sold as, and the app does not invent one. Without it there is no comparison with the advert, and the full-pack range waits for a capacity test. Wear does not need it: it comes from measured full discharges.",
   "catalogueSetIt": "Set capacity",
   "catalogueUseBms": "Use the BMS figure, {ah} Ah",
   "@catalogueUseBms": {
@@ -899,17 +906,17 @@
     }
   },
   "settingsHaptics": "Buzz on alerts",
-  "settingsHapticsHint": "Nobody looks at the screen while riding. This makes the phone speak up from a pocket.",
+  "settingsHapticsHint": "Nobody looks at the screen while riding. With the app in view the phone itself buzzes; with the screen off or the phone in a pocket it is the alert notification that vibrates, so the notification-shade alerts need to be on for that.",
   "settingsRawFrames": "Keep raw frames",
-  "settingsRawFramesHint": "Leave this on. It is what allows the history to be re-read if a protocol offset turns out to have been wrong.",
+  "settingsRawFramesHint": "Leave this on. It keeps 30 days of raw frames, to diagnose and re-read recent readings if a protocol offset turns out to have been wrong. Older ones are deleted on their own.",
   "settingsSave": "Save",
   "exportTitle": "Export",
   "exportIntro": "Data you cannot get out is not really yours.",
   "exportTrips": "Trips (CSV)",
-  "exportReadings": "Last week of readings (CSV)",
-  "exportFrames": "Last day of raw frames",
+  "exportReadings": "Readings (CSV)",
+  "exportFrames": "Raw frames (hex)",
   "exportTrack": "Track (GPX)",
-  "exportDone": "Saved to {path}",
+  "exportDone": "Ready to share: {path}",
   "@exportDone": {
     "placeholders": {
       "path": {
@@ -947,7 +954,7 @@
   "warnDischargeUndertemp": "Too cold while discharging",
   "warnGpsRemoteLock": "Remote GPS lock",
   "updateTitle": "Updates",
-  "updateIntro": "This app is not on a store, so it updates from GitHub releases. It never checks or downloads on its own: you ask.",
+  "updateIntro": "This app is not on a store, so it updates from GitHub releases. It checks once a day for a new version and asks you; it never downloads anything unless you ask.",
   "updateInstalled": "Installed version",
   "updatePublished": "Latest published",
   "updateReleasedOn": "Published on {date}",
@@ -1098,17 +1105,27 @@
   "agoSuffix": "ago",
   "catalogueFromBmsTag": "from the BMS",
   "catalogueConfirm": "Confirm it was sold as this",
-  "catalogueFromBmsHint": "Taken from the BMS configuration. That is a number about this pack, but whoever assembled it typed it in. If you were sold a different capacity, set it: the gap between the two is exactly what health measures.",
+  "catalogueFromBmsHint": "Taken from the BMS configuration. That is a number about this pack, but whoever assembled it typed it in. While it comes from there, the app does not treat it as the advert: it does not compare its measurements against it, and the full-pack range says where it comes from. If you were sold a different capacity, set it.",
   "connectRetry": "Search again",
   "storedManageHint": "Long-press a battery to rename or delete it.",
   "offlineHealthTitle": "Stored health",
   "offlineMeasuredHealth": "Wear measured",
   "offlineImplied": "Capacity the BMS is set to",
   "offlineImpliedHint": "A setting inside the BMS, not a measurement of the cells. It is what every percentage the pack reports is scaled against, so it is worth seeing, and it stays the same however tired the battery gets.",
-  "offlineImpliedUnusable": "Only readable between about 25 % and 90 % charge.",
+  "offlineImpliedUnusable": "Only readable between {min} % and {max} % charge.",
+  "@offlineImpliedUnusable": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
   "offlineSoh": "Health the BMS claims",
   "offlineCycles": "Cycles the BMS counts",
-  "offlineWeakest": "Weakest cell",
+  "offlineWeakest": "Lowest cell at rest",
   "offlineWeakestValue": "cell {index}, {volts} V",
   "@offlineWeakestValue": {
     "placeholders": {
@@ -1133,7 +1150,7 @@
   "offlineBestMeasured": "Best real measurement",
   "connectWaitingFirst": "Connecting and waiting for the first reading...",
   "connectNotABms": "It connected, but no BMS reading arrived. That device is almost certainly not a JK BMS. If you believe it is, check the raw frame console in Settings.",
-  "connectLinkNeverCameUp": "The Bluetooth link to the pack did not come up in 25 seconds, and the app tried more than once. Check that the pack is on and nearby, and that the official JK app is fully closed, not just in the background.",
+  "connectLinkNeverCameUp": "The Bluetooth link to the pack did not come up in 25 seconds, and the app tried more than once. Check that the pack is on and nearby, and that your BMS's official app is fully closed, not just in the background.",
   "connectSilent": "Connected but no readings arrived. If you picked the brand, try the other one.",
   "connectTalkingUndecoded": "It connected and bytes are arriving, but none of them decode as a JK frame. Open the console with the terminal icon at the top: what shows up there is what is needed to add support.",
   "antEvidence": "ANT: {status} status, {info} info, {rejected} rejected",
@@ -1171,7 +1188,7 @@
   "thermalProbeAbsent": "not connected",
   "thermalAbsentNote": "Unconnected probes report impossible values, around -200 C. That is not cold, it is nothing wired to that input. They are shown separately so they cannot skew the maximum or trip an alert.",
   "backupTitle": "Backup",
-  "backupIntro": "The whole database in one file, and back again. The CSV and GPX exports are for reading the data elsewhere; this is for not losing it. If you change phones or lose one, this is the only thing that brings back months of readings, the rides with their tracks, and the raw frames.",
+  "backupIntro": "The whole database in one file, and back again. The CSV and GPX exports are for reading the data elsewhere; this is for not losing it. It brings back the packs, the rides with their tracks, the capacity tests, the maintenance log, the inspections, the link log and the readings as the phone stores them: in full for the last month and one a minute before that. Raw frames are only kept for 30 days, so the copy carries at most those. It also carries your alert, charging, ride and screen settings. It does not carry the licence or the update token, which belong to this phone.",
   "backupExport": "Save a copy of everything",
   "backupExportLight": "Save a smaller copy, without raw frames",
   "backupImport": "Restore from a file",
@@ -1206,7 +1223,7 @@
   "chargeAlertsIntro": "Charging happens overnight and nobody watches it. That is what these are for. Stopping short of full is not superstition: the top of the range is where a lithium cell ages fastest, so if you do not need the whole pack tomorrow you are better off stopping early.",
   "chargeTarget": "Tell me at",
   "chargeTargetOff": "Off",
-  "chargeAlertTargetReached": "The battery reached {soc} %",
+  "chargeAlertTargetReached": "The battery reached {soc} %, by the BMS",
   "chargeAlertComplete": "Charging finished",
   "chargeAlertHot": "Getting hot while charging",
   "chargeAlertSpread": "Cells spreading apart at the top",
@@ -1304,7 +1321,7 @@
   },
   "trendsMaintMarks": "The dotted lines are things you noted in the maintenance log.",
   "chargeWatchTitle": "Watch the charge",
-  "chargeWatchHint": "While the app is in the background Android cuts the Bluetooth link within minutes. With this on, it raises a foreground service as soon as charging starts and holds the link, which is what the alerts need to reach you overnight. It costs phone battery while it runs.",
+  "chargeWatchHint": "While the app is in the background Android cuts the Bluetooth link within minutes. With this on, it raises a foreground service as soon as charging starts and holds the link, and if the link drops it keeps trying to reconnect until the charge ends, which is what the alerts need to reach you overnight. It does not work if you swipe the app away. It costs phone battery while it runs.",
   "chargeWatchNotifTitle": "Charging",
   "chargeWatchNotifText": "{soc} % · {volts} V · {amps} A",
   "@chargeWatchNotifText": {
@@ -1325,7 +1342,7 @@
   "alertsSectionTitle": "Which alerts you want",
   "alertsSectionHint": "One by one. Switching off the one that annoys you should not cost you the ones you want.",
   "autoTripTitle": "Record rides on their own",
-  "autoTripHint": "Records the ride without you having to remember, and closes it after about three minutes standing still. Turn it off and the app only learns your range from rides you start by hand, and the ones people forget are not a random sample: they are the short ones and the rushed ones. Starting needs pack current and GPS movement together, so switching the bike on does not open a ride.",
+  "autoTripHint": "Opens the ride when the pack is drawing and the GPS says you are moving, both for about 20 seconds (setting off at walking pace, it waits until you pass 6 km/h), and closes it after about three minutes standing still. Whatever you cover before it opens is not recorded. Turn it off and the app only learns your range from rides you start by hand, and the ones people forget are not a random sample: they are the short ones and the rushed ones.",
   "autoTripStarted": "Ride started automatically",
   "autoTripStopped": "Ride saved",
   "degNowTitle": "Capacity now",
@@ -1343,7 +1360,7 @@
   "degLostWhy": "Degradation is measured against the best this battery has ever held, not against what the advert said. It needs more than one measurement: with a single one you have a capacity, not a loss.",
   "degImpliedNote": "Estimated from the BMS counter, not measured. A capacity test gives the real figure.",
   "degSoldTitle": "Against the advert",
-  "degSoldShort": "Sold as {sold} Ah, and the best it has held is {real} Ah: about {pct} % less range than advertised. That is not wear, it was never {sold}.",
+  "degSoldShort": "Sold as {sold} Ah, and the best it has measured is {real} Ah: about {pct} % less than advertised. If that measurement was made with the pack new, it is not wear: it was never {sold}.",
   "@degSoldShort": {
     "placeholders": {
       "sold": {
@@ -1357,15 +1374,15 @@
       }
     }
   },
-  "degSoldOk": "It has delivered what was advertised.",
+  "degSoldOk": "The best it has measured lives up to what was advertised.",
   "demoSetCharge": "Set the charge to",
   "demoFull": "Fill to 100 %",
   "demoEmpty": "Drain to 10 %",
   "demoSpeed": "Simulator speed",
   "demoSpeedHint": "Speeds up the simulated pack. A capacity test is a whole discharge: at normal speed that is hours, and a feature that takes an afternoon to reach cannot be judged. Distance and GPS are not sped up, so the learned consumption stays realistic.",
   "demoSpeedNormal": "normal",
-  "etaFull": "Full in",
-  "etaTapering": "approx., the current is already tailing off",
+  "etaFull": "Full in about",
+  "etaTapering": "the current is already tailing off, and the end takes longer",
   "etaDone": "It is full",
   "etaCannotSay": "Cannot say",
   "etaCounterAhead": "the counter is ahead of the cells, so no minutes here",
@@ -1402,8 +1419,8 @@
   "linkStaleBody": "The link is up and the pack is sending nothing this app can read. What is on screen is the last reading, not the current one. If this goes on a few seconds more, the app lets the connection go and goes back in.",
   "linkBack": "Reading again",
   "linkDetails": "Details",
-  "troubleBusy": "Something else is already connected to the pack. The JK BMS accepts only one Bluetooth connection at a time, so close the official JK app or any other logger.",
-  "troubleOutOfRange": "The pack did not answer. Either it is out of range or switched off, or something else is holding its one Bluetooth connection: the official JK app, or another logger.",
+  "troubleBusy": "Something else is already connected to the pack. The BMS accepts only one Bluetooth connection at a time, so close your BMS's official app or any other logger.",
+  "troubleOutOfRange": "The pack did not answer. Either it is out of range or switched off, or something else is holding its one Bluetooth connection: your BMS's official app, or another logger.",
   "troubleBluetoothOff": "Bluetooth is off on the phone.",
   "troublePermission": "The app is not allowed to use Bluetooth. Grant Nearby devices in Android settings.",
   "troubleLocationOff": "Location is off on the phone. Android needs it on to scan for Bluetooth devices.",
@@ -1420,7 +1437,7 @@
   "linkWatchNotifWaiting": "Waiting for the first reading",
   "linkWatchNotifText": "{soc} %  ·  {volts} V  ·  {amps} A",
   "linkWatchTitle": "Keep reading with the screen off",
-  "linkWatchHint": "Android stops handing an app Bluetooth readings shortly after the screen goes dark, unless the app holds a foreground service. This holds one while the pack is connected, so the app behaves the same with the screen on or off. That is what the notification is for; it is not the app announcing itself.",
+  "linkWatchHint": "Android stops handing an app Bluetooth readings shortly after the screen goes dark, unless the app holds a foreground service. This holds one while the pack is connected, and while it tries to get the link back after a drop, so the app behaves the same with the screen on or off. That is what the notification is for; it is not the app announcing itself. If you swipe the app away, it stops reading.",
   "screenAwakeReason": "With the setting above on, the screen can sleep without the readings stopping.",
   "backupScope": "Every pack, not just the connected one: {packs} batteries, {trips} rides, {readings} readings.",
   "backupScopeEmpty": "Nothing stored yet, so there is nothing to copy.",
@@ -1429,24 +1446,24 @@
   "learnWhyTitle": "Why nothing has been learned",
   "learnWhyCount": "{used} of {considered} recorded rides were usable.",
   "learnWhyShort": "{n} were under 200 m, which is too short to divide by: a wobble in the GPS over that distance produces a consumption figure in the hundreds.",
-  "learnWhyNoEnergy": "{n} recorded distance but no energy leaving the pack. Either they were spent on a trailer, or the pack reports its current with the opposite sign to the one this app assumes.",
+  "learnWhyNoEnergy": "{n} were measured, but no net energy left the pack. Either they were spent on a trailer or nearly all downhill, or the pack reports its current with the opposite sign to the one this app assumes.",
   "learnWhySignWarning": "If it is the sign, it would also be disabling trip energy, consumption and the capacity scan, while every live reading still looks correct. Worth checking: while riding, the current on the live screen should be negative.",
   "learnWhyNeedMore": "It learns from the first ride over 200 m that draws energy. Nothing else to do.",
   "trendsIntro": "Four charts, and the useful thing about each one is its slope, not its height. A number that sits still is a healthy pack; a number that drifts in one direction over months is the pack telling you something.",
-  "trendsConsumptionHint": "One dot per recorded ride, oldest on the left. Height is what that ride cost per kilometre. Riding style and weather move it around a lot, so ignore single dots and look at whether the cloud is drifting upwards over months: the same route costing more means the pack is having to work harder for it.",
-  "trendsCapacityHint": "One dot per full discharge measured, oldest on the left. Height is the amp-hours the pack actually held that time. This is the only real measure of wear here, and it is the slowest to fill in: expect it to go down a little each year and be suspicious of a sudden drop.",
-  "trendsAxisTime": "left to right: oldest to newest",
+  "trendsConsumptionHint": "One dot per measured ride that counts towards the range: what it cost per kilometre. The route, how you ride, the wind, the temperature and the tyres move it far more than the battery does, so this is not a measure of wear: it shows how your riding costs. Unmeasured rides, rides marked as an exception and impossible figures are left out.",
+  "trendsCapacityHint": "One dot per full discharge measured, oldest on the left: cells at the top to a cell at the cutoff, watched the whole way, with no charge in the middle. Height is the amp-hours that came out that time. This is the only real measure of wear here, and it is the slowest to fill in: expect it to go down a little each year and be suspicious of a sudden drop.",
+  "trendsAxisTime": "across is time: oldest to newest, with gaps where there was no data",
   "trendsAxisCharge": "left to right: empty to full",
-  "learnWhyImplausible": "{n} came out at a consumption no motorcycle could produce, so they were refused. That is a fault in this app rather than anything about the riding, and it was fixed in this version: rides recorded from here should read correctly. The old ones cannot be repaired, because the readings they needed were never stored.",
+  "learnWhyImplausible": "{n} came out at a consumption no motorcycle could produce, so they were refused. That was a fault in this app rather than anything about the riding, and it is fixed: rides recorded since should read correctly. Old ones that still have their readings can be measured again with “Measure again” in their detail.",
   "connectCouldNotSearch": "The radio never confirmed the search started, so nothing was actually looked for. Usually Bluetooth still waking up just after launch. Try again.",
-  "backupShare": "Send it somewhere instead",
+  "backupShare": "Send the small copy, without raw frames, to another app",
   "backupSaveDialog": "Where to put the copy",
   "backupSaved": "Saved as {name}.",
   "rangeFull": "On a full pack",
   "rangeFullBand": "about {low} to {high} km",
   "rangeFullUnknown": "Needs a measured capacity before this can be said.",
   "rangeFullFromAdvert": "From the capacity you entered, not a measured one.",
-  "rangeFullFromMeasured": "From a capacity this pack actually measured.",
+  "rangeFullFromMeasured": "From a full discharge measured on this pack, cells at the top to a cell at the cutoff.",
   "rangeNoneLearned": "Nothing learned yet, so no distance is worth quoting at any charge.",
   "offlineRangeAtLastSeen": "At the charge in the last reading",
   "offlineHealthNeedsTests": "Needs two full discharges before wear can be measured at all. One gives a capacity; it takes two to show a decline.",
@@ -1473,7 +1490,7 @@
       }
     }
   },
-  "licenseFreeBody": "The complete live viewer and the last 24 hours of history, free. The rest (unlimited history, degradation, verdicts, alerts with the app closed, backup) is Pro: one payment, for life, for this phone.",
+  "licenseFreeBody": "The complete live viewer and the last 24 hours of history, free. The rest (unlimited history, degradation, verdicts, watching a charge all night, backup) is Pro: one payment, for life, for this phone.",
   "licenseProBody": "Pro is active on this phone. One payment, no expiry.",
   "licenseWorkshopBody": "Pro Workshop active until {date}.",
   "@licenseWorkshopBody": {
@@ -1575,7 +1592,7 @@
   "licenseRemoveConfirmTitle": "Remove this key?",
   "licenseRemoveConfirmBody": "The app loses what this key unlocks. The key itself stays valid: if you kept it, you can paste it again.",
   "licenseWhyTitle": "Why it costs money",
-  "licenseWhyBody": "The free tier matches the official JK app and is never cut down. Pro is what that app cannot do by design: remember, compare and conclude. One payment; no subscriptions. No account, no server, no internet: the key is checked on the phone against the author's signature.",
+  "licenseWhyBody": "The free tier matches your BMS's official app and is never cut down. Pro is what that app cannot do by design: remember, compare and conclude. One payment; no subscriptions. No account, no server, no internet: the key is checked on the phone against the author's signature.",
   "licenseOpen": "See licence",
   "proBadge": "PRO",
   "proGateTitle": "Pro feature",
@@ -1591,7 +1608,7 @@
   "proFeatureHistory": "History older than 24 hours",
   "proFeatureDegradation": "Degradation and the long-term curves",
   "proFeatureVerdicts": "The verdicts on the pack's condition",
-  "proFeatureBackgroundAlerts": "Alerts with the app closed",
+  "proFeatureBackgroundAlerts": "Watching a charge all night, reconnecting whenever the link drops",
   "proFeatureBackup": "Backup and restore",
   "proFeatureConfigAudit": "The BMS configuration audit",
   "proFeatureBatteryReport": "The battery PDF report",
@@ -1606,14 +1623,14 @@
       }
     }
   },
-  "chargeWatchProHint": "Pro: needs a licence to hold the link with the app closed.",
+  "chargeWatchProHint": "Pro: needs a licence to watch a charge all night, reconnecting if the link drops. Keeping reading with the screen off is free.",
   "licenseStatusAdmin": "Admin",
   "licenseAdminBody": "Full access on this phone: everything unlocked, no limits, no expiry.",
   "adviceWhy": "WHY",
   "adviceWhyHide": "HIDE",
-  "adviceHonestyNote": "Every sentence rests on a measured figure: tap it to see which. The BMS's cycle count and configured capacity can be edited from the official app, so they are always checked here against what the physics says.",
+  "adviceHonestyNote": "Every sentence rests on a figure: tap it to see which. The BMS's cycle count and configured capacity can be edited from its official app, so here they are checked against what the app measures on its own wherever it can.",
   "verdictHealthMeasuredTitle": "Capacity against the best it has held",
-  "verdictHealthMeasuredBody": "Your battery is at {pct} % of the capacity it arrived with: {now} Ah measured now against {best} Ah, the best it has given. Measured over full discharges, not estimated.",
+  "verdictHealthMeasuredBody": "Your battery is at {pct} % of the best measurement it has made: {now} Ah in the latest against {best} Ah, the best. Measured over full discharges, not estimated.",
   "@verdictHealthMeasuredBody": {
     "placeholders": {
       "pct": {
@@ -1644,7 +1661,7 @@
       }
     }
   },
-  "verdictCellDriftingBody": "For {weeks} weeks it has been drifting: {dev} V under the pack average and falling about {rate} V a month. Consistent with a cell on its way out. Look at it before the pack shuts down in the street.",
+  "verdictCellDriftingBody": "Over {days} days of resting readings it has been pulling away: {dev} V under the pack average, and the trend is about {rate} V more a month. Consistent with a cell on its way out. Look at it before the pack shuts down in the street.",
   "@verdictCellDriftingBody": {
     "placeholders": {
       "weeks": {
@@ -1659,7 +1676,7 @@
     }
   },
   "verdictNoCellDriftingTitle": "No cell is going",
-  "verdictNoCellDriftingBody": "Over {weeks} weeks of resting readings no cell is pulling away from the rest. The worst sits {dev} V under the average and is not getting worse. Nothing to do.",
+  "verdictNoCellDriftingBody": "Over {days} days of resting readings, all between 40 and 80 % charge, no cell is pulling away from the rest. The lowest, cell {cell}, sits {dev} V under the average and is not getting worse. Nothing to do.",
   "@verdictNoCellDriftingBody": {
     "placeholders": {
       "weeks": {
@@ -1690,7 +1707,7 @@
     }
   },
   "verdictDeltaNormalTitle": "Delta under load is normal",
-  "verdictDeltaNormalBody": "Under current the delta reaches {loaded} V, against {rest} V at rest. Nothing resistive to chase. Nothing to do.",
+  "verdictDeltaNormalBody": "Under a heavy load the delta reaches {loaded} V, against {rest} V at rest. Nothing resistive to chase. Nothing to do.",
   "@verdictDeltaNormalBody": {
     "placeholders": {
       "loaded": {
@@ -1701,8 +1718,8 @@
       }
     }
   },
-  "evidenceRestingDelta": "Delta at rest (session maximum)",
-  "evidenceLoadedDelta": "Delta under load (session maximum)",
+  "evidenceRestingDelta": "Delta at rest (the highest since it connected)",
+  "evidenceLoadedDelta": "Delta under load (reached by several readings since it connected)",
   "evidenceWeakCellShare": "Readings in which cell {cell} was lowest",
   "@evidenceWeakCellShare": {
     "placeholders": {
@@ -1711,9 +1728,9 @@
       }
     }
   },
-  "evidenceReadingsInSession": "Readings this session",
+  "evidenceReadingsInSession": "Readings that count since it connected",
   "evidenceReportedCycles": "Cycles per the BMS (editable figure)",
-  "evidenceEquivalentCycles": "Equivalent cycles from amp-hours that flowed",
+  "evidenceEquivalentCycles": "Equivalent cycles (Ah the BMS counted over the configured capacity)",
   "evidenceReportedSoh": "SOH per the BMS",
   "evidenceReportedSoc": "Charge per the BMS",
   "evidenceSocFullAnchor": "Where a charge ends (per cell)",
@@ -1772,7 +1789,7 @@
   "evidenceDriftRate": "Rate of separation",
   "evidencePerMonth": "month",
   "evidenceDriftSamples": "Resting readings analysed",
-  "evidenceDriftSpanWeeks": "Weeks observed",
+  "evidenceDriftDays": "Days with resting readings",
   "verdictTitle": "Verdict",
   "demoScenarioInspection": "Inspection rehearsal",
   "demoScenarioInspectionDesc": "Quiet 35 s, lights 20 s, hard pull 8 s, then released. Cell 7 is the weak one.",
@@ -1845,7 +1862,7 @@
   "inspectionLightProblem": "Don't buy blind: there is a problem",
   "inspectionLightUnmeasured": "No verdict: the pack was never loaded",
   "inspectionUnmeasuredBody": "Per-cell sag under load is where this test gets its answer, and no load big enough ever arrived, so there is nothing here about this battery either way. Run it again and give it one of these: ride fifty metres accelerating properly, or hold the rear brake on the stand and open the throttle, or plug the charger in for half a minute. A wheel spinning free in the air is not a load: there is nothing for the motor to push against, so the current stays near zero however hard you twist it.",
-  "inspectionFidelityNote": "A quick test catches the obvious scam and the bad cell; it does not measure real capacity. Real capacity takes a full discharge.",
+  "inspectionFidelityNote": "A quick test catches the cell that breaks away from the others under load (at this test's load, from about {floor} mΩ of extra resistance) and the obvious scam; it does not measure real capacity. Real capacity takes a full discharge.",
   "inspectionCaveatsTitle": "What this test could not see",
   "inspectionCaveatNoHeavyLoad": "No hard pull: per-cell sag could not be measured.",
   "inspectionCaveatHeavyWasCharge": "The load was a charger, so the cells were lifted rather than pulled down. The arithmetic is the same; the direction is not.",
@@ -1911,7 +1928,7 @@
       }
     }
   },
-  "verdictInspCellSaggingBody": "Under the hard pull it dropped {excess} V more than the pack median. Consistent with a worn cell or a bad connection at that cell. This is the main reason not to pay the asking price without more tests.",
+  "verdictInspCellSaggingBody": "Under the hard pull it dropped {excess} V more than the pack median: about {ohms} mΩ of extra resistance. Consistent with a worn cell or a bad connection at that cell. This is the main reason not to pay the asking price without more tests.",
   "@verdictInspCellSaggingBody": {
     "placeholders": {
       "excess": {
@@ -1920,7 +1937,7 @@
     }
   },
   "verdictInspSagUniformTitle": "Every cell sags evenly",
-  "verdictInspSagUniformBody": "Under the hard pull the worst cell dropped only {excess} V more than the median. None gives up before the others.",
+  "verdictInspSagUniformBody": "Under the hard pull ({amps} A) the worst cell dropped only {excess} V more than the median. At this current a cell with about {floor} mΩ of extra resistance would already stand out, and none gives up before the others.",
   "@verdictInspSagUniformBody": {
     "placeholders": {
       "excess": {
@@ -1957,7 +1974,7 @@
       }
     }
   },
-  "verdictInspWeakLightBody": "With only the lights on ({amps} A) it dropped {extra} V more than the rest. A cell that gives up at one or two amps is a very tired cell.",
+  "verdictInspWeakLightBody": "With only the lights on ({amps} A) it dropped {extra} V more than the rest. A cell that gives up under the lights' load (less than an amp) is a very tired cell.",
   "@verdictInspWeakLightBody": {
     "placeholders": {
       "amps": {
@@ -1976,7 +1993,7 @@
       }
     }
   },
-  "verdictInspSlowRecoveryBody": "It took {extra} s longer than the median to return to its resting voltage after the load, or never did. Tired cells rebound slowly; it is a rarely watched and very good sign.",
+  "verdictInspSlowRecoveryBody": "It took {extra} s longer than the median to return to its resting voltage after the load, or never did. Tired cells rebound slowly.",
   "@verdictInspSlowRecoveryBody": {
     "placeholders": {
       "extra": {
@@ -1985,7 +2002,7 @@
     }
   },
   "verdictInspRecoveryOkTitle": "Even recovery",
-  "verdictInspRecoveryOkBody": "After the load the cells were back at rest in about {seconds} s, all at the same pace.",
+  "verdictInspRecoveryOkBody": "After the load the cells were back at rest in about {seconds} s, all at the same pace. After a pull this hard, recovery is a rarely watched and very good sign.",
   "@verdictInspRecoveryOkBody": {
     "placeholders": {
       "seconds": {
@@ -1994,7 +2011,7 @@
     }
   },
   "verdictInspHotTitle": "The pack was hot",
-  "verdictInspHotBody": "It reached {temp} °C during the test. A pack that is hot at rest or under light load is not normal.",
+  "verdictInspHotBody": "It reached {temp} °C during the test. For a test of a few minutes that is a lot: ask where the heat comes from.",
   "@verdictInspHotBody": {
     "placeholders": {
       "temp": {
@@ -2021,7 +2038,7 @@
     }
   },
   "verdictInspNoHeavyLoadTitle": "No hard pull: reduced fidelity",
-  "verdictInspNoHeavyLoadBody": "The highest current seen was {amps} A. Without a hard pull there is no way to measure how far each cell drops, which is where the truth comes out. Repeat with the wheel in the air or 50 metres on the bike.",
+  "verdictInspNoHeavyLoadBody": "The highest current seen was {amps} A. Without a hard pull held for a few seconds there is no way to measure how far each cell drops, which is where the truth comes out. Repeat riding under real load (a hill or hard acceleration), or with the charger.",
   "@verdictInspNoHeavyLoadBody": {
     "placeholders": {
       "amps": {
@@ -2163,17 +2180,17 @@
   "reportModel": "Model",
   "reportSerial": "Serial number",
   "reportSoftware": "Firmware version",
-  "reportCycles": "Counted cycles",
+  "reportCycles": "Cycles per the BMS",
   "reportReportedSoh": "Reported health",
   "reportReportedNote": "These values can be edited from the official BMS app in under a minute. They are printed separately on purpose: they are a claim, not a measurement.",
   "reportSectionCaveats": "What this test could not see",
   "reportSectionNote": "Inspector's note",
   "reportSectionCertificate": "Certificate",
   "reportCertificateCode": "Certificate code",
-  "reportCertificateIssuer": "Issuer (installation)",
+  "reportCertificateIssuer": "Issuer code",
   "reportCertificateIssuedAt": "Signed on",
-  "reportCertificateExplain": "The signature proves these figures came out of the app that day and have not been changed since. It does not prove the battery is good or the seller honest. Scan the QR or paste the code into the app to check it.",
-  "reportHonestyInspection": "Checked with a quick test on {date}. Capacity is estimated, not measured: measuring it needs a full discharge. This test catches the bad cell and the obvious scam, and does not replace a workshop inspection.",
+  "reportCertificateExplain": "The signature proves these figures came out of the app on the phone whose issuer code is shown here, and have not been changed since. It does not prove whose phone that is: compare the code with the one published by whoever gave you the certificate. Nor does it prove which battery was tested (the name and serial come from the BMS and can be changed), nor the date, which is that phone's clock, nor that the battery is good. Scan the QR or paste the code into the app to check it.",
+  "reportHonestyInspection": "Quick test on {date}. A test like this catches the cell that breaks away from the others under load, at this test's load, and the obvious scam; it does not replace a workshop inspection. It does not measure capacity: the capacity shown is the one configured in the BMS, not a measurement.",
   "@reportHonestyInspection": {
     "placeholders": {
       "date": {
@@ -2188,11 +2205,11 @@
   "reportFailed": "The PDF could not be created.",
   "reportShareText": "Report generated with JK BMS +",
   "certificateVerifyTitle": "Verify a certificate",
-  "certificateVerifyIntro": "Paste the code that came with a certificate, or the text from its QR. The app checks the signature and shows exactly the figures that were signed.",
+  "certificateVerifyIntro": "Paste the code that came with a certificate, or the text from its QR. The app checks the signature and shows you the figures that were signed, all of them, with the verdict the app draws from them.",
   "certificateVerifyHint": "JKC1....",
   "certificateVerifyButton": "Check",
   "certificateVerifyOpen": "Verify a certificate",
-  "certificateValid": "Signature is good. These are the signed figures.",
+  "certificateValid": "Signature valid for issuer {issuer}. Check that this code belongs to whoever gave you the certificate.",
   "certificateBadSignature": "The signature does not match: the contents were changed after signing.",
   "certificateMalformed": "That is not a valid certificate.",
   "certificateCreditsLeft": "Signing a certificate uses one credit. You have {count} left.",
@@ -2218,7 +2235,7 @@
       }
     }
   },
-  "verdictInspRepeatSameCellBody": "Not bad luck and not a loose lead: run the test again and the same cell drops before the others. This is no longer a suspicion, it is the cell.",
+  "verdictInspRepeatSameCellBody": "Run again at a similar pull, the same cell drops before the others, and both times past the line. It no longer looks like a bad reading: it is that cell or its connection, and a workshop can tell which.",
   "verdictInspRepeatCellMovedTitle": "A different cell dropped this time",
   "@verdictInspRepeatCellMovedTitle": {
     "placeholders": {
@@ -2238,12 +2255,12 @@
       }
     }
   },
-  "verdictInspRepeatWorseTitle": "Worse than the previous run",
-  "verdictInspRepeatWorseBody": "Compared at the same kind of pull, the pack measures worse than last time. With two runs separated in time that is a trend, not a snapshot.",
+  "verdictInspRepeatWorseTitle": "Measures worse than the previous run",
+  "verdictInspRepeatWorseBody": "Against the previous run the pack measures worse; both runs' figures are in the detail. Sag is only compared when the two pulls were alike, and the resting spread only when the pack was at a similar charge. Two runs point at a change; a third would confirm it.",
   "verdictInspRepeatSteadyTitle": "Same as last time",
   "verdictInspRepeatSteadyBody": "This run's figures land inside the noise of the previous one. The first test was not a fluke and this one found nothing new.",
-  "verdictInspRepeatCountersResetTitle": "Somebody touched the counters between visits",
-  "verdictInspRepeatCountersResetBody": "Cycles only go up and health only goes down. If between the two runs the cycles fell, the health rose or the configured capacity changed, the BMS was reset. The physical findings above cannot be reset with a button, which is why they are the ones to read.",
+  "verdictInspRepeatCountersResetTitle": "The BMS counters went down between visits",
+  "verdictInspRepeatCountersResetBody": "Cycles and the total the BMS counts only ever go up. If they went down between the two runs, the BMS was reset or replaced. Ask why. The physical findings above cannot be reset with a button, which is why they are the ones to read.",
   "verdictInspRepeatLoadDiffersTitle": "The two runs did not pull alike",
   "verdictInspRepeatLoadDiffersBody": "Voltage sag depends on how much current is asked for. With very different pulls, comparing the sag says nothing. To compare properly, run it again with a similar pull.",
   "evidenceRunCount": "Runs on this pack",
@@ -2334,7 +2351,7 @@
   },
   "inspectionSeriesFirstRun": "First inspection of this pack. Run it again another day to confirm what you saw.",
   "inspectionRepeatButton": "Run the test again",
-  "inspectionRepeatHint": "Repeat it as often as you like: every run is saved and the next one is compared against all of them.",
+  "inspectionRepeatHint": "Save it before repeating so the runs can be compared: only saved runs are compared.",
   "inspectionAlreadySeen": "Inspected {count} time(s) already",
   "@inspectionAlreadySeen": {
     "placeholders": {
@@ -2344,7 +2361,7 @@
     }
   },
   "reportSectionSeries": "Earlier runs on this pack",
-  "reportSeriesNote": "Each row is an earlier inspection stored on the phone that signed this sheet. Repeating the test is what tells a bad cell from a bad reading.",
+  "reportSeriesNote": "Each row is an inspection stored on the phone that signed this sheet, this one included, as the last. Repeating the test is what tells a bad cell from a bad reading.",
   "reportSeriesWorstCell": "Worst cell",
   "profileTitle": "Battery profile",
   "profileIntro": "Four things the BMS cannot know that change what the app can tell you. All of them can be left blank.",
@@ -2453,7 +2470,7 @@
   "reportSectionDayOne": "This battery's day one",
   "reportDayOneNote": "Compared against the state kept on the day the battery was taken on. Not a capacity measurement: a snapshot of the voltages cannot measure what a pack holds, and nothing here is presented as if it could.",
   "verdictConfigOvpDangerousTitle": "The charge cutoff is above what the cells can take",
-  "verdictConfigOvpDangerousBody": "The BMS stops charging at {value} V a cell and the safe maximum for this chemistry is {limit} V. Every full charge is doing damage. Change it in the official BMS app, on your own responsibility; this app never writes anything to a battery.",
+  "verdictConfigOvpDangerousBody": "The BMS stops charging at {value} V a cell and the safe maximum for this chemistry is {limit} V. Every full charge is doing damage. Change it in the official BMS app, on your own responsibility; this app does not write setting values to a battery.",
   "@verdictConfigOvpDangerousBody": {
     "placeholders": {
       "value": {
@@ -2615,20 +2632,20 @@
   "configAuditTitle": "Configuration audit",
   "configAuditIntro": "What the BMS is set up to do, against what the cells you said it holds can take.",
   "configAuditOpen": "Audit the configuration",
-  "configAuditReadOnly": "Read only. This app never writes to a BMS: a wrong value written to a battery is a fire, and the protocol's write path is reverse-engineered. Anything that needs changing is changed in the official BMS app, and that decision is yours.",
+  "configAuditReadOnly": "Read only. This app does not write setting values to a BMS: a wrong value written to a battery is a fire, and the protocol's write path is reverse-engineered. Anything that needs changing is changed in the official BMS app, and that decision is yours. The only things the app can touch are the charge, discharge and balancer switches, and only with the write permission on in Settings.",
   "configAuditSettings": "Everything that was looked at",
   "configAuditNoSettings": "The BMS has not sent its configuration yet. Wait a few seconds with the battery connected.",
   "configAuditChemistryRow": "Declared chemistry",
   "configAuditNeedsProfile": "Complete the profile",
   "alertNearCurrentLimit": "Current close to the BMS limit",
   "alertLinkLost": "Lost the connection to the battery",
-  "alertsNotifyTitle": "Alerts that arrive with the app closed",
-  "alertsNotifyIntro": "Alerts land in the notification shade even when the app is in the background or closed. Without this, an alert at three in the morning with the phone in another room reaches nobody.",
+  "alertsNotifyTitle": "Alerts in the notification shade",
+  "alertsNotifyIntro": "Alerts land in the notification shade with the app in the background or the screen off (not if you swipe the app away: then it stops reading the pack). Without this, an alert at three in the morning with the phone in another room reaches nobody.",
   "alertsNotifyEnable": "Post alerts to the notification shade",
-  "alertsNotifyDenied": "Android has not granted permission to notify. Alerts will still appear on screen and buzz, but they will not arrive with the app closed.",
-  "alertsNotifyOneConnection": "Remember: the BMS accepts a single Bluetooth connection. While the phone is connected in the background the official JK app cannot connect, and the other way round.",
+  "alertsNotifyDenied": "Android has not granted permission to notify. Alerts will still appear on screen and buzz while you are looking at the app, but they will not arrive with the app in the background or the screen off.",
+  "alertsNotifyOneConnection": "Remember: the BMS accepts a single Bluetooth connection. While the phone is connected in the background your BMS's official app cannot connect, and the other way round.",
   "alertsThresholdsTitle": "When to speak up",
-  "alertsThresholdsIntro": "The defaults are conservative. Raise them if your pack lives outside the usual range and it is warning you too often.",
+  "alertsThresholdsIntro": "The defaults are conservative. If an alert fires too often, move it the way that warns less: cell spread and temperature up, low charge down.",
   "alertsDeltaWarn": "Spread between cells",
   "alertsTempWarn": "Temperature",
   "alertsLowChargeWarn": "Low charge",
@@ -2683,7 +2700,7 @@
     }
   },
   "alertNotificationBodyLinkLost": "The app stopped receiving readings from the battery. If you were watching a charge, nothing is watching it now.",
-  "alertNotificationBodyChargeTarget": "The pack has reached the {value} % you asked for.",
+  "alertNotificationBodyChargeTarget": "The BMS reads {value} %, what you asked for. That is its counter, not a measurement of the cells.",
   "@alertNotificationBodyChargeTarget": {
     "placeholders": {
       "value": {
@@ -2691,7 +2708,7 @@
       }
     }
   },
-  "alertNotificationBodyChargeComplete": "Charging has finished.",
+  "alertNotificationBodyChargeComplete": "The highest cell is at the top and the charger is barely putting anything in: charging has finished.",
   "alertNotificationBodyChargeHot": "{value} °C while charging. Unplug it and let it cool.",
   "@alertNotificationBodyChargeHot": {
     "placeholders": {
@@ -2782,7 +2799,7 @@
   },
   "representativeYes": "That's normal",
   "representativeNo": "That was an exception",
-  "representativeDone": "Done. Your range stays at {km} km.",
+  "representativeDone": "Done. Your range is now {km} km.",
   "@representativeDone": {
     "placeholders": {
       "km": {
@@ -2845,8 +2862,8 @@
   "healthWeakCellWhy": "The pack stops when the lowest cell reaches cutoff, not when the average does. Whatever the others still hold above that point is not yours to use.",
   "healthWeakCellWhich": "Which one",
   "healthWeakCellStrands": "What it strands",
-  "healthWeakCellResistance": "Resistance since day one",
-  "healthWeakCellResistanceUp": "+{pct} % on cell {cell}",
+  "healthWeakCellResistance": "Balance lead since day one",
+  "healthWeakCellResistanceUp": "+{pct} % on the lead of cell {cell}",
   "@healthWeakCellResistanceUp": {
     "placeholders": {
       "pct": {
@@ -2857,7 +2874,7 @@
       }
     }
   },
-  "healthWeakCellResistanceFlat": "Nobody has moved",
+  "healthWeakCellResistanceFlat": "No lead has moved",
   "healthWeakCellResistanceNoBaseline": "Needs a day-one snapshot to compare against",
   "subjectCells": "Cells",
   "subjectCapacity": "Capacity",
@@ -2869,7 +2886,7 @@
   "adviceCheckedSomeFine": "Checked {subjects}: fine.",
   "adviceNotChecked": "Nothing to say about {subjects} yet.",
   "adviceCaveatsTitle": "What this measurement is worth",
-  "chargeWatchRedundant": "With the setting above on this is already covered: the link stays open anyway. You only need it if you turn that one off and still want charge alerts overnight.",
+  "chargeWatchRedundant": "With the setting above on, the link already stays open with the screen off, including while it recovers from a drop. This adds one thing: while charging, the app never stops trying to reconnect. Without it, it gives up after about six minutes with no answer from the pack.",
   "alertGroupSpread": "Cells apart",
   "alertGroupHeat": "Temperature",
   "alertGroupRunningOut": "Running out of charge",
@@ -2878,5 +2895,659 @@
   "alertWhenRiding": "While riding",
   "alertWhenCharging": "While charging",
   "alertWhenTopOfCharge": "At the top of the charge",
-  "alertTargetReachedShort": "Reached the level you set"
+  "alertTargetReachedShort": "Reached the level you set",
+  "alertBmsHot": "The BMS is running hot",
+  "alertWhenBmsMosfet": "The BMS (MOSFET)",
+  "alertNotificationBodyBmsHot": "The BMS MOSFET is at {value} °C. Not the battery: it is the part that cuts the power if it keeps climbing. Ease off and give it air.",
+  "@alertNotificationBodyBmsHot": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "statusBmsHotWatch": "BMS running warm: {temp} °C",
+  "@statusBmsHotWatch": {
+    "placeholders": {
+      "temp": {
+        "type": "String"
+      }
+    }
+  },
+  "statusBmsHotBad": "BMS too hot: {temp} °C",
+  "@statusBmsHotBad": {
+    "placeholders": {
+      "temp": {
+        "type": "String"
+      }
+    }
+  },
+  "adviceBmsHotTitle": "The BMS is running hot",
+  "adviceBmsHotBody": "Its MOSFET reached {temp} °C. That is not the battery, but it is the part that cuts the power if it keeps climbing. Check the BMS has airflow and is not pressed against something warm.",
+  "@adviceBmsHotBody": {
+    "placeholders": {
+      "temp": {
+        "type": "String"
+      }
+    }
+  },
+  "evidenceMosfetTemp": "BMS MOSFET",
+  "thermalMirrorNote": "Probe 5 on this BMS repeats the MOSFET temperature, so it is not counted as a battery probe.",
+  "thermalLegendMosfet": "MOSFET (no battery probes)",
+  "balanceWhichCellsReported": "{cells} (reported by the BMS)",
+  "@balanceWhichCellsReported": {
+    "placeholders": {
+      "cells": {
+        "type": "String"
+      }
+    }
+  },
+  "balanceWhichCellsNoneReported": "none right now (reported by the BMS)",
+  "balancerStoppedByHeat": "stopped by heat",
+  "alertNotificationBodyCellTypical": "A cell is at {value} V, close to {cutoff} V, the usual cutoff for this chemistry (the BMS did not report its own). It can run out even while the percentage still looks reasonable.",
+  "@alertNotificationBodyCellTypical": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "cutoff": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyCellAssumed": "A cell is at {value} V, close to {cutoff} V, an assumed cutoff: the BMS did not report its own and the pack's chemistry is not known. It can run out even while the percentage still looks reasonable.",
+  "@alertNotificationBodyCellAssumed": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "cutoff": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNearLimitUnavailable": "Not available on this BMS: it does not report its current limit.",
+  "sessionEnergyIn": "Energy put into the pack",
+  "sessionEnergyHint": "Since the pack connected. Only counts the moments readings were arriving.",
+  "healthWeakCellStrandsNeedsRest": "Needs a reading at rest, with no current. On LFP, also off the flat part of the curve.",
+  "healthWeakCellStrandsAge": "From the last reading at rest, {minutes} min ago.",
+  "@healthWeakCellStrandsAge": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "degSoldUnmeasured": "Not yet measured against the advert: that needs a full discharge.",
+  "degConfiguredTitle": "Configured capacity",
+  "healthVerdictReported": "Not measured yet",
+  "healthWeakCellResistanceHint": "The BMS measures the resistance of the balance lead and its connection, not of the cell. If it climbs, that lead is the first thing to check.",
+  "cellsResistanceNote": "The mΩ under each cell is the resistance of its balance lead and connection, which is what the BMS measures. It is not the cell's internal resistance.",
+  "rangeFullFromBms": "From the capacity configured in the BMS, not a measured one.",
+  "reportRangeFromBmsConfig": "capacity configured in the BMS",
+  "capacityOfConfigured": "{pct} % of configured",
+  "@capacityOfConfigured": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "historyItemDrift": "Which cell is pulling away from the others over the weeks",
+  "trendsCapacityNotEnough": "Each point is a full discharge measured with the app connected, so this does not fill in on its own: it needs at least three.",
+  "profileCaptureBaselineHintNoSettings": "The cells exactly as they are now. This BMS reports neither resistances nor its configuration, so the snapshot keeps what it does give. Everything the app later says about drift is measured against this. Best done with the pack at rest.",
+  "profileConfigNotCompared": "Not compared",
+  "profileDriftOtherCharge": "at another charge level, not comparable",
+  "adviceCycleMismatchTitle": "The cycle counter does not add up",
+  "adviceCycleMismatchBody": "The BMS says {bms} cycles, and the charge it counted through the pack itself comes to {equivalent} equivalent cycles. Each firmware counts cycles its own way and the counter can be edited, so the gap can go either way. If you are buying or selling a pack, quote both.",
+  "@adviceCycleMismatchBody": {
+    "placeholders": {
+      "bms": {
+        "type": "String"
+      },
+      "equivalent": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictDeltaLightTitle": "Nothing odd under a light load",
+  "verdictDeltaLightBody": "Under current the delta reaches {loaded} V, against {rest} V at rest. But there has not been a load heavy enough for a bad connection to show, so this rules nothing out yet.",
+  "@verdictDeltaLightBody": {
+    "placeholders": {
+      "loaded": {
+        "type": "String"
+      },
+      "rest": {
+        "type": "String"
+      }
+    }
+  },
+  "adviceBmsClaimsOkTitle": "What the BMS says adds up",
+  "adviceBmsClaimsOkBody": "What could be checked of what the BMS says about itself matches what is measured: the cycle counter against the charge that went through, or the percentage against the cells at an end of the range.",
+  "adviceTemperatureOkTitle": "Temperature normal",
+  "adviceTemperatureOkBody": "The battery's hottest probe reads {temp} °C, and the BMS is not hot either.",
+  "@adviceTemperatureOkBody": {
+    "placeholders": {
+      "temp": {
+        "type": "String"
+      }
+    }
+  },
+  "adviceConfigNothingFlaggedTitle": "Nothing to object to here",
+  "adviceConfigNothingFlaggedBody": "The charge limit per cell is {voltage} V, which is not too high. This screen only looks at that; the full review is under Audit the configuration, in System.",
+  "@adviceConfigNothingFlaggedBody": {
+    "placeholders": {
+      "voltage": {
+        "type": "String"
+      }
+    }
+  },
+  "verdictConfigColdCutoffMarginalTitle": "The cold cutoff has little margin",
+  "verdictConfigColdCutoffMarginalBody": "The cold cutoff is at {value} °C: above freezing, but only just. The probe reads the outside of the pack and the cells inside lag behind. Raise it to {limit} °C or more from the BMS's official app.",
+  "@verdictConfigColdCutoffMarginalBody": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "balanceRankingEntry": "cell {cell}: {pct} %",
+  "@balanceRankingEntry": {
+    "placeholders": {
+      "cell": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "capacityNoFullMark": "Where this pack is full is unknown: the BMS has not said what it charges to and the chemistry is not known. Set it in the pack details to be able to start the test.",
+  "capacityStopEarly": "Finish here",
+  "capacityStopEarlyHint": "Finishing before the cutoff keeps it as a partial: what it counted is real, but it is a slice of the pack and it is never turned into a capacity.",
+  "capacityPartialTag": "partial",
+  "capacityLegacyTag": "old",
+  "capacityChargedTag": "charged part way",
+  "capacityUntrustedNote": "The tagged ones do not count as a capacity. \"partial\": it ended before the cutoff. \"old\": it was closed on the BMS percentage, which is worked out against the configured capacity, so it handed that setting back rather than what the battery holds. \"charged part way\": current went in along the way.",
+  "chargeGapNote": "{minutes} min without a connection along the way: the BMS counted that part, not the app.",
+  "@chargeGapNote": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "etaNearlyFull": "Nearly full",
+  "chargeTargetAtTop": "From {soc} % this alert is the charge-finished one: the BMS counter gets there before the cells do, so it speaks when the highest cell is at the top and the current has dropped.",
+  "@chargeTargetAtTop": {
+    "placeholders": {
+      "soc": {
+        "type": "String"
+      }
+    }
+  },
+  "alertsTempWarnHint": "Riding, it warns from here. Charging, from here or from {limit} °C, whichever is lower: charging hotter damages the cells, so that limit is never raised.",
+  "@alertsTempWarnHint": {
+    "placeholders": {
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "alertsDeltaWarnHint": "Riding, it warns from here. At the end of a charge, from here or from {limit} mV, whichever is lower: up there the curve is steep and that gap is already a mismatch.",
+  "@alertsDeltaWarnHint": {
+    "placeholders": {
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNotificationBodyCriticalIdle": "{value} % charge left. Charge it before you set off.",
+  "@alertNotificationBodyCriticalIdle": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "alertsNotifyQuietChannel": "Alerts without vibration",
+  "alertLinkLostNeedsWatch": "Only speaks with \"Keep reading with the screen off\" or \"Watch the charge\" on: without them nothing is watching the link.",
+  "alertLinkLostRidingHint": "Silent while a ride is recording: riding, the link comes and goes, and the ride already shows on screen when it drops.",
+  "alertsLowChargeWarnHint": "Warns when the charge falls below this. Lower it if it warns too early; raise it to hear sooner.",
+  "stuckTitle": "The phone's Bluetooth looks stuck",
+  "stuckBody": "Several attempts in a row have failed with the pack within reach. Try these in order, and stop as soon as it connects again:",
+  "stuckResetButton": "Restart the app's Bluetooth connection",
+  "stuckStepForceStop": "If that is not enough, force-stop the app (Settings > Apps > JK BMS + > Force stop) and open it again.",
+  "stuckStepScanning": "Next, turn off \"Bluetooth scanning\" (Settings > Location > Location services), then switch Bluetooth off and on. With that scanning on, switching Bluetooth off does not really restart it.",
+  "stuckStepRestart": "As a last resort, restart the phone.",
+  "stuckAskWhichStep": "Once it connects again, say which step fixed it: that tells whether the fault is in the app or in Android.",
+  "stuckResetDone": "The app's Bluetooth connection was restarted. Tap the pack again.",
+  "stuckResetRunning": "Restarting the app's Bluetooth connection…",
+  "consoleReportAttempts": "Connect attempts, newest first",
+  "tripNoGpsFixes": "No GPS is coming in, so this ride is not measuring distance or speed. The app is retrying. If it stays like this, open the app for a moment with the screen on and check that location is on.",
+  "locationApproximateOnly": "The app only has approximate location, which cannot measure a ride: every position is hundreds of metres off. Turn on \"Use precise location\" in Settings > Apps > JK BMS + > Permissions > Location, then start the ride again.",
+  "inspectionCaveatRecoveryNoLoad": "With no hard pull there was no recovery to measure either.",
+  "inspectionCaveatEndedBeforeLoad": "The test was ended before the load: neither per-cell sag nor recovery was measured.",
+  "inspectionCaveatEndedBeforeRecovery": "The test was ended while the cells were climbing back: recovery was not measured.",
+  "inspectionCaveatRecoveryLinkGap": "The link to the BMS dropped while the cells were climbing back: recovery was not measured, because the time would have been the outage's.",
+  "inspectionCaveatLinkGaps": "The link to the BMS dropped during the test. The steps it dropped in started counting again from zero.",
+  "verdictInspCellRisingTitle": "Cell {cell} rises far more than the rest",
+  "verdictInspCellRisingBody": "On the charger it rose {excess} V more than the pack median: about {ohms} mΩ of extra resistance. Consistent with a worn cell or a bad connection at that cell. This is the main reason not to pay the asking price without more tests.",
+  "verdictInspSagUniformChargeTitle": "Every cell rises evenly",
+  "verdictInspSagUniformChargeBody": "On the charger ({amps} A) the cell that rose most went only {excess} V above the median. At this current a cell with about {floor} mΩ of extra resistance would already stand out, and none breaks away from the others.",
+  "verdictInspSagUnresolvedTitle": "Too little load to rule out a bad cell",
+  "verdictInspSagUnresolvedBody": "At this load ({amps} A) a cell with less than {floor} mΩ extra cannot be told apart, and a bad cell can have less than that. The cells moved together, but with so little current that rules nothing out. Repeat riding under real load (a hill or hard acceleration), or with the charger.",
+  "verdictInspRecoveryNotDiscriminatingTitle": "At this load recovery says nothing",
+  "verdictInspRecoveryNotDiscriminatingBody": "The cells were back at rest in about {seconds} s. At this load ({amps} A) recovery does not discriminate: a tired cell comes back almost as fast as a good one. For it to count the pull has to be at least a third of the pack's capacity.",
+  "verdictInspHotRestBody": "It reached {temp} °C at rest or with only the lights on. A pack that is hot with no load is not normal: either it came straight off hard use, or something inside heats up by itself.",
+  "verdictInspHotLoadBody": "It reached {temp} °C during the hard pull or just after. A pull of a few seconds does not heat a healthy pack that much: either it was already hot, or something heats up too much under load.",
+  "evidenceInspectionRestDelta": "Delta at rest (each cell's median at rest)",
+  "evidenceExcessResistance": "Extra resistance, cell {cell}",
+  "evidenceDetectionFloor": "Least that stands out at this load",
+  "evidenceLoadWasCharge": "Load used",
+  "evidenceLoadCharger": "the charger",
+  "evidenceSeenDuringStep": "When it was seen",
+  "evidenceStepRest": "at rest",
+  "evidenceStepLight": "with the lights on",
+  "evidenceStepHeavy": "under the hard pull",
+  "evidenceStepRecovery": "after the load let go",
+  "inspectionFidelityNoteUnmeasured": "Without enough load this test could not look for the bad cell: what is above is only what shows at rest. It does not measure real capacity either; that takes a full discharge.",
+  "inspectionLightUnresolved": "No verdict: the load was too small to rule out a bad cell",
+  "inspectionUnresolvedBody": "There was a load, but a small one: at that current a bad cell can move just like the good ones, so there is nothing here about this battery either way. Run it again with more current: riding under real load (a hill or hard acceleration), or with the charger.",
+  "inspectionLightUnmeasuredShort": "No verdict",
+  "verdictInspRepeatConfigChangedTitle": "The settings or counters changed between visits",
+  "verdictInspRepeatConfigChangedBody": "Between the two runs the configured capacity changed, or the health the BMS reports went up. It can be the owner correcting a setting or the firmware recalculating, and it need not be a trick, but ask what was changed. The physical findings above do not depend on these numbers.",
+  "evidencePreviousCycleCapacity": "Total counted on {date}",
+  "evidenceCycleCapacity": "Total counted by the BMS",
+  "certificateIssuedHere": "Issued by this phone.",
+  "certificateDoesNotProve": "What the signature does not prove: which battery was tested (the name and serial come from the BMS and can be changed), nor the date, which is the signing phone's clock, nor that the battery is good.",
+  "certificateSimulated": "TEST WITH THE SIMULATED PACK. These figures came from the app's simulator, not from a battery.",
+  "certificateSimulatedUnknown": "Certificate from an earlier version of the app: it does not say whether the test was on a battery or on the simulated pack.",
+  "certificateNoSimulated": "A rehearsal with the simulated pack cannot be signed: a certificate says the figures came off a battery.",
+  "certificateLocalIssuer": "This phone's issuer code",
+  "certificateLocalIssuerHint": "It is the code anyone checking a certificate signed on this phone will see. Publish it where people know you (your advert, your workshop) so they can compare.",
+  "inspectionSimulatedBanner": "TEST WITH THE SIMULATED PACK. None of this is from a real battery.",
+  "reportCertificateIssuerCheck": "Check that this issuer code is the one published by whoever gave you the certificate.",
+  "reportPackLabel": "Battery",
+  "reportCurrentStep": "Current step (load minus rest)",
+  "reportMedianRise": "Median rise on the charger",
+  "inspectionCellHeaderChange": "Change",
+  "inspectionSaveTitle": "Save this run",
+  "reportHonestyInspectionUnmeasured": "Quick test on {date} without enough load: the bad cell could not be looked for, and this sheet says nothing for or against the battery. It does not measure capacity: the capacity shown is the one configured in the BMS, not a measurement.",
+  "reportSeriesNoteUnsigned": "Each row is an inspection stored on the phone that made this sheet, this one included, as the last. This sheet is not signed. Repeating the test is what tells a bad cell from a bad reading.",
+  "reportChange": "Change (V)",
+  "reportCellTableNoteCharge": "Change is how far each cell rose on the charger. Resistance is estimated from the current step, not measured with an instrument.",
+  "inspectionDeleteConfirm": "Delete",
+  "inspectionSaveNoStore": "Could not save: the app's storage is not available.",
+  "autoTripPocketNeedsLinkWatch": "With “Keep reading with the screen off” switched off, the app stops reading the pack when the screen goes dark, so with the phone in a pocket no ride can start.",
+  "autoTripPocketWhileInUse": "With the phone in a pocket this works while the notification the app put up when you connected with the screen on is still there. If Android closes it, or the app reconnects by itself with the screen off, the GPS only answers with location allowed all the time, and without the GPS no ride starts.",
+  "autoTripPocketAllowAlways": "Allow location all the time",
+  "autoTripPocketSettingsHint": "In the app's settings, open Permissions, Location, and choose “Allow all the time”.",
+  "autoTripPocketAlways": "Location allowed all the time: a ride can start with the phone in a pocket even after the app reconnected by itself.",
+  "offlineWeakestRestValue": "cell {index}, lowest in {pct} % of {count} resting readings over the last month",
+  "offlineLowestLastReading": "Lowest cell in the last reading",
+  "historyAverageOf": "from {used} of {total} rides: the measured ones that count towards the range",
+  "learnWhyUnmeasured": "{n} could not be measured: the link to the pack dropped for much of the ride and there were no readings left to tell how much energy came out. That is not about the riding. If the ride kept readings, “Measure again” in its detail tries once more.",
+  "learnWhyExcluded": "{n} you marked as an exception, so they do not count.",
+  "tripNotMeasured": "not measured",
+  "tripEnergyUnmeasuredWhy": "The link to the pack dropped for much of the ride and there were no readings left to tell how much energy came out. It does not count towards the range.",
+  "tripEnergySourceLabel": "How it was measured",
+  "tripEnergySourceBms": "BMS counter, the whole ride",
+  "tripEnergySourceIntegrated": "added up from the readings received",
+  "tripEnergySourceBracketed": "BMS counter, from the readings before and after",
+  "tripEnergySourcePartial": "partial: the link dropped",
+  "tripEnergySourceUnmeasurable": "could not be measured",
+  "tripResistanceHint": "The median slope of voltage against current over the stretches where the current changed a lot. Approximate: good for following the same pack over months, not for comparing with a datasheet.",
+  "trendsCapacityHollow": "Hollow circles are discharges the app does not believe (minutes were missing, there was a charge in the middle, or they closed on the percentage) or that it found on its own while riding. They are shown, but kept out of the trend.",
+  "maintDeleteConfirmTitle": "Delete this entry?",
+  "maintDeleteConfirmBody": "It is removed from the maintenance log and from the charts.",
+  "maintDeleteConfirmCellBody": "It is removed from the log, and the pack's history counts from before the cell replacement again: drift, capacity and the charts will include the old cells once more.",
+  "orphansDiscardConfirmTitle": "Discard this history?",
+  "orphansDiscardConfirmBody": "{count} rows stored with no pack assigned are deleted for good. This cannot be undone.",
+  "tripEnergySoFarOffline": "{wh} Wh until the link dropped",
+  "tripReadingAgeSeconds": "{s} s ago",
+  "tripReadingAgeMinutes": "{m} min ago",
+  "backupExportFailed": "Could not make the copy: {reason}",
+  "exportShared": "Sent.",
+  "exportRange": "Readings and frames from:",
+  "exportRangeDay": "1 day",
+  "exportRangeWeek": "7 days",
+  "exportRangeMonth": "30 days",
+  "exportRangeAll": "All",
+  "exportRangeNote": "Raw frames are kept for 30 days, so “All” brings at most those. Readings older than a month are stored one a minute.",
+  "tripExportGpx": "Export track (GPX)",
+  "settingsGroupCell": "Cell protection",
+  "settingsGroupCurrent": "Current",
+  "settingsGroupTemperature": "Temperature",
+  "settingsGroupBalance": "Balancing",
+  "settingsGroupOther": "Other",
+  "settingSmartSleep": "Smart sleep voltage",
+  "settingRequestCharge": "Requested charge voltage per cell",
+  "settingRequestFloat": "Requested float voltage per cell",
+  "settingChargeOcpDelay": "Charge overcurrent delay",
+  "settingChargeOcpRecovery": "Charge overcurrent recovery",
+  "settingDischargeOcpDelay": "Discharge overcurrent delay",
+  "settingDischargeOcpRecovery": "Discharge overcurrent recovery",
+  "settingScpDelay": "Short-circuit delay",
+  "settingScpRecovery": "Short-circuit recovery",
+  "settingChargeOtpRecovery": "Charge overtemperature recovery",
+  "settingDischargeOtpRecovery": "Discharge overtemperature recovery",
+  "settingChargeUtpRecovery": "Charge undertemperature recovery",
+  "settingMosfetOtpRecovery": "MOSFET overtemperature recovery",
+  "settingWireResistances": "Balance lead resistance",
+  "settingWireResistancesCount": "{count} cells",
+  "@settingWireResistancesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingWireResistancesHint": "What the BMS is configured to compensate for each cell's lead, in milliohms. A setting, not a measurement of the cell.",
+  "systemSetupPasscode": "Settings passcode the BMS hands out",
+  "bmsStateTitle": "BMS state",
+  "bmsStateIntro": "As the BMS reports it in every reading.",
+  "bmsStatePrecharge": "Precharge",
+  "bmsStateChargerPlugged": "Sees a charger plugged in",
+  "bmsStateChargeStatus": "Charge phase",
+  "bmsStateBatteryType": "Battery type configured",
+  "bmsStateBatteryTypeHint": "What somebody chose when setting the BMS up, not something it measures in the cells.",
+  "bmsStateRuntime": "Total running time",
+  "bmsStateEnabledCells": "Cells enabled",
+  "bmsStateCycleCapacity": "Total charge through the pack",
+  "bmsStateCycleCapacityHint": "The BMS's own running total. Divided by the capacity it gives the real number of full cycles.",
+  "chargeStatusBulk": "bulk",
+  "chargeStatusAbsorption": "absorption",
+  "chargeStatusFloat": "float",
+  "batteryTypeLfp": "LFP (LiFePO4)",
+  "batteryTypeLiIon": "Li-ion",
+  "batteryTypeLto": "LTO",
+  "bmsUnknownCode": "code {code}",
+  "@bmsUnknownCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "nowChargerByBms": "According to the BMS",
+  "nowChargerSeen": "it sees the charger",
+  "nowChargerNotSeen": "it sees no charger",
+  "nowChargePhase": "phase: {phase}",
+  "@nowChargePhase": {
+    "placeholders": {
+      "phase": {
+        "type": "String"
+      }
+    }
+  },
+  "profileBaselineNoteAdd": "Add a note",
+  "profileBaselineNoteEdit": "Edit the note",
+  "profileBaselineNoteTitle": "Day-one note",
+  "profileBaselineNoteHint": "Where it came from, what the seller said, what it cost.",
+  "profileBaselineRedo": "Redo day one",
+  "profileBaselineRedoTitle": "Redo day one?",
+  "profileBaselineRedoBody": "The day one saved on {date} is deleted and a new one is saved from the reading and the BMS settings as they are now. Everything the app compares \"since day one\" starts again today. The note is kept. This cannot be undone, and it is best done with the battery at rest.",
+  "@profileBaselineRedoBody": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "profileBaselineRedoConfirm": "Delete and save the new one",
+  "profileBaselineRedone": "Day one saved again, from the reading now.",
+  "balanceRankingNeedsHistory": "needs more history",
+  "balanceRankingProgress": "{count} of {needed} resting readings with the cells at least 10 mV apart, over the last 30 days.",
+  "@balanceRankingProgress": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "needed": {
+        "type": "String"
+      }
+    }
+  },
+  "balanceRankingBasis": "From {count} resting readings over the last 30 days with the cells at least 10 mV apart. The lowest at rest is the one holding the least charge: it says where to look, not that the cell is bad.",
+  "@balanceRankingBasis": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "faultHistoryTitle": "BMS fault history",
+  "faultHistoryIntro": "Every time the BMS raised a protection or a warning on this battery, newest first. It comes from the warning bits stored with every reading, so it is only what the app saw: with no connection there are no readings.",
+  "faultHistoryEmpty": "No protection or warning from the BMS in this battery's stored readings.",
+  "faultHistoryThinned": "Readings older than a month are stored one a minute. Back there a fault shorter than that may not show, and the lengths are approximate.",
+  "faultUnknownBit": "Unnamed warning (bit {bit})",
+  "@faultUnknownBit": {
+    "placeholders": {
+      "bit": {
+        "type": "int"
+      }
+    }
+  },
+  "faultOngoing": "still on in the last reading",
+  "faultInstant": "one reading",
+  "faultStarted": "First seen",
+  "faultLastSeen": "Last seen",
+  "faultNoData": "No data: the link was down for more than 5 minutes during the fault or just before or after it, so it may have started earlier, ended later, or come and gone unseen.",
+  "faultReadings": "Readings with it on",
+  "faultAtStart": "When it started",
+  "faultAtStartCells": "Highest cell {max} V, lowest {min} V.",
+  "@faultAtStartCells": {
+    "placeholders": {
+      "max": {
+        "type": "String"
+      },
+      "min": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineMoreHistory": "More history",
+  "cellHistoryTitle": "Cells over time",
+  "cellHistoryOpen": "See the history",
+  "cellHistoryTripButton": "Cells during the ride",
+  "cellHistoryRangeHour": "Last hour",
+  "cellHistoryRangeDay": "Last 24 h",
+  "cellHistoryRangeWeek": "Last 7 days",
+  "cellHistoryRangeTrip": "This ride",
+  "cellHistoryRangeCharge": "Last charge",
+  "cellHistoryAnchor": "Up to the last stored reading, {date}.",
+  "@cellHistoryAnchor": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "cellHistoryModeVolts": "Voltage",
+  "cellHistoryModeDeviation": "Against the average",
+  "cellHistoryAxisVolts": "V per cell",
+  "cellHistoryAxisDeviation": "mV above or below the pack average in that reading",
+  "cellHistoryLowest": "Cell {cell}: the lowest on average over this stretch",
+  "@cellHistoryLowest": {
+    "placeholders": {
+      "cell": {
+        "type": "int"
+      }
+    }
+  },
+  "cellHistoryHighest": "Cell {cell}: the highest on average over this stretch",
+  "@cellHistoryHighest": {
+    "placeholders": {
+      "cell": {
+        "type": "int"
+      }
+    }
+  },
+  "cellHistoryPicked": "Cell {cell}: the one you picked",
+  "@cellHistoryPicked": {
+    "placeholders": {
+      "cell": {
+        "type": "int"
+      }
+    }
+  },
+  "cellHistoryOthers": "The rest",
+  "cellHistoryPickCell": "Pick out a cell",
+  "cellHistoryPoints": "{count} readings",
+  "@cellHistoryPoints": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cellHistoryNote": "Every point is a real reading, one per {bucket}: a spike between two of them is not drawn. Where the lines break there were no readings for more than 30 seconds, and nothing is filled in.",
+  "@cellHistoryNote": {
+    "placeholders": {
+      "bucket": {
+        "type": "String"
+      }
+    }
+  },
+  "cellHistoryEmpty": "No readings stored in this stretch.",
+  "linkEventRidingCurrentSeen": "Riding current seen",
+  "linkEventIdleSpeedSeen": "Speed seen with no ride open",
+  "linkEventLocationArmed": "GPS switched on",
+  "linkEventLocationStoodDown": "GPS switched off",
+  "linkEventLocationRefused": "GPS refused to start",
+  "linkEventTripWithoutFixes": "Ride with no GPS fix",
+  "linkEventLocationStreamError": "GPS error",
+  "linkEventForegroundServiceRefused": "Android refused the service",
+  "linkEventForegroundServiceLost": "Android stopped the service",
+  "linkEventAutoTripStarted": "Ride opened itself",
+  "linkEventAutoTripStopped": "Ride closed itself",
+  "linkEventAutoTripBlocked": "Ride could not open",
+  "linkEventReadingsResumed": "Readings resumed",
+  "linkEventLinkDropped": "Link dropped",
+  "linkEventMuteLinkReleased": "Silent link let go",
+  "linkEventReconnectAttempted": "Reconnect attempt",
+  "linkEventReconnectFailed": "Reconnect failed",
+  "linkEventReconnectGaveUp": "Stopped trying to reconnect",
+  "linkEventReconnectPersisting": "Reconnecting without giving up (ride on)",
+  "linkEventReconnectRelaxed": "Reconnecting as usual again",
+  "linkEventConnectAttempt": "Connect attempt",
+  "linkEventBluetoothLooksStuck": "The phone's Bluetooth looks stuck",
+  "linkEventBluetoothRemedy": "Bluetooth remedy",
+  "linkEventBluetoothRecovered": "Connected after being stuck",
+  "linkEventProtocolSwitched": "Protocol switched",
+  "linkEventAntFrameRejected": "ANT frame rejected",
+  "linkEventAntDecodeFailed": "ANT frame not decoded",
+  "linkEventOldAntProtocolSeen": "Old ANT protocol",
+  "linkEventJkFrameRejected": "JK bytes rejected",
+  "linkEventJkFrameUndecoded": "JK frame not decoded",
+  "linkEventAntCurrentSignInverted": "ANT current sign reversed",
+  "linkEventsTitle": "Connection history",
+  "linkEventsIntro": "What the app decided and when: every connect attempt, every drop, every ride that opened or did not. Kept for 14 days.",
+  "linkEventsThisPack": "This battery",
+  "linkEventsAllPacks": "All",
+  "linkEventsThisPackHint": "What happens while connecting has almost never been filed under a battery yet: it is under \"All\".",
+  "linkEventsAnyKind": "Every kind",
+  "linkEventsEmpty": "Nothing recorded with these filters.",
+  "linkEventsNoPack": "no battery",
+  "linkEventsBytes": "{count} bytes",
+  "@linkEventsBytes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "linkEventsCopyBytes": "Copy the bytes",
+  "linkEventsBytesCopied": "Bytes copied",
+  "linkEventsCopyAll": "Copy everything shown",
+  "linkEventsCopiedAll": "Copied: {count} rows",
+  "@linkEventsCopiedAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "linkEventsCount": "{count} rows",
+  "@linkEventsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "linkEventsUnknownKind": "Unknown kind: {name}",
+  "@linkEventsUnknownKind": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "workshopTitle": "Workshop details on the reports",
+  "workshopIntro": "Printed at the top of the PDFs: the battery sheet and the inspection one. The figures are still the ones the app measures, and the sheet still says so.",
+  "workshopName": "Workshop name",
+  "workshopLine": "Contact line",
+  "workshopLineHint": "Phone, address or website",
+  "workshopLogo": "Logo",
+  "workshopLogoPick": "Pick a logo",
+  "workshopLogoChange": "Change",
+  "workshopLogoRemove": "Remove",
+  "workshopLogoRefused": "That file will not do: it has to be a PNG or a JPEG under 1 MB.",
+  "workshopSaved": "Saved. It goes on the next report.",
+  "workshopSaveFailed": "Could not save it.",
+  "linkEventBmsWriteRefused": "BMS change refused by the app",
+  "linkEventBmsWriteNotSent": "BMS change not sent",
+  "linkEventBmsWriteSent": "Change sent to the BMS",
+  "linkEventBmsWriteConfirmed": "The BMS confirmed the change",
+  "linkEventBmsWriteUnconfirmed": "The BMS did not confirm the change",
+  "settingsSectionBmsWrites": "Changes to the BMS",
+  "bmsWritesTitle": "Let the app change the BMS",
+  "bmsWritesHint": "Off, the app changes nothing on the BMS. On, it can turn charging, discharging and the balancer on and off from System, under BMS settings, asking you to confirm every time. JK only. No setting value (voltages, currents, temperatures) is ever written.",
+  "bmsWritesConfirmTitle": "Allow changes to the BMS?",
+  "bmsWritesConfirmBody": "With this on, the app can switch off the BMS's charging, discharging and balancer. Switching discharging off cuts the power: the bike loses drive and lights. Every change asks you to confirm, the app will not switch discharging off while the bike is moving, and a change only counts as done once the BMS confirms it. The protocol is reverse-engineered: use it on your own responsibility.",
+  "bmsWritesConfirmAction": "Allow",
+  "bmsSwitchesLocked": "Read-only. To change them, turn on \"Let the app change the BMS\" in Settings.",
+  "bmsSwitchesHint": "What you see is what the BMS last said. Every change asks you to confirm and only counts as done once the BMS confirms it.",
+  "bmsSwitchSending": "Sent. Waiting for the BMS to confirm.",
+  "bmsSwitchConfirmTitle": "{action, select, chargeOff{Switch charging off?} chargeOn{Switch charging on?} dischargeOff{Switch discharging off?} dischargeOn{Switch discharging on?} balancerOff{Switch the balancer off?} balancerOn{Switch the balancer on?} other{Change the switch?}}",
+  "@bmsSwitchConfirmTitle": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "bmsSwitchConfirmBody": "{action, select, chargeOff{The BMS stops accepting charge: with the charger plugged in, the battery will not charge until you switch it back on. With the battery low, do not leave it like that.} chargeOn{The BMS accepts charge again. Its own protections still cut as they always do.} dischargeOff{The battery stops giving current: the bike loses drive, lights and controller until you switch it back on, here or in the official app. Only do it with the bike stopped somewhere safe.} dischargeOn{The battery gives current again. Check the throttle is at rest first.} balancerOff{The balancer stops evening out the cells. Over time they drift apart, the pack loses usable capacity and one cell reaches the cutoff first. Switch it back on when you are done.} balancerOn{The balancer evens out the cells again, from its start voltage.} other{The BMS changes this switch.}}",
+  "@bmsSwitchConfirmBody": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "bmsSwitchConfirmAction": "Send to the BMS",
+  "bmsSwitchApplied": "Applied: the BMS confirms it.",
+  "bmsSwitchUnconfirmed": "The BMS did not confirm the change. What you see is what it last said; the attempt is in the connection log.",
+  "bmsSwitchNotSent": "Could not send it: Bluetooth did not take the write. Nothing changed.",
+  "bmsSwitchRefused": "{reason, select, notPermitted{The app has no permission to change the BMS. It is turned on in Settings.} notJk{Only on a JK. On an ANT the app writes nothing.} notConnected{There is no connection to the BMS.} variantUnsupported{This BMS speaks a framing (JK04 or unknown) the app does not write to. Nothing was sent.} noSettings{The BMS has not sent its settings yet, so its current state is not known.} noRecentReading{No recent readings: without them the app cannot tell whether the bike is moving, nor wait for the BMS's answer.} readingImplausible{The readings do not add up with the framing in use. Until they do, the app writes nothing.} alreadySet{The BMS already has it that way.} riding{Stop the bike first: while it is moving or a ride is recording, the app will not switch discharging off.} busy{Another change is waiting for the BMS to answer.} other{Nothing was sent.}}",
+  "@bmsSwitchRefused": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "systemWritesOnNote": "The write permission is on: the app can only switch the three switches above on and off, asking you every time. No other value is ever written.",
+  "tripMapTitle": "Route",
+  "tripMapStart": "Start",
+  "tripMapEnd": "Finish",
+  "tripMapBySpeed": "Speed",
+  "tripMapByPower": "Power",
+  "tripMapPowerHint": "What the battery was giving at each point: its voltage times its current, as the BMS sent them beside each position. Not consumption per kilometre, which shoots up at every stop even when nothing is spent.",
+  "tripMapOffline": "The background map is fetched from OpenStreetMap over the internet when this screen opens, so their servers see which area the ride was in (not the ride itself). Offline, the route still draws on a plain background."
 }

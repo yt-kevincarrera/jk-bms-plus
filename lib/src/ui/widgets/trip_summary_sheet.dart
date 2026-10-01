@@ -137,7 +137,11 @@ class _TripSummarySheetState extends State<TripSummarySheet> {
             children: [
               InfoRow(
                 t.tripEnergyOut,
-                '${view.energyOutWh.toStringAsFixed(1)} Wh',
+                view.energyMeasured
+                    ? '${view.energyOutWh.toStringAsFixed(1)} Wh'
+                    : t.tripNotMeasured,
+                dim: !view.energyMeasured,
+                hint: view.energyMeasured ? null : t.tripEnergyUnmeasuredWhy,
               ),
               InfoRow(
                 t.tripSocUsed,
@@ -150,17 +154,23 @@ class _TripSummarySheetState extends State<TripSummarySheet> {
                     : '${view.socPerKm!.toStringAsFixed(2)} %/km',
                 dim: view.socPerKm == null,
               ),
-              InfoRow(
-                t.tripSag,
-                '${view.sagVolts.toStringAsFixed(2)} V',
-              ),
+              if (view.packResistanceMilliohms case final r?)
+                InfoRow(
+                  t.tripResistance,
+                  '${r.toStringAsFixed(0)} mΩ',
+                  hint: t.tripResistanceHint,
+                ),
               InfoRow(
                 t.tripMaxCurrent,
                 '${view.maxDischargeCurrent.toStringAsFixed(1)} A',
               ),
+              // Empty when the pack has no battery probe, not 0 degC.
               InfoRow(
                 t.tripMaxTemp,
-                '${view.maxTemperature.toStringAsFixed(1)} °C',
+                view.maxTemperature == null
+                    ? '--'
+                    : '${view.maxTemperature!.toStringAsFixed(1)} °C',
+                dim: view.maxTemperature == null,
               ),
               InfoRow(
                 t.tripMaxDelta,

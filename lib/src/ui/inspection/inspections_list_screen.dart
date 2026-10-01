@@ -6,7 +6,10 @@ import '../../../l10n/app_localizations.dart';
 import '../../bms_service.dart';
 import '../../data/database.dart';
 import '../../inspection/inspection_result.dart';
+import '../../inspection/inspection_series.dart';
 import '../../inspection/inspection_session.dart';
+import '../../inspection/inspection_verdicts.dart';
+import '../../report/certificate.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import 'inspection_verdict_screen.dart';
@@ -16,9 +19,17 @@ import 'inspection_verdict_screen.dart';
 /// Not a list of batteries: the packs here were looked at, not adopted, and
 /// nothing about them lives anywhere else in the app.
 class InspectionsListScreen extends StatelessWidget {
-  const InspectionsListScreen({required this.service, super.key});
+  const InspectionsListScreen({
+    required this.service,
+    this.identity,
+    super.key,
+  });
 
   final BmsService service;
+
+  /// This phone's signing identity, for showing its issuer code. Injectable
+  /// for tests.
+  final CertificateIdentity? identity;
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +64,7 @@ class InspectionsListScreen extends StatelessWidget {
                           ),
                         ),
                       ),
+                      _issuerCard(t),
                       for (final row in rows)
                         _tile(context, t, row, runs[row.id]),
                     ],
@@ -84,9 +96,59 @@ class InspectionsListScreen extends StatelessWidget {
               color: AppTheme.textSecondary,
             ),
           ),
+          const SizedBox(height: 20),
+          _issuerCard(t),
         ],
       ),
     ),
+  );
+
+  /// This phone's issuer code, the one its certificates carry.
+  ///
+  /// A certificate's signature only says which installation signed it. That
+  /// is worth something to a buyer only if they can compare it with a code
+  /// the seller or the workshop has published somewhere they can see, so the
+  /// code has to be findable before anything is signed.
+  Widget _issuerCard(AppL10n t) => FutureBuilder<String>(
+    future: (identity ?? CertificateIdentity()).issuerCode(),
+    builder: (context, snap) {
+      final code = snap.data;
+      if (code == null) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceRaised,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppTheme.hairline),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                t.certificateLocalIssuer.toUpperCase(),
+                style: AppTheme.caption(context),
+              ),
+              const SizedBox(height: 6),
+              SelectableText(
+                code,
+                style: AppTheme.readout(20, color: AppTheme.textPrimary),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                t.certificateLocalIssuerHint,
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  height: 1.45,
+                  color: AppTheme.textFaint,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
   );
 
   Widget _tile(
@@ -95,10 +157,12 @@ class InspectionsListScreen extends StatelessWidget {
     Inspection row,
     (int, int)? run,
   ) {
-    final tone = switch (row.light) {
-      'problem' => AppTheme.bad,
-      'watch' => AppTheme.watch,
-      _ => AppTheme.good,
+    final light = lightOf(row);
+    final tone = switch (light) {
+      InspectionLight.problem => AppTheme.bad,
+      InspectionLight.watch => AppTheme.watch,
+      InspectionLight.good => AppTheme.good,
+      InspectionLight.unmeasured => AppTheme.textFaint,
     };
     final name = row.bmsName.isEmpty ? row.bmsId : row.bmsName;
     return Padding(
@@ -125,7 +189,7 @@ class InspectionsListScreen extends StatelessWidget {
         },
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
-          onTap: () => _open(context, row),
+          onTap: () => _open(context, row, run?.$2),
           child: Container(
             decoration: BoxDecoration(
               color: AppTheme.surfaceRaised,
@@ -173,10 +237,12 @@ class InspectionsListScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                Pill(switch (row.light) {
-                  'problem' => t.inspectionLightProblem,
-                  'watch' => t.inspectionLightWatch,
-                  _ => t.inspectionLightGood,
+                Pill(switch (light) {
+                  InspectionLight.problem => t.inspectionLightProblem,
+                  InspectionLight.watch => t.inspectionLightWatch,
+                  InspectionLight.good => t.inspectionLightGood,
+                  InspectionLight.unmeasured =>
+                    t.inspectionLightUnmeasuredShort,
                 }, color: tone),
               ],
             ),
@@ -186,27 +252,56 @@ class InspectionsListScreen extends StatelessWidget {
     );
   }
 
-  /// For each row, which run of that pack it is and how many there are.
+  /// The light a saved run shows, worked out again from its stored result.
   ///
-  /// Grouped by address rather than by serial: this is a label on a list, and
-  /// a wrong grouping here would quietly merge two packs in front of the
-  /// person trying to tell them apart.
-  static Map<int, (int, int)> _runNumbers(List<Inspection> rows) {
-    final byPack = <String, List<Inspection>>{};
-    for (final row in rows) {
-      byPack.putIfAbsent(row.bmsId, () => []).add(row);
+  /// The verdict screen recomputes it from the result, and the list used to
+  /// read the word saved with the row instead, and only knew three of them:
+  /// a run saved as "unmeasured" fell through to green "nothing serious".
+  /// Runs saved before the unmeasured light existed hold "good" for a test
+  /// that measured nothing. The stored result has everything the verdict
+  /// needs, so the list asks the verdict, the same one the screen behind it
+  /// asks, and only falls back to the stored word when the result cannot be
+  /// read.
+  @visibleForTesting
+  static InspectionLight lightOf(Inspection row) {
+    try {
+      final r = InspectionResult.fromJson(
+        (jsonDecode(row.resultJson) as Map).cast<String, Object?>(),
+      );
+      return const InspectionVerdicts().light(r);
+    } on Object {
+      return InspectionLight.values
+              .where((l) => l.name == row.light)
+              .firstOrNull ??
+          InspectionLight.unmeasured;
     }
-    final out = <int, (int, int)>{};
-    for (final group in byPack.values) {
-      final ordered = [...group]..sort((a, b) => a.at.compareTo(b.at));
-      for (var i = 0; i < ordered.length; i++) {
-        out[ordered[i].id] = (i + 1, ordered.length);
-      }
-    }
-    return out;
   }
 
-  Future<void> _open(BuildContext context, Inspection row) async {
+  /// For each row, which run of that pack it is and how many there are.
+  ///
+  /// By the same rule the verdict uses to find a pack's earlier runs: the
+  /// address, or a serial that looks real together with the same name. It
+  /// used to be the address alone here and the address or any serial there,
+  /// so a pack could be "run 1 of 1" in the list and "run 3" on its sheet.
+  static Map<int, (int, int)> _runNumbers(List<Inspection> rows) {
+    bool same(Inspection a, Inspection b) => InspectionSeries.sameIdentity(
+      bmsId: a.bmsId,
+      serialNumber: a.serialNumber,
+      bmsName: a.bmsName,
+      otherBmsId: b.bmsId,
+      otherSerialNumber: b.serialNumber,
+      otherBmsName: b.bmsName,
+    );
+    return {
+      for (final row in rows)
+        row.id: (
+          rows.where((o) => o.at.isBefore(row.at) && same(row, o)).length + 1,
+          rows.where((o) => same(row, o)).length,
+        ),
+    };
+  }
+
+  Future<void> _open(BuildContext context, Inspection row, int? total) async {
     final result = InspectionResult.fromJson(
       (jsonDecode(row.resultJson) as Map).cast<String, Object?>(),
     );
@@ -224,6 +319,7 @@ class InspectionsListScreen extends StatelessWidget {
           bmsName: row.bmsName,
           savedId: row.id,
           initialNote: row.note,
+          runTotal: total,
         ),
       ),
     );
@@ -247,7 +343,7 @@ class InspectionsListScreen extends StatelessWidget {
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppTheme.bad),
-            child: Text(t.licenseRemoveKey),
+            child: Text(t.inspectionDeleteConfirm),
           ),
         ],
       ),

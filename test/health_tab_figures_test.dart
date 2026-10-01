@@ -34,7 +34,6 @@ void main() {
         nominalCapacityAh: 40,
       ),
       catalogueCapacityAh: 45,
-      cutoffVoltagePerCell: 2.8,
     );
 
     test('a pack with three cycles on it says nothing about the counter', () {

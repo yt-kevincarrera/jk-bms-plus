@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 2.27.0+2065
+version: 2.29.0+2071
 
 environment:
   sdk: ^3.11.5
@@ -61,10 +61,19 @@ dependencies:
   # foreground service notification is a quiet readout by design, so it is
   # the wrong thing to shout with.
   flutter_local_notifications: ^22.3.0
+  # A ride's track drawn on OpenStreetMap tiles in the trip detail. No API
+  # key and no account: the tiles are fetched only while that screen is open.
+  flutter_map: ^8.3.2
+  latlong2: ^0.10.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
+  # Already resolved through flutter_blue_plus; named here so a test can stand
+  # a fake radio under the real transport. The transport's attach, retry and
+  # letting-go logic had no test at all, because nothing could answer it.
+  flutter_blue_plus_platform_interface: ^9.0.3
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

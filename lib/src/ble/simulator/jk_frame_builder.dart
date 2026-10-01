@@ -17,6 +17,11 @@ import '../../protocol/protocol_variant.dart';
 class JkFrameBuilder {
   const JkFrameBuilder();
 
+  /// What a probe input with nothing wired to it reads, raw: -200.0 C in
+  /// tenths. Measured on the rider's pack; see
+  /// `BmsSnapshot.absentProbeCelsius`.
+  static const int _absentProbeRaw = -2000;
+
   /// Builds a cell info frame (record type 0x02) in the JK02_24S framing.
   ///
   /// [cellVoltages] may be shorter than 24; the unused slots are left at zero
@@ -108,9 +113,24 @@ class JkFrameBuilder {
       _i16(f, 112 + o2, (mosfetTemp * 10).round());
       _u32(f, 134 + o2, errorBitmask);
       // Stored in descending address order, as the reference has them.
-      _i16(f, 226 + o2, (temperatures.length > 2 ? temperatures[2] * 10 : 0).round());
-      _i16(f, 224 + o2, (temperatures.length > 3 ? temperatures[3] * 10 : 0).round());
-      _i16(f, 222 + o2, (temperatures.length > 4 ? temperatures[4] * 10 : 0).round());
+      //
+      // Written the way the rider's own JK02_32S writes them, not as zeros: an
+      // input with no probe reads raw -2000 (-200.0 C), and the fifth slot
+      // repeats the MOSFET exactly. A zero is a plausible 0 C, so frames built
+      // here used to show two extra frozen probes that no real pack reports,
+      // and never exercised the sentinel or the mirror at all.
+      int probe(int i) => temperatures.length > i
+          ? (temperatures[i] * 10).round()
+          : _absentProbeRaw;
+      _i16(f, 226 + o2, probe(2));
+      _i16(f, 224 + o2, probe(3));
+      _i16(
+        f,
+        222 + o2,
+        temperatures.length > 4
+            ? (temperatures[4] * 10).round()
+            : (mosfetTemp * 10).round(),
+      );
       f[168 + o2] = 0; // precharging
       f[169 + o2] = balancingAction != 0 ? 1 : 0;
       f[243 + o2] = 0; // battery type: LFP
@@ -133,8 +153,9 @@ class JkFrameBuilder {
     f[167 + o2] = dischargeMosfetOn ? 1 : 0;
 
     // Byte 182 is reproduced as the real captures have it (0x07). See the note
-    // in docs/PROTOCOL.md: the app does not filter on it.
-    _u16(f, 182 + o2, 0x0007);
+    // in docs/PROTOCOL.md: the app does not filter on it. One byte: 183 is the
+    // heater flag, and writing the mask as two bytes cleared it.
+    f[182 + o2] = 0x07;
     f[213 + o2] = chargerPlugged ? 1 : 0;
 
     return _seal(f);
@@ -184,6 +205,9 @@ class JkFrameBuilder {
     required int cellCount,
     required double nominalCapacityAh,
     required double balanceStartVoltage,
+    bool chargeSwitchOn = true,
+    bool dischargeSwitchOn = true,
+    bool balancerSwitchOn = true,
   }) {
     final f = _blank(JkRecordType.settings.code, counter);
     _u32(f, 10, (cellUvp * 1000).round());
@@ -209,9 +233,9 @@ class JkFrameBuilder {
     _i32(f, 106, 900); // MOSFET OTP, 90.0 degC
     _i32(f, 110, 700); // MOSFET OTP recovery
     _u32(f, 114, cellCount);
-    f[118] = 1; // charge switch
-    f[122] = 1; // discharge switch
-    f[126] = 1; // balancer switch
+    f[118] = chargeSwitchOn ? 1 : 0; // charge switch
+    f[122] = dischargeSwitchOn ? 1 : 0; // discharge switch
+    f[126] = balancerSwitchOn ? 1 : 0; // balancer switch
     _u32(f, 130, (nominalCapacityAh * 1000).round());
     _u32(f, 134, 1500); // SCP delay, microseconds
     _u32(f, 138, (balanceStartVoltage * 1000).round());

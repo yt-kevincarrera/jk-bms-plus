@@ -22,13 +22,20 @@ void main() {
           .where((c) => subjectOf(c) == null)
           .toSet();
 
-      // These three say the test itself was weak, not that the pack is. Mixing
+      // These say the test itself was weak, not that the pack is. Mixing
       // them in with findings about cells is what makes a reader doubt the
       // findings that are sound.
+      // A pull too small to rule a bad cell out, and a recovery that could
+      // not have failed at that load, are the same kind of sentence; so is a
+      // setting that changed between visits, beside the counters that went
+      // backwards.
       expect(withoutSubject, {
         AdviceCode.inspectionNoHeavyLoad,
+        AdviceCode.inspectionSagUnresolved,
+        AdviceCode.inspectionRecoveryNotDiscriminating,
         AdviceCode.inspectionRepeatLoadDiffers,
         AdviceCode.inspectionRepeatCountersReset,
+        AdviceCode.inspectionRepeatConfigChanged,
       });
     });
 
@@ -49,7 +56,7 @@ void main() {
       // repeat one idea: the numbers the BMS reports are claims, not
       // measurements. Together they argue it once.
       for (final code in [
-        AdviceCode.cycleCounterInflated,
+        AdviceCode.cycleCounterDisagrees,
         AdviceCode.healthFigureDecorative,
         AdviceCode.socCounterAhead,
         AdviceCode.socCounterBehind,
@@ -65,6 +72,7 @@ void main() {
     test('heat is heat, wherever it was found', () {
       for (final code in [
         AdviceCode.runningHot,
+        AdviceCode.bmsRunningHot,
         AdviceCode.inspectionHot,
         AdviceCode.configChargesWhenFrozen,
         AdviceCode.configColdCutoffOk,

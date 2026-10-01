@@ -4,6 +4,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jk_bms/src/ble/ble_transport.dart';
 import 'package:jk_bms/src/ble/bms_link.dart';
+import 'package:jk_bms/src/ble/bms_write_gate.dart';
 import 'package:jk_bms/src/ble/link_script.dart';
 import 'package:jk_bms/src/bms_service.dart';
 import 'package:jk_bms/src/data/database.dart';
@@ -18,6 +19,8 @@ class FakeLink implements BmsLink {
 
   @override
   Stream<List<int>> get bytes => _bytes.stream;
+  @override
+  Stream<List<int>> get writes => const Stream.empty();
   @override
   Stream<BleLinkState> get state => _state.stream;
   @override
@@ -40,6 +43,10 @@ class FakeLink implements BmsLink {
   set script(LinkScript value) {}
   @override
   Future<void> askAgain() async {}
+  @override
+  Future<bool> writeRegister(RegisterWrite write) async => false;
+  @override
+  Future<void> askSettings() async {}
 
   @override
   set persistRetries(bool value) {}
@@ -298,6 +305,94 @@ void main() {
       expect(run(19 * 60, 0, null), everyElement(AutoTripAction.none));
       expect(run(60, -20, null), everyElement(AutoTripAction.none));
       expect(run(19 * 60, 0, null), everyElement(AutoTripAction.none));
+    });
+  });
+
+  group('a real ride does not draw on every reading', () {
+    test('coasting between pulls of the throttle does not restart the count',
+        () {
+      // About one reading in three draws under 3 A on the owner's rides.
+      // Every one of them used to send the twenty seconds back to zero.
+      final d = TripAutoStart();
+      final actions = <AutoTripAction>[];
+      for (var i = 0; i < 60; i++) {
+        actions.add(d.evaluate(
+          at: t0.add(Duration(milliseconds: 400 * i)),
+          current: i % 3 == 2 ? -1.2 : -8,
+          speedKmh: 22,
+          recording: false,
+        ));
+      }
+      expect(actions, contains(AutoTripAction.start));
+    });
+
+    test('one pull of the throttle is not twenty seconds of riding', () {
+      // The grace covers a coast, not a whole start: rolling downhill with
+      // the phone moving and the pack quiet must not open a ride on a
+      // single burst of current at the top.
+      final d = TripAutoStart();
+      final actions = <AutoTripAction>[
+        d.evaluate(at: t0, current: -12, speedKmh: 20, recording: false),
+        ...feed(d,
+            seconds: 60,
+            current: -0.3,
+            speedKmh: 25,
+            recording: false,
+            from: t0.add(const Duration(seconds: 1))),
+      ];
+      expect(actions, everyElement(AutoTripAction.none));
+    });
+  });
+
+  group('the GPS before a ride', () {
+    test('stays on through a coast instead of going off at once', () {
+      final d = TripAutoStart();
+      expect(d.wantsGps(t0), isFalse);
+      d.evaluate(at: t0, current: -9, speedKmh: null, recording: false);
+      expect(d.wantsGps(t0), isTrue);
+      d.evaluate(
+        at: t0.add(const Duration(seconds: 1)),
+        current: -0.5,
+        speedKmh: null,
+        recording: false,
+      );
+      expect(d.wantsGps(t0.add(const Duration(seconds: 90))), isTrue);
+    });
+
+    test('goes off a couple of minutes after the pack stopped drawing', () {
+      final d = TripAutoStart();
+      d.evaluate(at: t0, current: -9, speedKmh: null, recording: false);
+      expect(d.wantsGps(t0.add(const Duration(minutes: 3))), isFalse);
+    });
+  });
+
+  group('a link that dropped', () {
+    test('a quiet reading before a drop does not start the fuse for later',
+        () {
+      // Quiet before a fifteen-minute drop, then coasting with no fix. The
+      // fuse used to count from before the drop and closed the ride five
+      // minutes later, mid-route.
+      final d = TripAutoStart();
+      d.evaluate(at: t0, current: 0, speedKmh: null, recording: true);
+      final actions = feed(d,
+          seconds: 10 * 60,
+          current: -0.5,
+          recording: true,
+          from: t0.add(const Duration(minutes: 15)));
+      expect(actions, everyElement(AutoTripAction.none));
+    });
+
+    test('a pack quiet on both sides of a drop as long as the fuse is parked',
+        () {
+      final d = TripAutoStart();
+      d.evaluate(at: t0, current: 0, speedKmh: null, recording: true);
+      final after = d.evaluate(
+        at: t0.add(const Duration(minutes: 25)),
+        current: 0,
+        speedKmh: null,
+        recording: true,
+      );
+      expect(after, AutoTripAction.stop);
     });
   });
 

@@ -55,8 +55,12 @@ void main() {
         RideAlert.cellSpread.name,
         ChargeAlert.spreadAtTop.name,
       ]);
+      // The BMS's own MOSFET is heat too, but not the battery's: it sits under
+      // the same heading with its own switch, so a rider can silence one
+      // without the other.
       expect(groups[t.alertGroupHeat], [
         RideAlert.temperature.name,
+        RideAlert.bmsHot.name,
         ChargeAlert.hotWhileCharging.name,
       ]);
     });

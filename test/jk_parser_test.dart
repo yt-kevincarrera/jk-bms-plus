@@ -1,12 +1,14 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:jk_bms/src/model/bms_snapshot.dart';
 import 'package:jk_bms/src/model/bms_warning.dart';
 import 'package:jk_bms/src/protocol/jk_frame.dart';
 import 'package:jk_bms/src/protocol/jk_parser.dart';
 import 'package:jk_bms/src/protocol/protocol_variant.dart';
 
 import 'fixtures/captured_frames.dart';
+import 'fixtures/real_kevinjk_frames.dart';
 
 /// Expected values in this file are read off the byte-layout tables and the
 /// worked examples in the reference implementation:
@@ -348,6 +350,76 @@ void main() {
       final w = BmsWarnings.fromBitmask(1 << 3 | 1 << 30);
       expect(w.active, isEmpty);
       expect(w.unknownBits, [3, 30]);
+    });
+  });
+
+  group("the rider's own pack, decoded", () {
+    // Frames straight off the KevinJK backup (JK-BD6A20S6P, 20S NMC, 40 Ah
+    // configured, JK02_32S). Every other cell info test here decodes the
+    // reference's JK02_24S captures, so nothing pinned down what the 32-cell
+    // framing actually yields from real bytes until this. The expected values
+    // were read off the hex by hand, not taken from the parser.
+    final expected = [
+      // (pack V, probe 1, probe 2, MOSFET = slot 5, SOC)
+      (82.769, 29.6, 29.6, 30.0, 100.0),
+      (81.998, 30.4, 30.2, 32.4, 97.0),
+      (76.933, 34.1, 34.2, 36.0, 69.0),
+      (76.371, 33.2, 33.6, 35.6, 66.0),
+    ];
+
+    for (var i = 0; i < kevinJkCellInfo.length; i++) {
+      test('frame ${i + 1}', () {
+        final s = parser.parseCellInfo(
+          frame(kevinJkCellInfo[i]),
+          JkProtocolVariant.jk02_32s,
+        );
+        final (volts, t1, t2, mosfet, soc) = expected[i];
+
+        expect(s.cellCount, 20);
+        expect(s.packVoltage, closeTo(volts, 0.0005));
+        // The cells add up to the pack, within the BMS's own rounding.
+        final sum = s.cellVoltages.reduce((a, b) => a + b);
+        expect(sum, closeTo(s.packVoltage, 0.02));
+        expect(s.soc, soc);
+        expect(s.nominalCapacityAh, closeTo(40.0, 0.001));
+
+        // At rest in all four captures: 0.000 A exactly, so neither
+        // direction. The sign convention (discharge negative) is pinned
+        // down by the ride data, not by these frames.
+        expect(s.current, 0.0);
+        expect(s.isCharging, isFalse);
+        expect(s.isDischarging, isFalse);
+
+        expect(s.temperatures, hasLength(5));
+        expect(s.temperatures[0], closeTo(t1, 0.001));
+        expect(s.temperatures[1], closeTo(t2, 0.001));
+        // Inputs 3 and 4 are empty and carry the -200 C sentinel.
+        expect(BmsSnapshot.isAbsentProbe(s.temperatures[2]), isTrue);
+        expect(BmsSnapshot.isAbsentProbe(s.temperatures[3]), isTrue);
+        // Slot 5 repeats the MOSFET exactly.
+        expect(s.mosfetTemp, closeTo(mosfet, 0.001));
+        expect(s.temperatures[4], closeTo(mosfet, 0.001));
+
+        // So the battery probes are exactly probes 1 and 2.
+        expect(s.mosfetMirrorSlot, 4);
+        expect(s.connectedTemperatures.map((p) => p.index), [0, 1]);
+        expect(s.probeInputCount, 4);
+        expect(s.hottestBatteryTemp, closeTo(t1 > t2 ? t1 : t2, 0.001));
+      });
+    }
+
+    test('the sensor mask is one byte, and the heater flag is not in it', () {
+      // Byte 183 is the heater. Reading the mask as two bytes pulled it in,
+      // so turning the heater on changed the "sensor mask" by 0x100.
+      final bytes = Uint8List.fromList(kevinJkCellInfo[0]);
+      final off = parser.parseCellInfo(frame(bytes), JkProtocolVariant.jk02_32s);
+      expect(off.temperatureSensorMask, 0xFF);
+      expect(off.heatingOn, isFalse);
+
+      bytes[183 + 32] = 1;
+      final on = parser.parseCellInfo(frame(bytes), JkProtocolVariant.jk02_32s);
+      expect(on.heatingOn, isTrue);
+      expect(on.temperatureSensorMask, 0xFF);
     });
   });
 }

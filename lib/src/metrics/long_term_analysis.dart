@@ -1,6 +1,9 @@
 import 'dart:math' as math;
 
 import '../data/database.dart';
+import 'capacity_endpoints.dart';
+import 'pack_resistance.dart';
+import 'trip_learning.dart';
 
 /// One point on the consumption-over-time curve.
 class ConsumptionPoint {
@@ -31,10 +34,21 @@ class CapacityPoint {
     required this.at,
     required this.measuredAh,
     required this.catalogueAh,
+    this.trusted = true,
+    this.detected = false,
   });
 
   final DateTime at;
   final double measuredAh;
+
+  /// Whether the run passes [CapacityTestTrust]. Only trusted points make
+  /// the trend; the others are drawn hollow, so the rider can see a run
+  /// happened and that it is not being believed.
+  final bool trusted;
+
+  /// Found by the app in ordinary riding rather than run as a test. Also
+  /// drawn hollow: it is a measurement, but nobody watched it start.
+  final bool detected;
   /// What the pack was sold as at the time, or null if it was never stated.
   final double? catalogueAh;
 
@@ -44,17 +58,12 @@ class CapacityPoint {
       (catalogueAh ?? 0) <= 0 ? null : measuredAh / catalogueAh!;
 }
 
-/// Sag observed at a given current.
-class SagPoint {
-  const SagPoint({
-    required this.at,
-    required this.current,
-    required this.sagVolts,
-  });
+/// A ride's apparent pack resistance.
+class ResistancePoint {
+  const ResistancePoint({required this.at, required this.milliohms});
 
   final DateTime at;
-  final double current;
-  final double sagVolts;
+  final double milliohms;
 }
 
 /// The views that only mean something once there is history behind them.
@@ -66,17 +75,24 @@ class SagPoint {
 class LongTermAnalysis {
   const LongTermAnalysis();
 
-  /// Consumption per ride, oldest first, demo rides excluded.
+  /// Consumption per ride, oldest first: the rides the range learns from
+  /// ([TripLearning]), over a kilometre, at a figure a bike can produce.
   ///
-  /// This is the closest thing to a degradation signal available without a full
-  /// capacity test: the same bike over the same roads costing more watt-hours
-  /// per kilometre as the months pass.
-  List<ConsumptionPoint> consumptionOverTime(List<Trip> trips) {
+  /// Not a wear signal, and the screen no longer says it is: what a ride
+  /// costs moves with the route, the rider, the wind, the tyres and the
+  /// temperature far more than with the pack. Unmeasured rides and the ones
+  /// marked as an exception used to be plotted too, as zeros and outliers.
+  List<ConsumptionPoint> consumptionOverTime(
+    List<Trip> trips, {
+    double minWhPerKm = 5,
+    double maxWhPerKm = 100,
+  }) {
     final points = <ConsumptionPoint>[];
     for (final t in trips) {
-      if (t.demo || t.distanceKm < 1.0) continue;
+      if (t.demo || t.distanceKm < 1.0 || !TripLearning.teaches(t)) continue;
       final net = t.energyOutWh - t.energyInWh;
-      if (net <= 0) continue;
+      final whPerKm = net / t.distanceKm;
+      if (whPerKm < minWhPerKm || whPerKm > maxWhPerKm) continue;
       points.add(
         ConsumptionPoint(at: t.startedAt, whPerKm: net / t.distanceKm),
       );
@@ -85,38 +101,58 @@ class LongTermAnalysis {
     return points;
   }
 
-  /// Delta against charge level.
+  /// Delta against charge level, at rest and under load, never charging.
   ///
-  /// The shape is the diagnosis. A pack whose delta is flat across the range
-  /// but jumps near full has one cell with less capacity than the rest; a pack
-  /// whose delta rises with current has a resistance problem instead. Loaded
-  /// and resting points are kept apart so the two can be told from each other.
-  List<DeltaPoint> deltaAgainstCharge(List<Snapshot> snapshots) {
-    // Thinned to one point per half a percent of charge, per population. At
-    // 1 Hz a week of riding is half a million rows, and a scatter plot of all
-    // of them is a smear rather than a shape.
-    final buckets = <String, DeltaPoint>{};
+  /// The shape is the diagnosis, with one caution the screen has to carry:
+  /// the delta opens near both ends of the charge on almost any pack, because
+  /// that is where the voltage curve is steep and the smallest difference in
+  /// state between cells shows as millivolts. What tells something is the
+  /// resting line opening more than it used to, or opening across the middle
+  /// where the curve is flat, and the loaded line sitting well above the
+  /// resting one, which is resistance.
+  ///
+  /// Rest is under [restAmps] either way; under load is a discharge past
+  /// [loadAmps]. Everything else is left out, and charging above all: it used
+  /// to count as rest, and a charger pushing 10 A into a full pack is the one
+  /// time the delta peaks on every pack there is.
+  ///
+  /// One point per percent of charge, the median of the readings in it, and
+  /// only where there are [minPerBucket] of them. It used to keep the worst
+  /// reading per half percent, which plotted a pack's single worst moments
+  /// as if they were its shape.
+  List<DeltaPoint> deltaAgainstCharge(
+    List<Snapshot> snapshots, {
+    double restAmps = 1.0,
+    double loadAmps = 5.0,
+    int minPerBucket = 3,
+  }) {
+    final buckets = <(bool, int), List<double>>{};
     for (final s in snapshots) {
       if (s.soc <= 0) continue;
-      final loaded = s.current < -5;
-      final key = '${loaded ? 'L' : 'R'}${(s.soc * 2).round()}';
-      final existing = buckets[key];
-      // Keep the worst delta in each bucket: the question is how far apart the
-      // cells get, not where they sit on average.
-      if (existing == null || s.deltaVolts > existing.deltaVolts) {
-        buckets[key] = DeltaPoint(
-          soc: s.soc,
-          deltaVolts: s.deltaVolts,
-          underLoad: loaded,
-        );
-      }
+      final loaded = s.current <= -loadAmps;
+      final resting = s.current.abs() < restAmps;
+      if (!loaded && !resting) continue;
+      (buckets[(loaded, s.soc.round())] ??= []).add(s.deltaVolts);
     }
-    final points = buckets.values.toList()
-      ..sort((a, b) => a.soc.compareTo(b.soc));
+    final points = <DeltaPoint>[];
+    for (final MapEntry(key: (loaded, soc), value: deltas) in buckets.entries) {
+      if (deltas.length < minPerBucket) continue;
+      deltas.sort();
+      final m = deltas.length ~/ 2;
+      final median =
+          deltas.length.isOdd ? deltas[m] : (deltas[m - 1] + deltas[m]) / 2;
+      points.add(
+        DeltaPoint(soc: soc.toDouble(), deltaVolts: median, underLoad: loaded),
+      );
+    }
+    points.sort((a, b) => a.soc.compareTo(b.soc));
     return points;
   }
 
-  /// Measured capacity over time, from completed capacity tests.
+  /// Measured capacity over time, from every finished run. Each says
+  /// whether it passes the [CapacityTestTrust] rule the range and the wear
+  /// figures use; a trend is drawn through the ones that do, so the chart
+  /// cannot show a drop the rest of the app threw out.
   List<CapacityPoint> capacityOverTime(List<CapacityTest> tests) {
     final points = <CapacityPoint>[];
     for (final t in tests) {
@@ -126,6 +162,8 @@ class LongTermAnalysis {
           at: t.endedAt ?? t.startedAt,
           measuredAh: t.measuredAh,
           catalogueAh: t.catalogueAh,
+          trusted: t.isTrustworthy,
+          detected: t.automatic,
         ),
       );
     }
@@ -133,33 +171,41 @@ class LongTermAnalysis {
     return points;
   }
 
-  /// Worst sag seen per ride, against the current that caused it.
+  /// The pack's apparent resistance per ride, oldest first.
   ///
-  /// Watched over months this is the cheapest early warning there is: the same
-  /// current producing a bigger drop means the pack's internal resistance is
-  /// climbing, and that shows up long before capacity does.
-  List<SagPoint> sagOverTime(List<Trip> trips) {
-    final points = <SagPoint>[];
+  /// The figure stored with the ride when there is one, otherwise worked out
+  /// from [readings] filed under it, which is how rides from before it was
+  /// stored still get a point while their readings are fine-grained enough.
+  /// See [PackResistance] for why this replaced the ride's highest voltage
+  /// minus its lowest over its peak current.
+  List<ResistancePoint> resistanceOverTime(
+    List<Trip> trips,
+    List<Snapshot> readings,
+  ) {
+    final byTrip = <int, List<Snapshot>>{};
+    for (final r in readings) {
+      final id = r.tripId;
+      if (id != null) (byTrip[id] ??= []).add(r);
+    }
+    final points = <ResistancePoint>[];
     for (final t in trips) {
-      if (t.demo || t.maxDischargeCurrent < 10) continue;
-      final sag = t.maxPackVoltage - t.minPackVoltage;
-      if (sag <= 0) continue;
-      points.add(
-        SagPoint(
-          at: t.startedAt,
-          current: t.maxDischargeCurrent,
-          sagVolts: sag,
-        ),
-      );
+      if (t.demo) continue;
+      var mohm = t.packResistanceMilliohms;
+      if (mohm == null) {
+        final rows = byTrip[t.id];
+        if (rows != null) {
+          rows.sort((x, y) => x.timestamp.compareTo(y.timestamp));
+          mohm = PackResistance.fromReadings([
+            for (final r in rows) (r.timestamp, r.packVoltage, r.current),
+          ]);
+        }
+      }
+      if (mohm == null) continue;
+      points.add(ResistancePoint(at: t.startedAt, milliohms: mohm));
     }
     points.sort((a, b) => a.at.compareTo(b.at));
     return points;
   }
-
-  /// Sag normalised to milliohms of apparent pack resistance, which is what
-  /// makes two rides at different currents comparable at all.
-  double? apparentResistanceMilliohms(SagPoint point) =>
-      point.current <= 0 ? null : point.sagVolts / point.current * 1000;
 
   /// Fits a straight line and reports the slope per 30 days.
   ///

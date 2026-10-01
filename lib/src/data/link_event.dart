@@ -40,6 +40,21 @@ enum LinkEventKind {
   /// Location refused to start. Detail carries which problem.
   locationRefused,
 
+  /// A ride has been recording with no GPS fix for a while. Detail carries
+  /// how long, the fixes seen so far, and the last one's age.
+  tripWithoutFixes,
+
+  /// The location stream reported an error. Detail carries it.
+  locationStreamError,
+
+  /// Android refused to start the foreground service. Detail carries which
+  /// claim wanted it and whether it was location-typed.
+  foregroundServiceRefused,
+
+  /// The service this app held was found stopped by Android. Detail carries
+  /// which claim held it.
+  foregroundServiceLost,
+
   /// A ride opened itself.
   autoTripStarted,
 
@@ -84,6 +99,34 @@ enum LinkEventKind {
   /// And told the ride is over, so the usual rules apply again.
   reconnectRelaxed,
 
+  // --- Why the phone would not connect ---
+  //
+  // For the morning a phone restart was the only fix. Each attempt says what
+  // the app could see before it, so a backup can tell a pack that was not
+  // advertising (it thought it was still connected) from one that was and
+  // could not be reached (the phone was the problem).
+
+  /// One connect attempt, first or retry, on the connect screen or in the
+  /// reconnect loop. Detail carries the outcome and how long it took, its
+  /// number in the streak, what was done before it, whether and how loudly
+  /// the pack was heard advertising, what the plugin and Android list as
+  /// connected, the adapter state, process uptime and time since the last
+  /// success. At most 30 an hour; the row after a gap says how many were
+  /// skipped.
+  connectAttempt,
+
+  /// Enough attempts in a row failed that the phone, not the pack, is the
+  /// suspect, and the rider was shown what to try.
+  bluetoothLooksStuck,
+
+  /// One of those steps was taken, or the app saw it happen: the in-app
+  /// reset, Bluetooth switched off, the app restarted, the phone rebooted.
+  bluetoothRemedy,
+
+  /// The first connection after the phone looked stuck. Detail says what had
+  /// been tried by then, which is the answer: app-side or Android-side.
+  bluetoothRecovered,
+
   // --- Which protocol the pack speaks ---
 
   /// The bytes said the pack speaks another brand than the one chosen, and
@@ -102,4 +145,93 @@ enum LinkEventKind {
   /// Bytes starting AA 55 AA FF arrived: the pre-2021 ANT protocol, which the
   /// app does not read yet.
   oldAntProtocolSeen,
+
+  /// The JK assembler threw bytes away: a frame that failed its checksum, or,
+  /// before anything on the connection has framed, bytes that never became a
+  /// frame. Detail carries the reason and the hex, as [antFrameRejected]
+  /// does for ANT. Shares ANT's budget of 20 per connection.
+  ///
+  /// Exists because a JK that never decodes never becomes an active pack,
+  /// and raw frames are only kept for an active one: the connect that most
+  /// needed its bytes read afterwards was the one that kept none.
+  jkFrameRejected,
+
+  /// A checksum-valid JK frame whose record type the app has no decoder for,
+  /// or one the parser refused. Detail carries the type or the error, and the
+  /// hex.
+  jkFrameUndecoded,
+
+  /// An ANT reported its current with the opposite sign to its own battery
+  /// state for several frames running, and the app reversed it for that
+  /// pack from then on. Detail carries the state and the raw current that
+  /// settled it. Written once per pack per session.
+  antCurrentSignInverted,
+
+  // --- What the app changed on the BMS ---
+  //
+  // The only writes the app can make are the three JK switches, with the
+  // rider's permission on. Every attempt leaves a row, refused or not, so a
+  // pack that stopped charging can be traced to a tap or ruled out.
+
+  /// A switch write the gate refused: nothing went out. Detail carries the
+  /// switch, the state asked for and the reason.
+  bmsWriteRefused,
+
+  /// The gate allowed a switch write and the radio would not take it.
+  /// Detail carries the switch, the register, the value and the frame.
+  bmsWriteNotSent,
+
+  /// A switch write went out. Detail carries the switch, the register, the
+  /// value and the frame, as written.
+  bmsWriteSent,
+
+  /// A settings frame after the write showed the new state.
+  bmsWriteConfirmed,
+
+  /// No settings frame showed the new state within the window. The pack may
+  /// have done it without saying so; the rows on screen keep showing what it
+  /// last said.
+  bmsWriteUnconfirmed,
+}
+
+/// The kind a stored row names, or null for a name this build does not know
+/// (a row written by a newer version, or by an older one whose kind was
+/// since retired). Rows are stored by name precisely so this can be asked.
+LinkEventKind? linkEventKindNamed(String name) {
+  for (final k in LinkEventKind.values) {
+    if (k.name == name) return k;
+  }
+  return null;
+}
+
+/// A row's detail split into its words and the bytes it carries, if any.
+///
+/// The frame-rejection kinds write the bytes as one run of hex after the
+/// reason, which on a screen is a wall of characters burying the reason. A
+/// run of at least eight bytes of hex is taken as that; anything shorter is
+/// left in the text, where a checksum or a code belongs.
+({String text, String? hex}) splitLinkEventDetail(String detail) {
+  final match = _hexRun.firstMatch(detail);
+  if (match == null) return (text: detail, hex: null);
+  final hex = match.group(0)!;
+  final text = (detail.substring(0, match.start) + detail.substring(match.end))
+      .replaceAll(RegExp(r'\s{2,}'), ' ')
+      .trim();
+  return (text: text, hex: hex);
+}
+
+final RegExp _hexRun = RegExp(
+  r'(?<![0-9A-Za-z])(?:[0-9a-fA-F]{2}){8,}(?![0-9A-Za-z])',
+);
+
+/// Hex as pairs, sixteen to a line, the way the console prints bytes.
+String spacedHex(String hex) {
+  final pairs = [
+    for (var i = 0; i + 1 < hex.length; i += 2) hex.substring(i, i + 2),
+  ];
+  final lines = <String>[];
+  for (var i = 0; i < pairs.length; i += 16) {
+    lines.add(pairs.skip(i).take(16).join(' ').toUpperCase());
+  }
+  return lines.join('\n');
 }

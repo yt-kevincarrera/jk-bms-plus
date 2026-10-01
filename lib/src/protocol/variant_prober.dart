@@ -27,7 +27,10 @@ class Plausibility {
     this.maxCurrentAmps = 1000,
     this.packSumTolerance = 0.05,
     this.packSumFloorVolts = 1.5,
-    this.temperatureRange = const (-40.0, 125.0),
+    this.temperatureRange = const (
+      BmsSnapshot.minPlausibleTemp,
+      BmsSnapshot.maxPlausibleTemp,
+    ),
   });
 
   /// Above this no lithium chemistry sits. 4.6 V clears a Li-ion cell at its
@@ -51,6 +54,10 @@ class Plausibility {
   /// an impossibly tight absolute figure.
   final double packSumFloorVolts;
 
+  /// The range a probe can read and still describe a battery. The model's
+  /// own bounds, not a copy: the two used to disagree (125 C here, 150 C in
+  /// the model), so a probe between them was shown on screen yet counted
+  /// against the decode that produced it.
   final (double, double) temperatureRange;
 
   /// Every reason this reading cannot be real. Empty means it can.

@@ -1,8 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:jk_bms/src/metrics/pack_energy.dart';
 import 'package:jk_bms/src/metrics/pack_health_report.dart';
 import 'package:jk_bms/src/metrics/range_estimator.dart';
 import 'package:jk_bms/src/model/bms_snapshot.dart';
 import 'package:jk_bms/src/model/bms_warning.dart';
+import 'package:jk_bms/src/pack/chemistry.dart';
 import 'package:jk_bms/src/protocol/bms_brand.dart';
 import 'package:jk_bms/src/protocol/protocol_variant.dart';
 
@@ -130,54 +132,6 @@ void main() {
       expect(restored.learnedKm, e.learnedKm);
       expect(restored.hasLearned, isTrue);
     });
-
-    group('usable energy', () {
-      test('a balanced pack can use nearly all of it', () {
-        final wh = RangeEstimator.usableWh(
-          remainingAh: 35,
-          packVoltage: 78,
-          cellCount: 20,
-          minCellVoltage: 3.895,
-          averageCellVoltage: 3.900,
-          cutoffVoltagePerCell: 3.0,
-        );
-        expect(wh, closeTo(35 * 78, 35 * 78 * 0.01));
-      });
-
-      test('a dragging cell strands real energy', () {
-        final balanced = RangeEstimator.usableWh(
-          remainingAh: 35,
-          packVoltage: 78,
-          cellCount: 20,
-          minCellVoltage: 3.90,
-          averageCellVoltage: 3.90,
-          cutoffVoltagePerCell: 3.0,
-        );
-        final imbalanced = RangeEstimator.usableWh(
-          remainingAh: 35,
-          packVoltage: 78,
-          cellCount: 20,
-          minCellVoltage: 3.60,
-          averageCellVoltage: 3.90,
-          cutoffVoltagePerCell: 3.0,
-        );
-        expect(imbalanced, lessThan(balanced));
-        // 0.60 V of headroom against 0.90 V is two thirds usable.
-        expect(imbalanced / balanced, closeTo(2 / 3, 0.01));
-      });
-
-      test('a cell already at cutoff means nothing is usable', () {
-        final wh = RangeEstimator.usableWh(
-          remainingAh: 35,
-          packVoltage: 78,
-          cellCount: 20,
-          minCellVoltage: 3.0,
-          averageCellVoltage: 3.6,
-          cutoffVoltagePerCell: 3.0,
-        );
-        expect(wh, 0);
-      });
-    });
   });
 
   group('PackHealthReport', () {
@@ -229,17 +183,43 @@ void main() {
       expect(r.cycleInflation, closeTo(200 / 45, 0.05));
     });
 
-    test('prices the imbalance in amp-hours', () {
+    test('prices the imbalance in watt-hours, from the resting energy', () {
+      // Used to be the voltage headroom ratio of whatever snapshot it was
+      // handed, loaded or not. Now it is whatever [PackEnergy] judged from a
+      // resting reading.
       final cells = List.filled(20, 3.90);
       cells[6] = 3.60;
+      final energy = PackEnergy.remaining(
+        remainingAh: 30,
+        soc: 78,
+        cellCount: 20,
+        chemistry: CellChemistry.nmc,
+        cutoffVoltagePerCell: 3.0,
+        resting: RestingCells(
+          minCellVoltage: 3.60,
+          averageCellVoltage: (3.90 * 19 + 3.60) / 20,
+          at: DateTime.utc(2026, 1, 1),
+        ),
+      );
       final r = PackHealthReport.from(
         snapshot: snapshot(cells: cells, remainingAh: 30),
-        cutoffVoltagePerCell: 3.0,
         catalogueCapacityAh: null,
+        energy: energy,
       );
       expect(r.weakestCellIndex, 7);
+      expect(r.imbalanceLossFraction, closeTo(energy.strandedFraction!, 1e-9));
       expect(r.imbalanceLossFraction, greaterThan(0.3));
-      expect(r.imbalanceLossAh, greaterThan(9));
+      expect(r.imbalanceLossWh, closeTo(energy.grossWh - energy.usableWh, 1e-6));
+      expect(r.imbalanceMeasuredAt, DateTime.utc(2026, 1, 1));
+    });
+
+    test('says nothing about the imbalance without a resting reading', () {
+      final r = PackHealthReport.from(
+        snapshot: snapshot(),
+        catalogueCapacityAh: null,
+      );
+      expect(r.imbalanceLossFraction, isNull);
+      expect(r.imbalanceLossWh, isNull);
     });
 
     test('flags a health figure that never moves', () {

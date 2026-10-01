@@ -17,12 +17,14 @@ BmsSnapshot buildSnapshot({
   double soh = 97,
   double current = -20,
   double nominalCapacityAh = 45,
+  BmsBrand brand = BmsBrand.jk,
+  JkProtocolVariant? variant = JkProtocolVariant.jk02_24s,
 }) {
   final v = cells ?? List.filled(20, 3.90);
   return BmsSnapshot(
     timestamp: timestamp ?? DateTime.utc(2026, 1, 1),
-    brand: BmsBrand.jk,
-    variant: JkProtocolVariant.jk02_24s,
+    brand: brand,
+    variant: variant,
     frameCounter: 1,
     cellVoltages: v,
     cellResistances: cellResistances ?? List.filled(v.length, 0.0025),

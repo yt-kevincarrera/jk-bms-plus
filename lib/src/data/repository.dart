@@ -7,8 +7,15 @@ import '../inspection/inspection_result.dart';
 import '../pack/pack_baseline.dart';
 import '../inspection/inspection_series.dart';
 import '../metrics/capacity_cycle_detector.dart';
+import '../metrics/capacity_endpoints.dart';
+import '../metrics/cell_history.dart';
+import '../metrics/fault_history.dart';
+import '../metrics/maintenance.dart';
+import '../metrics/snapshot_history.dart';
 import '../metrics/trip_energy_repair.dart';
+import '../metrics/trip_learning.dart';
 import '../metrics/trip_recorder.dart';
+import '../metrics/weak_cell_ranking.dart';
 import '../model/bms_snapshot.dart';
 import '../protocol/bms_brand.dart';
 import '../protocol/raw_bms_frame.dart';
@@ -61,10 +68,6 @@ class BmsRepository {
   void addSnapshot(BmsSnapshot s) {
     final device = activeDeviceId;
     if (device == null) return;
-    final temps = <double>[
-      ...s.plausibleTemperatures,
-      if (s.mosfetTemp != null) s.mosfetTemp!,
-    ];
     _pendingSnapshots.add(
       SnapshotsCompanion.insert(
         timestamp: s.timestamp,
@@ -75,16 +78,15 @@ class BmsRepository {
         soc: s.soc,
         soh: s.soh,
         remainingAh: s.remainingCapacityAh,
-        // ANT reports no cycle count; the column predates nullable readings
-        // and nothing on screen reads it back (spec §11.5).
-        cycleCount: (s.cycleCount ?? 0).toDouble(),
+        // Null when the BMS keeps no counter (an ANT does not): a 0 here read
+        // as a pack that had never been cycled.
+        cycleCount: Value(s.cycleCount?.toDouble()),
         cycleCapacityAh: Value(s.cycleCapacityAh),
         deltaVolts: s.deltaCellVoltage,
         minCellVoltage: s.minCellVoltage,
         maxCellVoltage: s.maxCellVoltage,
-        maxTemperature: temps.isEmpty
-            ? 0
-            : temps.reduce((a, b) => a > b ? a : b),
+        // Battery probes only: the MOSFET has its own column.
+        maxTemperature: Value(s.hottestBatteryTemp),
         mosfetTemp: Value(s.mosfetTemp),
         warningsMask: s.warnings.raw,
         balancerActive: s.balancerActive,
@@ -151,7 +153,8 @@ class BmsRepository {
         minPackVoltage: 0,
         maxPackVoltage: 0,
         maxDischargeCurrent: 0,
-        maxTemperature: 0,
+        // Unknown until the ride ends; a ride cut short by a crash leaves it
+        // empty rather than claiming 0 degC.
         maxDeltaVolts: 0,
         climbM: 0,
         descentM: 0,
@@ -195,6 +198,7 @@ class BmsRepository {
         descentM: Value(summary.descentM),
         ahOut: Value(summary.ahOut),
         energySource: Value(summary.energySource.name),
+        packResistanceMilliohms: Value(summary.packResistanceMilliohms),
         whPerKmBefore: Value(conclusions?.whPerKmBefore),
         whPerKmAfter: Value(conclusions?.whPerKmAfter),
         learnedKm: Value(conclusions?.learnedKm),
@@ -495,30 +499,11 @@ class BmsRepository {
   /// 2 Wh/km -- but 4.3 is not absurd in the abstract, only against this bike,
   /// and a threshold tuned to catch it would be a guess. The row already knows
   /// it was never measured properly; asking it is a fact rather than a guess.
-  static const Set<String> _unmeasuredSources = {
-    'partialCoulombCount',
-    'unmeasurable',
-    'unmeasurableBracketed',
-  };
-
-  Future<List<Trip>> tripsForLearning(String deviceId) async {
-    final all = await db.recentTrips(deviceId, limit: 500);
-    final usable =
-        all
-            .where(
-              (t) =>
-                  t.distanceKm >= 0.2 &&
-                  t.energyOutWh > t.energyInWh &&
-                  !_unmeasuredSources.contains(t.energySource) &&
-                  // Null is not false: a ride nobody was asked about counts,
-                  // which keeps the behaviour of every ride recorded before
-                  // the question existed. Only an explicit no takes one out.
-                  t.representative != false,
-            )
-            .toList()
-          ..sort((a, b) => a.startedAt.compareTo(b.startedAt));
-    return usable;
-  }
+  ///
+  /// The rule itself lives in [TripLearning], so every screen that learns a
+  /// range from stored rides learns the same one.
+  Future<List<Trip>> tripsForLearning(String deviceId) async =>
+      TripLearning.forLearning(await db.recentTrips(deviceId, limit: 500));
 
   /// Notes something the app decided, for explaining a ride afterwards.
   ///
@@ -609,6 +594,10 @@ class BmsRepository {
 
   // --- Capacity tests ---
 
+  /// Filed under the pack connected now. It used to be filed under no pack
+  /// at all, so a manual run never appeared in that pack's history, was
+  /// never found again to be resumed, and counted as a row from before packs
+  /// were tracked.
   Future<int> beginCapacityTest({
     required DateTime startedAt,
     required double startSoc,
@@ -624,16 +613,23 @@ class BmsRepository {
       measuredAh: 0,
       measuredWh: 0,
       catalogueAh: Value(catalogueAh),
+      deviceId: Value(activeDeviceId),
     ),
   );
 
   /// Called as the run goes, so a closed app costs seconds rather than hours.
+  ///
+  /// The unwatched seconds and the charged flag go with it. Neither was ever
+  /// written, so every manual test read as gap-free and uncharged the moment
+  /// it finished, whatever had happened during it.
   Future<void> updateCapacityProgress(
     int id, {
     required double measuredAh,
     required double measuredWh,
     required double endSoc,
     required double endPackVoltage,
+    int gapSeconds = 0,
+    bool chargedDuringRun = false,
   }) => db.updateCapacityTest(
     id,
     CapacityTestsCompanion(
@@ -641,6 +637,8 @@ class BmsRepository {
       measuredWh: Value(measuredWh),
       endSoc: Value(endSoc),
       endPackVoltage: Value(endPackVoltage),
+      gapSeconds: Value(gapSeconds),
+      chargedDuringRun: Value(chargedDuringRun),
     ),
   );
 
@@ -651,6 +649,9 @@ class BmsRepository {
     required double endPackVoltage,
     required double measuredAh,
     required double measuredWh,
+    required CapacityEndReason endReason,
+    int gapSeconds = 0,
+    bool chargedDuringRun = false,
   }) => db.updateCapacityTest(
     id,
     CapacityTestsCompanion(
@@ -660,6 +661,9 @@ class BmsRepository {
       measuredAh: Value(measuredAh),
       measuredWh: Value(measuredWh),
       completed: const Value(true),
+      endReason: Value(endReason.name),
+      gapSeconds: Value(gapSeconds),
+      chargedDuringRun: Value(chargedDuringRun),
     ),
   );
 
@@ -668,9 +672,12 @@ class BmsRepository {
   Future<List<CapacityTest>> capacityTests(String deviceId) =>
       db.allCapacityTests(deviceId);
 
+  /// Tests that measured the pack: finished at the cutoff, watched, never
+  /// charged in the middle. A partial or a run closed on the percentage is
+  /// history, not a measurement, and must not stop the advice asking for one.
   Future<int> countCompletedCapacityTests(String deviceId) async {
     final all = await db.allCapacityTests(deviceId);
-    return all.where((t) => t.completed).length;
+    return all.where((t) => t.isTrustworthy).length;
   }
 
   /// A run that was interrupted, if there is one, so it can be picked back up.
@@ -692,30 +699,42 @@ class BmsRepository {
     final existing = await db.allCapacityTests(deviceId);
     // Matched on the start instant: the same discharge scanned twice must not
     // become two measurements.
-    if (cycleAlreadyRecorded(
-      cycle.startedAt,
-      existing.map((t) => t.startedAt),
-    )) {
-      return false;
+    final match = [
+      for (final t in existing)
+        if (cycleAlreadyRecorded(cycle.startedAt, [t.startedAt])) t,
+    ];
+    final values = CapacityTestsCompanion.insert(
+      startedAt: cycle.startedAt,
+      endedAt: Value(cycle.endedAt),
+      startSoc: cycle.startSoc,
+      endSoc: cycle.endSoc,
+      startPackVoltage: cycle.startPackVoltage,
+      endPackVoltage: cycle.endPackVoltage,
+      measuredAh: cycle.measuredAh,
+      measuredWh: cycle.measuredWh,
+      catalogueAh: Value(catalogueAh),
+      completed: const Value(true),
+      automatic: const Value(true),
+      gapSeconds: Value(cycle.gapSeconds),
+      endReason: Value(cycle.endReason.name),
+      deviceId: Value(deviceId),
+    );
+    if (match.isNotEmpty) {
+      // A cycle the old detector found, closed on the BMS's percentage, is
+      // re-measured from its own readings rather than left standing as the
+      // configured capacity handed back. Only the detector's own rows: a
+      // run somebody stood over is theirs, and is never rewritten.
+      final legacy = match.where(
+        (t) =>
+            t.automatic &&
+            CapacityEndReason.byName(t.endReason) == CapacityEndReason.legacy,
+      );
+      if (legacy.isEmpty) return false;
+      await db.updateCapacityTest(legacy.first.id, values);
+      return true;
     }
 
-    await db.insertCapacityTest(
-      CapacityTestsCompanion.insert(
-        startedAt: cycle.startedAt,
-        endedAt: Value(cycle.endedAt),
-        startSoc: cycle.startSoc,
-        endSoc: cycle.endSoc,
-        startPackVoltage: cycle.startPackVoltage,
-        endPackVoltage: cycle.endPackVoltage,
-        measuredAh: cycle.measuredAh,
-        measuredWh: cycle.measuredWh,
-        catalogueAh: Value(catalogueAh),
-        completed: const Value(true),
-        automatic: const Value(true),
-        gapSeconds: Value(cycle.gapSeconds),
-        deviceId: Value(deviceId),
-      ),
-    );
+    await db.insertCapacityTest(values);
     return true;
   }
 
@@ -726,6 +745,96 @@ class BmsRepository {
         DateTime.now().toUtc().subtract(Duration(days: days)),
         DateTime.now().toUtc(),
       );
+
+  /// When the history that still describes this pack began. See
+  /// [MaintenanceLog.historyStart].
+  Future<DateTime?> historyStart(String deviceId) async =>
+      MaintenanceLog.historyStart(await db.maintenanceFor(deviceId));
+
+  /// [allSnapshots], from no earlier than the last cell replacement.
+  ///
+  /// The maintenance card used to say the history ran from the replacement
+  /// while every figure behind it still read the readings of a pack that no
+  /// longer exists.
+  Future<List<Snapshot>> currentPackSnapshots(
+    String deviceId, {
+    int days = 180,
+  }) async {
+    final now = DateTime.now().toUtc();
+    var from = now.subtract(Duration(days: days));
+    final since = await historyStart(deviceId);
+    if (since != null && since.isAfter(from)) from = since;
+    return db.snapshotsBetween(deviceId, from, now);
+  }
+
+  /// Every stretch the BMS held a fault on this pack, newest first, from the
+  /// warning mask stored with every reading. See [FaultHistory].
+  Future<List<FaultEpisode>> faultHistory(String deviceId) async {
+    await flush();
+    final transitions = await db.warningTransitions(
+      deviceId,
+      gapSeconds: FaultHistory.noDataGap.inSeconds,
+    );
+    if (transitions.isEmpty) return const [];
+    return FaultHistory.episodes(
+      transitions,
+      totalReadings: await db.snapshotCountFor(deviceId),
+      lastAt: (await db.lastSnapshotFor(deviceId))?.timestamp.toUtc(),
+    );
+  }
+
+  /// Every cell's voltage from [from] to [to], thinned to a chart's worth of
+  /// real readings. See [CellHistory].
+  Future<CellHistory> cellHistory(
+    String deviceId,
+    DateTime from,
+    DateTime to,
+  ) async {
+    await flush();
+    return CellHistory.from(
+      await db.cellHistoryBuckets(
+        deviceId,
+        from,
+        to,
+        CellHistory.bucketFor(from, to),
+      ),
+    );
+  }
+
+  /// Which cells sat clearly lowest at rest over the last month, from the
+  /// stored readings. See [WeakCellRanking]. From no earlier than the last
+  /// cell replacement, like every other figure about the cells.
+  Future<WeakCellRanking> weakCellRanking(
+    String deviceId, {
+    DateTime? now,
+  }) async {
+    await flush();
+    final at = now ?? DateTime.now().toUtc();
+    var from = at.subtract(WeakCellRanking.window);
+    final since = await historyStart(deviceId);
+    if (since != null && since.isAfter(from)) from = since;
+    final rows = await db.restingCellReadings(
+      deviceId,
+      from,
+      restingAmps: WeakCellRanking.restingAmps,
+      chargingAmps: WeakCellRanking.chargingAmps,
+      minDeltaVolts: SessionAggregates.weakCellMinDelta,
+      thinSeconds: WeakCellRanking.thinTo.inSeconds,
+    );
+    return WeakCellRanking.from(rows);
+  }
+
+  /// The capacity tests run since the last cell replacement: the ones that
+  /// measured this pack as it now is.
+  Future<List<CapacityTest>> currentPackCapacityTests(String deviceId) async {
+    final tests = await capacityTests(deviceId);
+    final since = await historyStart(deviceId);
+    if (since == null) return tests;
+    return [
+      for (final t in tests)
+        if (!t.startedAt.isBefore(since)) t,
+    ];
+  }
 
   // --- Packs ---
 
@@ -796,9 +905,14 @@ class BmsRepository {
   /// [before] and [excludeId] are for rereading a saved run: the comparison
   /// then shows what was known that day rather than what is known now, which
   /// is the only reading of it that stays true.
+  ///
+  /// The database is asked broadly, by address or serial, and the rows are
+  /// then held to [InspectionSeries.samePack], so the history a verdict
+  /// compares against is the same one the list of inspections counts.
   Future<List<PastInspection>> pastInspections({
     required String bmsId,
     String serialNumber = '',
+    String bmsName = '',
     DateTime? before,
     int? excludeId,
   }) async {
@@ -823,10 +937,19 @@ class BmsRepository {
           result: result,
           id: row.id,
           bmsId: row.bmsId,
+          bmsName: row.bmsName,
           note: row.note,
         ),
       );
     }
+    out.removeWhere(
+      (p) => !InspectionSeries.samePack(
+        p,
+        bmsId: bmsId,
+        serialNumber: serialNumber,
+        bmsName: bmsName,
+      ),
+    );
     out.sort((a, b) => a.at.compareTo(b.at));
     return out;
   }
@@ -868,6 +991,20 @@ class BmsRepository {
       db.setBaselineNote(deviceId, note);
 
   Future<void> deleteBaseline(String deviceId) => db.deleteBaseline(deviceId);
+
+  /// Replaces the day-one baseline with [fresh], on the rider's say-so.
+  ///
+  /// The deliberate act the comment above promises, and the only way a
+  /// stored baseline is ever overwritten. The old one is deleted rather than
+  /// kept beside it: two day ones would make "since day one" ask which. The
+  /// rider's note stays, because it is about where the pack came from, which
+  /// a new reading does not change.
+  Future<void> redoBaseline(String deviceId, PackBaseline fresh) =>
+      db.transaction(() async {
+        final note = await baselineNote(deviceId);
+        await db.deleteBaseline(deviceId);
+        await saveBaseline(deviceId, fresh, note: note);
+      });
 
   /// A row written by a newer version, or a corrupted one, reads as no
   /// baseline rather than as a crash on the screen that asked for it.
@@ -911,6 +1048,11 @@ class BmsRepository {
 
   Future<void> setDeviceName(String id, String name) =>
       db.updateDevice(id, DevicesCompanion(name: Value(name)));
+
+  /// Keeps the last finished charge with its pack, so the report is still
+  /// there after a restart.
+  Future<void> saveLastChargeReport(String id, String json) =>
+      db.updateDevice(id, DevicesCompanion(lastChargeJson: Value(json)));
 
   /// The rider stating what the pack was sold as. Sticks, and outranks the BMS.
   Future<void> setDeviceCatalogue(String id, double ah) => db.updateDevice(

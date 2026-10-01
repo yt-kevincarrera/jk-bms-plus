@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math' as math;
 
 import '../model/bms_snapshot.dart';
@@ -21,6 +22,59 @@ class ChargeReport {
     required this.strongCellAtTop,
     required this.balancerWorkedSeconds,
     required this.reachedTop,
+    this.gapSeconds = 0,
+  });
+
+  /// Back from what [toJson] wrote, or null for anything that is not one.
+  static ChargeReport? tryParse(String? json) {
+    if (json == null || json.isEmpty) return null;
+    try {
+      final m = jsonDecode(json) as Map<String, dynamic>;
+      double d(String k) => (m[k] as num).toDouble();
+      int i(String k) => (m[k] as num? ?? 0).toInt();
+      return ChargeReport(
+        startedAt: DateTime.parse(m['startedAt'] as String),
+        endedAt: DateTime.parse(m['endedAt'] as String),
+        startSoc: d('startSoc'),
+        endSoc: d('endSoc'),
+        ahIn: d('ahIn'),
+        whIn: d('whIn'),
+        peakCurrent: d('peakCurrent'),
+        maxTemperature: (m['maxTemperature'] as num?)?.toDouble(),
+        deltaAtStart: d('deltaAtStart'),
+        deltaAtTop: d('deltaAtTop'),
+        worstDeltaHigh: d('worstDeltaHigh'),
+        weakCellAtTop: i('weakCellAtTop'),
+        strongCellAtTop: i('strongCellAtTop'),
+        balancerWorkedSeconds: i('balancerWorkedSeconds'),
+        reachedTop: m['reachedTop'] as bool? ?? false,
+        gapSeconds: i('gapSeconds'),
+      );
+    } on Object {
+      return null;
+    }
+  }
+
+  /// Stored with the pack, so the last charge survives a restart. It used to
+  /// live only in memory, and after one the screen said no charge had ever
+  /// been recorded.
+  String toJson() => jsonEncode({
+    'startedAt': startedAt.toUtc().toIso8601String(),
+    'endedAt': endedAt.toUtc().toIso8601String(),
+    'startSoc': startSoc,
+    'endSoc': endSoc,
+    'ahIn': ahIn,
+    'whIn': whIn,
+    'peakCurrent': peakCurrent,
+    'maxTemperature': maxTemperature,
+    'deltaAtStart': deltaAtStart,
+    'deltaAtTop': deltaAtTop,
+    'worstDeltaHigh': worstDeltaHigh,
+    'weakCellAtTop': weakCellAtTop,
+    'strongCellAtTop': strongCellAtTop,
+    'balancerWorkedSeconds': balancerWorkedSeconds,
+    'reachedTop': reachedTop,
+    'gapSeconds': gapSeconds,
   });
 
   final DateTime startedAt;
@@ -30,7 +84,8 @@ class ChargeReport {
   final double ahIn;
   final double whIn;
   final double peakCurrent;
-  final double maxTemperature;
+  /// Hottest battery probe over the charge, or null when the pack has none.
+  final double? maxTemperature;
 
   /// Spread when charging began.
   final double deltaAtStart;
@@ -43,10 +98,19 @@ class ChargeReport {
 
   /// The cells at each end of the pack near the top, 1-based. Zero when the
   /// charge never got high enough to tell.
+  ///
+  /// In series every cell takes the same current, so the one that fills
+  /// first is the one reading highest: [strongCellAtTop], despite the name,
+  /// is the cell with the least room, and [weakCellAtTop] the one furthest
+  /// behind.
   final int weakCellAtTop;
   final int strongCellAtTop;
 
   final int balancerWorkedSeconds;
+
+  /// Seconds of the charge the app did not see. The amp-hours across them
+  /// are the BMS's own count, not the app's, and the card says so.
+  final int gapSeconds;
 
   /// Whether the charge actually reached the region where imbalance shows.
   final bool reachedTop;
@@ -105,13 +169,15 @@ class ChargeSessionRecorder {
   DateTime? _lastAt;
   double? _lastCurrent;
   double? _lastPower;
+  double? _lastRemainingAh;
+  double? _lastPackVoltage;
 
   double _ah = 0;
   double _wh = 0;
   double _startSoc = 0;
   double _endSoc = 0;
   double _peakCurrent = 0;
-  double _maxTemp = -100;
+  double? _maxTemp;
   double _deltaAtStart = 0;
   double _deltaAtTop = 0;
   double _worstDeltaHigh = 0;
@@ -125,6 +191,7 @@ class ChargeSessionRecorder {
   /// had never done anything.
   Duration _balancing = Duration.zero;
   bool _reachedTop = false;
+  int _gapSeconds = 0;
 
   /// Live figures while a charge is under way.
   double get ahIn => _ah;
@@ -154,15 +221,20 @@ class ChargeSessionRecorder {
   void _begin(BmsSnapshot s) {
     _active = true;
     _startedAt = s.timestamp;
-    _lastAt = null;
-    _lastCurrent = null;
-    _lastPower = null;
+    // The reading that opened the charge is the first end of the first
+    // interval. It used to be forgotten, so the stretch up to the second
+    // reading, and a drop straight after plugging in, counted nothing.
+    _lastAt = s.timestamp;
+    _lastCurrent = s.current;
+    _lastPower = s.power;
+    _lastRemainingAh = s.remainingCapacityAh;
+    _lastPackVoltage = s.packVoltage;
     _ah = 0;
     _wh = 0;
     _startSoc = s.soc;
     _endSoc = s.soc;
     _peakCurrent = 0;
-    _maxTemp = -100;
+    _maxTemp = null;
     _deltaAtStart = s.deltaCellVoltage;
     _deltaAtTop = 0;
     _worstDeltaHigh = 0;
@@ -170,18 +242,19 @@ class ChargeSessionRecorder {
     _strongCellAtTop = 0;
     _balancing = Duration.zero;
     _reachedTop = false;
+    _gapSeconds = 0;
   }
 
   void _accumulate(BmsSnapshot s) {
     _endSoc = s.soc;
     _peakCurrent = math.max(_peakCurrent, s.current);
 
-    final temps = <double>[
-      ...s.plausibleTemperatures,
-      if (s.mosfetTemp != null) s.mosfetTemp!,
-    ];
-    if (temps.isNotEmpty) {
-      _maxTemp = math.max(_maxTemp, temps.reduce(math.max));
+    // Battery probes only. The MOSFET runs hotter than the cells by design,
+    // and folding it in made every summary report the switch as the pack.
+    final hottest = s.hottestBatteryTemp;
+    if (hottest != null) {
+      final before = _maxTemp;
+      _maxTemp = before == null ? hottest : math.max(before, hottest);
     }
 
     // Everything above the high-voltage mark is the part worth remembering.
@@ -198,9 +271,13 @@ class ChargeSessionRecorder {
     final previousAt = _lastAt;
     final previousCurrent = _lastCurrent;
     final previousPower = _lastPower;
+    final previousRemaining = _lastRemainingAh;
+    final previousVoltage = _lastPackVoltage;
     _lastAt = s.timestamp;
     _lastCurrent = s.current;
     _lastPower = s.power;
+    _lastRemainingAh = s.remainingCapacityAh;
+    _lastPackVoltage = s.packVoltage;
     if (previousAt == null ||
         previousCurrent == null ||
         previousPower == null) {
@@ -212,7 +289,26 @@ class ChargeSessionRecorder {
       s.timestamp,
       maxGap: const Duration(seconds: 30),
     );
-    if (dt == null) return;
+    if (dt == null) {
+      // A drop. This used to be skipped in silence, so a charge that lost the
+      // link for an hour reported an hour's less charge put in, with nothing
+      // to say so. The BMS kept counting: its remaining amp-hours before and
+      // after cover the gap, and the minutes go on the report.
+      final raw = s.timestamp.difference(previousAt);
+      if (raw > Duration.zero) _gapSeconds += raw.inSeconds;
+      final before = previousRemaining;
+      if (before != null) {
+        final added = s.remainingCapacityAh - before;
+        if (added > 0) {
+          _ah += added;
+          _wh += added *
+              (previousVoltage == null
+                  ? s.packVoltage
+                  : (previousVoltage + s.packVoltage) / 2);
+        }
+      }
+      return;
+    }
 
     final hours = hoursIn(dt);
     _ah += (previousCurrent + s.current) / 2 * hours;
@@ -239,7 +335,7 @@ class ChargeSessionRecorder {
       ahIn: _ah,
       whIn: _wh,
       peakCurrent: _peakCurrent,
-      maxTemperature: _maxTemp > -100 ? _maxTemp : 0,
+      maxTemperature: _maxTemp,
       deltaAtStart: _deltaAtStart,
       deltaAtTop: _deltaAtTop,
       worstDeltaHigh: _worstDeltaHigh,
@@ -247,6 +343,7 @@ class ChargeSessionRecorder {
       strongCellAtTop: _strongCellAtTop,
       balancerWorkedSeconds: _balancing.inSeconds,
       reachedTop: _reachedTop,
+      gapSeconds: _gapSeconds,
     );
   }
 }

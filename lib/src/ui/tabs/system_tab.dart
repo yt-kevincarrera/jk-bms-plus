@@ -27,6 +27,10 @@ import '../live_console_screen.dart';
 import '../../license/entitlements.dart';
 import '../pack/config_audit_screen.dart';
 import '../pack/pack_profile_card.dart';
+import '../bms_code_labels.dart';
+import '../fault_history_screen.dart';
+import '../link_events_screen.dart';
+import '../widgets/bms_switches.dart';
 import '../widgets/pro_gate.dart';
 import '../locale_controller.dart';
 import '../theme.dart';
@@ -60,6 +64,11 @@ class SystemTab extends StatefulWidget {
 }
 
 class _SystemTabState extends State<SystemTab> {
+  /// How far back the readings and frames exports reach. It used to be a
+  /// week of readings and a day of frames, fixed, and a problem from last
+  /// month could not be exported at all.
+  Duration _exportRange = const Duration(days: 7);
+
   final List<StreamSubscription<Object?>> _subs = [];
   final List<String> _problems = [];
   BmsDeviceInfo? _info;
@@ -167,6 +176,20 @@ class _SystemTabState extends State<SystemTab> {
                           ? null
                           : AppTheme.watch,
                       hint: t.systemPasscodeHint,
+                    ),
+                    // The settings passcode travels in the same frame, in
+                    // the same clear text. It was decoded and never shown,
+                    // which only meant the rider could not see what any
+                    // Bluetooth client nearby can.
+                    InfoRow(
+                      t.systemSetupPasscode,
+                      jk.setupPasscode.isEmpty
+                          ? t.systemPasscodeEmpty
+                          : jk.setupPasscode,
+                      dim: jk.setupPasscode.isEmpty,
+                      valueColor: jk.setupPasscode.isEmpty
+                          ? null
+                          : AppTheme.watch,
                       last: true,
                     ),
                   ],
@@ -191,7 +214,14 @@ class _SystemTabState extends State<SystemTab> {
                   ? t.unknown
                   : t.systemMtuValue(service.negotiatedMtu!),
             ),
-            InfoRow(t.systemFramesOk, '${stats?.accepted ?? 0}'),
+            // The frame counters restart on every connect now and the three
+            // link-health rows below do not, so the section says which is
+            // which rather than leaving two periods side by side unmarked.
+            InfoRow(
+              t.systemFramesOk,
+              '${stats?.accepted ?? 0}',
+              hint: t.systemCountersThisConnection,
+            ),
             InfoRow(
               t.systemFramesBadChecksum,
               '${stats?.badChecksum ?? 0}',
@@ -227,6 +257,7 @@ class _SystemTabState extends State<SystemTab> {
             ),
           ],
         ),
+        if (widget.snapshot case final snap?) _bmsStateSection(t, snap),
         if (_settings != null)
           _bmsSettingsSection(t, _settings!)
         else if (service.brand == BmsBrand.ant)
@@ -261,6 +292,44 @@ class _SystemTabState extends State<SystemTab> {
                 ),
             ],
           ),
+        // What the BMS raised on this pack, from the stored readings. The
+        // live tabs only ever show a fault while it is up.
+        if (service.repository case final repo?)
+          if (service.activeDeviceId case final id?)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.history, size: 18),
+                label: Text(t.faultHistoryTitle),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => FaultHistoryScreen(
+                      repository: repo,
+                      deviceId: id,
+                      packName: _packName(id),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        // The app's own record of what it decided about the link and the
+        // rides, which used to be readable only inside a backup file.
+        if (service.repository case final repo?)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.list_alt, size: 18),
+              label: Text(t.linkEventsTitle),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => LinkEventsScreen(
+                    repository: repo,
+                    deviceId: service.activeDeviceId,
+                  ),
+                ),
+              ),
+            ),
+          ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: OutlinedButton.icon(
@@ -276,19 +345,33 @@ class _SystemTabState extends State<SystemTab> {
             ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
-          child: Text(
-            t.systemReadOnlyNote,
-            style: const TextStyle(
-              fontSize: 11.5,
-              height: 1.4,
-              color: AppTheme.textFaint,
+        // Says what is true now. It used to say the app never writes, which
+        // stopped being true the day the switches arrived; with the
+        // permission off it still is.
+        ListenableBuilder(
+          listenable: widget.settings,
+          builder: (context, _) => Padding(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+            child: Text(
+              widget.settings.allowBmsWrites
+                  ? t.systemWritesOnNote
+                  : t.systemReadOnlyNote,
+              style: const TextStyle(
+                fontSize: 11.5,
+                height: 1.4,
+                color: AppTheme.textFaint,
+              ),
             ),
           ),
         ),
       ],
     );
+  }
+
+  /// The connected pack as the rider named it, or its address.
+  String _packName(String id) {
+    final name = widget.service.activeDevice?.name ?? '';
+    return name.isEmpty ? id : name;
   }
 
   Widget _demoSection(AppL10n t) {
@@ -685,16 +768,24 @@ class _SystemTabState extends State<SystemTab> {
         // Exported files land in the app's private directory, which is a place
         // nobody can reach from a file manager. Handing them straight to the
         // share sheet is what actually makes the data portable.
-        await SharePlus.instance.share(
+        final result = await SharePlus.instance.share(
           ShareParams(
             files: [XFile(file.path)],
             fileNameOverrides: [p.basename(file.path)],
           ),
         );
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.exportDone(p.basename(file.path)))),
-        );
+        // What happened to it, as far as Android says. It used to say "saved
+        // in" a path nobody can open, whether or not anything was shared.
+        final message = switch (result.status) {
+          ShareResultStatus.success => t.exportShared,
+          ShareResultStatus.dismissed => null,
+          ShareResultStatus.unavailable => t.exportDone(p.basename(file.path)),
+        };
+        if (message == null) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
       } on Exception catch (_) {
         if (!mounted) return;
         ScaffoldMessenger.of(
@@ -723,15 +814,51 @@ class _SystemTabState extends State<SystemTab> {
           icon: const Icon(Icons.table_chart_outlined, size: 18),
           label: Text(t.exportTrips),
         ),
+        Padding(
+          padding: const EdgeInsets.only(top: 8, bottom: 4),
+          child: Text(
+            t.exportRange,
+            style: const TextStyle(fontSize: 12, color: AppTheme.textFaint),
+          ),
+        ),
+        Wrap(
+          spacing: 8,
+          children: [
+            for (final (days, label) in [
+              (1, t.exportRangeDay),
+              (7, t.exportRangeWeek),
+              (30, t.exportRangeMonth),
+              (36500, t.exportRangeAll),
+            ])
+              ChoiceChip(
+                label: Text(label),
+                selected: _exportRange.inDays == days,
+                onSelected: (_) =>
+                    setState(() => _exportRange = Duration(days: days)),
+              ),
+          ],
+        ),
         TextButton.icon(
-          onPressed: () => run(() => exporter.exportReadings(device)),
+          onPressed: () => run(
+            () => exporter.exportReadings(device, since: _exportRange),
+          ),
           icon: const Icon(Icons.show_chart, size: 18),
           label: Text(t.exportReadings),
         ),
         TextButton.icon(
-          onPressed: () => run(() => exporter.exportRawFrames(device)),
+          onPressed: () => run(
+            () => exporter.exportRawFrames(device, since: _exportRange),
+          ),
           icon: const Icon(Icons.data_object, size: 18),
           label: Text(t.exportFrames),
+        ),
+        Text(
+          t.exportRangeNote,
+          style: const TextStyle(
+            fontSize: 11,
+            height: 1.4,
+            color: AppTheme.textFaint,
+          ),
         ),
         const SizedBox(height: 6),
       ],
@@ -765,9 +892,18 @@ class _SystemTabState extends State<SystemTab> {
     return Section(
       title: t.systemSettingsTitle,
       children: [
+        // First, because they are the only rows here a rider can act on.
+        // A settings frame only ever comes from a JK; the brand check is
+        // there so an ANT can never be offered a write, whatever else
+        // changes around it.
+        if (widget.service.brand == BmsBrand.jk)
+          BmsSwitchesGroup(
+            service: widget.service,
+            settings: s,
+            appSettings: widget.settings,
+          ),
         // The settings themselves are below; this reads them against what
-        // the declared chemistry can take. Read only, like everything else
-        // this app does with a BMS.
+        // the declared chemistry can take. Read only: the audit never writes.
         ProGate(
           feature: Feature.configAudit,
           compact: true,
@@ -784,58 +920,171 @@ class _SystemTabState extends State<SystemTab> {
             ),
           ),
         ),
-        InfoRow(t.settingCellCount, '${s.cellCount}'),
-        InfoRow(
-          t.settingNominalCapacity,
-          '${s.nominalCapacityAh.toStringAsFixed(1)} Ah',
-        ),
-        InfoRow(t.settingCellOvp, '${s.cellOvp.toStringAsFixed(3)} V'),
-        InfoRow(
-          t.settingCellOvpRecovery,
-          '${s.cellOvpRecovery.toStringAsFixed(3)} V',
-        ),
-        InfoRow(t.settingCellUvp, '${s.cellUvp.toStringAsFixed(3)} V'),
-        InfoRow(
-          t.settingCellUvpRecovery,
-          '${s.cellUvpRecovery.toStringAsFixed(3)} V',
-        ),
-        InfoRow(t.settingPowerOff, '${s.powerOffVoltage.toStringAsFixed(3)} V'),
-        InfoRow(
-          t.settingMaxCharge,
-          '${s.maxChargeCurrent.toStringAsFixed(1)} A',
-        ),
-        InfoRow(
-          t.settingMaxDischarge,
-          '${s.maxDischargeCurrent.toStringAsFixed(1)} A',
-        ),
-        InfoRow(
-          t.settingMaxBalance,
-          '${s.maxBalanceCurrent.toStringAsFixed(2)} A',
-        ),
-        InfoRow(
-          t.settingBalanceStart,
-          '${s.balanceStartVoltage.toStringAsFixed(3)} V',
-        ),
-        InfoRow(
-          t.settingBalanceTrigger,
-          '${(s.balanceTriggerVoltage * 1000).toStringAsFixed(0)} mV',
-        ),
-        InfoRow(t.settingChargeOtp, '${s.chargeOtp.toStringAsFixed(1)} °C'),
-        InfoRow(
-          t.settingDischargeOtp,
-          '${s.dischargeOtp.toStringAsFixed(1)} °C',
-        ),
-        InfoRow(t.settingChargeUtp, '${s.chargeUtp.toStringAsFixed(1)} °C'),
-        InfoRow(t.settingMosfetOtp, '${s.mosfetOtp.toStringAsFixed(1)} °C'),
-        InfoRow(
-          t.settingSwitches,
-          '${s.chargeSwitchOn ? "charge" : "-"} / '
-          '${s.dischargeSwitchOn ? "discharge" : "-"} / '
-          '${s.balancerSwitchOn ? "balancer" : "-"}',
-          last: true,
-        ),
+        // Grouped by what each figure protects, because a flat list of thirty
+        // read as thirty unrelated numbers, and half of what the frame
+        // carries (every delay, every recovery, the short-circuit timing,
+        // the lead resistances) was decoded and never shown at all.
+        ..._settingsGroup(t.settingsGroupCell, [
+          InfoRow(t.settingCellOvp, _v(s.cellOvp)),
+          InfoRow(t.settingCellOvpRecovery, _v(s.cellOvpRecovery)),
+          InfoRow(t.settingCellUvp, _v(s.cellUvp)),
+          InfoRow(t.settingCellUvpRecovery, _v(s.cellUvpRecovery)),
+          InfoRow(t.settingPowerOff, _v(s.powerOffVoltage)),
+          InfoRow(t.settingSmartSleep, _v(s.smartSleepVoltage), last: true),
+        ]),
+        ..._settingsGroup(t.settingsGroupCurrent, [
+          InfoRow(
+            t.settingMaxCharge,
+            '${s.maxChargeCurrent.toStringAsFixed(1)} A',
+          ),
+          InfoRow(t.settingChargeOcpDelay, '${s.chargeOcpDelaySeconds} s'),
+          InfoRow(
+            t.settingChargeOcpRecovery,
+            '${s.chargeOcpRecoverySeconds} s',
+          ),
+          InfoRow(
+            t.settingMaxDischarge,
+            '${s.maxDischargeCurrent.toStringAsFixed(1)} A',
+          ),
+          InfoRow(
+            t.settingDischargeOcpDelay,
+            '${s.dischargeOcpDelaySeconds} s',
+          ),
+          InfoRow(
+            t.settingDischargeOcpRecovery,
+            '${s.dischargeOcpRecoverySeconds} s',
+          ),
+          // Microseconds on the wire. The BMS cuts a short circuit in a few
+          // hundred of them, and rounding that to "0 s" would read as no
+          // delay at all.
+          InfoRow(t.settingScpDelay, '${s.scpDelayMicroseconds} µs'),
+          InfoRow(
+            t.settingScpRecovery,
+            '${s.scpRecoverySeconds} s',
+            last: true,
+          ),
+        ]),
+        ..._settingsGroup(t.settingsGroupTemperature, [
+          InfoRow(t.settingChargeOtp, _c(s.chargeOtp)),
+          InfoRow(t.settingChargeOtpRecovery, _c(s.chargeOtpRecovery)),
+          InfoRow(t.settingDischargeOtp, _c(s.dischargeOtp)),
+          InfoRow(t.settingDischargeOtpRecovery, _c(s.dischargeOtpRecovery)),
+          InfoRow(t.settingChargeUtp, _c(s.chargeUtp)),
+          InfoRow(t.settingChargeUtpRecovery, _c(s.chargeUtpRecovery)),
+          InfoRow(t.settingMosfetOtp, _c(s.mosfetOtp)),
+          InfoRow(
+            t.settingMosfetOtpRecovery,
+            _c(s.mosfetOtpRecovery),
+            last: true,
+          ),
+        ]),
+        // The three switches are at the top of the section, as switches.
+        ..._settingsGroup(t.settingsGroupBalance, [
+          InfoRow(
+            t.settingMaxBalance,
+            '${s.maxBalanceCurrent.toStringAsFixed(2)} A',
+          ),
+          InfoRow(t.settingBalanceStart, _v(s.balanceStartVoltage)),
+          InfoRow(
+            t.settingBalanceTrigger,
+            '${(s.balanceTriggerVoltage * 1000).toStringAsFixed(0)} mV',
+            last: true,
+          ),
+        ]),
+        ..._settingsGroup(t.settingsGroupOther, [
+          InfoRow(t.settingCellCount, '${s.cellCount}'),
+          InfoRow(
+            t.settingNominalCapacity,
+            '${s.nominalCapacityAh.toStringAsFixed(1)} Ah',
+          ),
+          InfoRow(t.configSoc100, _v(s.soc100Voltage)),
+          InfoRow(t.configSoc0, _v(s.soc0Voltage)),
+          InfoRow(t.settingRequestCharge, _v(s.cellRequestChargeVoltage)),
+          InfoRow(t.settingRequestFloat, _v(s.cellRequestFloatVoltage)),
+          _wireResistances(t, s),
+        ]),
       ],
     );
+  }
+
+  /// A heading inside the settings section, then its rows.
+  List<Widget> _settingsGroup(String title, List<Widget> rows) => [
+    Padding(
+      padding: const EdgeInsets.only(top: 12, bottom: 2),
+      child: Caption(title, color: AppTheme.textFaint),
+    ),
+    ...rows,
+  ];
+
+  static String _v(double volts) => '${volts.toStringAsFixed(3)} V';
+  static String _c(double celsius) => '${celsius.toStringAsFixed(1)} °C';
+  static String _onOff(AppL10n t, bool on) => on ? t.configOn : t.configOff;
+
+  /// The lead resistances the BMS compensates for, one per cell in use. The
+  /// frame carries a slot for every cell the framing allows, so the ones past
+  /// the configured count are left out rather than shown as zeros.
+  Widget _wireResistances(AppL10n t, JkSettings s) {
+    final count = s.cellCount.clamp(0, s.connectionWireResistances.length);
+    final values = s.connectionWireResistances.take(count).toList();
+    return InfoRow(
+      t.settingWireResistances,
+      values.isEmpty ? t.notReported : t.settingWireResistancesCount(count),
+      dim: values.isEmpty,
+      hint: values.isEmpty
+          ? null
+          : '${t.settingWireResistancesHint}\n'
+                '${[for (var i = 0; i < values.length; i++) '${i + 1}: ${(values[i] * 1000).toStringAsFixed(0)} mΩ'].join('  ·  ')}',
+      last: true,
+    );
+  }
+
+  /// What the BMS says about itself in every reading, beyond the figures the
+  /// other tabs already show: whether it is precharging, whether it sees a
+  /// charger, the charge phase and battery type it was set up for, how long
+  /// it has run, which cell inputs are enabled, and its own throughput
+  /// counter. All of it was decoded and none of it shown.
+  ///
+  /// A field the BMS does not report is left out, not shown as "no": the
+  /// precharge flag, the charge phase and the battery type exist only in a
+  /// JK02_32S frame, and an ANT has no cell mask.
+  Widget _bmsStateSection(AppL10n t, BmsSnapshot s) => Section(
+    title: t.bmsStateTitle,
+    intro: t.bmsStateIntro,
+    children: [
+      if (s.prechargeOn case final on?)
+        InfoRow(t.bmsStatePrecharge, _onOff(t, on)),
+      if (s.chargerPlugged case final on?)
+        InfoRow(t.bmsStateChargerPlugged, _onOff(t, on)),
+      if (s.chargeStatusCode case final code?)
+        InfoRow(t.bmsStateChargeStatus, chargeStatusLabel(t, code)),
+      if (s.batteryTypeCode case final code?)
+        InfoRow(
+          t.bmsStateBatteryType,
+          batteryTypeLabel(t, code),
+          hint: t.bmsStateBatteryTypeHint,
+        ),
+      InfoRow(t.bmsStateRuntime, _duration(s.totalRuntimeSeconds)),
+      if (s.enabledCellMask case final mask?)
+        InfoRow(
+          t.bmsStateEnabledCells,
+          '${_bitCount(mask)}  ·  '
+          '0x${mask.toRadixString(16).padLeft(8, '0').toUpperCase()}',
+        ),
+      InfoRow(
+        t.bmsStateCycleCapacity,
+        '${s.cycleCapacityAh.toStringAsFixed(1)} Ah',
+        hint: t.bmsStateCycleCapacityHint,
+        last: true,
+      ),
+    ],
+  );
+
+  static int _bitCount(int mask) {
+    var n = 0;
+    for (var m = mask; m != 0; m >>= 1) {
+      n += m & 1;
+    }
+    return n;
   }
 
   String _languageLabel(AppL10n t, LanguageChoice c) => switch (c) {

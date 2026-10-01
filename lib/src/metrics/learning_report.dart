@@ -1,4 +1,5 @@
 import '../data/database.dart';
+import 'trip_learning.dart';
 
 /// Why the range estimate has, or has not, learned anything.
 ///
@@ -21,6 +22,8 @@ class LearningReport {
     required this.noEnergyOut,
     required this.implausible,
     required this.learnedKm,
+    this.unmeasured = 0,
+    this.excluded = 0,
   });
 
   /// Finished rides on record for this pack.
@@ -50,6 +53,18 @@ class LearningReport {
   /// symptom of a bug three layers down.
   final int implausible;
 
+  /// Rejected because the ride's energy was never measured: the link dropped
+  /// for so much of it that no figure could be put on what left the pack.
+  ///
+  /// Counted apart from [noEnergyOut], which it used to be lumped into. That
+  /// sentence blamed a trailer or a reversed current sign, and on the
+  /// owner's pack the real cause was nearly always the link.
+  final int unmeasured;
+
+  /// Rides the rider marked as an exception, which the estimator leaves out
+  /// on purpose.
+  final int excluded;
+
   final double learnedKm;
 
   bool get hasLearned => used > 0;
@@ -63,23 +78,30 @@ class LearningReport {
     // Ordered by how much each one tells you. An implausible figure is a
     // fault in the app, not a fact about the riding, so it outranks the
     // explanations that merely describe short trips.
-    if (implausible >= noEnergyOut && implausible >= noDistance) {
+    if (implausible >= noEnergyOut &&
+        implausible >= noDistance &&
+        implausible >= unmeasured) {
       return LearningBlocker.implausible;
+    }
+    if (unmeasured >= noEnergyOut && unmeasured >= noDistance) {
+      return LearningBlocker.unmeasured;
     }
     if (noEnergyOut >= noDistance) return LearningBlocker.noEnergyOut;
     return LearningBlocker.ridesTooShort;
   }
 
-  /// Reads the stored rides and applies exactly the estimator's own rules.
-  ///
-  /// Deliberately duplicating the thresholds rather than asking the estimator:
-  /// the estimator silently returns from `addSegment`, which is right for it
-  /// and useless for explaining anything.
+  /// Reads the stored rides and applies exactly the rules the estimator is
+  /// fed by ([TripLearning]) and its own limits, so [used] is the number of
+  /// rides that really taught it. It used to skip the measurement and the
+  /// "exception" filters, and could count as used a ride the estimator was
+  /// never given.
   static LearningReport from(List<Trip> trips, {required double learnedKm}) {
     var used = 0;
     var noDistance = 0;
     var noEnergyOut = 0;
     var implausible = 0;
+    var unmeasured = 0;
+    var excluded = 0;
     var considered = 0;
 
     for (final t in trips) {
@@ -93,8 +115,10 @@ class LearningReport {
 
       final net = t.energyOutWh - t.energyInWh;
       final whPerKm = t.distanceKm <= 0 ? null : net / t.distanceKm;
-      if (t.distanceKm < 0.2) {
+      if (t.distanceKm < TripLearning.minimumKm) {
         noDistance++;
+      } else if (!TripLearning.isMeasured(t)) {
+        unmeasured++;
       } else if (net <= 0) {
         noEnergyOut++;
       } else if (whPerKm == null || whPerKm < 2 || whPerKm > 400) {
@@ -102,6 +126,8 @@ class LearningReport {
         // addSegment returns silently, which is right for it and useless for
         // explaining anything.
         implausible++;
+      } else if (t.representative == false) {
+        excluded++;
       } else {
         used++;
       }
@@ -113,6 +139,8 @@ class LearningReport {
       noDistance: noDistance,
       noEnergyOut: noEnergyOut,
       implausible: implausible,
+      unmeasured: unmeasured,
+      excluded: excluded,
       learnedKm: learnedKm,
     );
   }
@@ -126,6 +154,9 @@ enum LearningBlocker {
 
   /// Rides recorded distance but no energy leaving the pack.
   noEnergyOut,
+
+  /// The link dropped through the rides, and their energy was never measured.
+  unmeasured,
 
   /// Every ride was too short to divide by.
   ridesTooShort,
