@@ -5505,4 +5505,80 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get offlineMoreHistory => 'Más historial';
+
+  @override
+  String get cellHistoryTitle => 'Celdas en el tiempo';
+
+  @override
+  String get cellHistoryOpen => 'Ver historial';
+
+  @override
+  String get cellHistoryTripButton => 'Celdas durante el viaje';
+
+  @override
+  String get cellHistoryRangeHour => 'Última hora';
+
+  @override
+  String get cellHistoryRangeDay => 'Últimas 24 h';
+
+  @override
+  String get cellHistoryRangeWeek => 'Últimos 7 días';
+
+  @override
+  String get cellHistoryRangeTrip => 'Este viaje';
+
+  @override
+  String get cellHistoryRangeCharge => 'Última carga';
+
+  @override
+  String cellHistoryAnchor(String date) {
+    return 'Hasta la última lectura guardada, $date.';
+  }
+
+  @override
+  String get cellHistoryModeVolts => 'Voltaje';
+
+  @override
+  String get cellHistoryModeDeviation => 'Frente al promedio';
+
+  @override
+  String get cellHistoryAxisVolts => 'V por celda';
+
+  @override
+  String get cellHistoryAxisDeviation =>
+      'mV por encima o por debajo del promedio del pack en esa lectura';
+
+  @override
+  String cellHistoryLowest(int cell) {
+    return 'Celda $cell: la más baja de media en este intervalo';
+  }
+
+  @override
+  String cellHistoryHighest(int cell) {
+    return 'Celda $cell: la más alta de media en este intervalo';
+  }
+
+  @override
+  String cellHistoryPicked(int cell) {
+    return 'Celda $cell: la que elegiste';
+  }
+
+  @override
+  String get cellHistoryOthers => 'Las demás';
+
+  @override
+  String get cellHistoryPickCell => 'Resaltar una celda';
+
+  @override
+  String cellHistoryPoints(int count) {
+    return '$count lecturas';
+  }
+
+  @override
+  String cellHistoryNote(String bucket) {
+    return 'Cada punto es una lectura real, una por cada $bucket: un pico entre dos de ellas no se dibuja. Donde las líneas se cortan no hubo lecturas durante más de 30 segundos, y no se rellena.';
+  }
+
+  @override
+  String get cellHistoryEmpty => 'No hay lecturas guardadas en este intervalo.';
 }

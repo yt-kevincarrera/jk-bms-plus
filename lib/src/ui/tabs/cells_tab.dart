@@ -7,6 +7,7 @@ import '../../metrics/weak_cell_ranking.dart';
 import '../../model/bms_snapshot.dart';
 import '../../protocol/ant_constants.dart';
 import '../../protocol/bms_brand.dart';
+import '../cell_history_screen.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/gauges.dart';
@@ -136,6 +137,31 @@ class CellsTab extends StatelessWidget {
             ),
           ),
         ),
+        // The grid is this instant. How the cells moved against each other
+        // through the last ride or charge is on disk, and this is the way in.
+        if (service.repository case final repo?)
+          if (service.activeDeviceId case final id?)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => CellHistoryScreen(
+                        repository: repo,
+                        deviceId: id,
+                        packName: service.activeDevice?.name.isNotEmpty == true
+                            ? service.activeDevice!.name
+                            : id,
+                      ),
+                    ),
+                  ),
+                  icon: const Icon(Icons.stacked_line_chart, size: 18),
+                  label: Text(t.cellHistoryOpen),
+                ),
+              ),
+            ),
         Section(
           title: t.balancingTitle,
           trailing: Pill(

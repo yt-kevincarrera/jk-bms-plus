@@ -5476,4 +5476,80 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get offlineMoreHistory => 'More history';
+
+  @override
+  String get cellHistoryTitle => 'Cells over time';
+
+  @override
+  String get cellHistoryOpen => 'See the history';
+
+  @override
+  String get cellHistoryTripButton => 'Cells during the ride';
+
+  @override
+  String get cellHistoryRangeHour => 'Last hour';
+
+  @override
+  String get cellHistoryRangeDay => 'Last 24 h';
+
+  @override
+  String get cellHistoryRangeWeek => 'Last 7 days';
+
+  @override
+  String get cellHistoryRangeTrip => 'This ride';
+
+  @override
+  String get cellHistoryRangeCharge => 'Last charge';
+
+  @override
+  String cellHistoryAnchor(String date) {
+    return 'Up to the last stored reading, $date.';
+  }
+
+  @override
+  String get cellHistoryModeVolts => 'Voltage';
+
+  @override
+  String get cellHistoryModeDeviation => 'Against the average';
+
+  @override
+  String get cellHistoryAxisVolts => 'V per cell';
+
+  @override
+  String get cellHistoryAxisDeviation =>
+      'mV above or below the pack average in that reading';
+
+  @override
+  String cellHistoryLowest(int cell) {
+    return 'Cell $cell: the lowest on average over this stretch';
+  }
+
+  @override
+  String cellHistoryHighest(int cell) {
+    return 'Cell $cell: the highest on average over this stretch';
+  }
+
+  @override
+  String cellHistoryPicked(int cell) {
+    return 'Cell $cell: the one you picked';
+  }
+
+  @override
+  String get cellHistoryOthers => 'The rest';
+
+  @override
+  String get cellHistoryPickCell => 'Pick out a cell';
+
+  @override
+  String cellHistoryPoints(int count) {
+    return '$count readings';
+  }
+
+  @override
+  String cellHistoryNote(String bucket) {
+    return 'Every point is a real reading, one per $bucket: a spike between two of them is not drawn. Where the lines break there were no readings for more than 30 seconds, and nothing is filled in.';
+  }
+
+  @override
+  String get cellHistoryEmpty => 'No readings stored in this stretch.';
 }

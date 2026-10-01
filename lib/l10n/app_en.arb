@@ -3350,5 +3350,68 @@
       }
     }
   },
-  "offlineMoreHistory": "More history"
+  "offlineMoreHistory": "More history",
+  "cellHistoryTitle": "Cells over time",
+  "cellHistoryOpen": "See the history",
+  "cellHistoryTripButton": "Cells during the ride",
+  "cellHistoryRangeHour": "Last hour",
+  "cellHistoryRangeDay": "Last 24 h",
+  "cellHistoryRangeWeek": "Last 7 days",
+  "cellHistoryRangeTrip": "This ride",
+  "cellHistoryRangeCharge": "Last charge",
+  "cellHistoryAnchor": "Up to the last stored reading, {date}.",
+  "@cellHistoryAnchor": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "cellHistoryModeVolts": "Voltage",
+  "cellHistoryModeDeviation": "Against the average",
+  "cellHistoryAxisVolts": "V per cell",
+  "cellHistoryAxisDeviation": "mV above or below the pack average in that reading",
+  "cellHistoryLowest": "Cell {cell}: the lowest on average over this stretch",
+  "@cellHistoryLowest": {
+    "placeholders": {
+      "cell": {
+        "type": "int"
+      }
+    }
+  },
+  "cellHistoryHighest": "Cell {cell}: the highest on average over this stretch",
+  "@cellHistoryHighest": {
+    "placeholders": {
+      "cell": {
+        "type": "int"
+      }
+    }
+  },
+  "cellHistoryPicked": "Cell {cell}: the one you picked",
+  "@cellHistoryPicked": {
+    "placeholders": {
+      "cell": {
+        "type": "int"
+      }
+    }
+  },
+  "cellHistoryOthers": "The rest",
+  "cellHistoryPickCell": "Pick out a cell",
+  "cellHistoryPoints": "{count} readings",
+  "@cellHistoryPoints": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cellHistoryNote": "Every point is a real reading, one per {bucket}: a spike between two of them is not drawn. Where the lines break there were no readings for more than 30 seconds, and nothing is filled in.",
+  "@cellHistoryNote": {
+    "placeholders": {
+      "bucket": {
+        "type": "String"
+      }
+    }
+  },
+  "cellHistoryEmpty": "No readings stored in this stretch."
 }

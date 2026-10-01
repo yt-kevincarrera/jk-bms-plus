@@ -9149,6 +9149,132 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Más historial'**
   String get offlineMoreHistory;
+
+  /// No description provided for @cellHistoryTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Celdas en el tiempo'**
+  String get cellHistoryTitle;
+
+  /// No description provided for @cellHistoryOpen.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver historial'**
+  String get cellHistoryOpen;
+
+  /// No description provided for @cellHistoryTripButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Celdas durante el viaje'**
+  String get cellHistoryTripButton;
+
+  /// No description provided for @cellHistoryRangeHour.
+  ///
+  /// In es, this message translates to:
+  /// **'Última hora'**
+  String get cellHistoryRangeHour;
+
+  /// No description provided for @cellHistoryRangeDay.
+  ///
+  /// In es, this message translates to:
+  /// **'Últimas 24 h'**
+  String get cellHistoryRangeDay;
+
+  /// No description provided for @cellHistoryRangeWeek.
+  ///
+  /// In es, this message translates to:
+  /// **'Últimos 7 días'**
+  String get cellHistoryRangeWeek;
+
+  /// No description provided for @cellHistoryRangeTrip.
+  ///
+  /// In es, this message translates to:
+  /// **'Este viaje'**
+  String get cellHistoryRangeTrip;
+
+  /// No description provided for @cellHistoryRangeCharge.
+  ///
+  /// In es, this message translates to:
+  /// **'Última carga'**
+  String get cellHistoryRangeCharge;
+
+  /// No description provided for @cellHistoryAnchor.
+  ///
+  /// In es, this message translates to:
+  /// **'Hasta la última lectura guardada, {date}.'**
+  String cellHistoryAnchor(String date);
+
+  /// No description provided for @cellHistoryModeVolts.
+  ///
+  /// In es, this message translates to:
+  /// **'Voltaje'**
+  String get cellHistoryModeVolts;
+
+  /// No description provided for @cellHistoryModeDeviation.
+  ///
+  /// In es, this message translates to:
+  /// **'Frente al promedio'**
+  String get cellHistoryModeDeviation;
+
+  /// No description provided for @cellHistoryAxisVolts.
+  ///
+  /// In es, this message translates to:
+  /// **'V por celda'**
+  String get cellHistoryAxisVolts;
+
+  /// No description provided for @cellHistoryAxisDeviation.
+  ///
+  /// In es, this message translates to:
+  /// **'mV por encima o por debajo del promedio del pack en esa lectura'**
+  String get cellHistoryAxisDeviation;
+
+  /// No description provided for @cellHistoryLowest.
+  ///
+  /// In es, this message translates to:
+  /// **'Celda {cell}: la más baja de media en este intervalo'**
+  String cellHistoryLowest(int cell);
+
+  /// No description provided for @cellHistoryHighest.
+  ///
+  /// In es, this message translates to:
+  /// **'Celda {cell}: la más alta de media en este intervalo'**
+  String cellHistoryHighest(int cell);
+
+  /// No description provided for @cellHistoryPicked.
+  ///
+  /// In es, this message translates to:
+  /// **'Celda {cell}: la que elegiste'**
+  String cellHistoryPicked(int cell);
+
+  /// No description provided for @cellHistoryOthers.
+  ///
+  /// In es, this message translates to:
+  /// **'Las demás'**
+  String get cellHistoryOthers;
+
+  /// No description provided for @cellHistoryPickCell.
+  ///
+  /// In es, this message translates to:
+  /// **'Resaltar una celda'**
+  String get cellHistoryPickCell;
+
+  /// No description provided for @cellHistoryPoints.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} lecturas'**
+  String cellHistoryPoints(int count);
+
+  /// No description provided for @cellHistoryNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada punto es una lectura real, una por cada {bucket}: un pico entre dos de ellas no se dibuja. Donde las líneas se cortan no hubo lecturas durante más de 30 segundos, y no se rellena.'**
+  String cellHistoryNote(String bucket);
+
+  /// No description provided for @cellHistoryEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay lecturas guardadas en este intervalo.'**
+  String get cellHistoryEmpty;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

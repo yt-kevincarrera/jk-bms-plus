@@ -19,6 +19,7 @@ import '../license/entitlements.dart';
 import '../report/pdf_reports.dart';
 import '../report/report_data.dart';
 import '../report/report_sharing.dart';
+import 'cell_history_screen.dart';
 import 'fault_history_screen.dart';
 import 'license_scope.dart';
 import 'widgets/pro_gate.dart';
@@ -612,6 +613,20 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
               ),
               icon: const Icon(Icons.history, size: 18),
               label: Text(t.faultHistoryTitle),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => CellHistoryScreen(
+                    repository: repo,
+                    deviceId: widget.device.id,
+                    packName: _name,
+                  ),
+                ),
+              ),
+              icon: const Icon(Icons.stacked_line_chart, size: 18),
+              label: Text(t.cellHistoryTitle),
             ),
             const SizedBox(height: 6),
           ],

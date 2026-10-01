@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
 
+import '../metrics/cell_history.dart';
 import '../metrics/fault_history.dart';
 
 part 'database.g.dart';
@@ -1143,6 +1144,52 @@ class AppDatabase extends _$AppDatabase {
           soc: r.read<double>('soc'),
           maxCellVoltage: r.read<double>('max_cell_voltage'),
           minCellVoltage: r.read<double>('min_cell_voltage'),
+        ),
+    ];
+  }
+
+  /// One real reading per [bucket] of a pack's window, with the first and
+  /// last instants of each bucket that had any, oldest first. See
+  /// [CellHistory].
+  ///
+  /// Bucketed in SQL: a week at three readings a second is nearly two
+  /// million rows of cell voltages, and the chart draws five hundred. The
+  /// reading kept is the newest of its bucket, found by id and joined back,
+  /// because sqlite only promises which row a bare column comes from when
+  /// the query has a single min or max, and this one needs three.
+  Future<List<CellHistoryRow>> cellHistoryBuckets(
+    String deviceId,
+    DateTime from,
+    DateTime to,
+    Duration bucket,
+  ) async {
+    final fromS = from.millisecondsSinceEpoch ~/ 1000;
+    final rows = await customSelect(
+      'WITH b AS ('
+      '  SELECT (timestamp - ?2) / ?4 AS k, MAX(id) AS id, '
+      '    MIN(timestamp) AS first_ts, MAX(timestamp) AS last_ts '
+      '  FROM snapshots WHERE device_id = ?1 '
+      '  AND timestamp >= ?2 AND timestamp <= ?3 GROUP BY k'
+      ') SELECT s.timestamp AS at, b.first_ts, b.last_ts, '
+      's.cell_voltages_json FROM b JOIN snapshots s ON s.id = b.id '
+      'ORDER BY b.k',
+      variables: [
+        Variable<String>(deviceId),
+        Variable<int>(fromS),
+        Variable<int>(to.millisecondsSinceEpoch ~/ 1000),
+        Variable<int>(bucket.inSeconds < 1 ? 1 : bucket.inSeconds),
+      ],
+      readsFrom: {snapshots},
+    ).get();
+    DateTime at(int seconds) =>
+        DateTime.fromMillisecondsSinceEpoch(seconds * 1000, isUtc: true);
+    return [
+      for (final r in rows)
+        CellHistoryRow(
+          at: at(r.read<int>('at')),
+          firstAt: at(r.read<int>('first_ts')),
+          lastAt: at(r.read<int>('last_ts')),
+          cellVoltagesJson: r.read<String>('cell_voltages_json'),
         ),
     ];
   }

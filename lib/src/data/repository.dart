@@ -8,6 +8,7 @@ import '../pack/pack_baseline.dart';
 import '../inspection/inspection_series.dart';
 import '../metrics/capacity_cycle_detector.dart';
 import '../metrics/capacity_endpoints.dart';
+import '../metrics/cell_history.dart';
 import '../metrics/fault_history.dart';
 import '../metrics/maintenance.dart';
 import '../metrics/snapshot_history.dart';
@@ -779,6 +780,24 @@ class BmsRepository {
       transitions,
       totalReadings: await db.snapshotCountFor(deviceId),
       lastAt: (await db.lastSnapshotFor(deviceId))?.timestamp.toUtc(),
+    );
+  }
+
+  /// Every cell's voltage from [from] to [to], thinned to a chart's worth of
+  /// real readings. See [CellHistory].
+  Future<CellHistory> cellHistory(
+    String deviceId,
+    DateTime from,
+    DateTime to,
+  ) async {
+    await flush();
+    return CellHistory.from(
+      await db.cellHistoryBuckets(
+        deviceId,
+        from,
+        to,
+        CellHistory.bucketFor(from, to),
+      ),
     );
   }
 

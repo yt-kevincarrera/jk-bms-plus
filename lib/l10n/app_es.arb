@@ -3680,5 +3680,68 @@
       }
     }
   },
-  "offlineMoreHistory": "Más historial"
+  "offlineMoreHistory": "Más historial",
+  "cellHistoryTitle": "Celdas en el tiempo",
+  "cellHistoryOpen": "Ver historial",
+  "cellHistoryTripButton": "Celdas durante el viaje",
+  "cellHistoryRangeHour": "Última hora",
+  "cellHistoryRangeDay": "Últimas 24 h",
+  "cellHistoryRangeWeek": "Últimos 7 días",
+  "cellHistoryRangeTrip": "Este viaje",
+  "cellHistoryRangeCharge": "Última carga",
+  "cellHistoryAnchor": "Hasta la última lectura guardada, {date}.",
+  "@cellHistoryAnchor": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "cellHistoryModeVolts": "Voltaje",
+  "cellHistoryModeDeviation": "Frente al promedio",
+  "cellHistoryAxisVolts": "V por celda",
+  "cellHistoryAxisDeviation": "mV por encima o por debajo del promedio del pack en esa lectura",
+  "cellHistoryLowest": "Celda {cell}: la más baja de media en este intervalo",
+  "@cellHistoryLowest": {
+    "placeholders": {
+      "cell": {
+        "type": "int"
+      }
+    }
+  },
+  "cellHistoryHighest": "Celda {cell}: la más alta de media en este intervalo",
+  "@cellHistoryHighest": {
+    "placeholders": {
+      "cell": {
+        "type": "int"
+      }
+    }
+  },
+  "cellHistoryPicked": "Celda {cell}: la que elegiste",
+  "@cellHistoryPicked": {
+    "placeholders": {
+      "cell": {
+        "type": "int"
+      }
+    }
+  },
+  "cellHistoryOthers": "Las demás",
+  "cellHistoryPickCell": "Resaltar una celda",
+  "cellHistoryPoints": "{count} lecturas",
+  "@cellHistoryPoints": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cellHistoryNote": "Cada punto es una lectura real, una por cada {bucket}: un pico entre dos de ellas no se dibuja. Donde las líneas se cortan no hubo lecturas durante más de 30 segundos, y no se rellena.",
+  "@cellHistoryNote": {
+    "placeholders": {
+      "bucket": {
+        "type": "String"
+      }
+    }
+  },
+  "cellHistoryEmpty": "No hay lecturas guardadas en este intervalo."
 }

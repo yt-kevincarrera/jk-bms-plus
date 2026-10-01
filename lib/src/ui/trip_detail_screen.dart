@@ -10,6 +10,7 @@ import '../data/exporter.dart';
 import '../data/repository.dart';
 import '../metrics/trip_learning.dart';
 import '../metrics/trip_recorder.dart';
+import 'cell_history_screen.dart';
 import 'theme.dart';
 import 'widgets/common.dart';
 import 'widgets/energy_source_label.dart';
@@ -283,6 +284,30 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                 ),
               ],
             ),
+            // Every cell through the ride, from the readings stored during
+            // it. A ride from before rides knew their pack has nowhere to
+            // look them up.
+            if (trip.deviceId case final id?)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: OutlinedButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => CellHistoryScreen(
+                          repository: repository,
+                          deviceId: id,
+                          packName: _date(trip.startedAt),
+                          trip: trip,
+                        ),
+                      ),
+                    ),
+                    icon: const Icon(Icons.stacked_line_chart, size: 18),
+                    label: Text(t.cellHistoryTripButton),
+                  ),
+                ),
+              ),
             // Offered on every ride, not only the ones whose row admits to a
             // problem. That is the whole point: the rides this was written for
             // looked perfectly healthy in the database, and gating the button
