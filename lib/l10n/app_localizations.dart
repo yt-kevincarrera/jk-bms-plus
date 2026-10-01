@@ -8179,6 +8179,12 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Intentos de conexión, del más reciente al más antiguo'**
   String get consoleReportAttempts;
+
+  /// No description provided for @tripNoGpsFixes.
+  ///
+  /// In es, this message translates to:
+  /// **'No está llegando el GPS, así que este viaje no está midiendo distancia ni velocidad. La app lo está reintentando. Si sigue así, abre la app un momento con la pantalla encendida y comprueba que la ubicación esté activada.'**
+  String get tripNoGpsFixes;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

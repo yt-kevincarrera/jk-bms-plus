@@ -310,6 +310,14 @@ class TripRecorder {
   }
   double get maxSpeedKmh => _maxSpeedKmh;
   Duration get movingDuration => _movingDuration;
+
+  /// When the ride began, and when its last GPS fix arrived. Null fix time
+  /// means none has, which is what a watchdog on the GPS needs to know.
+  DateTime? get startedAt => _startedAt;
+  DateTime? get lastFixAt => _lastFixAt;
+
+  /// GPS fixes this ride has taken in.
+  int get fixesSeen => _points.length;
   /// Wall-clock time since the trip started, minus whatever was spent paused.
   ///
   /// Deliberately different from [movingDuration]: the gap between the two is

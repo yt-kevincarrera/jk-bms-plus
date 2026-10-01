@@ -96,7 +96,7 @@ class GeolocatorSource implements LocationSource {
           accuracyM: p.accuracy,
         ),
       );
-    });
+    }, onError: _controller.addError);
     return null;
   }
 

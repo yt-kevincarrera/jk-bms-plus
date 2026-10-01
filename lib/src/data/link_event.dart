@@ -40,6 +40,17 @@ enum LinkEventKind {
   /// Location refused to start. Detail carries which problem.
   locationRefused,
 
+  /// A ride has been recording with no GPS fix for a while. Detail carries
+  /// how long, the fixes seen so far, and the last one's age.
+  tripWithoutFixes,
+
+  /// The location stream reported an error. Detail carries it.
+  locationStreamError,
+
+  /// Android refused to start the foreground service. Detail carries which
+  /// claim wanted it and whether it was location-typed.
+  foregroundServiceRefused,
+
   /// A ride opened itself.
   autoTripStarted,
 

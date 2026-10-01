@@ -192,6 +192,44 @@ void main() {
       expect(service.serviceUsesLocationForTest, isFalse);
     });
 
+    test('a ride opening under a location-typed link keeps the service it has',
+        () async {
+      // The 45-minute ride that came back with 0 km. The link service was
+      // born location-typed for this very moment, then stopped and started
+      // again for the ride; Android refuses that start from the background,
+      // so the ride ran with no service and no fixes.
+      service.applySettings(haptics: false, rawFrames: false, autoTrip: true);
+      link.announce(BleLinkState.connected);
+      await pumpEventQueue();
+      expect(service.isWatchingLink, isTrue);
+      final starts = service.serviceStartsForTest;
+
+      expect(await service.startTrip(), isNull);
+      await pumpEventQueue();
+
+      expect(service.claimForTest, ServiceClaim.trip);
+      expect(service.serviceStartsForTest, starts);
+
+      // And handing back after the ride keeps it too.
+      await service.stopTrip();
+      await pumpEventQueue();
+      expect(service.isWatchingLink, isTrue);
+      expect(service.serviceStartsForTest, starts);
+    });
+
+    test('a ride under a dataSync link still restarts, for the location type',
+        () async {
+      service.applySettings(haptics: false, rawFrames: false, autoTrip: false);
+      link.announce(BleLinkState.connected);
+      await pumpEventQueue();
+      final starts = service.serviceStartsForTest;
+
+      expect(await service.startTrip(), isNull);
+      await pumpEventQueue();
+
+      expect(service.serviceStartsForTest, starts + 1);
+    });
+
     test('toggling auto-start on while connected restarts with location type',
         () async {
       // The settings screen lets the rider switch auto-start on after connecting.

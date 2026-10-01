@@ -151,6 +151,21 @@ class _TripScreenState extends State<TripScreen> {
               child: ListView(
                 padding: const EdgeInsets.only(bottom: 12),
                 children: [
+                  // Said while the ride is still going, when it can be acted
+                  // on. A ride that recorded no GPS used to say so only at the
+                  // end, as 0 km.
+                  if (widget.service.tripLacksGps)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                      child: Text(
+                        t.tripNoGpsFixes,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          height: 1.4,
+                          color: AppTheme.bad,
+                        ),
+                      ),
+                    ),
                   if (_problem != null)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),

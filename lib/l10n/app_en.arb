@@ -3127,5 +3127,6 @@
   "stuckAskWhichStep": "Once it connects again, say which step fixed it: that tells whether the fault is in the app or in Android.",
   "stuckResetDone": "The app's Bluetooth connection was restarted. Tap the pack again.",
   "stuckResetRunning": "Restarting the app's Bluetooth connection…",
-  "consoleReportAttempts": "Connect attempts, newest first"
+  "consoleReportAttempts": "Connect attempts, newest first",
+  "tripNoGpsFixes": "No GPS is coming in, so this ride is not measuring distance or speed. The app is retrying. If it stays like this, open the app for a moment with the screen on and check that location is on."
 }

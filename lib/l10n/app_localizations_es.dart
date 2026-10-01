@@ -4906,4 +4906,8 @@ class AppL10nEs extends AppL10n {
   @override
   String get consoleReportAttempts =>
       'Intentos de conexión, del más reciente al más antiguo';
+
+  @override
+  String get tripNoGpsFixes =>
+      'No está llegando el GPS, así que este viaje no está midiendo distancia ni velocidad. La app lo está reintentando. Si sigue así, abre la app un momento con la pantalla encendida y comprueba que la ubicación esté activada.';
 }

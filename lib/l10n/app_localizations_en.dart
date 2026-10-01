@@ -4883,4 +4883,8 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get consoleReportAttempts => 'Connect attempts, newest first';
+
+  @override
+  String get tripNoGpsFixes =>
+      'No GPS is coming in, so this ride is not measuring distance or speed. The app is retrying. If it stays like this, open the app for a moment with the screen on and check that location is on.';
 }

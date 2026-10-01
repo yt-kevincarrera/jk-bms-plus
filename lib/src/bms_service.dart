@@ -1645,6 +1645,7 @@ class BmsService {
       _checkChargeAlerts(snapshot);
       unawaited(_updateForegroundService());
       unawaited(_updateAutoTrip(snapshot));
+      unawaited(_watchTripFixes(snapshot));
       _updateCapacityTest(snapshot);
       _watchCharging(snapshot);
       _learnFromSnapshot(snapshot);
@@ -1885,8 +1886,100 @@ class BmsService {
           _noticedSpeed = false;
         }
       }
+    }, onError: (Object e) {
+      // Kept, not thrown into the zone: an error here used to vanish, and the
+      // stream behind it delivered nothing for the rest of the ride.
+      unawaited(
+        repository?.note(
+              LinkEventKind.locationStreamError,
+              detail: '$e',
+              deviceId: activeDeviceId,
+            ) ??
+            Future.value(),
+      );
     });
     return null;
+  }
+
+  /// How long a ride may record with no fix before the GPS is suspected.
+  static const Duration tripFixSilence = Duration(seconds: 90);
+
+  /// When the GPS was last rebuilt by [_watchTripFixes], so it is retried
+  /// every couple of minutes rather than on every reading.
+  DateTime? _fixRebuiltAt;
+  bool _fixSilenceNoted = false;
+
+  /// Notices a ride that is recording and getting no GPS, and does something.
+  ///
+  /// A ride came back as 45 minutes, 0 km and 0 km/h: the readings arrived the
+  /// whole time and not one fix did, and nothing said so until the end. The
+  /// stream can die without telling the app (the OS revoking the permission,
+  /// standing the provider down, a service it needed being refused), so this
+  /// judges by what arrives: after [tripFixSilence] with the pack drawing
+  /// current and no fix, it writes down why it thinks so, says it on screen,
+  /// and rebuilds the stream, again every two minutes until a fix lands.
+  Future<void> _watchTripFixes(BmsSnapshot snapshot) async {
+    if (!trip.isRecording || isDemo) {
+      _fixSilenceNoted = false;
+      return;
+    }
+    final now = DateTime.now().toUtc();
+    final since = trip.lastFixAt ?? trip.startedAt;
+    if (since == null) return;
+    final silent = now.difference(since.toUtc());
+    if (silent < tripFixSilence) {
+      _fixSilenceNoted = false;
+      return;
+    }
+    // Parked at a light with the motor off is not a dead GPS: the distance
+    // filter holds fixes back while nothing moves.
+    if (snapshot.current > -1) return;
+
+    if (!_fixSilenceNoted) {
+      _fixSilenceNoted = true;
+      _problem(
+        'This ride has had no GPS fix for ${silent.inSeconds} s while the pack '
+        'is working, so no distance is being recorded. Trying to restart the '
+        'GPS.',
+      );
+      unawaited(
+        repository?.note(
+              LinkEventKind.tripWithoutFixes,
+              detail: '${silent.inSeconds} s, ${trip.fixesSeen} fixes so far, '
+                  'service ${_serviceOwner?.name ?? 'none'} '
+                  'location-typed $_serviceLocationTyped',
+              deviceId: activeDeviceId,
+            ) ??
+            Future.value(),
+      );
+    }
+
+    final rebuilt = _fixRebuiltAt;
+    if (rebuilt != null && now.difference(rebuilt) < const Duration(minutes: 2)) {
+      return;
+    }
+    _fixRebuiltAt = now;
+    final problem = await _ensureLocation();
+    lastLocationProblem = problem;
+    if (problem != null) {
+      unawaited(
+        repository?.note(
+              LinkEventKind.locationRefused,
+              detail: 'mid-ride: ${problem.name}',
+              deviceId: activeDeviceId,
+            ) ??
+            Future.value(),
+      );
+    }
+  }
+
+  /// Whether the ride in progress has gone [tripFixSilence] without a fix,
+  /// for the trip screen to say so while it can still be acted on.
+  bool get tripLacksGps {
+    if (!trip.isRecording || isDemo) return false;
+    final since = trip.lastFixAt ?? trip.startedAt;
+    if (since == null) return false;
+    return DateTime.now().toUtc().difference(since.toUtc()) >= tripFixSilence;
   }
 
   Future<void> _stopLocation() async {
@@ -2190,6 +2283,11 @@ class BmsService {
     return claim != null && _serviceNeedsLocation(claim);
   }
 
+  /// Times the service was (re)started, so a test can tell a hand-over that
+  /// kept the running service from one that restarted it.
+  @visibleForTesting
+  int serviceStartsForTest = 0;
+
   @visibleForTesting
   String get serviceTextForTest {
     final claim = _claim;
@@ -2257,8 +2355,26 @@ class BmsService {
       return;
     }
 
-    // A change of owner can also be a change of service *type*, and Android
-    // will not reclassify a running service, so it has to be restarted.
+    // A change of owner with no change of type keeps the service it has.
+    // Restarting it is not free: Android refuses to start a foreground
+    // service from the background, and the one moment this matters most is
+    // a ride opening itself with the phone in a pocket. The link claim was
+    // born location-typed for exactly that ride, and stopping it to start an
+    // identical one is what threw it away: the new start was refused, the
+    // ride had no service, and Android stopped delivering fixes to a
+    // backgrounded app. A 45-minute ride came back with 0 km.
+    final needsLocation = _serviceNeedsLocation(wanted);
+    if (_serviceOwner != null && _serviceLocationTyped == needsLocation) {
+      _adoptService(wanted);
+      await notifications.update(
+        title: _serviceTitle(wanted),
+        text: _serviceText(wanted),
+      );
+      return;
+    }
+
+    // A change of type does need a restart: Android will not reclassify a
+    // running service.
     if (_serviceOwner != null) await notifications.stop();
 
     if (!await notifications.requestPermission()) {
@@ -2272,6 +2388,7 @@ class BmsService {
       return;
     }
 
+    serviceStartsForTest++;
     final started = await notifications.start(
       title: _serviceTitle(wanted),
       text: _serviceText(wanted),
@@ -2279,26 +2396,46 @@ class BmsService {
       // location-typed service from an app with no location permission, and
       // neither a charge nor a bare connection has anything to do with where
       // the bike is.
-      usesRealLocation: _serviceNeedsLocation(wanted),
+      usesRealLocation: needsLocation,
     );
     if (!started) {
       _serviceOwner = null;
+      _notificationTimer?.cancel();
+      _notificationTimer = null;
       if (wanted == ServiceClaim.trip) {
         _problem(
           'Could not start the background service, so the trip will stop '
           'recording when the app leaves the screen.',
         );
       }
+      unawaited(
+        repository?.note(
+              LinkEventKind.foregroundServiceRefused,
+              detail: '${wanted.name} location=$needsLocation',
+              deviceId: activeDeviceId,
+            ) ??
+            Future.value(),
+      );
       return;
     }
 
-    _serviceOwner = wanted;
+    _serviceLocationTyped = needsLocation;
+    _adoptService(wanted);
+  }
+
+  /// Whether the running service was started location-typed.
+  bool _serviceLocationTyped = false;
+
+  /// Makes [owner] the service's owner and paces its notification.
+  void _adoptService(ServiceClaim owner) {
+    if (_serviceOwner == owner) return;
+    _serviceOwner = owner;
     _notificationTimer?.cancel();
     // A ride and a download are being watched second by second; a charge or a
     // bare connection is not, and rewriting that notification once a second
     // for hours would spend battery on a number nobody is reading. The point
     // of holding the service is the radio, not the text.
-    final cadence = switch (wanted) {
+    final cadence = switch (owner) {
       ServiceClaim.trip || ServiceClaim.update => const Duration(seconds: 1),
       ServiceClaim.charge || ServiceClaim.link => const Duration(seconds: 10),
     };
