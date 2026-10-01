@@ -16,7 +16,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get connectOneConnectionWarning =>
-      'El JK BMS acepta una sola conexión Bluetooth a la vez. Cierra la app oficial de JK antes de conectar aquí.';
+      'El BMS acepta una sola conexión Bluetooth a la vez. Cierra la app oficial de tu BMS antes de conectar aquí.';
 
   @override
   String get connectScan => 'Buscar BMS';
@@ -41,7 +41,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get connectNothingFoundHelp =>
-      'No apareció nada. Casi siempre es una de estas:\n\n• La app oficial de JK está conectada al BMS. Mientras lo está, el BMS deja de anunciarse y ningún otro teléfono lo ve. Ciérrala del todo.\n• El pack está dormido. Enciende la moto o muévela para despertarlo.\n• Estás lejos. Acércate al pack.';
+      'No apareció nada. Casi siempre es una de estas:\n\n• La app oficial de tu BMS está conectada a él. Mientras lo está, el BMS deja de anunciarse y ningún otro teléfono lo ve. Ciérrala del todo.\n• El pack está dormido. Enciende la moto o muévela para despertarlo.\n• Estás lejos. Acércate al pack.';
 
   @override
   String get connectCancelScan => 'Cancelar búsqueda';
@@ -2115,7 +2115,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get connectLinkNeverCameUp =>
-      'No se pudo levantar la conexión Bluetooth con la batería en 25 segundos, y la app lo intentó más de una vez. Comprueba que la batería esté encendida y cerca, y que la app oficial de JK esté cerrada del todo, no solo en segundo plano.';
+      'No se pudo levantar la conexión Bluetooth con la batería en 25 segundos, y la app lo intentó más de una vez. Comprueba que la batería esté encendida y cerca, y que la app oficial de tu BMS esté cerrada del todo, no solo en segundo plano.';
 
   @override
   String get connectSilent =>
@@ -2519,11 +2519,11 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get troubleBusy =>
-      'Algo más ya está conectado a la batería. El JK BMS acepta una sola conexión Bluetooth a la vez, así que cierra la app oficial de JK o cualquier otro registrador.';
+      'Algo más ya está conectado a la batería. El BMS acepta una sola conexión Bluetooth a la vez, así que cierra la app oficial de tu BMS o cualquier otro registrador.';
 
   @override
   String get troubleOutOfRange =>
-      'La batería no respondió. O está fuera de alcance o apagada, o algo más tiene tomada su única conexión Bluetooth: la app oficial de JK, u otro registrador.';
+      'La batería no respondió. O está fuera de alcance o apagada, o algo más tiene tomada su única conexión Bluetooth: la app oficial de tu BMS, u otro registrador.';
 
   @override
   String get troubleBluetoothOff => 'El Bluetooth del teléfono está apagado.';

@@ -16,7 +16,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get connectOneConnectionWarning =>
-      'The JK BMS accepts one Bluetooth connection at a time. Close the official JK app before connecting here.';
+      'The BMS accepts one Bluetooth connection at a time. Close your BMS\'s official app before connecting here.';
 
   @override
   String get connectScan => 'Scan for a BMS';
@@ -41,7 +41,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get connectNothingFoundHelp =>
-      'Nothing turned up. It is almost always one of these:\n\n• The official JK app is connected to the BMS. While it is, the BMS stops advertising and no other phone can see it. Close it fully.\n• The pack is asleep. Switch the bike on or move it to wake it.\n• You are too far away. Get closer to the pack.';
+      'Nothing turned up. It is almost always one of these:\n\n• Your BMS\'s official app is connected to it. While it is, the BMS stops advertising and no other phone can see it. Close it fully.\n• The pack is asleep. Switch the bike on or move it to wake it.\n• You are too far away. Get closer to the pack.';
 
   @override
   String get connectCancelScan => 'Cancel scan';
@@ -2106,7 +2106,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get connectLinkNeverCameUp =>
-      'The Bluetooth link to the pack did not come up in 25 seconds, and the app tried more than once. Check that the pack is on and nearby, and that the official JK app is fully closed, not just in the background.';
+      'The Bluetooth link to the pack did not come up in 25 seconds, and the app tried more than once. Check that the pack is on and nearby, and that your BMS\'s official app is fully closed, not just in the background.';
 
   @override
   String get connectSilent =>
@@ -2510,11 +2510,11 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get troubleBusy =>
-      'Something else is already connected to the pack. The JK BMS accepts only one Bluetooth connection at a time, so close the official JK app or any other logger.';
+      'Something else is already connected to the pack. The BMS accepts only one Bluetooth connection at a time, so close your BMS\'s official app or any other logger.';
 
   @override
   String get troubleOutOfRange =>
-      'The pack did not answer. Either it is out of range or switched off, or something else is holding its one Bluetooth connection: the official JK app, or another logger.';
+      'The pack did not answer. Either it is out of range or switched off, or something else is holding its one Bluetooth connection: your BMS\'s official app, or another logger.';
 
   @override
   String get troubleBluetoothOff => 'Bluetooth is off on the phone.';
