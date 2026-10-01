@@ -238,14 +238,8 @@ abstract class AppL10n {
   /// No description provided for @tapStackSaturated.
   ///
   /// In es, this message translates to:
-  /// **'Van {count} intentos fallidos seguidos. A estas alturas el problema es el Bluetooth del teléfono, no la batería, y otro intento solo lo empeora. Apaga y enciende el Bluetooth; si sigue igual, reinicia el teléfono. Después toca Desconectar o vuelve a buscar para reintentar.'**
+  /// **'Van {count} intentos fallidos seguidos. A estas alturas el problema es el Bluetooth del teléfono, no la batería, y otro intento solo lo empeora. Sigue los pasos de la tarjeta de arriba y después vuelve a buscar para reintentar.'**
   String tapStackSaturated(String count);
-
-  /// No description provided for @tapHeldByPhone.
-  ///
-  /// In es, this message translates to:
-  /// **'El teléfono ya tiene abierta una conexión con esta batería que esta app no controla. O la tiene otra app, o quedó colgada de un intento anterior. Ningún intento desde aquí va a ganarla: cierra la otra app, o reinicia el Bluetooth del teléfono.'**
-  String get tapHeldByPhone;
 
   /// No description provided for @tileConnected.
   ///
@@ -8125,6 +8119,66 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Avisa al bajar de aquí. Bájalo si te avisa demasiado pronto; súbelo si quieres enterarte antes.'**
   String get alertsLowChargeWarnHint;
+
+  /// No description provided for @stuckTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'El Bluetooth del teléfono parece atascado'**
+  String get stuckTitle;
+
+  /// No description provided for @stuckBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Varios intentos seguidos han fallado con la batería al alcance. Prueba esto en orden y para en cuanto vuelva a conectar:'**
+  String get stuckBody;
+
+  /// No description provided for @stuckResetButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Reiniciar la conexión Bluetooth de la app'**
+  String get stuckResetButton;
+
+  /// No description provided for @stuckStepForceStop.
+  ///
+  /// In es, this message translates to:
+  /// **'Si no basta, fuerza la detención de la app (Ajustes > Aplicaciones > JK BMS + > Forzar detención) y vuelve a abrirla.'**
+  String get stuckStepForceStop;
+
+  /// No description provided for @stuckStepScanning.
+  ///
+  /// In es, this message translates to:
+  /// **'Después, desactiva «Búsqueda de Bluetooth» (Ajustes > Ubicación > Servicios de ubicación) y apaga y enciende el Bluetooth. Con esa búsqueda activada, apagar el Bluetooth no lo reinicia de verdad.'**
+  String get stuckStepScanning;
+
+  /// No description provided for @stuckStepRestart.
+  ///
+  /// In es, this message translates to:
+  /// **'Como último recurso, reinicia el teléfono.'**
+  String get stuckStepRestart;
+
+  /// No description provided for @stuckAskWhichStep.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuando vuelva a conectar, avisa de qué paso lo arregló: eso dice si el fallo está en la app o en Android.'**
+  String get stuckAskWhichStep;
+
+  /// No description provided for @stuckResetDone.
+  ///
+  /// In es, this message translates to:
+  /// **'Conexión Bluetooth de la app reiniciada. Vuelve a tocar la batería.'**
+  String get stuckResetDone;
+
+  /// No description provided for @stuckResetRunning.
+  ///
+  /// In es, this message translates to:
+  /// **'Reiniciando la conexión Bluetooth de la app…'**
+  String get stuckResetRunning;
+
+  /// No description provided for @consoleReportAttempts.
+  ///
+  /// In es, this message translates to:
+  /// **'Intentos de conexión, del más reciente al más antiguo'**
+  String get consoleReportAttempts;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

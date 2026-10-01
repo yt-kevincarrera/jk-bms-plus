@@ -263,6 +263,15 @@ class _LiveConsoleScreenState extends State<LiveConsoleScreen> {
     for (final n in s.recentNotices.reversed) {
       out.writeln('${_clock(n.at)} ${n.text}');
     }
+    // What each connect attempt could see before it ran, so a paste from a
+    // morning that would not connect says whether the pack was advertising
+    // and whether the phone thought it was already connected.
+    out
+      ..writeln()
+      ..writeln('== ${t.consoleReportAttempts} ==');
+    for (final a in s.recentAttempts) {
+      out.writeln('${_clock(a.endedAt)} ${a.detail}');
+    }
     out
       ..writeln()
       ..writeln('== ${t.consoleReportDecoded} ==')

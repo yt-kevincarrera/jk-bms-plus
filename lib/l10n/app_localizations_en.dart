@@ -90,12 +90,8 @@ class AppL10nEn extends AppL10n {
 
   @override
   String tapStackSaturated(String count) {
-    return 'That is $count failed attempts in a row. By now the problem is the phone\'s Bluetooth, not the pack, and another attempt only makes it worse. Switch Bluetooth off and on; if it persists, restart the phone. Then tap Disconnect or search again to retry.';
+    return 'That is $count failed attempts in a row. By now the problem is the phone\'s Bluetooth, not the pack, and another attempt only makes it worse. Follow the steps in the card above, then search again to retry.';
   }
-
-  @override
-  String get tapHeldByPhone =>
-      'The phone already has a connection to this pack open that this app does not own. Either another app holds it, or it was stranded by an earlier attempt. No attempt from here will win it: close the other app, or restart the phone\'s Bluetooth.';
 
   @override
   String get tileConnected => 'Connected. Tap to go back to its screens.';
@@ -4852,4 +4848,39 @@ class AppL10nEn extends AppL10n {
   @override
   String get alertsLowChargeWarnHint =>
       'Warns when the charge falls below this. Lower it if it warns too early; raise it to hear sooner.';
+
+  @override
+  String get stuckTitle => 'The phone\'s Bluetooth looks stuck';
+
+  @override
+  String get stuckBody =>
+      'Several attempts in a row have failed with the pack within reach. Try these in order, and stop as soon as it connects again:';
+
+  @override
+  String get stuckResetButton => 'Restart the app\'s Bluetooth connection';
+
+  @override
+  String get stuckStepForceStop =>
+      'If that is not enough, force-stop the app (Settings > Apps > JK BMS + > Force stop) and open it again.';
+
+  @override
+  String get stuckStepScanning =>
+      'Next, turn off \"Bluetooth scanning\" (Settings > Location > Location services), then switch Bluetooth off and on. With that scanning on, switching Bluetooth off does not really restart it.';
+
+  @override
+  String get stuckStepRestart => 'As a last resort, restart the phone.';
+
+  @override
+  String get stuckAskWhichStep =>
+      'Once it connects again, say which step fixed it: that tells whether the fault is in the app or in Android.';
+
+  @override
+  String get stuckResetDone =>
+      'The app\'s Bluetooth connection was restarted. Tap the pack again.';
+
+  @override
+  String get stuckResetRunning => 'Restarting the app\'s Bluetooth connection…';
+
+  @override
+  String get consoleReportAttempts => 'Connect attempts, newest first';
 }

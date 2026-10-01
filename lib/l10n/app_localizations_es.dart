@@ -90,12 +90,8 @@ class AppL10nEs extends AppL10n {
 
   @override
   String tapStackSaturated(String count) {
-    return 'Van $count intentos fallidos seguidos. A estas alturas el problema es el Bluetooth del teléfono, no la batería, y otro intento solo lo empeora. Apaga y enciende el Bluetooth; si sigue igual, reinicia el teléfono. Después toca Desconectar o vuelve a buscar para reintentar.';
+    return 'Van $count intentos fallidos seguidos. A estas alturas el problema es el Bluetooth del teléfono, no la batería, y otro intento solo lo empeora. Sigue los pasos de la tarjeta de arriba y después vuelve a buscar para reintentar.';
   }
-
-  @override
-  String get tapHeldByPhone =>
-      'El teléfono ya tiene abierta una conexión con esta batería que esta app no controla. O la tiene otra app, o quedó colgada de un intento anterior. Ningún intento desde aquí va a ganarla: cierra la otra app, o reinicia el Bluetooth del teléfono.';
 
   @override
   String get tileConnected => 'Conectada. Toca para volver a sus pantallas.';
@@ -4873,4 +4869,41 @@ class AppL10nEs extends AppL10n {
   @override
   String get alertsLowChargeWarnHint =>
       'Avisa al bajar de aquí. Bájalo si te avisa demasiado pronto; súbelo si quieres enterarte antes.';
+
+  @override
+  String get stuckTitle => 'El Bluetooth del teléfono parece atascado';
+
+  @override
+  String get stuckBody =>
+      'Varios intentos seguidos han fallado con la batería al alcance. Prueba esto en orden y para en cuanto vuelva a conectar:';
+
+  @override
+  String get stuckResetButton => 'Reiniciar la conexión Bluetooth de la app';
+
+  @override
+  String get stuckStepForceStop =>
+      'Si no basta, fuerza la detención de la app (Ajustes > Aplicaciones > JK BMS + > Forzar detención) y vuelve a abrirla.';
+
+  @override
+  String get stuckStepScanning =>
+      'Después, desactiva «Búsqueda de Bluetooth» (Ajustes > Ubicación > Servicios de ubicación) y apaga y enciende el Bluetooth. Con esa búsqueda activada, apagar el Bluetooth no lo reinicia de verdad.';
+
+  @override
+  String get stuckStepRestart => 'Como último recurso, reinicia el teléfono.';
+
+  @override
+  String get stuckAskWhichStep =>
+      'Cuando vuelva a conectar, avisa de qué paso lo arregló: eso dice si el fallo está en la app o en Android.';
+
+  @override
+  String get stuckResetDone =>
+      'Conexión Bluetooth de la app reiniciada. Vuelve a tocar la batería.';
+
+  @override
+  String get stuckResetRunning =>
+      'Reiniciando la conexión Bluetooth de la app…';
+
+  @override
+  String get consoleReportAttempts =>
+      'Intentos de conexión, del más reciente al más antiguo';
 }

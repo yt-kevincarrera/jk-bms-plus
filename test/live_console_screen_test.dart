@@ -1,14 +1,16 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jk_bms/l10n/app_localizations.dart';
 import 'package:jk_bms/src/ble/ble_transport.dart';
+import 'package:jk_bms/src/ble/connect_recovery.dart';
+import 'package:jk_bms/src/ble/switchable_link.dart';
 import 'package:jk_bms/src/bms_service.dart';
 import 'package:jk_bms/src/protocol/jk_commands.dart';
 import 'package:jk_bms/src/protocol/jk_constants.dart';
 import 'package:jk_bms/src/ui/live_console_screen.dart';
 
+import 'support/fake_radio.dart';
 import 'support/fakes.dart';
 
 void main() {
@@ -76,6 +78,49 @@ void main() {
     await tester.pump();
     expect(find.textContaining('← RX  2 B\n03 04'), findsOneWidget);
 
+    await tester.pumpWidget(const SizedBox());
+    await tester.runAsync(service.dispose);
+  });
+
+  testWidgets('the diagnostic copy carries the last connect attempts',
+      (tester) async {
+    // A morning that would not connect has no frames to show, so the copy
+    // has to carry what each attempt could see, or it says nothing useful.
+    final recovery = ConnectRecovery(
+      radio: FakeRecoveryRadio(),
+      adverts: AdvertBook(),
+    );
+    final service = BmsService(
+      transport: SwitchableLink(real: BleTransport(recovery: recovery)),
+      locationFactory: StubLocation.new,
+    );
+    await tester.runAsync(() async {
+      final a = recovery.begin('C8:47');
+      await recovery.prepare(a, stillWanted: () => true);
+      recovery.failed(a, 'android-code: 147 | GATT_CONNECTION_TIMEOUT');
+    });
+    String? copied;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied = (call.arguments as Map)['text'] as String?;
+        }
+        return null;
+      },
+    );
+
+    await open(tester, service);
+    await tester.tap(find.byTooltip('Copiar todo para diagnóstico'));
+    await tester.pump();
+    expect(copied, contains('== Intentos de conexión'));
+    expect(copied, contains('#1 failed'));
+    expect(copied, contains('GATT_CONNECTION_TIMEOUT'));
+
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      null,
+    );
     await tester.pumpWidget(const SizedBox());
     await tester.runAsync(service.dispose);
   });

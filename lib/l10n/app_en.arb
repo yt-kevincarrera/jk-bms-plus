@@ -37,7 +37,7 @@
       }
     }
   },
-  "tapStackSaturated": "That is {count} failed attempts in a row. By now the problem is the phone's Bluetooth, not the pack, and another attempt only makes it worse. Switch Bluetooth off and on; if it persists, restart the phone. Then tap Disconnect or search again to retry.",
+  "tapStackSaturated": "That is {count} failed attempts in a row. By now the problem is the phone's Bluetooth, not the pack, and another attempt only makes it worse. Follow the steps in the card above, then search again to retry.",
   "@tapStackSaturated": {
     "placeholders": {
       "count": {
@@ -45,7 +45,6 @@
       }
     }
   },
-  "tapHeldByPhone": "The phone already has a connection to this pack open that this app does not own. Either another app holds it, or it was stranded by an earlier attempt. No attempt from here will win it: close the other app, or restart the phone's Bluetooth.",
   "tileConnected": "Connected. Tap to go back to its screens.",
   "tileCooling": "Paused for {seconds} s after a failed attempt",
   "@tileCooling": {
@@ -3118,5 +3117,15 @@
   "alertsNotifyQuietChannel": "Alerts without vibration",
   "alertLinkLostNeedsWatch": "Only speaks with \"Keep reading with the screen off\" or \"Watch the charge\" on: without them nothing is watching the link.",
   "alertLinkLostRidingHint": "Silent while a ride is recording: riding, the link comes and goes, and the ride already shows on screen when it drops.",
-  "alertsLowChargeWarnHint": "Warns when the charge falls below this. Lower it if it warns too early; raise it to hear sooner."
+  "alertsLowChargeWarnHint": "Warns when the charge falls below this. Lower it if it warns too early; raise it to hear sooner.",
+  "stuckTitle": "The phone's Bluetooth looks stuck",
+  "stuckBody": "Several attempts in a row have failed with the pack within reach. Try these in order, and stop as soon as it connects again:",
+  "stuckResetButton": "Restart the app's Bluetooth connection",
+  "stuckStepForceStop": "If that is not enough, force-stop the app (Settings > Apps > JK BMS + > Force stop) and open it again.",
+  "stuckStepScanning": "Next, turn off \"Bluetooth scanning\" (Settings > Location > Location services), then switch Bluetooth off and on. With that scanning on, switching Bluetooth off does not really restart it.",
+  "stuckStepRestart": "As a last resort, restart the phone.",
+  "stuckAskWhichStep": "Once it connects again, say which step fixed it: that tells whether the fault is in the app or in Android.",
+  "stuckResetDone": "The app's Bluetooth connection was restarted. Tap the pack again.",
+  "stuckResetRunning": "Restarting the app's Bluetooth connection…",
+  "consoleReportAttempts": "Connect attempts, newest first"
 }
