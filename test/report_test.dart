@@ -180,6 +180,86 @@ void main() {
     });
   });
 
+  group('a certificate and what it says about itself', () {
+    // Signed on 2.28.1, before the demo flag existed, and frozen here. Every
+    // certificate already printed and handed to a buyer looks like this, and
+    // has to keep checking out.
+    const oldToken =
+        'JKC1.H4sIAAAAAAAACp2RS2_CMBCE_0o1ZwdtDOGxNyoufahFhVMrDlayJSnOQ3GgRYj_XjkEFalc2tvOer4da_eAHThUMA0YmvQwoHGgaRmOOCQm6hHRKxQKMOYm3tzsMvkooVCDD9coii6oWKx14LcDsjalFteA-72JQipmtwdTjyKFrG4r0pH3xN5CR9VS-joV6h9q-Avq_ytq8EdqdfLPxDbm9Dw-daZ55dqGgs3WaaeLrbUKlZjNSevQG1wjVadbIJdkYdbn3FySu4voXJKXLl0hN1_L89R3s7WN3_RKITY7MWdRS1XWjST-WnmZiAXj_iG41dPxQtMcCk7qzPj24il4fpz5zicY_nr72IoDD8gPrabp-Y-ujMGjrkzBk8jvEE7iskgcONTkk02SFWsH7hMdj99pbrvJaQIAAA.J07WsmgF0v6NBgUp7povKHY7aXbZxf0d7jj_NrO3aTk.O5OOTrskrX3mHQdF-XrC9yCcOe_MDYPxTwEjSHRWVl2o9QrHLwF61ogslOGFLBJ86VfurfnOYtydXP8mRcgNDA';
+
+    test('a token signed before the demo flag still verifies', () async {
+      final check = await const Certificates().check(oldToken);
+      expect(check.ok, isTrue);
+      final cert = check.certificate!;
+      expect(cert.issuer, '4JBQ-ADTN-QRWB');
+      expect(cert.content.packName, 'Pack viejo');
+      expect(cert.content.result.reported.serialNumber, 'SN-OLD');
+      // No flag is unknown, not "a real battery".
+      expect(cert.content.result.simulated, isNull);
+      expect(cert.content.result.reported.cycleCapacityAh, isNull);
+    });
+
+    test('a new one says whether the pack was the simulator', () async {
+      final pair = await CertificateIdentity(
+        seed: List<int>.filled(32, 21),
+      ).keyPair();
+      Future<bool?> roundTrip(bool simulated) async {
+        final r = InspectionResult.fromJson({
+          ..._result().toJson(),
+          'demo': simulated,
+        });
+        final cert = await const Certificates().issue(
+          CertificateContent(
+            issuedAt: DateTime.utc(2026, 5, 4, 12),
+            packName: 'Pack',
+            result: r,
+          ),
+          pair,
+        );
+        final check = await const Certificates().check(cert.token);
+        expect(check.ok, isTrue);
+        return check.certificate!.content.result.simulated;
+      }
+
+      expect(await roundTrip(false), isFalse);
+      expect(await roundTrip(true), isTrue);
+    });
+
+    test('flipping the demo flag breaks the signature', () async {
+      final pair = await CertificateIdentity(
+        seed: List<int>.filled(32, 21),
+      ).keyPair();
+      final demo = InspectionResult.fromJson({
+        ..._result().toJson(),
+        'demo': true,
+      });
+      final cert = await const Certificates().issue(
+        CertificateContent(
+          issuedAt: DateTime.utc(2026, 5, 4, 12),
+          packName: 'Pack',
+          result: demo,
+        ),
+        pair,
+      );
+      final real = CertificateContent(
+        issuedAt: DateTime.utc(2026, 5, 4, 12),
+        packName: 'Pack',
+        result: InspectionResult.fromJson({
+          ..._result().toJson(),
+          'demo': false,
+        }),
+      ).encode();
+      final parts = cert.token.split('.');
+      final forged = [
+        parts[0],
+        base64Url.encode(real).replaceAll('=', ''),
+        parts[2],
+        parts[3],
+      ].join('.');
+      expect((await const Certificates().check(forged)).ok, isFalse);
+    });
+  });
+
   group('a certificate that carries earlier runs', () {
     test('signs them along with this one and reads them back', () async {
       final pair = await CertificateIdentity(

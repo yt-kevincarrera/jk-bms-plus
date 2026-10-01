@@ -8,6 +8,7 @@ import '../../data/database.dart';
 import '../../inspection/inspection_result.dart';
 import '../../inspection/inspection_series.dart';
 import '../../inspection/inspection_session.dart';
+import '../../report/certificate.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import 'inspection_verdict_screen.dart';
@@ -17,9 +18,17 @@ import 'inspection_verdict_screen.dart';
 /// Not a list of batteries: the packs here were looked at, not adopted, and
 /// nothing about them lives anywhere else in the app.
 class InspectionsListScreen extends StatelessWidget {
-  const InspectionsListScreen({required this.service, super.key});
+  const InspectionsListScreen({
+    required this.service,
+    this.identity,
+    super.key,
+  });
 
   final BmsService service;
+
+  /// This phone's signing identity, for showing its issuer code. Injectable
+  /// for tests.
+  final CertificateIdentity? identity;
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +63,7 @@ class InspectionsListScreen extends StatelessWidget {
                           ),
                         ),
                       ),
+                      _issuerCard(t),
                       for (final row in rows)
                         _tile(context, t, row, runs[row.id]),
                     ],
@@ -85,9 +95,59 @@ class InspectionsListScreen extends StatelessWidget {
               color: AppTheme.textSecondary,
             ),
           ),
+          const SizedBox(height: 20),
+          _issuerCard(t),
         ],
       ),
     ),
+  );
+
+  /// This phone's issuer code, the one its certificates carry.
+  ///
+  /// A certificate's signature only says which installation signed it. That
+  /// is worth something to a buyer only if they can compare it with a code
+  /// the seller or the workshop has published somewhere they can see, so the
+  /// code has to be findable before anything is signed.
+  Widget _issuerCard(AppL10n t) => FutureBuilder<String>(
+    future: (identity ?? CertificateIdentity()).issuerCode(),
+    builder: (context, snap) {
+      final code = snap.data;
+      if (code == null) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceRaised,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppTheme.hairline),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                t.certificateLocalIssuer.toUpperCase(),
+                style: AppTheme.caption(context),
+              ),
+              const SizedBox(height: 6),
+              SelectableText(
+                code,
+                style: AppTheme.readout(20, color: AppTheme.textPrimary),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                t.certificateLocalIssuerHint,
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  height: 1.45,
+                  color: AppTheme.textFaint,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
   );
 
   Widget _tile(

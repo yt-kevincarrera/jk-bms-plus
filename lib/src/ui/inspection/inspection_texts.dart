@@ -72,3 +72,18 @@ String inspectionCaveatText(AppL10n t, InspectionCaveat c) => switch (c) {
   InspectionCaveat.fewReadings => t.inspectionCaveatFewReadings,
   InspectionCaveat.heavyWasCharge => t.inspectionCaveatHeavyWasCharge,
 };
+
+/// A cell's recovery time as the tables print it: the time, "> time" for a
+/// cell still not back when the window closed, or "did not come back" when
+/// there is not even an end-of-window time.
+String inspectionRecoveryCell(
+  AppL10n t,
+  CellInspection c, {
+  int digits = 1,
+  bool unit = true,
+}) {
+  final s = c.recoverySeconds;
+  if (s == null) return c.recovered ? '--' : t.reportNotRecovered;
+  final shown = '${s.toStringAsFixed(digits)}${unit ? ' s' : ''}';
+  return c.recovered ? shown : '> $shown';
+}

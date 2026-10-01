@@ -96,6 +96,9 @@ class _InspectionScreenState extends State<InspectionScreen> {
     final result = const InspectionAnalysis().compute(
       _session,
       reported: reported,
+      // Carried in the result, and so in anything signed from it: a
+      // rehearsal with the demo pack must never pass for a battery.
+      simulated: service.isDemo,
     );
 
     if (!mounted) return;

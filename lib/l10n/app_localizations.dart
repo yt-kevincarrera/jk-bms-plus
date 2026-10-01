@@ -6333,7 +6333,7 @@ abstract class AppL10n {
   /// No description provided for @reportCertificateIssuer.
   ///
   /// In es, this message translates to:
-  /// **'Emisor (instalación)'**
+  /// **'Código de emisor'**
   String get reportCertificateIssuer;
 
   /// No description provided for @reportCertificateIssuedAt.
@@ -6345,7 +6345,7 @@ abstract class AppL10n {
   /// No description provided for @reportCertificateExplain.
   ///
   /// In es, this message translates to:
-  /// **'La firma demuestra que estas cifras salieron de la app ese día y no se han cambiado desde entonces. No demuestra que la batería sea buena ni que el vendedor sea honesto. Escanea el QR o pega el código en la app para comprobarlo.'**
+  /// **'La firma demuestra que estas cifras salieron de la app en el teléfono cuyo código de emisor aparece aquí, y que no se han cambiado desde entonces. No demuestra de quién es ese teléfono: compara el código con el que publica quien te dio el certificado. Tampoco demuestra qué batería se probó (el nombre y el número de serie los da el BMS y se pueden cambiar), ni la fecha, que es la del reloj de ese teléfono, ni que la batería esté bien. Escanea el QR o pega el código en la app para comprobarlo.'**
   String get reportCertificateExplain;
 
   /// No description provided for @reportHonestyInspection.
@@ -6399,7 +6399,7 @@ abstract class AppL10n {
   /// No description provided for @certificateVerifyIntro.
   ///
   /// In es, this message translates to:
-  /// **'Pega aquí el código que acompaña a un certificado, o el texto del QR. La app comprueba la firma y te muestra exactamente las cifras que se firmaron.'**
+  /// **'Pega aquí el código que acompaña a un certificado, o el texto del QR. La app comprueba la firma y te muestra las cifras que se firmaron, todas, con el veredicto que la app saca de ellas.'**
   String get certificateVerifyIntro;
 
   /// No description provided for @certificateVerifyHint.
@@ -6423,8 +6423,8 @@ abstract class AppL10n {
   /// No description provided for @certificateValid.
   ///
   /// In es, this message translates to:
-  /// **'Firma correcta. Estas son las cifras firmadas.'**
-  String get certificateValid;
+  /// **'Firma válida para el emisor {issuer}. Comprueba que ese código es el de quien te dio el certificado.'**
+  String certificateValid(String issuer);
 
   /// No description provided for @certificateBadSignature.
   ///
@@ -8393,6 +8393,90 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Energía total contada por el BMS'**
   String get evidenceCycleCapacity;
+
+  /// No description provided for @certificateIssuedHere.
+  ///
+  /// In es, this message translates to:
+  /// **'Emitido por este teléfono.'**
+  String get certificateIssuedHere;
+
+  /// No description provided for @certificateDoesNotProve.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que la firma no demuestra: qué batería se probó (el nombre y el número de serie los da el BMS y se pueden cambiar), ni la fecha, que es la del reloj del teléfono que firmó, ni que la batería esté bien.'**
+  String get certificateDoesNotProve;
+
+  /// No description provided for @certificateSimulated.
+  ///
+  /// In es, this message translates to:
+  /// **'PRUEBA CON PACK SIMULADO. Estas cifras salieron del simulador de la app, no de una batería.'**
+  String get certificateSimulated;
+
+  /// No description provided for @certificateSimulatedUnknown.
+  ///
+  /// In es, this message translates to:
+  /// **'Certificado de una versión anterior de la app: no dice si la prueba se hizo con una batería o con el pack simulado.'**
+  String get certificateSimulatedUnknown;
+
+  /// No description provided for @certificateNoSimulated.
+  ///
+  /// In es, this message translates to:
+  /// **'Un ensayo con el pack simulado no se puede firmar: un certificado dice que las cifras salieron de una batería.'**
+  String get certificateNoSimulated;
+
+  /// No description provided for @certificateLocalIssuer.
+  ///
+  /// In es, this message translates to:
+  /// **'Código de emisor de este teléfono'**
+  String get certificateLocalIssuer;
+
+  /// No description provided for @certificateLocalIssuerHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Es el código que verá quien compruebe un certificado firmado en este teléfono. Publícalo donde te conozcan (tu anuncio, tu taller) para que puedan compararlo.'**
+  String get certificateLocalIssuerHint;
+
+  /// No description provided for @inspectionSimulatedBanner.
+  ///
+  /// In es, this message translates to:
+  /// **'PRUEBA CON PACK SIMULADO. Nada de esto es de una batería real.'**
+  String get inspectionSimulatedBanner;
+
+  /// No description provided for @reportCertificateIssuerCheck.
+  ///
+  /// In es, this message translates to:
+  /// **'Comprueba que este código de emisor es el que publica quien te dio el certificado.'**
+  String get reportCertificateIssuerCheck;
+
+  /// No description provided for @reportPackLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Batería'**
+  String get reportPackLabel;
+
+  /// No description provided for @reportCurrentStep.
+  ///
+  /// In es, this message translates to:
+  /// **'Escalón de corriente (carga menos reposo)'**
+  String get reportCurrentStep;
+
+  /// No description provided for @reportMedianRise.
+  ///
+  /// In es, this message translates to:
+  /// **'Subida mediana con el cargador'**
+  String get reportMedianRise;
+
+  /// No description provided for @inspectionCellHeaderChange.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambio'**
+  String get inspectionCellHeaderChange;
+
+  /// No description provided for @inspectionSaveTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar esta prueba'**
+  String get inspectionSaveTitle;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

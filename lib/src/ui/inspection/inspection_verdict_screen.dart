@@ -20,6 +20,7 @@ import '../license_scope.dart';
 import '../theme.dart';
 import '../widgets/advice_list.dart';
 import '../widgets/common.dart';
+import 'inspection_sections.dart';
 import 'inspection_texts.dart';
 
 /// The traffic light, three sentences, the fidelity, and a save button.
@@ -151,6 +152,11 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
         child: ListView(
           padding: const EdgeInsets.only(top: 4, bottom: 28),
           children: [
+            // A rehearsal against the app's own simulator looks exactly like
+            // a real result. Said first and loudly, on every screen it is
+            // shown on, so nobody reads a demo pack's figures as a battery.
+            if (r.simulated == true)
+              inspectionSimulatedBanner(t.inspectionSimulatedBanner),
             // --- The light ---
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 4),
@@ -231,26 +237,7 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
               title: t.verdictTitle,
               showHonestyNote: false,
             ),
-            if (r.caveats.isNotEmpty)
-              Section(
-                title: t.inspectionCaveatsTitle,
-                accent: AppTheme.watch,
-                children: [
-                  for (final c in r.caveats)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Text(
-                        inspectionCaveatText(t, c),
-                        style: const TextStyle(
-                          fontSize: 12.5,
-                          height: 1.45,
-                          color: AppTheme.textSecondary,
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: 4),
-                ],
-              ),
+            inspectionCaveatsSection(t, r),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 4, 20, 6),
               child: Text(
@@ -263,11 +250,11 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
               ),
             ),
             _seriesSection(t),
-            _cellsSection(t, r),
-            _reportedSection(t, r),
+            inspectionCellsSection(t, r, verdicts: _verdicts),
+            inspectionReportedSection(t, r),
             _sheetSection(t),
             Section(
-              title: t.inspectionsTitle,
+              title: t.inspectionSaveTitle,
               children: [
                 TextField(
                   controller: _note,
@@ -417,7 +404,10 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
 
   Widget _sheetSection(AppL10n t) {
     final e = LicenseScope.entitlements(context);
-    final canSign = e.allows(Feature.sellerCertificate);
+    // A rehearsal with the simulated pack is never signed. A certificate is
+    // a statement that these figures came off a battery, and these did not.
+    final simulated = widget.result.simulated == true;
+    final canSign = e.allows(Feature.sellerCertificate) && !simulated;
     return Section(
       title: t.reportSectionCertificate,
       children: [
@@ -436,7 +426,7 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          _certificateCreditsLine(t, e),
+          simulated ? t.certificateNoSimulated : _certificateCreditsLine(t, e),
           style: const TextStyle(
             fontSize: 11.5,
             height: 1.45,
@@ -469,6 +459,7 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
     try {
       final r = widget.result;
       Certificate? certificate;
+      if (sign && r.simulated == true) return;
       if (sign) {
         if (!await license.consumeCertificate()) {
           messenger.showSnackBar(
@@ -597,133 +588,6 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(t.inspectionSaved)));
-  }
-
-  Widget _cellsSection(AppL10n t, InspectionResult r) {
-    if (r.cells.isEmpty) return const SizedBox.shrink();
-    final worstSag = r.worstSag?.index;
-    final slow = r.slowestRecovery;
-    const label = TextStyle(fontSize: 10.5, color: AppTheme.textFaint);
-    const cell = TextStyle(
-      fontSize: 12,
-      fontFeatures: AppTheme.tabular,
-      color: AppTheme.textSecondary,
-    );
-    return Section(
-      title: t.inspectionCellsTitle,
-      children: [
-        Row(
-          children: [
-            const SizedBox(width: 30, child: Text('#', style: label)),
-            Expanded(child: Text(t.inspectionCellHeaderRest, style: label)),
-            Expanded(child: Text(t.inspectionCellHeaderSag, style: label)),
-            Expanded(child: Text(t.inspectionCellHeaderIr, style: label)),
-            Expanded(child: Text(t.inspectionCellHeaderRec, style: label)),
-          ],
-        ),
-        const SizedBox(height: 4),
-        for (final c in r.cells)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 30,
-                  child: Text(
-                    '${c.index}',
-                    style: cell.copyWith(
-                      color: c.index == worstSag && r.worstSagExcess != null
-                          ? AppTheme.watch
-                          : AppTheme.textPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    '${c.restVolts.toStringAsFixed(3)} V',
-                    style: cell,
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    c.heavySagVolts == null
-                        ? '--'
-                        : '${(c.heavySagVolts! * 1000).toStringAsFixed(0)} mV',
-                    style: cell.copyWith(
-                      color:
-                          c.index == worstSag &&
-                              (r.worstExcessOhms ?? 0) >=
-                                  _verdicts.thresholds.sagWatchOhms
-                          ? AppTheme.watch
-                          : null,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    c.resistanceOhms == null
-                        ? '--'
-                        : '${(c.resistanceOhms! * 1000).toStringAsFixed(1)} mΩ',
-                    style: cell,
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    c.recoverySeconds == null
-                        ? '--'
-                        : c.recovered
-                        ? '${c.recoverySeconds!.toStringAsFixed(0)} s'
-                        : '> ${c.recoverySeconds!.toStringAsFixed(0)} s',
-                    style: cell.copyWith(
-                      color:
-                          slow != null && slow.index == c.index && !c.recovered
-                          ? AppTheme.watch
-                          : null,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        const SizedBox(height: 6),
-      ],
-    );
-  }
-
-  Widget _reportedSection(AppL10n t, InspectionResult r) {
-    final rep = r.reported;
-    return Section(
-      title: t.inspectionReportedTitle,
-      intro: t.inspectionReportedHint,
-      accent: AppTheme.textFaint,
-      children: [
-        if (rep.model.isNotEmpty) InfoRow(t.inspectionReportedModel, rep.model),
-        InfoRow(
-          t.inspectionReportedCycles,
-          rep.cycleCount?.toString() ?? '--',
-          dim: rep.cycleCount == null,
-        ),
-        InfoRow(
-          t.inspectionReportedCapacity,
-          rep.configuredCapacityAh == null
-              ? '--'
-              : '${rep.configuredCapacityAh!.toStringAsFixed(0)} Ah',
-          dim: rep.configuredCapacityAh == null,
-        ),
-        InfoRow(
-          t.inspectionReportedSoc,
-          rep.soc == null ? '--' : '${rep.soc!.toStringAsFixed(0)} %',
-          dim: rep.soc == null,
-        ),
-        InfoRow(
-          t.inspectionReportedSoh,
-          rep.soh == null ? '--' : '${rep.soh!.toStringAsFixed(0)} %',
-          dim: rep.soh == null,
-          last: true,
-        ),
-      ],
-    );
   }
 
   static String _date(DateTime utc) {

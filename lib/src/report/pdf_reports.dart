@@ -214,7 +214,8 @@ class PdfReports {
             generatedAt: d.generatedAt,
             appVersion: d.appVersion,
           ),
-          _lightBanner(t, d.light),
+          if (r.simulated == true) _simulatedBanner(t),
+          _lightBanner(t, d.light, r),
           _section(t.reportSectionTest, [
             _row(t.reportTestedAt, _dateTime(r.at)),
             _row(t.reportCellCount, '${r.cellCount}'),
@@ -222,8 +223,17 @@ class PdfReports {
               t.reportPeakCurrent,
               '${r.peakDischargeAmps.toStringAsFixed(1)} A',
             ),
+            _row(
+              t.reportCurrentStep,
+              r.hasHeavyLoad
+                  ? '${r.currentStepAmps.toStringAsFixed(1)} A'
+                  : _dash,
+            ),
             _row(t.reportRestDelta, _volts(r.restDeltaVolts, 3)),
-            _row(t.reportMedianSag, _volts(r.medianHeavySagVolts, 3)),
+            _row(
+              r.heavyWasCharge ? t.reportMedianRise : t.reportMedianSag,
+              _volts(r.medianHeavySagVolts, 3),
+            ),
             _row(
               t.reportMedianResistance,
               r.medianResistanceOhms == null
@@ -698,7 +708,27 @@ class PdfReports {
         ),
       ]);
 
-  pw.Widget _lightBanner(AppL10n t, InspectionLight light) {
+  /// A run against the app's own simulator, said at the top in red. The
+  /// figures under it look like any battery's.
+  pw.Widget _simulatedBanner(AppL10n t) => pw.Container(
+    margin: const pw.EdgeInsets.only(top: 14),
+    padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+    decoration: pw.BoxDecoration(
+      color: PdfColor.fromInt(0xFFFBE9E7),
+      border: pw.Border.all(color: _bad, width: 1.5),
+      borderRadius: pw.BorderRadius.circular(4),
+    ),
+    child: _t(
+      t.inspectionSimulatedBanner,
+      style: pw.TextStyle(
+        fontSize: 12,
+        fontWeight: pw.FontWeight.bold,
+        color: _bad,
+      ),
+    ),
+  );
+
+  pw.Widget _lightBanner(AppL10n t, InspectionLight light, InspectionResult r) {
     final colour = switch (light) {
       InspectionLight.good => _good,
       InspectionLight.watch => _watch,
@@ -707,12 +737,7 @@ class PdfReports {
       // sheet that shaded this green or red would be making a claim.
       InspectionLight.unmeasured => _faint,
     };
-    final text = switch (light) {
-      InspectionLight.good => t.inspectionLightGood,
-      InspectionLight.watch => t.inspectionLightWatch,
-      InspectionLight.problem => t.inspectionLightProblem,
-      InspectionLight.unmeasured => t.inspectionLightUnmeasured,
-    };
+    final text = inspectionHeadline(t, light, r);
     return pw.Container(
       margin: const pw.EdgeInsets.only(top: 14),
       padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 9),
@@ -776,7 +801,19 @@ class PdfReports {
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 _row(t.reportCertificateCode, cert.code, strong: true),
-                _row(t.reportCertificateIssuer, cert.issuer),
+                // The issuer is what a buyer has to compare with the code the
+                // seller or the workshop publishes. Without that comparison
+                // the signature only proves that somebody with the app signed.
+                _row(t.reportCertificateIssuer, cert.issuer, strong: true),
+                _t(
+                  t.reportCertificateIssuerCheck,
+                  style: pw.TextStyle(
+                    fontSize: 8.5,
+                    fontWeight: pw.FontWeight.bold,
+                    color: _ink,
+                  ),
+                ),
+                pw.SizedBox(height: 4),
                 _row(
                   t.reportCertificateIssuedAt,
                   _dateTime(cert.content.issuedAt),

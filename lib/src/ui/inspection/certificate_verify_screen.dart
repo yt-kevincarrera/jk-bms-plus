@@ -6,7 +6,10 @@ import '../../inspection/inspection_result.dart';
 import '../../inspection/inspection_verdicts.dart';
 import '../../report/certificate.dart';
 import '../theme.dart';
+import '../widgets/advice_list.dart';
 import '../widgets/common.dart';
+import 'inspection_sections.dart';
+import 'inspection_texts.dart';
 
 /// Checks a certificate somebody else produced.
 ///
@@ -17,9 +20,20 @@ import '../widgets/common.dart';
 ///
 /// A pasted certificate is untrusted input from a stranger's phone. Nothing
 /// here is displayed until the signature has checked out, and what is
-/// displayed afterwards is only what was signed.
+/// displayed afterwards is only what was signed, with the verdict the app
+/// draws from it.
+///
+/// A good signature is not a trusted issuer. The key travels inside the
+/// token, so anybody with the app can sign a certificate of their own; what
+/// the signature does establish is which installation signed it, and that is
+/// only worth something when the buyer compares the issuer code with the one
+/// the seller or the workshop publishes. So that is what the screen says.
 class CertificateVerifyScreen extends StatefulWidget {
-  const CertificateVerifyScreen({super.key});
+  const CertificateVerifyScreen({this.identity, super.key});
+
+  /// This phone's own signing identity, to say "issued by this phone" when
+  /// it was. Injectable for tests.
+  final CertificateIdentity? identity;
 
   @override
   State<CertificateVerifyScreen> createState() =>
@@ -31,6 +45,9 @@ class _CertificateVerifyScreenState extends State<CertificateVerifyScreen> {
   bool _busy = false;
   Certificate? _accepted;
   String? _problem;
+
+  /// This phone's issuer code, when it has ever signed anything.
+  String? _localIssuer;
 
   @override
   void dispose() {
@@ -46,9 +63,17 @@ class _CertificateVerifyScreenState extends State<CertificateVerifyScreen> {
       _problem = null;
     });
     final check = await const Certificates().check(_input.text);
+    String? local;
+    try {
+      local = await (widget.identity ?? CertificateIdentity())
+          .existingIssuerCode();
+    } on Object {
+      local = null;
+    }
     if (!mounted) return;
     setState(() {
       _busy = false;
+      _localIssuer = local;
       _accepted = check.certificate;
       _problem = check.ok
           ? null
@@ -137,7 +162,8 @@ class _CertificateVerifyScreenState extends State<CertificateVerifyScreen> {
     // Recomputed from the signed figures rather than read from the
     // certificate: the light is a conclusion, and a seller who could sign one
     // separately could sign a red test and label it green.
-    final light = const InspectionVerdicts().light(r);
+    const verdicts = InspectionVerdicts();
+    final light = verdicts.light(r);
     final tone = switch (light) {
       InspectionLight.problem => AppTheme.bad,
       InspectionLight.watch => AppTheme.watch,
@@ -146,6 +172,15 @@ class _CertificateVerifyScreenState extends State<CertificateVerifyScreen> {
       // be dressed as either on a certificate somebody is being shown.
       InspectionLight.unmeasured => AppTheme.textFaint,
     };
+    final fromHere = _localIssuer != null && _localIssuer == cert.issuer;
+    const body = TextStyle(
+      fontSize: 12.5,
+      height: 1.45,
+      color: AppTheme.textSecondary,
+    );
+    final sag = r.medianHeavySagVolts;
+    final ir = r.medianResistanceOhms;
+    final rec = r.medianRecoverySeconds;
     return [
       const SizedBox(height: 16),
       Container(
@@ -155,23 +190,86 @@ class _CertificateVerifyScreenState extends State<CertificateVerifyScreen> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppTheme.good.withValues(alpha: 0.5)),
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.verified_outlined, color: AppTheme.good),
+            Row(
+              children: [
+                const Icon(Icons.verified_outlined, color: AppTheme.good),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    t.certificateValid(cert.issuer),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      height: 1.4,
+                      color: AppTheme.good,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            // The issuer is the one thing a buyer has to check by hand, so it
+            // is the biggest thing on the card.
+            SelectableText(
+              cert.issuer,
+              style: AppTheme.readout(22, color: AppTheme.textPrimary),
+            ),
+            if (fromHere) ...[
+              const SizedBox(height: 4),
+              Text(
+                t.certificateIssuedHere,
+                style: const TextStyle(fontSize: 12.5, color: AppTheme.watch),
+              ),
+            ],
+            const SizedBox(height: 8),
+            Text(t.certificateDoesNotProve, style: body),
+          ],
+        ),
+      ),
+      if (r.simulated == true)
+        inspectionSimulatedBanner(t.certificateSimulated)
+      else if (r.simulated == null)
+        Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: Text(t.certificateSimulatedUnknown, style: body),
+        ),
+      // --- The verdict the signed figures give ---
+      Padding(
+        padding: const EdgeInsets.fromLTRB(0, 18, 0, 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              margin: const EdgeInsets.only(top: 6),
+              decoration: BoxDecoration(color: tone, shape: BoxShape.circle),
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                t.certificateValid,
-                style: const TextStyle(
-                  fontSize: 13,
-                  height: 1.4,
-                  color: AppTheme.good,
+                inspectionHeadline(t, light, r, verdicts: verdicts),
+                style: TextStyle(
+                  fontSize: 19,
+                  height: 1.25,
+                  fontWeight: FontWeight.w700,
+                  color: tone,
                 ),
               ),
             ),
           ],
         ),
       ),
+      if (light == InspectionLight.unmeasured)
+        Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Text(
+            inspectionUnmeasuredText(t, r, verdicts: verdicts),
+            style: body,
+          ),
+        ),
       Section(
         title: t.reportSectionCertificate,
         children: [
@@ -179,7 +277,7 @@ class _CertificateVerifyScreenState extends State<CertificateVerifyScreen> {
           InfoRow(t.reportCertificateIssuer, cert.issuer),
           InfoRow(t.reportCertificateIssuedAt, _date(cert.content.issuedAt)),
           InfoRow(
-            t.reportSectionTest,
+            t.reportPackLabel,
             cert.content.packName.isEmpty
                 ? t.reportUnknownPack
                 : cert.content.packName,
@@ -198,18 +296,48 @@ class _CertificateVerifyScreenState extends State<CertificateVerifyScreen> {
             '${r.peakDischargeAmps.toStringAsFixed(1)} A',
           ),
           InfoRow(
+            t.reportCurrentStep,
+            r.hasHeavyLoad ? '${r.currentStepAmps.toStringAsFixed(1)} A' : '--',
+          ),
+          InfoRow(
             t.reportRestDelta,
             '${r.restDeltaVolts.toStringAsFixed(3)} V',
           ),
           InfoRow(
-            t.reportMedianSag,
-            r.medianHeavySagVolts == null
-                ? '--'
-                : '${r.medianHeavySagVolts!.toStringAsFixed(3)} V',
+            r.heavyWasCharge ? t.reportMedianRise : t.reportMedianSag,
+            sag == null ? '--' : '${sag.toStringAsFixed(3)} V',
+          ),
+          InfoRow(
+            t.reportMedianResistance,
+            ir == null ? '--' : '${(ir * 1000).toStringAsFixed(1)} mΩ',
+          ),
+          InfoRow(
+            t.reportMedianRecovery,
+            rec == null ? '--' : '${rec.toStringAsFixed(1)} s',
+          ),
+          InfoRow(
+            t.reportDuration,
+            '${r.durationSeconds} s  ${t.reportReadingsInline('${r.readings}')}',
             last: true,
           ),
         ],
       ),
+      AdviceList(
+        advice: verdicts.evaluate(r),
+        title: t.verdictTitle,
+        showHonestyNote: false,
+      ),
+      inspectionCaveatsSection(t, r),
+      inspectionCellsSection(t, r, verdicts: verdicts),
+      inspectionReportedSection(t, r),
+      if (cert.content.note.isNotEmpty)
+        Section(
+          title: t.reportSectionNote,
+          children: [
+            Text(cert.content.note, style: body),
+            const SizedBox(height: 6),
+          ],
+        ),
       // The runs signed alongside this one. A buyer looking at a certificate
       // that names the same cell three times is looking at a fact, not at a
       // seller's good day.
@@ -221,10 +349,7 @@ class _CertificateVerifyScreenState extends State<CertificateVerifyScreen> {
             for (final run in cert.content.history)
               InfoRow(
                 t.inspectionSeriesPrevious(_date(run.at)),
-                run.worstCell == null
-                    ? t.inspectionCaveatNoHeavyLoad
-                    : '${t.reportCell} ${run.worstCell}'
-                          '  ${(run.worstSagVolts ?? 0).toStringAsFixed(3)} V',
+                _historyLine(t, run),
                 dim: true,
               ),
             const SizedBox(height: 4),
@@ -242,6 +367,15 @@ class _CertificateVerifyScreenState extends State<CertificateVerifyScreen> {
         ),
       ),
     ];
+  }
+
+  /// An earlier signed run in one line. A missing sag is a dash, not a
+  /// "0.000 V" that reads as a measured nothing.
+  static String _historyLine(AppL10n t, CertifiedRun run) {
+    if (run.worstCell == null) return t.inspectionCaveatNoHeavyLoad;
+    final sag = run.worstSagVolts;
+    return '${t.reportCell} ${run.worstCell}  '
+        '${sag == null ? '--' : '${sag.toStringAsFixed(3)} V'}';
   }
 
   static String _date(DateTime utc) {

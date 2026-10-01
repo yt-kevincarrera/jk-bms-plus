@@ -3722,14 +3722,14 @@ class AppL10nEs extends AppL10n {
   String get reportCertificateCode => 'Código del certificado';
 
   @override
-  String get reportCertificateIssuer => 'Emisor (instalación)';
+  String get reportCertificateIssuer => 'Código de emisor';
 
   @override
   String get reportCertificateIssuedAt => 'Firmado el';
 
   @override
   String get reportCertificateExplain =>
-      'La firma demuestra que estas cifras salieron de la app ese día y no se han cambiado desde entonces. No demuestra que la batería sea buena ni que el vendedor sea honesto. Escanea el QR o pega el código en la app para comprobarlo.';
+      'La firma demuestra que estas cifras salieron de la app en el teléfono cuyo código de emisor aparece aquí, y que no se han cambiado desde entonces. No demuestra de quién es ese teléfono: compara el código con el que publica quien te dio el certificado. Tampoco demuestra qué batería se probó (el nombre y el número de serie los da el BMS y se pueden cambiar), ni la fecha, que es la del reloj de ese teléfono, ni que la batería esté bien. Escanea el QR o pega el código en la app para comprobarlo.';
 
   @override
   String reportHonestyInspection(String date) {
@@ -3759,7 +3759,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get certificateVerifyIntro =>
-      'Pega aquí el código que acompaña a un certificado, o el texto del QR. La app comprueba la firma y te muestra exactamente las cifras que se firmaron.';
+      'Pega aquí el código que acompaña a un certificado, o el texto del QR. La app comprueba la firma y te muestra las cifras que se firmaron, todas, con el veredicto que la app saca de ellas.';
 
   @override
   String get certificateVerifyHint => 'JKC1....';
@@ -3771,8 +3771,9 @@ class AppL10nEs extends AppL10n {
   String get certificateVerifyOpen => 'Verificar un certificado';
 
   @override
-  String get certificateValid =>
-      'Firma correcta. Estas son las cifras firmadas.';
+  String certificateValid(String issuer) {
+    return 'Firma válida para el emisor $issuer. Comprueba que ese código es el de quien te dio el certificado.';
+  }
 
   @override
   String get certificateBadSignature =>
@@ -5051,4 +5052,53 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get evidenceCycleCapacity => 'Energía total contada por el BMS';
+
+  @override
+  String get certificateIssuedHere => 'Emitido por este teléfono.';
+
+  @override
+  String get certificateDoesNotProve =>
+      'Lo que la firma no demuestra: qué batería se probó (el nombre y el número de serie los da el BMS y se pueden cambiar), ni la fecha, que es la del reloj del teléfono que firmó, ni que la batería esté bien.';
+
+  @override
+  String get certificateSimulated =>
+      'PRUEBA CON PACK SIMULADO. Estas cifras salieron del simulador de la app, no de una batería.';
+
+  @override
+  String get certificateSimulatedUnknown =>
+      'Certificado de una versión anterior de la app: no dice si la prueba se hizo con una batería o con el pack simulado.';
+
+  @override
+  String get certificateNoSimulated =>
+      'Un ensayo con el pack simulado no se puede firmar: un certificado dice que las cifras salieron de una batería.';
+
+  @override
+  String get certificateLocalIssuer => 'Código de emisor de este teléfono';
+
+  @override
+  String get certificateLocalIssuerHint =>
+      'Es el código que verá quien compruebe un certificado firmado en este teléfono. Publícalo donde te conozcan (tu anuncio, tu taller) para que puedan compararlo.';
+
+  @override
+  String get inspectionSimulatedBanner =>
+      'PRUEBA CON PACK SIMULADO. Nada de esto es de una batería real.';
+
+  @override
+  String get reportCertificateIssuerCheck =>
+      'Comprueba que este código de emisor es el que publica quien te dio el certificado.';
+
+  @override
+  String get reportPackLabel => 'Batería';
+
+  @override
+  String get reportCurrentStep => 'Escalón de corriente (carga menos reposo)';
+
+  @override
+  String get reportMedianRise => 'Subida mediana con el cargador';
+
+  @override
+  String get inspectionCellHeaderChange => 'Cambio';
+
+  @override
+  String get inspectionSaveTitle => 'Guardar esta prueba';
 }
