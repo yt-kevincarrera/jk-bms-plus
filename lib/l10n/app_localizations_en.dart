@@ -5863,4 +5863,27 @@ class AppL10nEn extends AppL10n {
   @override
   String get systemWritesOnNote =>
       'The write permission is on: the app can only switch the three switches above on and off, asking you every time. No other value is ever written.';
+
+  @override
+  String get tripMapTitle => 'Route';
+
+  @override
+  String get tripMapStart => 'Start';
+
+  @override
+  String get tripMapEnd => 'Finish';
+
+  @override
+  String get tripMapBySpeed => 'Speed';
+
+  @override
+  String get tripMapByPower => 'Power';
+
+  @override
+  String get tripMapPowerHint =>
+      'What the battery was giving at each point: its voltage times its current, as the BMS sent them beside each position. Not consumption per kilometre, which shoots up at every stop even when nothing is spent.';
+
+  @override
+  String get tripMapOffline =>
+      'The background map is fetched from OpenStreetMap over the internet when this screen opens, so their servers see which area the ride was in (not the ride itself). Offline, the route still draws on a plain background.';
 }

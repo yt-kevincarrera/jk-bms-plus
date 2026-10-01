@@ -9755,6 +9755,48 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'El permiso de escritura está encendido: la app solo puede encender y apagar los tres interruptores de arriba, cada vez con tu confirmación. Ningún otro valor se escribe nunca.'**
   String get systemWritesOnNote;
+
+  /// No description provided for @tripMapTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Recorrido'**
+  String get tripMapTitle;
+
+  /// No description provided for @tripMapStart.
+  ///
+  /// In es, this message translates to:
+  /// **'Salida'**
+  String get tripMapStart;
+
+  /// No description provided for @tripMapEnd.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegada'**
+  String get tripMapEnd;
+
+  /// No description provided for @tripMapBySpeed.
+  ///
+  /// In es, this message translates to:
+  /// **'Velocidad'**
+  String get tripMapBySpeed;
+
+  /// No description provided for @tripMapByPower.
+  ///
+  /// In es, this message translates to:
+  /// **'Potencia'**
+  String get tripMapByPower;
+
+  /// No description provided for @tripMapPowerHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que daba la batería en cada punto: su voltaje por su corriente, tal como los mandó el BMS junto a cada posición. No es consumo por kilómetro, que en cada parada se dispara aunque no se gaste nada.'**
+  String get tripMapPowerHint;
+
+  /// No description provided for @tripMapOffline.
+  ///
+  /// In es, this message translates to:
+  /// **'El mapa de fondo se pide a OpenStreetMap por internet al abrir esta pantalla, así que sus servidores ven por qué zona fue el viaje (no el viaje en sí). Sin conexión, el recorrido se dibuja igual sobre fondo liso.'**
+  String get tripMapOffline;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

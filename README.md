@@ -26,7 +26,10 @@ load. It is quoted as a band, and the band narrows as the estimate earns it.
 
 **Trip mode.** Speedometer, distance, top and average speed, climb and descent,
 with pause and resume — alongside what the pack did over that same ride. Keeps
-recording with the screen off. Every trip is stored with its track.
+recording with the screen off. Every trip is stored with its track, drawn on
+an OpenStreetMap map in the trip detail and coloured by speed or by the power
+the pack gave. The tiles are fetched only while that screen is open; offline,
+the route still draws on a plain background.
 
 **The numbers the vendor would rather not show.** Implied real capacity against
 what the pack was sold as. Honest full-equivalent cycles against the BMS's

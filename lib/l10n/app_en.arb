@@ -3542,5 +3542,12 @@
       }
     }
   },
-  "systemWritesOnNote": "The write permission is on: the app can only switch the three switches above on and off, asking you every time. No other value is ever written."
+  "systemWritesOnNote": "The write permission is on: the app can only switch the three switches above on and off, asking you every time. No other value is ever written.",
+  "tripMapTitle": "Route",
+  "tripMapStart": "Start",
+  "tripMapEnd": "Finish",
+  "tripMapBySpeed": "Speed",
+  "tripMapByPower": "Power",
+  "tripMapPowerHint": "What the battery was giving at each point: its voltage times its current, as the BMS sent them beside each position. Not consumption per kilometre, which shoots up at every stop even when nothing is spent.",
+  "tripMapOffline": "The background map is fetched from OpenStreetMap over the internet when this screen opens, so their servers see which area the ride was in (not the ride itself). Offline, the route still draws on a plain background."
 }

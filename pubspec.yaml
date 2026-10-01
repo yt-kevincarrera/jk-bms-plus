@@ -61,6 +61,10 @@ dependencies:
   # foreground service notification is a quiet readout by design, so it is
   # the wrong thing to shout with.
   flutter_local_notifications: ^22.3.0
+  # A ride's track drawn on OpenStreetMap tiles in the trip detail. No API
+  # key and no account: the tiles are fetched only while that screen is open.
+  flutter_map: ^8.3.2
+  latlong2: ^0.10.1
 
 dev_dependencies:
   flutter_test:

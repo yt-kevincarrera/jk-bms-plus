@@ -17,6 +17,7 @@ import 'widgets/energy_source_label.dart';
 import 'widgets/representative_question.dart';
 import 'widgets/trip_grade_rows.dart';
 import 'widgets/trip_learned_section.dart';
+import 'widgets/trip_map.dart';
 import 'widgets/trip_summary_view.dart';
 
 /// One stored ride, in full.
@@ -185,6 +186,22 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                   ),
                 ],
               ),
+            ),
+            // Where the ride went, from the same track the profile and the
+            // GPX export read. Draws nothing for a ride with no fixes.
+            FutureBuilder<List<TripPoint>>(
+              future: _points,
+              builder: (context, snap) {
+                final points = snap.data ?? const <TripPoint>[];
+                if (drawablePoints(points).length < 2) {
+                  return const SizedBox.shrink();
+                }
+                return Section(
+                  title: t.tripMapTitle,
+                  intro: t.tripMapOffline,
+                  children: [TripMap(points: points)],
+                );
+              },
             ),
             _ProfileSection(points: _points, t: t),
             // What the app concluded when this ride ended, as it was then. It

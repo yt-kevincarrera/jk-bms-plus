@@ -5894,4 +5894,27 @@ class AppL10nEs extends AppL10n {
   @override
   String get systemWritesOnNote =>
       'El permiso de escritura está encendido: la app solo puede encender y apagar los tres interruptores de arriba, cada vez con tu confirmación. Ningún otro valor se escribe nunca.';
+
+  @override
+  String get tripMapTitle => 'Recorrido';
+
+  @override
+  String get tripMapStart => 'Salida';
+
+  @override
+  String get tripMapEnd => 'Llegada';
+
+  @override
+  String get tripMapBySpeed => 'Velocidad';
+
+  @override
+  String get tripMapByPower => 'Potencia';
+
+  @override
+  String get tripMapPowerHint =>
+      'Lo que daba la batería en cada punto: su voltaje por su corriente, tal como los mandó el BMS junto a cada posición. No es consumo por kilómetro, que en cada parada se dispara aunque no se gaste nada.';
+
+  @override
+  String get tripMapOffline =>
+      'El mapa de fondo se pide a OpenStreetMap por internet al abrir esta pantalla, así que sus servidores ven por qué zona fue el viaje (no el viaje en sí). Sin conexión, el recorrido se dibuja igual sobre fondo liso.';
 }
