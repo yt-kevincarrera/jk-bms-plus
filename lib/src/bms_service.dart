@@ -2579,14 +2579,16 @@ class BmsService {
     for (final alert in firing) {
       if (mutedAlerts.contains(alert.name)) continue;
       _alertController.add(alert);
-      _notify(
+      final buzzed = _notify(
         key: alert.name,
         words: rideAlertText?.call(alert, snapshot),
         critical: alert.isCritical,
       );
-      if (hapticAlerts) {
-        // Riding is exactly when nobody is looking at the screen, so the phone
-        // has to be felt rather than read.
+      // Riding is exactly when nobody is looking at the screen, so the phone
+      // has to be felt rather than read. Once, though: a vibrating
+      // notification already buzzes, and the in-app haptic on top of it made
+      // every alert with the app open a double buzz.
+      if (hapticAlerts && !buzzed) {
         if (alert.isCritical) {
           HapticFeedback.heavyImpact();
         } else {
@@ -2598,12 +2600,15 @@ class BmsService {
 
   /// Posts one alert to the shade, if the UI gave it words and the rider has
   /// not switched the whole thing off.
-  void _notify({
+  ///
+  /// Returns whether what it posted vibrates, so the caller does not buzz a
+  /// second time for the same alert.
+  bool _notify({
     required String key,
     required (String, String)? words,
     required bool critical,
   }) {
-    if (!notifyAlerts || words == null) return;
+    if (!notifyAlerts || words == null) return false;
     unawaited(
       alertNotifications.show(
         key: key,
@@ -2615,6 +2620,7 @@ class BmsService {
         vibrate: hapticAlerts,
       ),
     );
+    return hapticAlerts && alertNotifications.isReady;
   }
 
   /// Creates the alert channels and asks for permission. Called by the UI,
@@ -3089,12 +3095,12 @@ class BmsService {
       // The alert channel is its own high-importance channel, separate from
       // the foreground service, and posts whether or not a service is up;
       // what keeps readings arriving with the screen off is the service.
-      _notify(
+      final buzzed = _notify(
         key: alert.name,
         words: chargeAlertText?.call(alert, snapshot),
         critical: alert.isProblem,
       );
-      if (hapticAlerts) {
+      if (hapticAlerts && !buzzed) {
         if (alert.isProblem) {
           HapticFeedback.heavyImpact();
         } else {
