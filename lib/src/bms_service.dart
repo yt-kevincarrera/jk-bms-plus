@@ -2377,6 +2377,24 @@ class BmsService {
       return;
     }
 
+    // Held is not the same as running: Android stops services on its own, and
+    // nothing told this object. Found out here, it is started again and the
+    // loss is written down, instead of a ride carrying on with no service.
+    final held = _serviceOwner;
+    if (held != null && !await notifications.stillRunning()) {
+      unawaited(
+        repository?.note(
+              LinkEventKind.foregroundServiceLost,
+              detail: '${held.name} location=$_serviceLocationTyped',
+              deviceId: activeDeviceId,
+            ) ??
+            Future.value(),
+      );
+      _serviceOwner = null;
+      _notificationTimer?.cancel();
+      _notificationTimer = null;
+    }
+
     if (_serviceOwner == wanted) {
       await notifications.update(
         title: _serviceTitle(wanted),
@@ -2441,7 +2459,8 @@ class BmsService {
       unawaited(
         repository?.note(
               LinkEventKind.foregroundServiceRefused,
-              detail: '${wanted.name} location=$needsLocation',
+              detail: '${wanted.name} location=$needsLocation '
+                  '${notifications.lastFailure ?? ''}',
               deviceId: activeDeviceId,
             ) ??
             Future.value(),

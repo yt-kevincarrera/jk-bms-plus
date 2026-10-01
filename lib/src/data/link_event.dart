@@ -51,6 +51,10 @@ enum LinkEventKind {
   /// claim wanted it and whether it was location-typed.
   foregroundServiceRefused,
 
+  /// The service this app held was found stopped by Android. Detail carries
+  /// which claim held it.
+  foregroundServiceLost,
+
   /// A ride opened itself.
   autoTripStarted,
 

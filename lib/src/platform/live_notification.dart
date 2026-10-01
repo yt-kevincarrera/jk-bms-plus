@@ -87,7 +87,11 @@ class LiveNotification {
     bool usesRealLocation = true,
   }) async {
     if (!Platform.isAndroid) return true;
-    if (_running) return true;
+    // Asked of Android, not of the flag. The flag only knew what this object
+    // had done, and Android also stops services on its own (a dataSync one
+    // after six hours on Android 15): a flag still saying "running" made this
+    // return true for a service that was gone, and a ride went without one.
+    if (_running && await FlutterForegroundTask.isRunningService) return true;
 
     final result = await FlutterForegroundTask.startService(
       serviceId: _serviceId,
@@ -100,7 +104,32 @@ class LiveNotification {
       notificationText: text,
     );
     _running = result is ServiceRequestSuccess;
+    lastFailure = result is ServiceRequestFailure ? '${result.error}' : null;
     return _running;
+  }
+
+  /// Why the last start or stop failed, for writing down. Null after one
+  /// that worked.
+  String? lastFailure;
+
+  DateTime? _checkedAt;
+
+  /// Whether Android still has the service running, asked at most every 30 s.
+  ///
+  /// For the caller that holds a service for hours: it is the only way to find
+  /// out Android stopped it, short of the fixes or the radio quietly stopping.
+  Future<bool> stillRunning() async {
+    if (!Platform.isAndroid) return true;
+    if (!_running) return false;
+    final now = DateTime.now();
+    final last = _checkedAt;
+    if (last != null && now.difference(last) < const Duration(seconds: 30)) {
+      return true;
+    }
+    _checkedAt = now;
+    final running = await FlutterForegroundTask.isRunningService;
+    if (!running) _running = false;
+    return running;
   }
 
   /// Rewrites the notification. Cheap enough to call once a second.
@@ -113,8 +142,16 @@ class LiveNotification {
   }
 
   Future<void> stop() async {
-    if (!_running || !Platform.isAndroid) return;
-    await FlutterForegroundTask.stopService();
-    _running = false;
+    if (!Platform.isAndroid) return;
+    // Not gated on the flag: a service this object lost track of is still a
+    // service, and the start after this stop would be refused as "already
+    // started" with it in the way.
+    if (!await FlutterForegroundTask.isRunningService) {
+      _running = false;
+      return;
+    }
+    final result = await FlutterForegroundTask.stopService();
+    lastFailure = result is ServiceRequestFailure ? '${result.error}' : null;
+    _running = await FlutterForegroundTask.isRunningService;
   }
 }
