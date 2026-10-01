@@ -105,6 +105,7 @@ class _TripScreenState extends State<TripScreen> {
         LocationProblem.serviceDisabled => t.locationDisabled,
         LocationProblem.permissionDenied => t.locationDenied,
         LocationProblem.permanentlyDenied => t.locationDeniedForever,
+        LocationProblem.approximateOnly => t.locationApproximateOnly,
       };
 
   @override

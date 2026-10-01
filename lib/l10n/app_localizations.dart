@@ -8185,6 +8185,12 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'No está llegando el GPS, así que este viaje no está midiendo distancia ni velocidad. La app lo está reintentando. Si sigue así, abre la app un momento con la pantalla encendida y comprueba que la ubicación esté activada.'**
   String get tripNoGpsFixes;
+
+  /// No description provided for @locationApproximateOnly.
+  ///
+  /// In es, this message translates to:
+  /// **'La app solo tiene permiso de ubicación aproximada, y con eso no se puede medir un viaje: cada posición viene con cientos de metros de error. Activa \"Usar ubicación precisa\" en Ajustes > Aplicaciones > JK BMS + > Permisos > Ubicación, y vuelve a empezar el viaje.'**
+  String get locationApproximateOnly;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

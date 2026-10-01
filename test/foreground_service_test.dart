@@ -5,6 +5,7 @@ import 'package:jk_bms/src/ble/bms_link.dart';
 import 'package:jk_bms/src/bms_service.dart';
 import 'package:jk_bms/src/data/database.dart';
 import 'package:jk_bms/src/data/repository.dart';
+import 'package:jk_bms/src/gps/location_source.dart';
 
 import 'fixtures/captured_frames.dart';
 import 'fixtures/snapshot_builder.dart';
@@ -217,6 +218,19 @@ void main() {
       expect(service.serviceStartsForTest, starts);
     });
 
+    test('a ride with only approximate location does not start, and says why',
+        () async {
+      // Approximate fixes are hundreds of metres wide and every one fails the
+      // accuracy floor: a ride started on them records 0 km for ever.
+      final approx = BmsService(
+        transport: FakeLink(),
+        locationFactory: _ApproximateLocation.new,
+      )..repository = repo;
+      addTearDown(approx.dispose);
+      expect(await approx.startTrip(), LocationProblem.approximateOnly);
+      expect(approx.trip.isActive, isFalse);
+    });
+
     test('a ride under a dataSync link still restarts, for the location type',
         () async {
       service.applySettings(haptics: false, rawFrames: false, autoTrip: false);
@@ -296,4 +310,14 @@ void main() {
       expect(service.serviceTextForTest, 'conectado');
     });
   });
+}
+
+/// Location granted as "approximate" only.
+class _ApproximateLocation implements LocationSource {
+  @override
+  Stream<GeoFix> get fixes => const Stream<GeoFix>.empty();
+  @override
+  Future<LocationProblem?> start() async => LocationProblem.approximateOnly;
+  @override
+  Future<void> stop() async {}
 }

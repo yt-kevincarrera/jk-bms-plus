@@ -4887,4 +4887,8 @@ class AppL10nEn extends AppL10n {
   @override
   String get tripNoGpsFixes =>
       'No GPS is coming in, so this ride is not measuring distance or speed. The app is retrying. If it stays like this, open the app for a moment with the screen on and check that location is on.';
+
+  @override
+  String get locationApproximateOnly =>
+      'The app only has approximate location, which cannot measure a ride: every position is hundreds of metres off. Turn on \"Use precise location\" in Settings > Apps > JK BMS + > Permissions > Location, then start the ride again.';
 }

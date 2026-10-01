@@ -1759,6 +1759,23 @@ class BmsService {
     final hadLearnedBefore = priorTrips.isNotEmpty;
 
     final points = trip.points;
+    // A ride that took in no fix at all is written down with what the GPS
+    // did deliver, before the stream is closed and that is lost.
+    final startedAt = trip.startedAt;
+    if (!isDemo &&
+        trip.fixesSeen == 0 &&
+        startedAt != null &&
+        DateTime.now().toUtc().difference(startedAt.toUtc()) >
+            const Duration(minutes: 2)) {
+      unawaited(
+        repository?.note(
+              LinkEventKind.tripWithoutFixes,
+              detail: 'ride ended with no fix: ${_gpsDiagnostics()}',
+              deviceId: activeDeviceId,
+            ) ??
+            Future.value(),
+      );
+    }
     final summary = trip.stop();
     _segments.reset();
     // Off the bike the old answer is the right one again, unless a charge
@@ -1946,6 +1963,7 @@ class BmsService {
         repository?.note(
               LinkEventKind.tripWithoutFixes,
               detail: '${silent.inSeconds} s, ${trip.fixesSeen} fixes so far, '
+                  '${_gpsDiagnostics()}, '
                   'service ${_serviceOwner?.name ?? 'none'} '
                   'location-typed $_serviceLocationTyped',
               deviceId: activeDeviceId,
@@ -1971,6 +1989,18 @@ class BmsService {
             Future.value(),
       );
     }
+  }
+
+  /// What the GPS has delivered to this stream, in one line. Positions
+  /// arriving and all being too inaccurate is a different fault from none
+  /// arriving at all, and only this tells them apart.
+  String _gpsDiagnostics() {
+    final source = _location;
+    if (source is! LocationDiagnostics) return 'no gps diagnostics';
+    final d = source as LocationDiagnostics;
+    final best = d.bestAccuracyM;
+    return 'gps delivered ${d.received}, too inaccurate ${d.tooInaccurate}, '
+        'best ${best == null ? '?' : '${best.toStringAsFixed(0)} m'}';
   }
 
   /// Whether the ride in progress has gone [tripFixSilence] without a fix,

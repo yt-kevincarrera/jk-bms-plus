@@ -4910,4 +4910,8 @@ class AppL10nEs extends AppL10n {
   @override
   String get tripNoGpsFixes =>
       'No está llegando el GPS, así que este viaje no está midiendo distancia ni velocidad. La app lo está reintentando. Si sigue así, abre la app un momento con la pantalla encendida y comprueba que la ubicación esté activada.';
+
+  @override
+  String get locationApproximateOnly =>
+      'La app solo tiene permiso de ubicación aproximada, y con eso no se puede medir un viaje: cada posición viene con cientos de metros de error. Activa \"Usar ubicación precisa\" en Ajustes > Aplicaciones > JK BMS + > Permisos > Ubicación, y vuelve a empezar el viaje.';
 }

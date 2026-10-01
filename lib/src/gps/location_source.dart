@@ -30,7 +30,30 @@ class GeoFix {
 }
 
 /// Why location is unavailable, in words worth showing.
-enum LocationProblem { serviceDisabled, permissionDenied, permanentlyDenied }
+///
+/// [approximateOnly]: Android 12 lets the rider grant "approximate" location,
+/// which comes in hundreds of metres wide. Every such fix fails the accuracy
+/// floor below, so a ride started with it records no distance and no speed
+/// at all, for as long as it runs.
+enum LocationProblem {
+  serviceDisabled,
+  permissionDenied,
+  permanentlyDenied,
+  approximateOnly,
+}
+
+/// What a location source has seen, for writing down when a ride gets no
+/// distance. Kept apart from [LocationSource] so test doubles need not care.
+abstract interface class LocationDiagnostics {
+  /// Positions the platform delivered.
+  int get received;
+
+  /// Of those, the ones dropped as too inaccurate.
+  int get tooInaccurate;
+
+  /// The best accuracy any delivered position had, in metres.
+  double? get bestAccuracyM;
+}
 
 /// Where positions come from.
 ///
@@ -43,7 +66,7 @@ abstract interface class LocationSource {
 }
 
 /// The real thing.
-class GeolocatorSource implements LocationSource {
+class GeolocatorSource implements LocationSource, LocationDiagnostics {
   GeolocatorSource({
     this.minimumAccuracyM = 30,
     this.ownForegroundService = false,
@@ -60,6 +83,13 @@ class GeolocatorSource implements LocationSource {
 
   final _controller = StreamController<GeoFix>.broadcast();
   StreamSubscription<Position>? _sub;
+
+  @override
+  int received = 0;
+  @override
+  int tooInaccurate = 0;
+  @override
+  double? bestAccuracyM;
 
   @override
   Stream<GeoFix> get fixes => _controller.stream;
@@ -80,12 +110,28 @@ class GeolocatorSource implements LocationSource {
     if (permission == LocationPermission.denied) {
       return LocationProblem.permissionDenied;
     }
+    // Granted is not the same as usable: "approximate" passes every check
+    // above and then delivers nothing a ride can be measured with.
+    try {
+      if (await Geolocator.getLocationAccuracy() ==
+          LocationAccuracyStatus.reduced) {
+        return LocationProblem.approximateOnly;
+      }
+    } on Object catch (_) {
+      // Could not ask; the fix counts below will tell if it matters.
+    }
 
     await _sub?.cancel();
     _sub = Geolocator.getPositionStream(
       locationSettings: _settings(),
     ).listen((p) {
-      if (p.accuracy > minimumAccuracyM) return;
+      received++;
+      final best = bestAccuracyM;
+      if (best == null || p.accuracy < best) bestAccuracyM = p.accuracy;
+      if (p.accuracy > minimumAccuracyM) {
+        tooInaccurate++;
+        return;
+      }
       _controller.add(
         GeoFix(
           timestamp: DateTime.now().toUtc(),

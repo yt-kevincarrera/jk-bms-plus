@@ -3268,5 +3268,6 @@
   "stuckResetDone": "Conexión Bluetooth de la app reiniciada. Vuelve a tocar la batería.",
   "stuckResetRunning": "Reiniciando la conexión Bluetooth de la app…",
   "consoleReportAttempts": "Intentos de conexión, del más reciente al más antiguo",
-  "tripNoGpsFixes": "No está llegando el GPS, así que este viaje no está midiendo distancia ni velocidad. La app lo está reintentando. Si sigue así, abre la app un momento con la pantalla encendida y comprueba que la ubicación esté activada."
+  "tripNoGpsFixes": "No está llegando el GPS, así que este viaje no está midiendo distancia ni velocidad. La app lo está reintentando. Si sigue así, abre la app un momento con la pantalla encendida y comprueba que la ubicación esté activada.",
+  "locationApproximateOnly": "La app solo tiene permiso de ubicación aproximada, y con eso no se puede medir un viaje: cada posición viene con cientos de metros de error. Activa \"Usar ubicación precisa\" en Ajustes > Aplicaciones > JK BMS + > Permisos > Ubicación, y vuelve a empezar el viaje."
 }
