@@ -102,8 +102,14 @@ class _InspectionScreenState extends State<InspectionScreen> {
     );
 
     if (!mounted) return;
-    await Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(
+    // Pushed on top, not swapped in. A replacement completed the connect
+    // screen's own push at once, with nothing, so it dropped the link and
+    // left inspection mode while the verdict was still on screen; the
+    // verdict's "repeat" then popped a true that nobody was waiting for, and
+    // repeating did exactly what discarding did. Now this screen waits for
+    // the verdict and hands its answer down.
+    final again = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
         builder: (_) => InspectionVerdictScreen(
           service: service,
           result: result,
@@ -113,6 +119,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
         ),
       ),
     );
+    if (!mounted) return;
+    Navigator.of(context).pop(again ?? false);
   }
 
   void _skip() {

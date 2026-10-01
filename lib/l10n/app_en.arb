@@ -2180,7 +2180,7 @@
   "reportModel": "Model",
   "reportSerial": "Serial number",
   "reportSoftware": "Firmware version",
-  "reportCycles": "Counted cycles",
+  "reportCycles": "Cycles per the BMS",
   "reportReportedSoh": "Reported health",
   "reportReportedNote": "These values can be edited from the official BMS app in under a minute. They are printed separately on purpose: they are a claim, not a measurement.",
   "reportSectionCaveats": "What this test could not see",
@@ -2190,7 +2190,7 @@
   "reportCertificateIssuer": "Issuer code",
   "reportCertificateIssuedAt": "Signed on",
   "reportCertificateExplain": "The signature proves these figures came out of the app on the phone whose issuer code is shown here, and have not been changed since. It does not prove whose phone that is: compare the code with the one published by whoever gave you the certificate. Nor does it prove which battery was tested (the name and serial come from the BMS and can be changed), nor the date, which is that phone's clock, nor that the battery is good. Scan the QR or paste the code into the app to check it.",
-  "reportHonestyInspection": "Checked with a quick test on {date}. Capacity is estimated, not measured: measuring it needs a full discharge. This test catches the bad cell and the obvious scam, and does not replace a workshop inspection.",
+  "reportHonestyInspection": "Quick test on {date}. A test like this catches the cell that breaks away from the others under load, at this test's load, and the obvious scam; it does not replace a workshop inspection. It does not measure capacity: the capacity shown is the one configured in the BMS, not a measurement.",
   "@reportHonestyInspection": {
     "placeholders": {
       "date": {
@@ -2351,7 +2351,7 @@
   },
   "inspectionSeriesFirstRun": "First inspection of this pack. Run it again another day to confirm what you saw.",
   "inspectionRepeatButton": "Run the test again",
-  "inspectionRepeatHint": "Repeat it as often as you like: every run is saved and the next one is compared against all of them.",
+  "inspectionRepeatHint": "Save it before repeating so the runs can be compared: only saved runs are compared.",
   "inspectionAlreadySeen": "Inspected {count} time(s) already",
   "@inspectionAlreadySeen": {
     "placeholders": {
@@ -2361,7 +2361,7 @@
     }
   },
   "reportSectionSeries": "Earlier runs on this pack",
-  "reportSeriesNote": "Each row is an earlier inspection stored on the phone that signed this sheet. Repeating the test is what tells a bad cell from a bad reading.",
+  "reportSeriesNote": "Each row is an inspection stored on the phone that signed this sheet, this one included, as the last. Repeating the test is what tells a bad cell from a bad reading.",
   "reportSeriesWorstCell": "Worst cell",
   "profileTitle": "Battery profile",
   "profileIntro": "Four things the BMS cannot know that change what the app can tell you. All of them can be left blank.",
@@ -3176,5 +3176,11 @@
   "reportCurrentStep": "Current step (load minus rest)",
   "reportMedianRise": "Median rise on the charger",
   "inspectionCellHeaderChange": "Change",
-  "inspectionSaveTitle": "Save this run"
+  "inspectionSaveTitle": "Save this run",
+  "reportHonestyInspectionUnmeasured": "Quick test on {date} without enough load: the bad cell could not be looked for, and this sheet says nothing for or against the battery. It does not measure capacity: the capacity shown is the one configured in the BMS, not a measurement.",
+  "reportSeriesNoteUnsigned": "Each row is an inspection stored on the phone that made this sheet, this one included, as the last. This sheet is not signed. Repeating the test is what tells a bad cell from a bad reading.",
+  "reportChange": "Change (V)",
+  "reportCellTableNoteCharge": "Change is how far each cell rose on the charger. Resistance is estimated from the current step, not measured with an instrument.",
+  "inspectionDeleteConfirm": "Delete",
+  "inspectionSaveNoStore": "Could not save: the app's storage is not available."
 }

@@ -292,9 +292,10 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
                 if (widget.savedId == null) ...[
                   const SizedBox(height: 14),
                   // Repeating is what saving is for: the next run is compared
-                  // against this one, and the one after that against both.
-                  // Popping with true tells the connect screen to stay in
-                  // inspection mode and start looking again.
+                  // against the saved ones. Popping with true tells the
+                  // inspection screen under this one to pop with true in turn,
+                  // and the connect screen to stay in inspection mode and
+                  // start looking again.
                   OutlinedButton.icon(
                     onPressed: () => Navigator.of(context).pop(true),
                     icon: const Icon(Icons.replay, size: 18),
@@ -548,7 +549,14 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
 
   Future<void> _save(AppL10n t) async {
     final repo = widget.service.repository;
-    if (repo == null) return;
+    if (repo == null) {
+      // Used to return without a word, so the button did nothing and the
+      // rider walked away believing the run was kept.
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(t.inspectionSaveNoStore)));
+      return;
+    }
     setState(() => _saving = true);
 
     // The credit is spent on saving, not on looking: a test that was aborted

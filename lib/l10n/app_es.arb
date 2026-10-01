@@ -2298,7 +2298,7 @@
   "reportModel": "Modelo",
   "reportSerial": "Número de serie",
   "reportSoftware": "Versión del firmware",
-  "reportCycles": "Ciclos contados",
+  "reportCycles": "Ciclos según el BMS",
   "reportReportedSoh": "Salud declarada",
   "reportReportedNote": "Estos valores son editables desde la app oficial del BMS en menos de un minuto. Se imprimen aparte a propósito: son una declaración, no una medida.",
   "reportSectionCaveats": "Lo que este test no pudo ver",
@@ -2308,7 +2308,7 @@
   "reportCertificateIssuer": "Código de emisor",
   "reportCertificateIssuedAt": "Firmado el",
   "reportCertificateExplain": "La firma demuestra que estas cifras salieron de la app en el teléfono cuyo código de emisor aparece aquí, y que no se han cambiado desde entonces. No demuestra de quién es ese teléfono: compara el código con el que publica quien te dio el certificado. Tampoco demuestra qué batería se probó (el nombre y el número de serie los da el BMS y se pueden cambiar), ni la fecha, que es la del reloj de ese teléfono, ni que la batería esté bien. Escanea el QR o pega el código en la app para comprobarlo.",
-  "reportHonestyInspection": "Verificado con test rápido el {date}. La capacidad es estimada, no medida: para medirla hace falta una descarga completa. Este test detecta la celda mala y la estafa obvia, y no sustituye a una revisión en taller.",
+  "reportHonestyInspection": "Test rápido del {date}. Un test así detecta la celda que se aparta de las demás bajo carga, a la carga de esta prueba, y la estafa obvia; no sustituye a una revisión en taller. No mide capacidad: la capacidad que aparece es la configurada en el BMS, no una medida.",
   "@reportHonestyInspection": {
     "placeholders": {
       "date": {
@@ -2476,7 +2476,7 @@
   },
   "inspectionSeriesFirstRun": "Primera inspección de este pack. Repítela otro día para confirmar lo que has visto.",
   "inspectionRepeatButton": "Repetir la prueba",
-  "inspectionRepeatHint": "Puedes repetirla las veces que quieras: cada prueba se guarda y la siguiente se compara con todas las anteriores.",
+  "inspectionRepeatHint": "Guárdala antes de repetir para poder compararlas: solo se comparan las pruebas guardadas.",
   "inspectionAlreadySeen": "Ya inspeccionada {count} vez/veces",
   "@inspectionAlreadySeen": {
     "placeholders": {
@@ -2486,7 +2486,7 @@
     }
   },
   "reportSectionSeries": "Pruebas anteriores a este pack",
-  "reportSeriesNote": "Cada fila es una inspección anterior guardada en el teléfono que firmó esta hoja. Repetir el test es lo que distingue una celda mala de una lectura mala.",
+  "reportSeriesNote": "Cada fila es una inspección guardada en el teléfono que firmó esta hoja, incluida esta, que es la última. Repetir el test es lo que distingue una celda mala de una lectura mala.",
   "reportSeriesWorstCell": "Peor celda",
   "profileTitle": "Perfil de la batería",
   "profileIntro": "Cuatro cosas que el BMS no puede saber y que cambian lo que la app puede decirte. Todas se pueden dejar en blanco.",
@@ -3417,5 +3417,18 @@
   "reportCurrentStep": "Escalón de corriente (carga menos reposo)",
   "reportMedianRise": "Subida mediana con el cargador",
   "inspectionCellHeaderChange": "Cambio",
-  "inspectionSaveTitle": "Guardar esta prueba"
+  "inspectionSaveTitle": "Guardar esta prueba",
+  "reportHonestyInspectionUnmeasured": "Test rápido del {date} sin una carga suficiente: no se ha podido buscar la celda mala, y esta hoja no dice nada a favor ni en contra de la batería. No mide capacidad: la capacidad que aparece es la configurada en el BMS, no una medida.",
+  "@reportHonestyInspectionUnmeasured": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "reportSeriesNoteUnsigned": "Cada fila es una inspección guardada en el teléfono que hizo esta hoja, incluida esta, que es la última. Esta hoja no está firmada. Repetir el test es lo que distingue una celda mala de una lectura mala.",
+  "reportChange": "Cambio (V)",
+  "reportCellTableNoteCharge": "El cambio es cuánto subió cada celda con el cargador. La resistencia se estima del salto de corriente, no se mide con instrumento.",
+  "inspectionDeleteConfirm": "Borrar",
+  "inspectionSaveNoStore": "No se pudo guardar: el almacenamiento de la app no está disponible."
 }

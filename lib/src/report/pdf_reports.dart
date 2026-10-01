@@ -262,7 +262,15 @@ class PdfReports {
               _t(d.note, style: const pw.TextStyle(fontSize: 9.5)),
             ]),
           if (d.certificate != null) _certificateBlock(t, d),
-          _honesty(t.reportHonestyInspection(_date(r.at))),
+          // Said about this test. It used to say "verified", "catches the bad
+          // cell" and "capacity is estimated" under every result, including
+          // a test that never loaded the pack, on a sheet that never
+          // estimates capacity at all.
+          _honesty(
+            d.light == InspectionLight.unmeasured
+                ? t.reportHonestyInspectionUnmeasured(_date(r.at))
+                : t.reportHonestyInspection(_date(r.at)),
+          ),
         ],
       ),
     );
@@ -559,31 +567,39 @@ class PdfReports {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        _section(t.reportSectionSeries, [
-          _table(
-            headers: [
-              t.reportDate,
-              t.reportSeriesWorstCell,
-              t.reportSag,
-              t.reportRestDelta,
-              t.reportPeakCurrent,
-            ],
-            rows: [
-              for (final p in [...c.earlier, _asPast(c)])
-                [
-                  _date(p.at),
-                  p.result.worstSag == null
-                      ? _dash
-                      : '${p.result.worstSag!.index}',
-                  p.result.worstSag?.heavySagVolts == null
-                      ? _dash
-                      : p.result.worstSag!.heavySagVolts!.toStringAsFixed(3),
-                  p.result.restDeltaVolts.toStringAsFixed(3),
-                  '${p.result.currentStepAmps.toStringAsFixed(1)} A',
-                ],
-            ],
-          ),
-        ], note: t.reportSeriesNote),
+        _section(
+          t.reportSectionSeries,
+          [
+            _table(
+              headers: [
+                t.reportDate,
+                t.reportSeriesWorstCell,
+                t.reportSag,
+                t.reportRestDelta,
+                // The figure in the column is the current step, not the peak:
+                // the column says so.
+                t.reportCurrentStep,
+              ],
+              rows: [
+                for (final p in [...c.earlier, _asPast(c)])
+                  [
+                    _date(p.at),
+                    p.result.worstSag == null
+                        ? _dash
+                        : '${p.result.worstSag!.index}',
+                    p.result.worstSag?.heavySagVolts == null
+                        ? _dash
+                        : p.result.worstSag!.heavySagVolts!.toStringAsFixed(3),
+                    p.result.restDeltaVolts.toStringAsFixed(3),
+                    '${p.result.currentStepAmps.toStringAsFixed(1)} A',
+                  ],
+              ],
+            ),
+          ],
+          note: d.isCertificate
+              ? t.reportSeriesNote
+              : t.reportSeriesNoteUnsigned,
+        ),
         if (d.seriesAdvice.isNotEmpty)
           _verdicts(t, d.seriesAdvice, title: t.inspectionSeriesTitle),
       ],
@@ -595,34 +611,39 @@ class PdfReports {
   static PastInspection _asPast(InspectionComparison c) =>
       PastInspection(at: c.result.at, result: c.result);
 
-  pw.Widget _cellTable(AppL10n t, InspectionResult r) =>
-      _section(t.reportSectionCells, [
-        _table(
-          headers: [
-            t.reportCell,
-            t.reportRestVolts,
-            t.reportSag,
-            t.reportResistance,
-            t.reportRecovery,
-          ],
-          rows: [
-            for (final c in r.cells)
-              [
-                '${c.index}',
-                c.restVolts.toStringAsFixed(3),
-                c.heavySagVolts == null
-                    ? _dash
-                    : c.heavySagVolts!.toStringAsFixed(3),
-                c.resistanceOhms == null
-                    ? _dash
-                    : (c.resistanceOhms! * 1000).toStringAsFixed(1),
-                c.recoverySeconds == null
-                    ? (c.recovered ? _dash : t.reportNotRecovered)
-                    : c.recoverySeconds!.toStringAsFixed(1),
-              ],
-          ],
-        ),
-      ], note: t.reportCellTableNote);
+  pw.Widget _cellTable(AppL10n t, InspectionResult r) => _section(
+    t.reportSectionCells,
+    [
+      _table(
+        headers: [
+          t.reportCell,
+          t.reportRestVolts,
+          r.heavyWasCharge ? t.reportChange : t.reportSag,
+          t.reportResistance,
+          t.reportRecovery,
+        ],
+        rows: [
+          for (final c in r.cells)
+            [
+              '${c.index}',
+              c.restVolts.toStringAsFixed(3),
+              c.heavySagVolts == null
+                  ? _dash
+                  : c.heavySagVolts!.toStringAsFixed(3),
+              c.resistanceOhms == null
+                  ? _dash
+                  : (c.resistanceOhms! * 1000).toStringAsFixed(1),
+              // The same as the screen: a cell still not back when the
+              // window closed is "> time", not a time it never made.
+              inspectionRecoveryCell(t, c, unit: false),
+            ],
+        ],
+      ),
+    ],
+    note: r.heavyWasCharge
+        ? t.reportCellTableNoteCharge
+        : t.reportCellTableNote,
+  );
 
   pw.Widget _table({
     required List<String> headers,

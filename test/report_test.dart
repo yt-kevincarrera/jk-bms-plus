@@ -406,6 +406,36 @@ void main() {
       expect(_isPdf(bytes), isTrue);
     });
 
+    test(
+      'renders a simulated charger run with a cell that never came back',
+      () async {
+        // The three sheet variants this batch added: the red simulator line,
+        // "change" instead of "sag" over a charger's figures, and "> time" for
+        // a cell still not back when the window closed.
+        final base = _result().toJson();
+        final cells = (base['cells'] as List).cast<Map<String, Object?>>();
+        cells[6] = {...cells[6], 'unrecovered': true};
+        final r = InspectionResult.fromJson({
+          ...base,
+          'cells': cells,
+          'caveats': ['heavyWasCharge'],
+          'demo': true,
+        });
+        expect(r.heavyWasCharge, isTrue);
+        expect(r.cells[6].recovered, isFalse);
+        final bytes = await const PdfReports().inspectionReport(
+          t,
+          InspectionReportData(
+            generatedAt: DateTime.utc(2026, 5, 4, 12),
+            result: r,
+            light: const InspectionVerdicts().light(r),
+            advice: const InspectionVerdicts().evaluate(r),
+          ),
+        );
+        expect(_isPdf(bytes), isTrue);
+      },
+    );
+
     test('renders when the test measured almost nothing', () async {
       final bare = InspectionResult(
         at: DateTime.utc(2026, 5, 4),

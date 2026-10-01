@@ -6291,7 +6291,7 @@ abstract class AppL10n {
   /// No description provided for @reportCycles.
   ///
   /// In es, this message translates to:
-  /// **'Ciclos contados'**
+  /// **'Ciclos según el BMS'**
   String get reportCycles;
 
   /// No description provided for @reportReportedSoh.
@@ -6351,7 +6351,7 @@ abstract class AppL10n {
   /// No description provided for @reportHonestyInspection.
   ///
   /// In es, this message translates to:
-  /// **'Verificado con test rápido el {date}. La capacidad es estimada, no medida: para medirla hace falta una descarga completa. Este test detecta la celda mala y la estafa obvia, y no sustituye a una revisión en taller.'**
+  /// **'Test rápido del {date}. Un test así detecta la celda que se aparta de las demás bajo carga, a la carga de esta prueba, y la estafa obvia; no sustituye a una revisión en taller. No mide capacidad: la capacidad que aparece es la configurada en el BMS, no una medida.'**
   String reportHonestyInspection(String date);
 
   /// No description provided for @reportPackButton.
@@ -6615,7 +6615,7 @@ abstract class AppL10n {
   /// No description provided for @inspectionRepeatHint.
   ///
   /// In es, this message translates to:
-  /// **'Puedes repetirla las veces que quieras: cada prueba se guarda y la siguiente se compara con todas las anteriores.'**
+  /// **'Guárdala antes de repetir para poder compararlas: solo se comparan las pruebas guardadas.'**
   String get inspectionRepeatHint;
 
   /// No description provided for @inspectionAlreadySeen.
@@ -6633,7 +6633,7 @@ abstract class AppL10n {
   /// No description provided for @reportSeriesNote.
   ///
   /// In es, this message translates to:
-  /// **'Cada fila es una inspección anterior guardada en el teléfono que firmó esta hoja. Repetir el test es lo que distingue una celda mala de una lectura mala.'**
+  /// **'Cada fila es una inspección guardada en el teléfono que firmó esta hoja, incluida esta, que es la última. Repetir el test es lo que distingue una celda mala de una lectura mala.'**
   String get reportSeriesNote;
 
   /// No description provided for @reportSeriesWorstCell.
@@ -8477,6 +8477,42 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Guardar esta prueba'**
   String get inspectionSaveTitle;
+
+  /// No description provided for @reportHonestyInspectionUnmeasured.
+  ///
+  /// In es, this message translates to:
+  /// **'Test rápido del {date} sin una carga suficiente: no se ha podido buscar la celda mala, y esta hoja no dice nada a favor ni en contra de la batería. No mide capacidad: la capacidad que aparece es la configurada en el BMS, no una medida.'**
+  String reportHonestyInspectionUnmeasured(String date);
+
+  /// No description provided for @reportSeriesNoteUnsigned.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada fila es una inspección guardada en el teléfono que hizo esta hoja, incluida esta, que es la última. Esta hoja no está firmada. Repetir el test es lo que distingue una celda mala de una lectura mala.'**
+  String get reportSeriesNoteUnsigned;
+
+  /// No description provided for @reportChange.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambio (V)'**
+  String get reportChange;
+
+  /// No description provided for @reportCellTableNoteCharge.
+  ///
+  /// In es, this message translates to:
+  /// **'El cambio es cuánto subió cada celda con el cargador. La resistencia se estima del salto de corriente, no se mide con instrumento.'**
+  String get reportCellTableNoteCharge;
+
+  /// No description provided for @inspectionDeleteConfirm.
+  ///
+  /// In es, this message translates to:
+  /// **'Borrar'**
+  String get inspectionDeleteConfirm;
+
+  /// No description provided for @inspectionSaveNoStore.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo guardar: el almacenamiento de la app no está disponible.'**
+  String get inspectionSaveNoStore;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

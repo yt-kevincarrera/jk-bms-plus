@@ -8,6 +8,7 @@ import '../../data/database.dart';
 import '../../inspection/inspection_result.dart';
 import '../../inspection/inspection_series.dart';
 import '../../inspection/inspection_session.dart';
+import '../../inspection/inspection_verdicts.dart';
 import '../../report/certificate.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
@@ -156,10 +157,12 @@ class InspectionsListScreen extends StatelessWidget {
     Inspection row,
     (int, int)? run,
   ) {
-    final tone = switch (row.light) {
-      'problem' => AppTheme.bad,
-      'watch' => AppTheme.watch,
-      _ => AppTheme.good,
+    final light = lightOf(row);
+    final tone = switch (light) {
+      InspectionLight.problem => AppTheme.bad,
+      InspectionLight.watch => AppTheme.watch,
+      InspectionLight.good => AppTheme.good,
+      InspectionLight.unmeasured => AppTheme.textFaint,
     };
     final name = row.bmsName.isEmpty ? row.bmsId : row.bmsName;
     return Padding(
@@ -234,10 +237,12 @@ class InspectionsListScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                Pill(switch (row.light) {
-                  'problem' => t.inspectionLightProblem,
-                  'watch' => t.inspectionLightWatch,
-                  _ => t.inspectionLightGood,
+                Pill(switch (light) {
+                  InspectionLight.problem => t.inspectionLightProblem,
+                  InspectionLight.watch => t.inspectionLightWatch,
+                  InspectionLight.good => t.inspectionLightGood,
+                  InspectionLight.unmeasured =>
+                    t.inspectionLightUnmeasuredShort,
                 }, color: tone),
               ],
             ),
@@ -245,6 +250,31 @@ class InspectionsListScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// The light a saved run shows, worked out again from its stored result.
+  ///
+  /// The verdict screen recomputes it from the result, and the list used to
+  /// read the word saved with the row instead, and only knew three of them:
+  /// a run saved as "unmeasured" fell through to green "nothing serious".
+  /// Runs saved before the unmeasured light existed hold "good" for a test
+  /// that measured nothing. The stored result has everything the verdict
+  /// needs, so the list asks the verdict, the same one the screen behind it
+  /// asks, and only falls back to the stored word when the result cannot be
+  /// read.
+  @visibleForTesting
+  static InspectionLight lightOf(Inspection row) {
+    try {
+      final r = InspectionResult.fromJson(
+        (jsonDecode(row.resultJson) as Map).cast<String, Object?>(),
+      );
+      return const InspectionVerdicts().light(r);
+    } on Object {
+      return InspectionLight.values
+              .where((l) => l.name == row.light)
+              .firstOrNull ??
+          InspectionLight.unmeasured;
+    }
   }
 
   /// For each row, which run of that pack it is and how many there are.
@@ -313,7 +343,7 @@ class InspectionsListScreen extends StatelessWidget {
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppTheme.bad),
-            child: Text(t.licenseRemoveKey),
+            child: Text(t.inspectionDeleteConfirm),
           ),
         ],
       ),

@@ -3681,7 +3681,7 @@ class AppL10nEn extends AppL10n {
   String get reportSoftware => 'Firmware version';
 
   @override
-  String get reportCycles => 'Counted cycles';
+  String get reportCycles => 'Cycles per the BMS';
 
   @override
   String get reportReportedSoh => 'Reported health';
@@ -3714,7 +3714,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String reportHonestyInspection(String date) {
-    return 'Checked with a quick test on $date. Capacity is estimated, not measured: measuring it needs a full discharge. This test catches the bad cell and the obvious scam, and does not replace a workshop inspection.';
+    return 'Quick test on $date. A test like this catches the cell that breaks away from the others under load, at this test\'s load, and the obvious scam; it does not replace a workshop inspection. It does not measure capacity: the capacity shown is the one configured in the BMS, not a measurement.';
   }
 
   @override
@@ -3895,7 +3895,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get inspectionRepeatHint =>
-      'Repeat it as often as you like: every run is saved and the next one is compared against all of them.';
+      'Save it before repeating so the runs can be compared: only saved runs are compared.';
 
   @override
   String inspectionAlreadySeen(String count) {
@@ -3907,7 +3907,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get reportSeriesNote =>
-      'Each row is an earlier inspection stored on the phone that signed this sheet. Repeating the test is what tells a bad cell from a bad reading.';
+      'Each row is an inspection stored on the phone that signed this sheet, this one included, as the last. Repeating the test is what tells a bad cell from a bad reading.';
 
   @override
   String get reportSeriesWorstCell => 'Worst cell';
@@ -5077,4 +5077,27 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get inspectionSaveTitle => 'Save this run';
+
+  @override
+  String reportHonestyInspectionUnmeasured(String date) {
+    return 'Quick test on $date without enough load: the bad cell could not be looked for, and this sheet says nothing for or against the battery. It does not measure capacity: the capacity shown is the one configured in the BMS, not a measurement.';
+  }
+
+  @override
+  String get reportSeriesNoteUnsigned =>
+      'Each row is an inspection stored on the phone that made this sheet, this one included, as the last. This sheet is not signed. Repeating the test is what tells a bad cell from a bad reading.';
+
+  @override
+  String get reportChange => 'Change (V)';
+
+  @override
+  String get reportCellTableNoteCharge =>
+      'Change is how far each cell rose on the charger. Resistance is estimated from the current step, not measured with an instrument.';
+
+  @override
+  String get inspectionDeleteConfirm => 'Delete';
+
+  @override
+  String get inspectionSaveNoStore =>
+      'Could not save: the app\'s storage is not available.';
 }

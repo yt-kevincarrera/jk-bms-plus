@@ -3700,7 +3700,7 @@ class AppL10nEs extends AppL10n {
   String get reportSoftware => 'Versión del firmware';
 
   @override
-  String get reportCycles => 'Ciclos contados';
+  String get reportCycles => 'Ciclos según el BMS';
 
   @override
   String get reportReportedSoh => 'Salud declarada';
@@ -3733,7 +3733,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String reportHonestyInspection(String date) {
-    return 'Verificado con test rápido el $date. La capacidad es estimada, no medida: para medirla hace falta una descarga completa. Este test detecta la celda mala y la estafa obvia, y no sustituye a una revisión en taller.';
+    return 'Test rápido del $date. Un test así detecta la celda que se aparta de las demás bajo carga, a la carga de esta prueba, y la estafa obvia; no sustituye a una revisión en taller. No mide capacidad: la capacidad que aparece es la configurada en el BMS, no una medida.';
   }
 
   @override
@@ -3915,7 +3915,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get inspectionRepeatHint =>
-      'Puedes repetirla las veces que quieras: cada prueba se guarda y la siguiente se compara con todas las anteriores.';
+      'Guárdala antes de repetir para poder compararlas: solo se comparan las pruebas guardadas.';
 
   @override
   String inspectionAlreadySeen(String count) {
@@ -3927,7 +3927,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get reportSeriesNote =>
-      'Cada fila es una inspección anterior guardada en el teléfono que firmó esta hoja. Repetir el test es lo que distingue una celda mala de una lectura mala.';
+      'Cada fila es una inspección guardada en el teléfono que firmó esta hoja, incluida esta, que es la última. Repetir el test es lo que distingue una celda mala de una lectura mala.';
 
   @override
   String get reportSeriesWorstCell => 'Peor celda';
@@ -5101,4 +5101,27 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get inspectionSaveTitle => 'Guardar esta prueba';
+
+  @override
+  String reportHonestyInspectionUnmeasured(String date) {
+    return 'Test rápido del $date sin una carga suficiente: no se ha podido buscar la celda mala, y esta hoja no dice nada a favor ni en contra de la batería. No mide capacidad: la capacidad que aparece es la configurada en el BMS, no una medida.';
+  }
+
+  @override
+  String get reportSeriesNoteUnsigned =>
+      'Cada fila es una inspección guardada en el teléfono que hizo esta hoja, incluida esta, que es la última. Esta hoja no está firmada. Repetir el test es lo que distingue una celda mala de una lectura mala.';
+
+  @override
+  String get reportChange => 'Cambio (V)';
+
+  @override
+  String get reportCellTableNoteCharge =>
+      'El cambio es cuánto subió cada celda con el cargador. La resistencia se estima del salto de corriente, no se mide con instrumento.';
+
+  @override
+  String get inspectionDeleteConfirm => 'Borrar';
+
+  @override
+  String get inspectionSaveNoStore =>
+      'No se pudo guardar: el almacenamiento de la app no está disponible.';
 }
