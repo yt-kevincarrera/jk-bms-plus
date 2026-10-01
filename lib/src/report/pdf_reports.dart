@@ -12,6 +12,7 @@ import '../metrics/maintenance.dart';
 import '../ui/inspection/inspection_texts.dart';
 import '../ui/widgets/advice_list.dart';
 import 'report_data.dart';
+import 'workshop_branding.dart';
 
 /// The printed sheets: one for the rider's own pack, one for an inspection.
 ///
@@ -40,7 +41,35 @@ class PdfReports {
   static const PdfColor _bad = PdfColor.fromInt(0xFFB3261E);
 
   /// The "my battery" sheet.
-  Future<Uint8List> packReport(AppL10n t, PackReportData d) async {
+  ///
+  /// [branding] is the workshop's name, line and logo, printed at the top
+  /// when the phone holds the workshop tier; the caller decides that.
+  Future<Uint8List> packReport(
+    AppL10n t,
+    PackReportData d, {
+    ReportBranding branding = ReportBranding.none,
+  }) => _readableLogo(branding, (b) => _packReport(t, d, b));
+
+  /// Builds a sheet with the logo, and again without it when the library
+  /// could not read it. The image is only decoded as the file is written, so
+  /// a corrupt picture would otherwise cost the rider the whole sheet.
+  static Future<Uint8List> _readableLogo(
+    ReportBranding b,
+    Future<Uint8List> Function(ReportBranding) build,
+  ) async {
+    if (b.logo == null) return build(b);
+    try {
+      return await build(b);
+    } on Object {
+      return build(ReportBranding(name: b.name, line: b.line));
+    }
+  }
+
+  Future<Uint8List> _packReport(
+    AppL10n t,
+    PackReportData d,
+    ReportBranding branding,
+  ) async {
     final doc = pw.Document(
       title: t.reportPackTitle,
       author: t.appTitle,
@@ -63,6 +92,7 @@ class PdfReports {
             detail: _identityLine(d.model, d.serialNumber),
             generatedAt: d.generatedAt,
             appVersion: d.appVersion,
+            branding: branding,
           ),
           _section(t.reportSectionNow, [
             _row(t.reportLastReading, _dateTime(d.lastReadingAt)),
@@ -186,7 +216,17 @@ class PdfReports {
   };
 
   /// The inspection sheet, signed or not.
-  Future<Uint8List> inspectionReport(AppL10n t, InspectionReportData d) async {
+  Future<Uint8List> inspectionReport(
+    AppL10n t,
+    InspectionReportData d, {
+    ReportBranding branding = ReportBranding.none,
+  }) => _readableLogo(branding, (b) => _inspectionReport(t, d, b));
+
+  Future<Uint8List> _inspectionReport(
+    AppL10n t,
+    InspectionReportData d,
+    ReportBranding branding,
+  ) async {
     final r = d.result;
     final title = d.isCertificate
         ? t.reportCertificateTitle
@@ -213,6 +253,7 @@ class PdfReports {
             detail: _identityLine(r.reported.model, r.reported.serialNumber),
             generatedAt: d.generatedAt,
             appVersion: d.appVersion,
+            branding: branding,
           ),
           if (r.simulated == true) _simulatedBanner(t),
           _lightBanner(t, d.light, r),
@@ -354,9 +395,11 @@ class PdfReports {
     required String detail,
     required DateTime generatedAt,
     required String appVersion,
+    ReportBranding branding = ReportBranding.none,
   }) => pw.Column(
     crossAxisAlignment: pw.CrossAxisAlignment.start,
     children: [
+      if (!branding.isEmpty) ..._branding(branding),
       pw.Row(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -410,6 +453,63 @@ class PdfReports {
       pw.Divider(color: _rule, height: 1, thickness: 1),
     ],
   );
+
+  /// The workshop's block, above the title: logo, name, contact line. The
+  /// app's own name stays on the right of the title, because the figures are
+  /// still the app's and the sheet should not read as if the workshop
+  /// measured them by other means.
+  ///
+  /// A logo the library refuses here is dropped; one it only fails on as the
+  /// file is written is caught by [_readableLogo].
+  List<pw.Widget> _branding(ReportBranding b) {
+    pw.ImageProvider? logo;
+    final bytes = b.logo;
+    if (bytes != null) {
+      try {
+        logo = pw.MemoryImage(bytes);
+      } on Object {
+        logo = null;
+      }
+    }
+    return [
+      pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.center,
+        children: [
+          if (logo != null) ...[
+            pw.ConstrainedBox(
+              constraints: const pw.BoxConstraints(
+                maxHeight: 40,
+                maxWidth: 120,
+              ),
+              child: pw.Image(logo, fit: pw.BoxFit.contain),
+            ),
+            pw.SizedBox(width: 10),
+          ],
+          pw.Expanded(
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                if (b.name.trim().isNotEmpty)
+                  _t(
+                    b.name.trim(),
+                    style: pw.TextStyle(
+                      fontSize: 12,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                if (b.line.trim().isNotEmpty)
+                  _t(
+                    b.line.trim(),
+                    style: const pw.TextStyle(fontSize: 8.5, color: _faint),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      pw.SizedBox(height: 10),
+    ];
+  }
 
   pw.Widget _footer(AppL10n t, pw.Context context) => pw.Padding(
     padding: const pw.EdgeInsets.only(top: 8),

@@ -3817,5 +3817,17 @@
         "type": "String"
       }
     }
-  }
+  },
+  "workshopTitle": "Datos del taller en los informes",
+  "workshopIntro": "Se imprimen arriba en los PDF: el de la batería y el de inspección. Las cifras siguen siendo las que mide la app, y el informe lo sigue diciendo.",
+  "workshopName": "Nombre del taller",
+  "workshopLine": "Línea de contacto",
+  "workshopLineHint": "Teléfono, dirección o web",
+  "workshopLogo": "Logo",
+  "workshopLogoPick": "Elegir logo",
+  "workshopLogoChange": "Cambiar",
+  "workshopLogoRemove": "Quitar",
+  "workshopLogoRefused": "Ese archivo no sirve: tiene que ser PNG o JPEG, de menos de 1 MB.",
+  "workshopSaved": "Guardado. Sale en el próximo informe.",
+  "workshopSaveFailed": "No se pudo guardar."
 }

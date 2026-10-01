@@ -21,6 +21,7 @@ import 'widgets/pro_gate.dart';
 import 'widgets/packs_card.dart';
 import 'widgets/common.dart';
 import 'widgets/update_card.dart';
+import 'widgets/workshop_branding_card.dart';
 
 /// Every alert the app can raise, gathered by what it is about.
 ///
@@ -182,6 +183,13 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                 ),
                 const SizedBox(height: 6),
               ],
+            ),
+            // Next to the inspections because that is who prints them: a
+            // workshop handing a customer, or a buyer, a sheet with its own
+            // name at the top.
+            const ProGate(
+              feature: Feature.workshopExtras,
+              child: WorkshopBrandingCard(),
             ),
             ProGate(
               feature: Feature.backupExportImport,

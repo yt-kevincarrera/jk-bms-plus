@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 import 'package:jk_bms/l10n/app_localizations.dart';
 import 'package:jk_bms/src/data/database.dart';
 import 'package:jk_bms/src/inspection/inspection_result.dart';
@@ -17,6 +18,7 @@ import 'package:jk_bms/src/report/certificate.dart';
 import 'package:jk_bms/src/report/pdf_reports.dart';
 import 'package:jk_bms/src/report/report_data.dart';
 import 'package:jk_bms/src/report/report_sharing.dart';
+import 'package:jk_bms/src/report/workshop_branding.dart';
 
 /// The Spanish wording, which is the template the app ships against. Pure
 /// Dart: no widget tree is needed to lay out a PDF.
@@ -703,6 +705,98 @@ void main() {
       expect(data.advertisedAh, 40);
       expect(data.measuredAh, isNull);
       expect(data.totalKm, 0);
+    });
+  });
+
+  // The workshop tier promised its own logo on the PDFs and nothing printed
+  // one.
+  group('the workshop\'s details', () {
+    // A real PNG, so the library has to embed an actual image.
+    final png = Uint8List.fromList(
+      img.encodePng(img.Image(width: 4, height: 2)),
+    );
+    const branding = ReportBranding(
+      name: 'Taller Voltio',
+      line: 'Calle Mayor 3, 600 000 000',
+    );
+
+    test('are printed at the top of the battery sheet, logo and all', () async {
+      final bytes = await const PdfReports().packReport(
+        t,
+        PackReportData(
+          generatedAt: DateTime.utc(2026, 5, 4, 12),
+          packName: 'Pack de la moto',
+        ),
+        branding: ReportBranding(
+          name: branding.name,
+          line: branding.line,
+          logo: png,
+        ),
+      );
+      expect(_isPdf(bytes), isTrue);
+      final text = _textOf(bytes);
+      expect(text, contains('Taller Voltio'));
+      expect(text, contains('Calle Mayor 3'));
+      // The app's name stays: the figures are still its own.
+      expect(text, contains(t.appTitle));
+    });
+
+    test('and on the inspection sheet', () async {
+      final r = _result();
+      final bytes = await const PdfReports().inspectionReport(
+        t,
+        InspectionReportData(
+          generatedAt: DateTime.utc(2026, 5, 4, 12),
+          result: r,
+          light: const InspectionVerdicts().light(r),
+          advice: const InspectionVerdicts().evaluate(r),
+          packName: 'Pack del vendedor',
+        ),
+        branding: branding,
+      );
+      expect(_textOf(bytes), contains('Taller Voltio'));
+    });
+
+    test('a logo the library cannot read is left out, not fatal', () async {
+      // A PNG signature over garbage: refused only as the file is written.
+      final bytes = await const PdfReports().packReport(
+        t,
+        PackReportData(
+          generatedAt: DateTime.utc(2026, 5, 4, 12),
+          packName: 'Pack de la moto',
+        ),
+        branding: ReportBranding(
+          name: 'Taller Voltio',
+          logo: Uint8List.fromList([0x89, 0x50, 0x4E, 0x47, 1, 2, 3]),
+        ),
+      );
+      expect(_isPdf(bytes), isTrue);
+      expect(_textOf(bytes), contains('Taller Voltio'));
+    });
+
+    test('nothing is printed without them', () async {
+      final bytes = await const PdfReports().packReport(
+        t,
+        PackReportData(
+          generatedAt: DateTime.utc(2026, 5, 4, 12),
+          packName: 'Pack de la moto',
+        ),
+      );
+      expect(_textOf(bytes), isNot(contains('Taller Voltio')));
+    });
+
+    test('only a PNG or a JPEG is kept as the logo', () {
+      expect(WorkshopBrandingStore.looksLikeImage(png), isTrue);
+      expect(
+        WorkshopBrandingStore.looksLikeImage(
+          Uint8List.fromList([0xFF, 0xD8, 0xFF, 0xE0]),
+        ),
+        isTrue,
+      );
+      expect(
+        WorkshopBrandingStore.looksLikeImage(utf8.encode('GIF89a')),
+        isFalse,
+      );
     });
   });
 

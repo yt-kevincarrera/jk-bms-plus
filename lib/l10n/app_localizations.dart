@@ -9551,6 +9551,78 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Tipo desconocido: {name}'**
   String linkEventsUnknownKind(String name);
+
+  /// No description provided for @workshopTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Datos del taller en los informes'**
+  String get workshopTitle;
+
+  /// No description provided for @workshopIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Se imprimen arriba en los PDF: el de la batería y el de inspección. Las cifras siguen siendo las que mide la app, y el informe lo sigue diciendo.'**
+  String get workshopIntro;
+
+  /// No description provided for @workshopName.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre del taller'**
+  String get workshopName;
+
+  /// No description provided for @workshopLine.
+  ///
+  /// In es, this message translates to:
+  /// **'Línea de contacto'**
+  String get workshopLine;
+
+  /// No description provided for @workshopLineHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Teléfono, dirección o web'**
+  String get workshopLineHint;
+
+  /// No description provided for @workshopLogo.
+  ///
+  /// In es, this message translates to:
+  /// **'Logo'**
+  String get workshopLogo;
+
+  /// No description provided for @workshopLogoPick.
+  ///
+  /// In es, this message translates to:
+  /// **'Elegir logo'**
+  String get workshopLogoPick;
+
+  /// No description provided for @workshopLogoChange.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar'**
+  String get workshopLogoChange;
+
+  /// No description provided for @workshopLogoRemove.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar'**
+  String get workshopLogoRemove;
+
+  /// No description provided for @workshopLogoRefused.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese archivo no sirve: tiene que ser PNG o JPEG, de menos de 1 MB.'**
+  String get workshopLogoRefused;
+
+  /// No description provided for @workshopSaved.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardado. Sale en el próximo informe.'**
+  String get workshopSaved;
+
+  /// No description provided for @workshopSaveFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo guardar.'**
+  String get workshopSaveFailed;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

@@ -16,6 +16,7 @@ import '../../report/certificate.dart';
 import '../../report/pdf_reports.dart';
 import '../../report/report_data.dart';
 import '../../report/report_sharing.dart';
+import '../../report/workshop_branding.dart';
 import '../license_scope.dart';
 import '../theme.dart';
 import '../widgets/advice_list.dart';
@@ -457,6 +458,9 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
     setState(() => _sharing = true);
     final messenger = ScaffoldMessenger.of(context);
     final license = LicenseScope.of(context);
+    // The workshop's name and logo, when the tier includes it. Asked before
+    // anything is awaited, while the context still answers.
+    final branded = license.entitlements.allows(Feature.workshopExtras);
     try {
       final r = widget.result;
       Certificate? certificate;
@@ -503,6 +507,9 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
               ? const []
               : const InspectionSeries().evaluate(series),
         ),
+        branding: branded
+            ? await WorkshopBrandingStore().load()
+            : ReportBranding.none,
       );
       await const ReportSharing().share(
         bytes,

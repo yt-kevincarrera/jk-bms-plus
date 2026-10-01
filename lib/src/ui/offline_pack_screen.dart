@@ -19,6 +19,7 @@ import '../license/entitlements.dart';
 import '../report/pdf_reports.dart';
 import '../report/report_data.dart';
 import '../report/report_sharing.dart';
+import '../report/workshop_branding.dart';
 import 'cell_history_screen.dart';
 import 'fault_history_screen.dart';
 import 'license_scope.dart';
@@ -679,6 +680,9 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
       openLicenseScreen(context);
       return;
     }
+    // The workshop's name and logo at the top, when the tier includes it.
+    // Asked before anything is awaited, while the context still answers.
+    final branded = LicenseScope.allows(context, Feature.workshopExtras);
     setState(() => _sharing = true);
     final messenger = ScaffoldMessenger.of(context);
     try {
@@ -730,7 +734,13 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
         baseline: baseline,
         sinceDayOne: sinceDayOne,
       );
-      final bytes = await const PdfReports().packReport(t, data);
+      final bytes = await const PdfReports().packReport(
+        t,
+        data,
+        branding: branded
+            ? await WorkshopBrandingStore().load()
+            : ReportBranding.none,
+      );
       await const ReportSharing().share(
         bytes,
         fileName: ReportSharing.fileName(

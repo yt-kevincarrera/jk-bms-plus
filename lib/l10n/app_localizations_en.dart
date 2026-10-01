@@ -5702,4 +5702,42 @@ class AppL10nEn extends AppL10n {
   String linkEventsUnknownKind(String name) {
     return 'Unknown kind: $name';
   }
+
+  @override
+  String get workshopTitle => 'Workshop details on the reports';
+
+  @override
+  String get workshopIntro =>
+      'Printed at the top of the PDFs: the battery sheet and the inspection one. The figures are still the ones the app measures, and the sheet still says so.';
+
+  @override
+  String get workshopName => 'Workshop name';
+
+  @override
+  String get workshopLine => 'Contact line';
+
+  @override
+  String get workshopLineHint => 'Phone, address or website';
+
+  @override
+  String get workshopLogo => 'Logo';
+
+  @override
+  String get workshopLogoPick => 'Pick a logo';
+
+  @override
+  String get workshopLogoChange => 'Change';
+
+  @override
+  String get workshopLogoRemove => 'Remove';
+
+  @override
+  String get workshopLogoRefused =>
+      'That file will not do: it has to be a PNG or a JPEG under 1 MB.';
+
+  @override
+  String get workshopSaved => 'Saved. It goes on the next report.';
+
+  @override
+  String get workshopSaveFailed => 'Could not save it.';
 }
