@@ -8,6 +8,7 @@ import '../pack/pack_baseline.dart';
 import '../inspection/inspection_series.dart';
 import '../metrics/capacity_cycle_detector.dart';
 import '../metrics/capacity_endpoints.dart';
+import '../metrics/fault_history.dart';
 import '../metrics/maintenance.dart';
 import '../metrics/snapshot_history.dart';
 import '../metrics/trip_energy_repair.dart';
@@ -763,6 +764,22 @@ class BmsRepository {
     final since = await historyStart(deviceId);
     if (since != null && since.isAfter(from)) from = since;
     return db.snapshotsBetween(deviceId, from, now);
+  }
+
+  /// Every stretch the BMS held a fault on this pack, newest first, from the
+  /// warning mask stored with every reading. See [FaultHistory].
+  Future<List<FaultEpisode>> faultHistory(String deviceId) async {
+    await flush();
+    final transitions = await db.warningTransitions(
+      deviceId,
+      gapSeconds: FaultHistory.noDataGap.inSeconds,
+    );
+    if (transitions.isEmpty) return const [];
+    return FaultHistory.episodes(
+      transitions,
+      totalReadings: await db.snapshotCountFor(deviceId),
+      lastAt: (await db.lastSnapshotFor(deviceId))?.timestamp.toUtc(),
+    );
   }
 
   /// Which cells sat clearly lowest at rest over the last month, from the

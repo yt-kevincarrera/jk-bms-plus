@@ -19,6 +19,7 @@ import '../license/entitlements.dart';
 import '../report/pdf_reports.dart';
 import '../report/report_data.dart';
 import '../report/report_sharing.dart';
+import 'fault_history_screen.dart';
 import 'license_scope.dart';
 import 'widgets/pro_gate.dart';
 import 'theme.dart';
@@ -593,8 +594,33 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
           const SizedBox(height: 6),
         ],
       ),
+      // The rest of what is stored about this pack, each on a screen of its
+      // own, all of it readable with the bike out of reach.
+      if (widget.service.repository case final repo?)
+        Section(
+          title: t.offlineMoreHistory,
+          children: [
+            OutlinedButton.icon(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => FaultHistoryScreen(
+                    repository: repo,
+                    deviceId: widget.device.id,
+                    packName: _name,
+                  ),
+                ),
+              ),
+              icon: const Icon(Icons.history, size: 18),
+              label: Text(t.faultHistoryTitle),
+            ),
+            const SizedBox(height: 6),
+          ],
+        ),
     ];
   }
+
+  String get _name =>
+      widget.device.name.isEmpty ? widget.device.id : widget.device.name;
 
   /// Rides that actually went somewhere. A row exists from the moment
   /// recording starts, so one in progress has no distance yet; the same cut

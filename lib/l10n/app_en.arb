@@ -3319,5 +3319,36 @@
         "type": "String"
       }
     }
-  }
+  },
+  "faultHistoryTitle": "BMS fault history",
+  "faultHistoryIntro": "Every time the BMS raised a protection or a warning on this battery, newest first. It comes from the warning bits stored with every reading, so it is only what the app saw: with no connection there are no readings.",
+  "faultHistoryEmpty": "No protection or warning from the BMS in this battery's stored readings.",
+  "faultHistoryThinned": "Readings older than a month are stored one a minute. Back there a fault shorter than that may not show, and the lengths are approximate.",
+  "faultUnknownBit": "Unnamed warning (bit {bit})",
+  "@faultUnknownBit": {
+    "placeholders": {
+      "bit": {
+        "type": "int"
+      }
+    }
+  },
+  "faultOngoing": "still on in the last reading",
+  "faultInstant": "one reading",
+  "faultStarted": "First seen",
+  "faultLastSeen": "Last seen",
+  "faultNoData": "No data: the link was down for more than 5 minutes during the fault or just before or after it, so it may have started earlier, ended later, or come and gone unseen.",
+  "faultReadings": "Readings with it on",
+  "faultAtStart": "When it started",
+  "faultAtStartCells": "Highest cell {max} V, lowest {min} V.",
+  "@faultAtStartCells": {
+    "placeholders": {
+      "max": {
+        "type": "String"
+      },
+      "min": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineMoreHistory": "More history"
 }

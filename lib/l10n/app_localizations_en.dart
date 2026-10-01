@@ -5426,4 +5426,54 @@ class AppL10nEn extends AppL10n {
   String balanceRankingBasis(String count) {
     return 'From $count resting readings over the last 30 days with the cells at least 10 mV apart. The lowest at rest is the one holding the least charge: it says where to look, not that the cell is bad.';
   }
+
+  @override
+  String get faultHistoryTitle => 'BMS fault history';
+
+  @override
+  String get faultHistoryIntro =>
+      'Every time the BMS raised a protection or a warning on this battery, newest first. It comes from the warning bits stored with every reading, so it is only what the app saw: with no connection there are no readings.';
+
+  @override
+  String get faultHistoryEmpty =>
+      'No protection or warning from the BMS in this battery\'s stored readings.';
+
+  @override
+  String get faultHistoryThinned =>
+      'Readings older than a month are stored one a minute. Back there a fault shorter than that may not show, and the lengths are approximate.';
+
+  @override
+  String faultUnknownBit(int bit) {
+    return 'Unnamed warning (bit $bit)';
+  }
+
+  @override
+  String get faultOngoing => 'still on in the last reading';
+
+  @override
+  String get faultInstant => 'one reading';
+
+  @override
+  String get faultStarted => 'First seen';
+
+  @override
+  String get faultLastSeen => 'Last seen';
+
+  @override
+  String get faultNoData =>
+      'No data: the link was down for more than 5 minutes during the fault or just before or after it, so it may have started earlier, ended later, or come and gone unseen.';
+
+  @override
+  String get faultReadings => 'Readings with it on';
+
+  @override
+  String get faultAtStart => 'When it started';
+
+  @override
+  String faultAtStartCells(String max, String min) {
+    return 'Highest cell $max V, lowest $min V.';
+  }
+
+  @override
+  String get offlineMoreHistory => 'More history';
 }

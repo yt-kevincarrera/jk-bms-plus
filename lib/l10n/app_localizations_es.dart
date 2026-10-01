@@ -5455,4 +5455,54 @@ class AppL10nEs extends AppL10n {
   String balanceRankingBasis(String count) {
     return 'De $count lecturas en reposo de los últimos 30 días con las celdas separadas al menos 10 mV. La más baja en reposo es la que tiene menos carga: dice dónde mirar, no que esa celda esté mal.';
   }
+
+  @override
+  String get faultHistoryTitle => 'Historial de fallos del BMS';
+
+  @override
+  String get faultHistoryIntro =>
+      'Cada vez que el BMS levantó una protección o un aviso en esta batería, la más reciente primero. Sale del registro de avisos que se guarda con cada lectura, así que es solo lo que la app vio: sin conexión no hay lecturas.';
+
+  @override
+  String get faultHistoryEmpty =>
+      'Ninguna protección ni aviso del BMS en las lecturas guardadas de esta batería.';
+
+  @override
+  String get faultHistoryThinned =>
+      'Las lecturas de más de un mes se guardan una por minuto. Ahí un fallo más corto que eso puede no aparecer, y las duraciones son aproximadas.';
+
+  @override
+  String faultUnknownBit(int bit) {
+    return 'Aviso sin nombre (bit $bit)';
+  }
+
+  @override
+  String get faultOngoing => 'seguía en la última lectura';
+
+  @override
+  String get faultInstant => 'una lectura';
+
+  @override
+  String get faultStarted => 'Visto por primera vez';
+
+  @override
+  String get faultLastSeen => 'Visto por última vez';
+
+  @override
+  String get faultNoData =>
+      'Sin datos: la conexión estuvo caída más de 5 minutos durante el fallo o justo antes o después, así que pudo empezar antes, acabar después o ir y venir sin que nadie lo viera.';
+
+  @override
+  String get faultReadings => 'Lecturas con el aviso';
+
+  @override
+  String get faultAtStart => 'Al empezar';
+
+  @override
+  String faultAtStartCells(String max, String min) {
+    return 'Celda más alta $max V, más baja $min V.';
+  }
+
+  @override
+  String get offlineMoreHistory => 'Más historial';
 }

@@ -28,6 +28,7 @@ import '../../license/entitlements.dart';
 import '../pack/config_audit_screen.dart';
 import '../pack/pack_profile_card.dart';
 import '../bms_code_labels.dart';
+import '../fault_history_screen.dart';
 import '../widgets/pro_gate.dart';
 import '../locale_controller.dart';
 import '../theme.dart';
@@ -289,6 +290,26 @@ class _SystemTabState extends State<SystemTab> {
                 ),
             ],
           ),
+        // What the BMS raised on this pack, from the stored readings. The
+        // live tabs only ever show a fault while it is up.
+        if (service.repository case final repo?)
+          if (service.activeDeviceId case final id?)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.history, size: 18),
+                label: Text(t.faultHistoryTitle),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => FaultHistoryScreen(
+                      repository: repo,
+                      deviceId: id,
+                      packName: _packName(id),
+                    ),
+                  ),
+                ),
+              ),
+            ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: OutlinedButton.icon(
@@ -317,6 +338,12 @@ class _SystemTabState extends State<SystemTab> {
         ),
       ],
     );
+  }
+
+  /// The connected pack as the rider named it, or its address.
+  String _packName(String id) {
+    final name = widget.service.activeDevice?.name ?? '';
+    return name.isEmpty ? id : name;
   }
 
   Widget _demoSection(AppL10n t) {

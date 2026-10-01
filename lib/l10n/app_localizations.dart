@@ -9065,6 +9065,90 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'De {count} lecturas en reposo de los últimos 30 días con las celdas separadas al menos 10 mV. La más baja en reposo es la que tiene menos carga: dice dónde mirar, no que esa celda esté mal.'**
   String balanceRankingBasis(String count);
+
+  /// No description provided for @faultHistoryTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Historial de fallos del BMS'**
+  String get faultHistoryTitle;
+
+  /// No description provided for @faultHistoryIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada vez que el BMS levantó una protección o un aviso en esta batería, la más reciente primero. Sale del registro de avisos que se guarda con cada lectura, así que es solo lo que la app vio: sin conexión no hay lecturas.'**
+  String get faultHistoryIntro;
+
+  /// No description provided for @faultHistoryEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Ninguna protección ni aviso del BMS en las lecturas guardadas de esta batería.'**
+  String get faultHistoryEmpty;
+
+  /// No description provided for @faultHistoryThinned.
+  ///
+  /// In es, this message translates to:
+  /// **'Las lecturas de más de un mes se guardan una por minuto. Ahí un fallo más corto que eso puede no aparecer, y las duraciones son aproximadas.'**
+  String get faultHistoryThinned;
+
+  /// No description provided for @faultUnknownBit.
+  ///
+  /// In es, this message translates to:
+  /// **'Aviso sin nombre (bit {bit})'**
+  String faultUnknownBit(int bit);
+
+  /// No description provided for @faultOngoing.
+  ///
+  /// In es, this message translates to:
+  /// **'seguía en la última lectura'**
+  String get faultOngoing;
+
+  /// No description provided for @faultInstant.
+  ///
+  /// In es, this message translates to:
+  /// **'una lectura'**
+  String get faultInstant;
+
+  /// No description provided for @faultStarted.
+  ///
+  /// In es, this message translates to:
+  /// **'Visto por primera vez'**
+  String get faultStarted;
+
+  /// No description provided for @faultLastSeen.
+  ///
+  /// In es, this message translates to:
+  /// **'Visto por última vez'**
+  String get faultLastSeen;
+
+  /// No description provided for @faultNoData.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin datos: la conexión estuvo caída más de 5 minutos durante el fallo o justo antes o después, así que pudo empezar antes, acabar después o ir y venir sin que nadie lo viera.'**
+  String get faultNoData;
+
+  /// No description provided for @faultReadings.
+  ///
+  /// In es, this message translates to:
+  /// **'Lecturas con el aviso'**
+  String get faultReadings;
+
+  /// No description provided for @faultAtStart.
+  ///
+  /// In es, this message translates to:
+  /// **'Al empezar'**
+  String get faultAtStart;
+
+  /// No description provided for @faultAtStartCells.
+  ///
+  /// In es, this message translates to:
+  /// **'Celda más alta {max} V, más baja {min} V.'**
+  String faultAtStartCells(String max, String min);
+
+  /// No description provided for @offlineMoreHistory.
+  ///
+  /// In es, this message translates to:
+  /// **'Más historial'**
+  String get offlineMoreHistory;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

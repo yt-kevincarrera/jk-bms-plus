@@ -7,6 +7,8 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
 
+import '../metrics/fault_history.dart';
+
 part 'database.g.dart';
 
 /// One BMS this phone has connected to.
@@ -1093,6 +1095,54 @@ class AppDatabase extends _$AppDatabase {
         (
           current: r.read<double>('current'),
           cellVoltagesJson: r.read<String>('cell_voltages_json'),
+        ),
+    ];
+  }
+
+  /// The readings at which a pack's warning mask changed, and those that came
+  /// after a silence of more than [gapSeconds] while a warning was held,
+  /// oldest first. See [FaultHistory].
+  ///
+  /// Only the transitions, not every reading: a protection held for a week
+  /// at three readings a second is millions of identical rows, and how many
+  /// there were is the difference of two row numbers. Readings where nothing
+  /// was raised either side are never returned at all.
+  Future<List<WarningTransition>> warningTransitions(
+    String deviceId, {
+    int gapSeconds = 300,
+  }) async {
+    final rows = await customSelect(
+      'SELECT n, timestamp, mask, prev_mask, prev_ts, current, soc, '
+      'max_cell_voltage, min_cell_voltage FROM ('
+      '  SELECT timestamp, warnings_mask AS mask, current, soc, '
+      '    max_cell_voltage, min_cell_voltage, '
+      '    ROW_NUMBER() OVER w AS n, '
+      '    LAG(warnings_mask) OVER w AS prev_mask, '
+      '    LAG(timestamp) OVER w AS prev_ts '
+      '  FROM snapshots WHERE device_id = ?1 '
+      '  WINDOW w AS (ORDER BY timestamp, id)'
+      ') WHERE (mask != 0 OR COALESCE(prev_mask, 0) != 0) '
+      'AND (prev_mask IS NULL OR mask != prev_mask OR timestamp - prev_ts > ?2) '
+      'ORDER BY n',
+      variables: [Variable<String>(deviceId), Variable<int>(gapSeconds)],
+      readsFrom: {snapshots},
+    ).get();
+    DateTime at(int seconds) =>
+        DateTime.fromMillisecondsSinceEpoch(seconds * 1000, isUtc: true);
+    return [
+      for (final r in rows)
+        WarningTransition(
+          index: r.read<int>('n'),
+          at: at(r.read<int>('timestamp')),
+          mask: r.read<int>('mask'),
+          previousMask: r.readNullable<int>('prev_mask'),
+          previousAt: r.readNullable<int>('prev_ts') == null
+              ? null
+              : at(r.read<int>('prev_ts')),
+          current: r.read<double>('current'),
+          soc: r.read<double>('soc'),
+          maxCellVoltage: r.read<double>('max_cell_voltage'),
+          minCellVoltage: r.read<double>('min_cell_voltage'),
         ),
     ];
   }

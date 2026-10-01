@@ -3649,5 +3649,36 @@
         "type": "String"
       }
     }
-  }
+  },
+  "faultHistoryTitle": "Historial de fallos del BMS",
+  "faultHistoryIntro": "Cada vez que el BMS levantó una protección o un aviso en esta batería, la más reciente primero. Sale del registro de avisos que se guarda con cada lectura, así que es solo lo que la app vio: sin conexión no hay lecturas.",
+  "faultHistoryEmpty": "Ninguna protección ni aviso del BMS en las lecturas guardadas de esta batería.",
+  "faultHistoryThinned": "Las lecturas de más de un mes se guardan una por minuto. Ahí un fallo más corto que eso puede no aparecer, y las duraciones son aproximadas.",
+  "faultUnknownBit": "Aviso sin nombre (bit {bit})",
+  "@faultUnknownBit": {
+    "placeholders": {
+      "bit": {
+        "type": "int"
+      }
+    }
+  },
+  "faultOngoing": "seguía en la última lectura",
+  "faultInstant": "una lectura",
+  "faultStarted": "Visto por primera vez",
+  "faultLastSeen": "Visto por última vez",
+  "faultNoData": "Sin datos: la conexión estuvo caída más de 5 minutos durante el fallo o justo antes o después, así que pudo empezar antes, acabar después o ir y venir sin que nadie lo viera.",
+  "faultReadings": "Lecturas con el aviso",
+  "faultAtStart": "Al empezar",
+  "faultAtStartCells": "Celda más alta {max} V, más baja {min} V.",
+  "@faultAtStartCells": {
+    "placeholders": {
+      "max": {
+        "type": "String"
+      },
+      "min": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineMoreHistory": "Más historial"
 }
