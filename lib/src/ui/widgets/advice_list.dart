@@ -574,6 +574,11 @@ class _EvidenceRow extends StatelessWidget {
       t.evidencePreviousConfiguredCapacity(_date(e.at)),
       ah(v),
     ),
+    EvidenceKind.previousCycleCapacity => (
+      t.evidencePreviousCycleCapacity(_date(e.at)),
+      ah(v),
+    ),
+    EvidenceKind.cycleCapacity => (t.evidenceCycleCapacity, ah(v)),
     EvidenceKind.previousPeakCurrent => (
       t.evidencePreviousPeakCurrent(_date(e.at)),
       '${v.toStringAsFixed(1)} A',
@@ -649,6 +654,8 @@ String adviceTitle(AppL10n t, Advice advice) {
       '$cell',
     ),
     AdviceCode.inspectionRepeatWorse => t.verdictInspRepeatWorseTitle,
+    AdviceCode.inspectionRepeatConfigChanged =>
+      t.verdictInspRepeatConfigChangedTitle,
     AdviceCode.inspectionRepeatSteady => t.verdictInspRepeatSteadyTitle,
     AdviceCode.inspectionRepeatCountersReset =>
       t.verdictInspRepeatCountersResetTitle,
@@ -851,6 +858,8 @@ String adviceBody(AppL10n t, Advice advice) {
       '$cell',
     ),
     AdviceCode.inspectionRepeatWorse => t.verdictInspRepeatWorseBody,
+    AdviceCode.inspectionRepeatConfigChanged =>
+      t.verdictInspRepeatConfigChangedBody,
     AdviceCode.inspectionRepeatSteady => t.verdictInspRepeatSteadyBody,
     AdviceCode.inspectionRepeatCountersReset =>
       t.verdictInspRepeatCountersResetBody,

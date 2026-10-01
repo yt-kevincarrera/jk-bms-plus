@@ -6459,7 +6459,7 @@ abstract class AppL10n {
   /// No description provided for @verdictInspRepeatSameCellBody.
   ///
   /// In es, this message translates to:
-  /// **'No fue mala suerte ni un cable suelto: repetida la prueba, la misma celda vuelve a hundirse antes que las demás. Esto ya no es una sospecha, es la celda.'**
+  /// **'Repetida la prueba con una carga parecida, la misma celda vuelve a hundirse antes que las demás, y las dos veces por encima del umbral. Ya no parece una lectura rara: es esa celda o su conexión, y un taller puede decir cuál.'**
   String get verdictInspRepeatSameCellBody;
 
   /// No description provided for @verdictInspRepeatCellMovedTitle.
@@ -6477,13 +6477,13 @@ abstract class AppL10n {
   /// No description provided for @verdictInspRepeatWorseTitle.
   ///
   /// In es, this message translates to:
-  /// **'Va a peor desde la prueba anterior'**
+  /// **'Mide peor que en la prueba anterior'**
   String get verdictInspRepeatWorseTitle;
 
   /// No description provided for @verdictInspRepeatWorseBody.
   ///
   /// In es, this message translates to:
-  /// **'Comparando con el mismo tipo de tirón, la batería mide peor que la última vez. Con dos pruebas separadas en el tiempo esto es una tendencia, no una foto.'**
+  /// **'Respecto a la prueba anterior el pack mide peor; las cifras de las dos están en el detalle. Las caídas solo se comparan cuando las dos cargas fueron parecidas, y el reposo solo cuando el pack estaba a una carga parecida. Dos pruebas apuntan a un cambio; una tercera lo confirmaría.'**
   String get verdictInspRepeatWorseBody;
 
   /// No description provided for @verdictInspRepeatSteadyTitle.
@@ -6501,13 +6501,13 @@ abstract class AppL10n {
   /// No description provided for @verdictInspRepeatCountersResetTitle.
   ///
   /// In es, this message translates to:
-  /// **'Alguien tocó los contadores entre una visita y otra'**
+  /// **'Los contadores del BMS bajaron entre visitas'**
   String get verdictInspRepeatCountersResetTitle;
 
   /// No description provided for @verdictInspRepeatCountersResetBody.
   ///
   /// In es, this message translates to:
-  /// **'Los ciclos solo suben y la salud solo baja. Si entre las dos pruebas los ciclos bajaron, la salud subió o cambió la capacidad configurada, es que se reseteó el BMS. Lo físico de arriba no se resetea con un botón; eso es lo que hay que mirar.'**
+  /// **'Los ciclos y la energía total que cuenta el BMS solo suben. Si entre las dos pruebas bajaron, el BMS se reseteó o se cambió. Pregunta por qué. Lo físico de arriba no se resetea con un botón; eso es lo que hay que mirar.'**
   String get verdictInspRepeatCountersResetBody;
 
   /// No description provided for @verdictInspRepeatLoadDiffersTitle.
@@ -8369,6 +8369,30 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Sin veredicto'**
   String get inspectionLightUnmeasuredShort;
+
+  /// No description provided for @verdictInspRepeatConfigChangedTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambió la configuración o los contadores entre visitas'**
+  String get verdictInspRepeatConfigChangedTitle;
+
+  /// No description provided for @verdictInspRepeatConfigChangedBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Entre las dos pruebas cambió la capacidad configurada, o subió la salud que reporta el BMS. Puede ser el dueño corrigiendo un ajuste o el firmware recalculando, y no tiene por qué ser un engaño, pero pregunta qué se tocó. Lo físico de arriba no depende de estos números.'**
+  String get verdictInspRepeatConfigChangedBody;
+
+  /// No description provided for @evidencePreviousCycleCapacity.
+  ///
+  /// In es, this message translates to:
+  /// **'Energía total contada el {date}'**
+  String evidencePreviousCycleCapacity(String date);
+
+  /// No description provided for @evidenceCycleCapacity.
+  ///
+  /// In es, this message translates to:
+  /// **'Energía total contada por el BMS'**
+  String get evidenceCycleCapacity;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

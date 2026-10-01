@@ -3801,7 +3801,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get verdictInspRepeatSameCellBody =>
-      'No fue mala suerte ni un cable suelto: repetida la prueba, la misma celda vuelve a hundirse antes que las demás. Esto ya no es una sospecha, es la celda.';
+      'Repetida la prueba con una carga parecida, la misma celda vuelve a hundirse antes que las demás, y las dos veces por encima del umbral. Ya no parece una lectura rara: es esa celda o su conexión, y un taller puede decir cuál.';
 
   @override
   String verdictInspRepeatCellMovedTitle(String cell) {
@@ -3815,11 +3815,11 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get verdictInspRepeatWorseTitle =>
-      'Va a peor desde la prueba anterior';
+      'Mide peor que en la prueba anterior';
 
   @override
   String get verdictInspRepeatWorseBody =>
-      'Comparando con el mismo tipo de tirón, la batería mide peor que la última vez. Con dos pruebas separadas en el tiempo esto es una tendencia, no una foto.';
+      'Respecto a la prueba anterior el pack mide peor; las cifras de las dos están en el detalle. Las caídas solo se comparan cuando las dos cargas fueron parecidas, y el reposo solo cuando el pack estaba a una carga parecida. Dos pruebas apuntan a un cambio; una tercera lo confirmaría.';
 
   @override
   String get verdictInspRepeatSteadyTitle =>
@@ -3831,11 +3831,11 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get verdictInspRepeatCountersResetTitle =>
-      'Alguien tocó los contadores entre una visita y otra';
+      'Los contadores del BMS bajaron entre visitas';
 
   @override
   String get verdictInspRepeatCountersResetBody =>
-      'Los ciclos solo suben y la salud solo baja. Si entre las dos pruebas los ciclos bajaron, la salud subió o cambió la capacidad configurada, es que se reseteó el BMS. Lo físico de arriba no se resetea con un botón; eso es lo que hay que mirar.';
+      'Los ciclos y la energía total que cuenta el BMS solo suben. Si entre las dos pruebas bajaron, el BMS se reseteó o se cambió. Pregunta por qué. Lo físico de arriba no se resetea con un botón; eso es lo que hay que mirar.';
 
   @override
   String get verdictInspRepeatLoadDiffersTitle =>
@@ -5035,4 +5035,20 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get inspectionLightUnmeasuredShort => 'Sin veredicto';
+
+  @override
+  String get verdictInspRepeatConfigChangedTitle =>
+      'Cambió la configuración o los contadores entre visitas';
+
+  @override
+  String get verdictInspRepeatConfigChangedBody =>
+      'Entre las dos pruebas cambió la capacidad configurada, o subió la salud que reporta el BMS. Puede ser el dueño corrigiendo un ajuste o el firmware recalculando, y no tiene por qué ser un engaño, pero pregunta qué se tocó. Lo físico de arriba no depende de estos números.';
+
+  @override
+  String evidencePreviousCycleCapacity(String date) {
+    return 'Energía total contada el $date';
+  }
+
+  @override
+  String get evidenceCycleCapacity => 'Energía total contada por el BMS';
 }

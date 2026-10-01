@@ -116,6 +116,7 @@ AdviceSubject? subjectOf(AdviceCode code) => switch (code) {
   AdviceCode.inspectionNoHeavyLoad ||
   AdviceCode.inspectionSagUnresolved ||
   AdviceCode.inspectionRecoveryNotDiscriminating ||
+  AdviceCode.inspectionRepeatConfigChanged ||
   AdviceCode.inspectionRepeatLoadDiffers ||
   AdviceCode.inspectionRepeatCountersReset => null,
 };

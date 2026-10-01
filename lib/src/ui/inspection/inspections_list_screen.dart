@@ -6,6 +6,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../bms_service.dart';
 import '../../data/database.dart';
 import '../../inspection/inspection_result.dart';
+import '../../inspection/inspection_series.dart';
 import '../../inspection/inspection_session.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
@@ -125,7 +126,7 @@ class InspectionsListScreen extends StatelessWidget {
         },
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
-          onTap: () => _open(context, row),
+          onTap: () => _open(context, row, run?.$2),
           child: Container(
             decoration: BoxDecoration(
               color: AppTheme.surfaceRaised,
@@ -188,25 +189,29 @@ class InspectionsListScreen extends StatelessWidget {
 
   /// For each row, which run of that pack it is and how many there are.
   ///
-  /// Grouped by address rather than by serial: this is a label on a list, and
-  /// a wrong grouping here would quietly merge two packs in front of the
-  /// person trying to tell them apart.
+  /// By the same rule the verdict uses to find a pack's earlier runs: the
+  /// address, or a serial that looks real together with the same name. It
+  /// used to be the address alone here and the address or any serial there,
+  /// so a pack could be "run 1 of 1" in the list and "run 3" on its sheet.
   static Map<int, (int, int)> _runNumbers(List<Inspection> rows) {
-    final byPack = <String, List<Inspection>>{};
-    for (final row in rows) {
-      byPack.putIfAbsent(row.bmsId, () => []).add(row);
-    }
-    final out = <int, (int, int)>{};
-    for (final group in byPack.values) {
-      final ordered = [...group]..sort((a, b) => a.at.compareTo(b.at));
-      for (var i = 0; i < ordered.length; i++) {
-        out[ordered[i].id] = (i + 1, ordered.length);
-      }
-    }
-    return out;
+    bool same(Inspection a, Inspection b) => InspectionSeries.sameIdentity(
+      bmsId: a.bmsId,
+      serialNumber: a.serialNumber,
+      bmsName: a.bmsName,
+      otherBmsId: b.bmsId,
+      otherSerialNumber: b.serialNumber,
+      otherBmsName: b.bmsName,
+    );
+    return {
+      for (final row in rows)
+        row.id: (
+          rows.where((o) => o.at.isBefore(row.at) && same(row, o)).length + 1,
+          rows.where((o) => same(row, o)).length,
+        ),
+    };
   }
 
-  Future<void> _open(BuildContext context, Inspection row) async {
+  Future<void> _open(BuildContext context, Inspection row, int? total) async {
     final result = InspectionResult.fromJson(
       (jsonDecode(row.resultJson) as Map).cast<String, Object?>(),
     );
@@ -224,6 +229,7 @@ class InspectionsListScreen extends StatelessWidget {
           bmsName: row.bmsName,
           savedId: row.id,
           initialNote: row.note,
+          runTotal: total,
         ),
       ),
     );

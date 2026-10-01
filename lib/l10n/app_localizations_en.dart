@@ -3782,7 +3782,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get verdictInspRepeatSameCellBody =>
-      'Not bad luck and not a loose lead: run the test again and the same cell drops before the others. This is no longer a suspicion, it is the cell.';
+      'Run again at a similar pull, the same cell drops before the others, and both times past the line. It no longer looks like a bad reading: it is that cell or its connection, and a workshop can tell which.';
 
   @override
   String verdictInspRepeatCellMovedTitle(String cell) {
@@ -3795,11 +3795,12 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String get verdictInspRepeatWorseTitle => 'Worse than the previous run';
+  String get verdictInspRepeatWorseTitle =>
+      'Measures worse than the previous run';
 
   @override
   String get verdictInspRepeatWorseBody =>
-      'Compared at the same kind of pull, the pack measures worse than last time. With two runs separated in time that is a trend, not a snapshot.';
+      'Against the previous run the pack measures worse; both runs\' figures are in the detail. Sag is only compared when the two pulls were alike, and the resting spread only when the pack was at a similar charge. Two runs point at a change; a third would confirm it.';
 
   @override
   String get verdictInspRepeatSteadyTitle => 'Same as last time';
@@ -3810,11 +3811,11 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get verdictInspRepeatCountersResetTitle =>
-      'Somebody touched the counters between visits';
+      'The BMS counters went down between visits';
 
   @override
   String get verdictInspRepeatCountersResetBody =>
-      'Cycles only go up and health only goes down. If between the two runs the cycles fell, the health rose or the configured capacity changed, the BMS was reset. The physical findings above cannot be reset with a button, which is why they are the ones to read.';
+      'Cycles and the total the BMS counts only ever go up. If they went down between the two runs, the BMS was reset or replaced. Ask why. The physical findings above cannot be reset with a button, which is why they are the ones to read.';
 
   @override
   String get verdictInspRepeatLoadDiffersTitle =>
@@ -5010,4 +5011,20 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get inspectionLightUnmeasuredShort => 'No verdict';
+
+  @override
+  String get verdictInspRepeatConfigChangedTitle =>
+      'The settings or counters changed between visits';
+
+  @override
+  String get verdictInspRepeatConfigChangedBody =>
+      'Between the two runs the configured capacity changed, or the health the BMS reports went up. It can be the owner correcting a setting or the firmware recalculating, and it need not be a trick, but ask what was changed. The physical findings above do not depend on these numbers.';
+
+  @override
+  String evidencePreviousCycleCapacity(String date) {
+    return 'Total counted on $date';
+  }
+
+  @override
+  String get evidenceCycleCapacity => 'Total counted by the BMS';
 }

@@ -38,6 +38,7 @@ class InspectionVerdictScreen extends StatefulWidget {
     required this.bmsName,
     this.savedId,
     this.initialNote = '',
+    this.runTotal,
     super.key,
   });
 
@@ -50,6 +51,11 @@ class InspectionVerdictScreen extends StatefulWidget {
   /// Set when this is a saved inspection being reread.
   final int? savedId;
   final String initialNote;
+
+  /// How many runs this pack has in all, when the list that opened a saved
+  /// run knows. The series only reads the runs before this one, so on its
+  /// own it can only say "run 2 of 2" about the second of five.
+  final int? runTotal;
 
   @override
   State<InspectionVerdictScreen> createState() =>
@@ -109,6 +115,7 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
     final earlier = await repo.pastInspections(
       bmsId: widget.bmsId,
       serialNumber: r.reported.serialNumber,
+      bmsName: widget.bmsName,
       before: widget.savedId == null ? null : r.at,
       excludeId: widget.savedId,
     );
@@ -378,7 +385,7 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
             InfoRow(
               t.inspectionSeriesRun(
                 '${series.runNumber}',
-                '${series.runNumber}',
+                '${widget.runTotal ?? series.runNumber}',
               ),
               _date(series.result.at),
             ),

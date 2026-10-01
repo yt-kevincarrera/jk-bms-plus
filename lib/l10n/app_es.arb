@@ -2353,7 +2353,7 @@
       }
     }
   },
-  "verdictInspRepeatSameCellBody": "No fue mala suerte ni un cable suelto: repetida la prueba, la misma celda vuelve a hundirse antes que las demás. Esto ya no es una sospecha, es la celda.",
+  "verdictInspRepeatSameCellBody": "Repetida la prueba con una carga parecida, la misma celda vuelve a hundirse antes que las demás, y las dos veces por encima del umbral. Ya no parece una lectura rara: es esa celda o su conexión, y un taller puede decir cuál.",
   "verdictInspRepeatCellMovedTitle": "Esta vez se hundió otra celda",
   "@verdictInspRepeatCellMovedTitle": {
     "placeholders": {
@@ -2373,12 +2373,12 @@
       }
     }
   },
-  "verdictInspRepeatWorseTitle": "Va a peor desde la prueba anterior",
-  "verdictInspRepeatWorseBody": "Comparando con el mismo tipo de tirón, la batería mide peor que la última vez. Con dos pruebas separadas en el tiempo esto es una tendencia, no una foto.",
+  "verdictInspRepeatWorseTitle": "Mide peor que en la prueba anterior",
+  "verdictInspRepeatWorseBody": "Respecto a la prueba anterior el pack mide peor; las cifras de las dos están en el detalle. Las caídas solo se comparan cuando las dos cargas fueron parecidas, y el reposo solo cuando el pack estaba a una carga parecida. Dos pruebas apuntan a un cambio; una tercera lo confirmaría.",
   "verdictInspRepeatSteadyTitle": "Repite lo mismo que la vez anterior",
   "verdictInspRepeatSteadyBody": "Las cifras de esta prueba caen dentro del ruido de la anterior. La primera prueba no fue una casualidad y esta no ha encontrado nada nuevo.",
-  "verdictInspRepeatCountersResetTitle": "Alguien tocó los contadores entre una visita y otra",
-  "verdictInspRepeatCountersResetBody": "Los ciclos solo suben y la salud solo baja. Si entre las dos pruebas los ciclos bajaron, la salud subió o cambió la capacidad configurada, es que se reseteó el BMS. Lo físico de arriba no se resetea con un botón; eso es lo que hay que mirar.",
+  "verdictInspRepeatCountersResetTitle": "Los contadores del BMS bajaron entre visitas",
+  "verdictInspRepeatCountersResetBody": "Los ciclos y la energía total que cuenta el BMS solo suben. Si entre las dos pruebas bajaron, el BMS se reseteó o se cambió. Pregunta por qué. Lo físico de arriba no se resetea con un botón; eso es lo que hay que mirar.",
   "verdictInspRepeatLoadDiffersTitle": "Las dos pruebas no tiraron igual",
   "verdictInspRepeatLoadDiffersBody": "La caída de voltaje depende de cuánta corriente se pida. Con acelerones muy distintos, comparar las caídas no dice nada. Para comparar de verdad, repite el test pidiendo un tirón parecido.",
   "evidenceRunCount": "Pruebas a este pack",
@@ -3385,5 +3385,16 @@
   "inspectionFidelityNoteUnmeasured": "Sin una carga suficiente este test no ha podido buscar la celda mala: lo de arriba es solo lo que se ve en reposo. Tampoco mide capacidad real; para eso hace falta una descarga completa.",
   "inspectionLightUnresolved": "Sin veredicto: la carga no bastó para descartar una celda mala",
   "inspectionUnresolvedBody": "Hubo carga, pero poca: a esa corriente una celda mala puede moverse igual que las buenas, así que aquí no hay nada sobre esta batería ni a favor ni en contra. Repítelo con más corriente: rodando con carga real (una cuesta o acelerar fuerte), o con el cargador.",
-  "inspectionLightUnmeasuredShort": "Sin veredicto"
+  "inspectionLightUnmeasuredShort": "Sin veredicto",
+  "verdictInspRepeatConfigChangedTitle": "Cambió la configuración o los contadores entre visitas",
+  "verdictInspRepeatConfigChangedBody": "Entre las dos pruebas cambió la capacidad configurada, o subió la salud que reporta el BMS. Puede ser el dueño corrigiendo un ajuste o el firmware recalculando, y no tiene por qué ser un engaño, pero pregunta qué se tocó. Lo físico de arriba no depende de estos números.",
+  "evidencePreviousCycleCapacity": "Energía total contada el {date}",
+  "@evidencePreviousCycleCapacity": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "evidenceCycleCapacity": "Energía total contada por el BMS"
 }

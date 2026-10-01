@@ -165,6 +165,11 @@ enum AdviceCode {
   /// The pack measures worse than it did last time.
   inspectionRepeatWorse,
 
+  /// A setting or a counter the BMS keeps moved between visits in a way it
+  /// can move by itself or by an honest hand: the configured capacity, or a
+  /// state of health that went up.
+  inspectionRepeatConfigChanged,
+
   /// Two runs agree within noise: the first was not a fluke.
   inspectionRepeatSteady,
 
@@ -313,6 +318,10 @@ enum EvidenceKind {
   previousSoh,
   previousConfiguredCapacity,
   previousPeakCurrent,
+  previousCycleCapacity,
+
+  /// The amp-hours the BMS says it has counted through the pack, ever.
+  cycleCapacity,
   // Configuration audit.
   configuredSetting,
   safeLimit,

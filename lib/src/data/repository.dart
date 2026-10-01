@@ -827,9 +827,14 @@ class BmsRepository {
   /// [before] and [excludeId] are for rereading a saved run: the comparison
   /// then shows what was known that day rather than what is known now, which
   /// is the only reading of it that stays true.
+  ///
+  /// The database is asked broadly, by address or serial, and the rows are
+  /// then held to [InspectionSeries.samePack], so the history a verdict
+  /// compares against is the same one the list of inspections counts.
   Future<List<PastInspection>> pastInspections({
     required String bmsId,
     String serialNumber = '',
+    String bmsName = '',
     DateTime? before,
     int? excludeId,
   }) async {
@@ -854,10 +859,19 @@ class BmsRepository {
           result: result,
           id: row.id,
           bmsId: row.bmsId,
+          bmsName: row.bmsName,
           note: row.note,
         ),
       );
     }
+    out.removeWhere(
+      (p) => !InspectionSeries.samePack(
+        p,
+        bmsId: bmsId,
+        serialNumber: serialNumber,
+        bmsName: bmsName,
+      ),
+    );
     out.sort((a, b) => a.at.compareTo(b.at));
     return out;
   }

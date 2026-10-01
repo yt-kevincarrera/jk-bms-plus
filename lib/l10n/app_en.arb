@@ -2235,7 +2235,7 @@
       }
     }
   },
-  "verdictInspRepeatSameCellBody": "Not bad luck and not a loose lead: run the test again and the same cell drops before the others. This is no longer a suspicion, it is the cell.",
+  "verdictInspRepeatSameCellBody": "Run again at a similar pull, the same cell drops before the others, and both times past the line. It no longer looks like a bad reading: it is that cell or its connection, and a workshop can tell which.",
   "verdictInspRepeatCellMovedTitle": "A different cell dropped this time",
   "@verdictInspRepeatCellMovedTitle": {
     "placeholders": {
@@ -2255,12 +2255,12 @@
       }
     }
   },
-  "verdictInspRepeatWorseTitle": "Worse than the previous run",
-  "verdictInspRepeatWorseBody": "Compared at the same kind of pull, the pack measures worse than last time. With two runs separated in time that is a trend, not a snapshot.",
+  "verdictInspRepeatWorseTitle": "Measures worse than the previous run",
+  "verdictInspRepeatWorseBody": "Against the previous run the pack measures worse; both runs' figures are in the detail. Sag is only compared when the two pulls were alike, and the resting spread only when the pack was at a similar charge. Two runs point at a change; a third would confirm it.",
   "verdictInspRepeatSteadyTitle": "Same as last time",
   "verdictInspRepeatSteadyBody": "This run's figures land inside the noise of the previous one. The first test was not a fluke and this one found nothing new.",
-  "verdictInspRepeatCountersResetTitle": "Somebody touched the counters between visits",
-  "verdictInspRepeatCountersResetBody": "Cycles only go up and health only goes down. If between the two runs the cycles fell, the health rose or the configured capacity changed, the BMS was reset. The physical findings above cannot be reset with a button, which is why they are the ones to read.",
+  "verdictInspRepeatCountersResetTitle": "The BMS counters went down between visits",
+  "verdictInspRepeatCountersResetBody": "Cycles and the total the BMS counts only ever go up. If they went down between the two runs, the BMS was reset or replaced. Ask why. The physical findings above cannot be reset with a button, which is why they are the ones to read.",
   "verdictInspRepeatLoadDiffersTitle": "The two runs did not pull alike",
   "verdictInspRepeatLoadDiffersBody": "Voltage sag depends on how much current is asked for. With very different pulls, comparing the sag says nothing. To compare properly, run it again with a similar pull.",
   "evidenceRunCount": "Runs on this pack",
@@ -3158,5 +3158,9 @@
   "inspectionFidelityNoteUnmeasured": "Without enough load this test could not look for the bad cell: what is above is only what shows at rest. It does not measure real capacity either; that takes a full discharge.",
   "inspectionLightUnresolved": "No verdict: the load was too small to rule out a bad cell",
   "inspectionUnresolvedBody": "There was a load, but a small one: at that current a bad cell can move just like the good ones, so there is nothing here about this battery either way. Run it again with more current: riding under real load (a hill or hard acceleration), or with the charger.",
-  "inspectionLightUnmeasuredShort": "No verdict"
+  "inspectionLightUnmeasuredShort": "No verdict",
+  "verdictInspRepeatConfigChangedTitle": "The settings or counters changed between visits",
+  "verdictInspRepeatConfigChangedBody": "Between the two runs the configured capacity changed, or the health the BMS reports went up. It can be the owner correcting a setting or the firmware recalculating, and it need not be a trick, but ask what was changed. The physical findings above do not depend on these numbers.",
+  "evidencePreviousCycleCapacity": "Total counted on {date}",
+  "evidenceCycleCapacity": "Total counted by the BMS"
 }
