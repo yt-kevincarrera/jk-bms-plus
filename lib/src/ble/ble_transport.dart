@@ -607,6 +607,12 @@ class BleTransport implements BmsLink {
         await device.requestMtu(mtuRequest);
         negotiatedMtu = device.mtuNow;
       } on Exception catch (e) {
+        // A refusal on a link that went down is the link going down, not a
+        // small packet size. Reported as a note, it hid the drop under "frames
+        // will arrive in more pieces" and the attempt went on to discover
+        // services on a device that was gone (seen 2026-09-30, right after an
+        // Android GATT 147). Failing here sends it to the retry at once.
+        if (!device.isConnected) rethrow;
         negotiatedMtu = device.mtuNow;
         _errorController.add(
           BleLinkError(
