@@ -69,6 +69,10 @@ class _JkBmsAppState extends State<JkBmsApp> {
   /// The stream fires from the service, which has no opinion about language.
   String Function(AutoTripAction)? _autoTripMessage;
 
+  /// Tells the service whether the app is on screen, which decides what
+  /// Android lets a service started now do with the GPS.
+  AppLifecycleListener? _lifecycle;
+
   @override
   void initState() {
     super.initState();
@@ -77,6 +81,10 @@ class _JkBmsAppState extends State<JkBmsApp> {
     // After the repository, so a restart that cleared a stuck stack is
     // written down as the remedy it was.
     unawaited(_service.loadLinkRecovery());
+    _lifecycle = AppLifecycleListener(
+      onStateChange: (state) =>
+          _service.appVisible = state == AppLifecycleState.resumed,
+    );
     _autoTripSub = _service.autoTripEvents.listen((action) {
       final text = _autoTripMessage?.call(action);
       if (text == null) return;
@@ -138,6 +146,7 @@ class _JkBmsAppState extends State<JkBmsApp> {
     _updates.dispose();
     _locale.dispose();
     unawaited(_autoTripSub?.cancel());
+    _lifecycle?.dispose();
     super.dispose();
   }
 

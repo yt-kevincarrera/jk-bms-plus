@@ -53,6 +53,10 @@ abstract interface class LocationDiagnostics {
 
   /// The best accuracy any delivered position had, in metres.
   double? get bestAccuracyM;
+
+  /// The location permission the platform reported when the stream was
+  /// opened, by name ("whileInUse", "always"), or null before that.
+  String? get permission;
 }
 
 /// Where positions come from.
@@ -90,6 +94,8 @@ class GeolocatorSource implements LocationSource, LocationDiagnostics {
   int tooInaccurate = 0;
   @override
   double? bestAccuracyM;
+  @override
+  String? permission;
 
   @override
   Stream<GeoFix> get fixes => _controller.stream;
@@ -110,6 +116,7 @@ class GeolocatorSource implements LocationSource, LocationDiagnostics {
     if (permission == LocationPermission.denied) {
       return LocationProblem.permissionDenied;
     }
+    this.permission = permission.name;
     // Granted is not the same as usable: "approximate" passes every check
     // above and then delivers nothing a ride can be measured with.
     try {

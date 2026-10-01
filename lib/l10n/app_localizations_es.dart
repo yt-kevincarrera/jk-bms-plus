@@ -2379,7 +2379,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get autoTripHint =>
-      'Graba el viaje sin que tengas que acordarte, y lo cierra tras unos tres minutos quieto. Si lo apagas, la app solo aprende tu autonomía de los viajes que empieces a mano, y los que se olvidan no son al azar: son los cortos y los que llevabas prisa. Para arrancar necesita consumo del pack y movimiento del GPS a la vez, así que no abre un viaje porque encendiste la moto.';
+      'Abre el viaje cuando el pack consume y el GPS dice que te mueves, las dos cosas durante unos 20 segundos (si sales a paso de peatón, espera a que pases de 6 km/h), y lo cierra tras unos tres minutos quieto. Lo que recorras antes de que se abra no se graba. Si lo apagas, la app solo aprende tu autonomía de los viajes que empieces a mano, y los que se olvidan no son al azar: son los cortos y los que llevabas prisa.';
 
   @override
   String get autoTripStarted => 'Viaje iniciado solo';
@@ -5124,4 +5124,24 @@ class AppL10nEs extends AppL10n {
   @override
   String get inspectionSaveNoStore =>
       'No se pudo guardar: el almacenamiento de la app no está disponible.';
+
+  @override
+  String get autoTripPocketNeedsLinkWatch =>
+      'Con «Seguir leyendo con la pantalla apagada» desactivado, la app deja de leer el pack al apagarse la pantalla, así que con el móvil en el bolsillo no puede empezar ningún viaje.';
+
+  @override
+  String get autoTripPocketWhileInUse =>
+      'Con el móvil en el bolsillo funciona mientras siga puesta la notificación que la app abrió al conectar con la pantalla encendida. Si Android la cierra, o la app se reconecta sola con la pantalla apagada, el GPS solo responde con la ubicación permitida todo el tiempo, y sin GPS el viaje no empieza.';
+
+  @override
+  String get autoTripPocketAllowAlways =>
+      'Permitir la ubicación todo el tiempo';
+
+  @override
+  String get autoTripPocketSettingsHint =>
+      'En los ajustes de la app, entra en Permisos, Ubicación, y elige «Permitir todo el tiempo».';
+
+  @override
+  String get autoTripPocketAlways =>
+      'Ubicación permitida todo el tiempo: el viaje puede empezar con el móvil en el bolsillo aunque la app se haya reconectado sola.';
 }

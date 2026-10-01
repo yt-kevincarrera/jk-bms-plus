@@ -15,6 +15,7 @@ import 'license_scope.dart';
 import 'license_screen.dart';
 import 'inspection/certificate_verify_screen.dart';
 import 'inspection/inspections_list_screen.dart';
+import 'widgets/auto_trip_pocket_note.dart';
 import 'widgets/backup_card.dart';
 import 'widgets/pro_gate.dart';
 import 'widgets/packs_card.dart';
@@ -216,6 +217,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                     ),
                   ),
                 ),
+                if (settings.autoTripEnabled)
+                  AutoTripPocketNote(linkWatchOn: settings.linkWatchEnabled),
                 const SizedBox(height: 4),
               ],
             ),

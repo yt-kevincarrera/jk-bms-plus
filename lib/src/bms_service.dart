@@ -95,9 +95,11 @@ class BmsService {
     BmsLink? transport,
     JkParser parser = const JkParser(),
     LocationSource Function()? locationFactory,
+    @visibleForTesting DateTime Function()? clock,
   }) : _transport = transport ?? SwitchableLink(),
        _parser = parser,
-       _locationFactory = locationFactory {
+       _locationFactory = locationFactory,
+       _now = clock ?? (() => DateTime.now().toUtc()) {
     _assembler.onRejected = _onJkRejected;
     _antAssembler.onRejected = _onAntRejected;
     _bytesSub = _transport.bytes.listen(_onBytes);
@@ -308,7 +310,13 @@ class BmsService {
   /// Exists so the pause-and-resume path can be tested. It was a real ride
   /// that found the bug there, which is an expensive way to run a test.
   final LocationSource Function()? _locationFactory;
-  final FrameAssembler _assembler = FrameAssembler();
+
+  /// The time readings are stamped with and a ride is timed by.
+  ///
+  /// Injectable so the auto-start can be tested against a real ride's
+  /// readings, which span minutes, without waiting minutes for them.
+  final DateTime Function() _now;
+  late final FrameAssembler _assembler = FrameAssembler(clock: _now);
 
   // --- Brand ---
   //
@@ -326,7 +334,7 @@ class BmsService {
   /// silence notice to say "you said", and to suggest the other brand.
   bool _brandChosenByRider = false;
 
-  final AntFrameAssembler _antAssembler = AntFrameAssembler();
+  late final AntFrameAssembler _antAssembler = AntFrameAssembler(clock: _now);
   final AntParser _antParser = const AntParser();
 
   /// The last ANT status that reached the snapshot stream, with the fields
@@ -1677,7 +1685,7 @@ class BmsService {
   // BMS cannot do this half: the JK protocol carries GPS lock bits but no
   // position data at all.
 
-  final TripRecorder trip = TripRecorder();
+  late final TripRecorder trip = TripRecorder(clock: _now);
 
   LocationSource? _location;
   StreamSubscription<GeoFix>? _fixSub;
@@ -1687,7 +1695,12 @@ class BmsService {
   /// in which case nothing is recorded rather than a trip of zero kilometres
   /// being logged as if it were real.
   Future<LocationProblem?> startTrip() async {
-    final problem = await _ensureLocation();
+    // A stream the auto-start already has delivering fixes is kept, not
+    // rebuilt. Rebuilding it meant the ride's first seconds waited for a
+    // fresh fix, and with the phone in a pocket it was one more stream
+    // opened from the background, which is the one Android may refuse.
+    final live = _location != null && _lastAutoSpeedKmh != null;
+    final problem = live ? null : await _ensureLocation();
     lastLocationProblem = problem;
     if (problem != null) return problem;
     _segments.reset();
@@ -1765,7 +1778,7 @@ class BmsService {
     if (!isDemo &&
         trip.fixesSeen == 0 &&
         startedAt != null &&
-        DateTime.now().toUtc().difference(startedAt.toUtc()) >
+        _now().difference(startedAt.toUtc()) >
             const Duration(minutes: 2)) {
       unawaited(
         repository?.note(
@@ -1940,7 +1953,7 @@ class BmsService {
       _fixSilenceNoted = false;
       return;
     }
-    final now = DateTime.now().toUtc();
+    final now = _now();
     final since = trip.lastFixAt ?? trip.startedAt;
     if (since == null) return;
     final silent = now.difference(since.toUtc());
@@ -2009,7 +2022,7 @@ class BmsService {
     if (!trip.isRecording || isDemo) return false;
     final since = trip.lastFixAt ?? trip.startedAt;
     if (since == null) return false;
-    return DateTime.now().toUtc().difference(since.toUtc()) >= tripFixSilence;
+    return _now().difference(since.toUtc()) >= tripFixSilence;
   }
 
   Future<void> _stopLocation() async {
@@ -2469,6 +2482,7 @@ class BmsService {
     }
 
     _serviceLocationTyped = needsLocation;
+    _serviceStartedVisible = appVisible;
     _adoptService(wanted);
   }
 
@@ -2779,11 +2793,7 @@ class BmsService {
     // be teaching the demo world things nobody asked for.
     if (!autoTripEnabled || isDemo || activeDevice == null) return;
 
-    // The radio is not on until the pack is drawing, which is what keeps this
-    // from being a GPS listener running all day. Current is cheap to watch and
-    // already arriving; satellites are not.
-    await _armLocationForAutoTrip(snapshot);
-
+    // Judged first, so the GPS decision below sees this reading's current.
     final action = tripAutoStart.evaluate(
       at: snapshot.timestamp,
       current: snapshot.current,
@@ -2794,6 +2804,11 @@ class BmsService {
       speedKmh: trip.isRecording ? trip.freshSpeedKmh : _lastAutoSpeedKmh,
       recording: trip.isRecording,
     );
+
+    // The radio is not on until the pack is drawing, which is what keeps this
+    // from being a GPS listener running all day. Current is cheap to watch and
+    // already arriving; satellites are not.
+    await _armLocationForAutoTrip(snapshot);
 
     await _runAutoTripAction(action);
   }
@@ -2858,6 +2873,11 @@ class BmsService {
     // distance at all, and the stale zero speed then looked like a parked bike
     // to the auto-stop.
     if (trip.isActive) return;
+    // One switch-on at a time. Readings arrive every few hundred
+    // milliseconds and asking the platform for a stream takes longer than
+    // that, so without this two streams could be opened, one of them never
+    // closed, or the one being opened stood down halfway.
+    if (_armingLocation) return;
 
     final drawing = snapshot.current <= -tripAutoStart.minCurrentAmps;
     if (drawing && !_noticedCurrent) {
@@ -2876,33 +2896,72 @@ class BmsService {
     } else if (!drawing) {
       _noticedCurrent = false;
     }
-    if (drawing && _location == null) {
-      unawaited(
-        repository?.note(
-              LinkEventKind.locationArmed,
-              deviceId: activeDeviceId,
-            ) ??
-            Future.value(),
-      );
-      final refused = await _ensureLocation();
-      if (refused != null) {
+
+    final wanted = tripAutoStart.wantsGps(snapshot.timestamp);
+    final refusedAt = _locationRefusedAt;
+    final retrySoon = refusedAt != null &&
+        snapshot.timestamp.difference(refusedAt) < const Duration(seconds: 30);
+    if (wanted && _location == null && !retrySoon) {
+      _armingLocation = true;
+      try {
+        final refused = await _ensureLocation();
+        _locationRefusedAt = refused == null ? null : snapshot.timestamp;
         unawaited(
           repository?.note(
-                LinkEventKind.locationRefused,
-                detail: refused.name,
+                refused == null
+                    ? LinkEventKind.locationArmed
+                    : LinkEventKind.locationRefused,
+                // What a pocket start depends on, written down where the
+                // next backup can show it: whether Android was asked for
+                // location from a service it will let read it.
+                detail: '${refused == null ? '' : '${refused.name}, '}'
+                    '${_locationContext()}',
                 deviceId: activeDeviceId,
               ) ??
               Future.value(),
         );
+      } finally {
+        _armingLocation = false;
       }
-    } else if (!drawing &&
-        _location != null &&
-        !tripAutoStart.looksLikeRiding) {
-      // Stood down. The speed goes with it: a stale one would let a later
-      // burst of current start a ride on a fix from an hour ago.
+    } else if (!wanted && _location != null) {
+      // Stood down, a couple of minutes after the pack last drew. The speed
+      // goes with it: a stale one would let a later burst of current start a
+      // ride on a fix from an hour ago.
       _lastAutoSpeedKmh = null;
       await _stopLocation();
     }
+  }
+
+  bool _armingLocation = false;
+
+  /// When the last switch-on was refused. Asked again every half minute
+  /// rather than on every reading, which with a permission prompt behind it
+  /// would be a prompt every reading.
+  DateTime? _locationRefusedAt;
+
+  /// Whether the app is on screen, told by the UI. Android lets a service
+  /// started while the app is visible read location from the background,
+  /// and one started from the background read it only with "allow all the
+  /// time", so it is the first thing to know when a pocket start fails.
+  bool appVisible = true;
+
+  /// Whether the running service was started while [appVisible].
+  bool? _serviceStartedVisible;
+
+  /// The circumstances of a GPS switch-on, in one line for the log.
+  String _locationContext() {
+    final source = _location;
+    final permission =
+        source is LocationDiagnostics ? (source as LocationDiagnostics).permission : null;
+    return 'permission ${permission ?? '?'}, '
+        'app ${appVisible ? 'visible' : 'in background'}, '
+        'service ${_serviceOwner?.name ?? 'none'} '
+        'location-typed $_serviceLocationTyped '
+        'started ${switch (_serviceStartedVisible) {
+          true => 'visible',
+          false => 'in background',
+          null => '?',
+        }}';
   }
 
   /// Speed while no trip is open, so the detector has something to judge.
@@ -2923,14 +2982,14 @@ class BmsService {
   double? get _lastAutoSpeedKmh {
     final at = _autoSpeedAt;
     if (at == null) return null;
-    return DateTime.now().toUtc().difference(at) > const Duration(seconds: 20)
+    return _now().difference(at) > const Duration(seconds: 20)
         ? null
         : _rawAutoSpeedKmh;
   }
 
   set _lastAutoSpeedKmh(double? kmh) {
     _rawAutoSpeedKmh = kmh;
-    _autoSpeedAt = kmh == null ? null : DateTime.now().toUtc();
+    _autoSpeedAt = kmh == null ? null : _now();
   }
 
   /// Fed by the UI from the location stream when nothing is recording.

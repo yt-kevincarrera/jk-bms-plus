@@ -1342,7 +1342,7 @@
   "alertsSectionTitle": "Qué avisos quieres",
   "alertsSectionHint": "Cada uno por separado. Apagar el que te molesta no debería costarte los que sí quieres.",
   "autoTripTitle": "Grabar viajes solo",
-  "autoTripHint": "Graba el viaje sin que tengas que acordarte, y lo cierra tras unos tres minutos quieto. Si lo apagas, la app solo aprende tu autonomía de los viajes que empieces a mano, y los que se olvidan no son al azar: son los cortos y los que llevabas prisa. Para arrancar necesita consumo del pack y movimiento del GPS a la vez, así que no abre un viaje porque encendiste la moto.",
+  "autoTripHint": "Abre el viaje cuando el pack consume y el GPS dice que te mueves, las dos cosas durante unos 20 segundos (si sales a paso de peatón, espera a que pases de 6 km/h), y lo cierra tras unos tres minutos quieto. Lo que recorras antes de que se abra no se graba. Si lo apagas, la app solo aprende tu autonomía de los viajes que empieces a mano, y los que se olvidan no son al azar: son los cortos y los que llevabas prisa.",
   "autoTripStarted": "Viaje iniciado solo",
   "autoTripStopped": "Viaje guardado",
   "degNowTitle": "Capacidad ahora",
@@ -3430,5 +3430,10 @@
   "reportChange": "Cambio (V)",
   "reportCellTableNoteCharge": "El cambio es cuánto subió cada celda con el cargador. La resistencia se estima del salto de corriente, no se mide con instrumento.",
   "inspectionDeleteConfirm": "Borrar",
-  "inspectionSaveNoStore": "No se pudo guardar: el almacenamiento de la app no está disponible."
+  "inspectionSaveNoStore": "No se pudo guardar: el almacenamiento de la app no está disponible.",
+  "autoTripPocketNeedsLinkWatch": "Con «Seguir leyendo con la pantalla apagada» desactivado, la app deja de leer el pack al apagarse la pantalla, así que con el móvil en el bolsillo no puede empezar ningún viaje.",
+  "autoTripPocketWhileInUse": "Con el móvil en el bolsillo funciona mientras siga puesta la notificación que la app abrió al conectar con la pantalla encendida. Si Android la cierra, o la app se reconecta sola con la pantalla apagada, el GPS solo responde con la ubicación permitida todo el tiempo, y sin GPS el viaje no empieza.",
+  "autoTripPocketAllowAlways": "Permitir la ubicación todo el tiempo",
+  "autoTripPocketSettingsHint": "En los ajustes de la app, entra en Permisos, Ubicación, y elige «Permitir todo el tiempo».",
+  "autoTripPocketAlways": "Ubicación permitida todo el tiempo: el viaje puede empezar con el móvil en el bolsillo aunque la app se haya reconectado sola."
 }

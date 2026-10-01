@@ -2370,7 +2370,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get autoTripHint =>
-      'Records the ride without you having to remember, and closes it after about three minutes standing still. Turn it off and the app only learns your range from rides you start by hand, and the ones people forget are not a random sample: they are the short ones and the rushed ones. Starting needs pack current and GPS movement together, so switching the bike on does not open a ride.';
+      'Opens the ride when the pack is drawing and the GPS says you are moving, both for about 20 seconds (setting off at walking pace, it waits until you pass 6 km/h), and closes it after about three minutes standing still. Whatever you cover before it opens is not recorded. Turn it off and the app only learns your range from rides you start by hand, and the ones people forget are not a random sample: they are the short ones and the rushed ones.';
 
   @override
   String get autoTripStarted => 'Ride started automatically';
@@ -5100,4 +5100,23 @@ class AppL10nEn extends AppL10n {
   @override
   String get inspectionSaveNoStore =>
       'Could not save: the app\'s storage is not available.';
+
+  @override
+  String get autoTripPocketNeedsLinkWatch =>
+      'With “Keep reading with the screen off” switched off, the app stops reading the pack when the screen goes dark, so with the phone in a pocket no ride can start.';
+
+  @override
+  String get autoTripPocketWhileInUse =>
+      'With the phone in a pocket this works while the notification the app put up when you connected with the screen on is still there. If Android closes it, or the app reconnects by itself with the screen off, the GPS only answers with location allowed all the time, and without the GPS no ride starts.';
+
+  @override
+  String get autoTripPocketAllowAlways => 'Allow location all the time';
+
+  @override
+  String get autoTripPocketSettingsHint =>
+      'In the app\'s settings, open Permissions, Location, and choose “Allow all the time”.';
+
+  @override
+  String get autoTripPocketAlways =>
+      'Location allowed all the time: a ride can start with the phone in a pocket even after the app reconnected by itself.';
 }
