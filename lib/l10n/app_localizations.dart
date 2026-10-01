@@ -1156,7 +1156,7 @@ abstract class AppL10n {
   /// No description provided for @systemSettingsTitle.
   ///
   /// In es, this message translates to:
-  /// **'Configuración del BMS (solo lectura)'**
+  /// **'Configuración del BMS'**
   String get systemSettingsTitle;
 
   /// No description provided for @settingsNotExposed.
@@ -1180,7 +1180,7 @@ abstract class AppL10n {
   /// No description provided for @systemReadOnlyNote.
   ///
   /// In es, this message translates to:
-  /// **'Esta app nunca escribe configuración al BMS. Todo lo de arriba es solo lectura.'**
+  /// **'Con el permiso de escritura apagado, la app no cambia nada en el BMS: todo lo de arriba es solo lectura.'**
   String get systemReadOnlyNote;
 
   /// No description provided for @systemLanguageTitle.
@@ -2290,7 +2290,7 @@ abstract class AppL10n {
   /// No description provided for @adviceBalancerNeverSeenBody.
   ///
   /// In es, this message translates to:
-  /// **'Las celdas están desparejas en reposo pero el balanceador no ha trabajado desde que se conectó el pack. O está apagado, o su voltaje de arranque ({voltage} V) está por encima de donde llegan tus celdas. Se revisa en los ajustes del BMS con su app oficial: esta app no cambia nada en el BMS.'**
+  /// **'Las celdas están desparejas en reposo pero el balanceador no ha trabajado desde que se conectó el pack. O está apagado, o su voltaje de arranque ({voltage} V) está por encima de donde llegan tus celdas. El voltaje de arranque se cambia con la app oficial del BMS. El interruptor del balanceador se puede encender desde Sistema, en Configuración del BMS, si activas el permiso de escritura en Ajustes; con el permiso apagado, la app no cambia nada en el BMS.'**
   String adviceBalancerNeverSeenBody(String voltage);
 
   /// No description provided for @adviceOvervoltageHighTitle.
@@ -6981,7 +6981,7 @@ abstract class AppL10n {
   /// No description provided for @verdictConfigOvpDangerousBody.
   ///
   /// In es, this message translates to:
-  /// **'El BMS corta la carga a {value} V por celda y el máximo seguro para esta química es {limit} V. Cada carga completa está haciendo daño. Se cambia desde la app oficial del BMS, bajo tu responsabilidad; esta app nunca escribe nada en la batería.'**
+  /// **'El BMS corta la carga a {value} V por celda y el máximo seguro para esta química es {limit} V. Cada carga completa está haciendo daño. Se cambia desde la app oficial del BMS, bajo tu responsabilidad; esta app no escribe valores de configuración en la batería.'**
   String verdictConfigOvpDangerousBody(String value, String limit);
 
   /// No description provided for @verdictConfigOvpHighTitle.
@@ -7227,7 +7227,7 @@ abstract class AppL10n {
   /// No description provided for @configAuditReadOnly.
   ///
   /// In es, this message translates to:
-  /// **'Solo lectura. Esta app nunca escribe en el BMS: un valor mal escrito en una batería es un incendio, y el camino de escritura del protocolo está sacado a base de ingeniería inversa. Lo que haya que cambiar se cambia desde la app oficial del BMS, y esa decisión es tuya.'**
+  /// **'Solo lectura. Esta app no escribe valores de configuración en el BMS: un valor mal escrito en una batería es un incendio, y el camino de escritura del protocolo está sacado a base de ingeniería inversa. Lo que haya que cambiar se cambia desde la app oficial del BMS, y esa decisión es tuya. Lo único que la app puede tocar son los interruptores de carga, descarga y balanceador, y solo con el permiso de escritura encendido en Ajustes.'**
   String get configAuditReadOnly;
 
   /// No description provided for @configAuditSettings.
@@ -9623,6 +9623,138 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'No se pudo guardar.'**
   String get workshopSaveFailed;
+
+  /// No description provided for @linkEventBmsWriteRefused.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambio en el BMS rechazado por la app'**
+  String get linkEventBmsWriteRefused;
+
+  /// No description provided for @linkEventBmsWriteNotSent.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambio en el BMS sin enviar'**
+  String get linkEventBmsWriteNotSent;
+
+  /// No description provided for @linkEventBmsWriteSent.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambio enviado al BMS'**
+  String get linkEventBmsWriteSent;
+
+  /// No description provided for @linkEventBmsWriteConfirmed.
+  ///
+  /// In es, this message translates to:
+  /// **'El BMS confirmó el cambio'**
+  String get linkEventBmsWriteConfirmed;
+
+  /// No description provided for @linkEventBmsWriteUnconfirmed.
+  ///
+  /// In es, this message translates to:
+  /// **'El BMS no confirmó el cambio'**
+  String get linkEventBmsWriteUnconfirmed;
+
+  /// No description provided for @settingsSectionBmsWrites.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambios en el BMS'**
+  String get settingsSectionBmsWrites;
+
+  /// No description provided for @bmsWritesTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Permitir que la app cambie el BMS'**
+  String get bmsWritesTitle;
+
+  /// No description provided for @bmsWritesHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Apagado, la app no cambia nada en el BMS. Encendido, puede encender y apagar la carga, la descarga y el balanceador desde Sistema, en Configuración del BMS, y cada vez te pide confirmación. Solo en un JK. Ningún valor de configuración (voltajes, corrientes, temperaturas) se escribe nunca.'**
+  String get bmsWritesHint;
+
+  /// No description provided for @bmsWritesConfirmTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Permitir cambios en el BMS?'**
+  String get bmsWritesConfirmTitle;
+
+  /// No description provided for @bmsWritesConfirmBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Con esto encendido, la app puede apagar la carga, la descarga y el balanceador del BMS. Apagar la descarga corta la corriente: la moto se queda sin potencia y sin luces. Cada cambio te pide confirmación, la app no apaga la descarga con la moto en marcha, y solo da un cambio por hecho cuando el BMS lo confirma. El protocolo está sacado a base de ingeniería inversa: úsalo bajo tu responsabilidad.'**
+  String get bmsWritesConfirmBody;
+
+  /// No description provided for @bmsWritesConfirmAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Permitir'**
+  String get bmsWritesConfirmAction;
+
+  /// No description provided for @bmsSwitchesLocked.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo lectura. Para cambiarlos, activa «Permitir que la app cambie el BMS» en Ajustes.'**
+  String get bmsSwitchesLocked;
+
+  /// No description provided for @bmsSwitchesHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que se ve es lo último que dijo el BMS. Cada cambio pide confirmación y se da por hecho solo cuando el BMS lo confirma.'**
+  String get bmsSwitchesHint;
+
+  /// No description provided for @bmsSwitchSending.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviado. Esperando a que el BMS lo confirme.'**
+  String get bmsSwitchSending;
+
+  /// No description provided for @bmsSwitchConfirmTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'{action, select, chargeOff{¿Apagar la carga?} chargeOn{¿Encender la carga?} dischargeOff{¿Apagar la descarga?} dischargeOn{¿Encender la descarga?} balancerOff{¿Apagar el balanceador?} balancerOn{¿Encender el balanceador?} other{¿Cambiar el interruptor?}}'**
+  String bmsSwitchConfirmTitle(String action);
+
+  /// No description provided for @bmsSwitchConfirmBody.
+  ///
+  /// In es, this message translates to:
+  /// **'{action, select, chargeOff{El BMS deja de aceptar carga: con el cargador enchufado, la batería no carga hasta que lo vuelvas a encender. Con la batería baja, no lo dejes así.} chargeOn{El BMS vuelve a aceptar carga. Sus propias protecciones siguen cortando como siempre.} dischargeOff{La batería deja de dar corriente: la moto se queda sin potencia, sin luces y sin controlador hasta que lo vuelvas a encender, desde aquí o desde la app oficial. Hazlo solo con la moto parada y en un sitio seguro.} dischargeOn{La batería vuelve a dar corriente. Comprueba antes que el acelerador está en reposo.} balancerOff{El balanceador deja de igualar las celdas. Con el tiempo se separan, el pack pierde capacidad útil y una celda llega antes al corte. Vuelve a encenderlo cuando termines.} balancerOn{El balanceador vuelve a igualar las celdas según su voltaje de arranque.} other{El BMS cambia este interruptor.}}'**
+  String bmsSwitchConfirmBody(String action);
+
+  /// No description provided for @bmsSwitchConfirmAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar al BMS'**
+  String get bmsSwitchConfirmAction;
+
+  /// No description provided for @bmsSwitchApplied.
+  ///
+  /// In es, this message translates to:
+  /// **'Aplicado: el BMS lo confirma.'**
+  String get bmsSwitchApplied;
+
+  /// No description provided for @bmsSwitchUnconfirmed.
+  ///
+  /// In es, this message translates to:
+  /// **'El BMS no confirmó el cambio. Lo que ves es lo último que dijo; queda anotado en el historial de conexión.'**
+  String get bmsSwitchUnconfirmed;
+
+  /// No description provided for @bmsSwitchNotSent.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo enviar: el Bluetooth no aceptó la escritura. No cambió nada.'**
+  String get bmsSwitchNotSent;
+
+  /// No description provided for @bmsSwitchRefused.
+  ///
+  /// In es, this message translates to:
+  /// **'{reason, select, notPermitted{La app no tiene permiso para cambiar el BMS. Se activa en Ajustes.} notJk{Solo se puede en un JK. En un ANT la app no escribe nada.} notConnected{No hay conexión con el BMS.} variantUnsupported{Este BMS habla un formato (JK04 o desconocido) en el que la app no escribe. No se envió nada.} noSettings{El BMS todavía no mandó su configuración, así que no se sabe cómo está ahora.} noRecentReading{No hay lecturas recientes: sin ellas la app no puede saber si la moto anda ni esperar la respuesta del BMS.} readingImplausible{Las lecturas no cuadran con el formato en uso. Mientras no cuadren, la app no escribe nada.} alreadySet{El BMS ya lo tiene así.} riding{Para la moto primero: con la moto en marcha o un viaje grabándose, la app no apaga la descarga.} busy{Hay otro cambio esperando la respuesta del BMS.} other{No se envió nada.}}'**
+  String bmsSwitchRefused(String reason);
+
+  /// No description provided for @systemWritesOnNote.
+  ///
+  /// In es, this message translates to:
+  /// **'El permiso de escritura está encendido: la app solo puede encender y apagar los tres interruptores de arriba, cada vez con tu confirmación. Ningún otro valor se escribe nunca.'**
+  String get systemWritesOnNote;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

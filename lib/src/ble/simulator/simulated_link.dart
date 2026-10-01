@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import '../../protocol/jk_constants.dart';
 import '../ble_transport.dart';
 import '../bms_link.dart';
+import '../bms_write_gate.dart';
 import '../link_script.dart';
 import 'jk_frame_builder.dart';
 import 'simulated_pack.dart';
@@ -33,12 +35,15 @@ class SimulatedLink implements BmsLink {
   Timer? _timer;
   int _counter = 0;
 
+  final _writes = StreamController<List<int>>.broadcast();
+
   @override
   Stream<List<int>> get bytes => _bytes.stream;
 
-  /// Nothing, ever: the simulator streams on its own and is never written to.
+  /// Only switch writes: the simulator streams on its own and needs no read
+  /// request, so the console shows exactly what demo mode changed.
   @override
-  Stream<List<int>> get writes => const Stream.empty();
+  Stream<List<int>> get writes => _writes.stream;
   @override
   Stream<BleLinkState> get state => _state.stream;
   @override
@@ -80,6 +85,17 @@ class SimulatedLink implements BmsLink {
       ),
     );
 
+    _emitSettings();
+
+    _emitCellInfo();
+    _timer?.cancel();
+    _timer = Timer.periodic(tickInterval, (_) {
+      pack.tick(tickInterval);
+      _emitCellInfo();
+    });
+  }
+
+  void _emitSettings() {
     _emit(
       _builder.settings(
         counter: _counter++,
@@ -98,15 +114,47 @@ class SimulatedLink implements BmsLink {
         cellCount: pack.cellCount,
         nominalCapacityAh: pack.nominalCapacityAh,
         balanceStartVoltage: 3.4,
+        chargeSwitchOn: pack.chargeSwitchOn,
+        dischargeSwitchOn: pack.dischargeSwitchOn,
+        balancerSwitchOn: pack.balancerSwitchOn,
       ),
     );
+  }
 
-    _emitCellInfo();
-    _timer?.cancel();
-    _timer = Timer.periodic(tickInterval, (_) {
-      pack.tick(tickInterval);
-      _emitCellInfo();
-    });
+  /// Honours a switch write the way a pack would: reads the register and the
+  /// value out of the frame itself, after checking its checksum, rather than
+  /// trusting the fields beside it. A frame a real BMS would drop is dropped
+  /// here too, so demo mode cannot show working what would fail on a pack.
+  @override
+  Future<bool> writeRegister(RegisterWrite write) async {
+    if (_timer == null) return false;
+    final f = write.frame;
+    if (f.length != commandFrameSize) return false;
+    var sum = 0;
+    for (var i = 0; i < commandFrameSize - 1; i++) {
+      sum = (sum + f[i]) & 0xFF;
+    }
+    if (!_writes.isClosed) _writes.add(f);
+    if (sum != f[commandFrameSize - 1] || f[5] != switchValueLength) {
+      return true;
+    }
+    final on = f[6] != 0;
+    switch (f[4]) {
+      case registerChargeSwitch:
+        pack.chargeSwitchOn = on;
+      case registerDischargeSwitch:
+        pack.dischargeSwitchOn = on;
+      case registerBalancerSwitch:
+        pack.balancerSwitchOn = on;
+    }
+    return true;
+  }
+
+  /// Answers with a settings frame, so a write can be confirmed in demo mode
+  /// the same way as on a pack: by what the frame says.
+  @override
+  Future<void> askSettings() async {
+    if (_timer != null) _emitSettings();
   }
 
   void _emitCellInfo() {
@@ -154,8 +202,8 @@ class SimulatedLink implements BmsLink {
   @override
   void frameAccepted({bool deviceInfo = false}) {}
 
-  /// The simulator speaks JK and writes nothing, so a script has nothing to
-  /// steer here.
+  /// The simulator speaks JK and needs no read requests, so a script has
+  /// nothing to steer here.
   @override
   set script(LinkScript value) {}
 
@@ -176,6 +224,7 @@ class SimulatedLink implements BmsLink {
   Future<void> dispose() async {
     await disconnect();
     await _bytes.close();
+    await _writes.close();
     await _state.close();
     await _errors.close();
   }

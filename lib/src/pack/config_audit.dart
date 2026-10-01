@@ -5,7 +5,9 @@ import 'pack_config.dart';
 /// Reads the BMS's own settings and says which ones are a bad idea.
 ///
 /// Strictly read only, and that is a design decision rather than a
-/// limitation. This app never writes to a BMS: a wrong value written to a
+/// limitation. This app never writes setting values to a BMS (the three
+/// on/off switches, behind their own permission, are the only writes it can
+/// make, and the audit makes none): a wrong value written to a
 /// battery management system is a fire, the protocol's write path is
 /// undocumented and reverse-engineered, and a bug in it would be discovered
 /// by somebody's pack rather than by a test. So the audit explains what to

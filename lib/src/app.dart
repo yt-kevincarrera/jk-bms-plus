@@ -191,6 +191,9 @@ class _JkBmsAppState extends State<JkBmsApp> {
       alertTempWarn: _settings.alertTempWarn,
       alertLowChargeWarn: _settings.alertLowChargeWarn,
     );
+    // Its own assignment rather than a parameter with a default, so a caller
+    // of applySettings that forgets it cannot quietly turn writes on or off.
+    _service.bmsWritesAllowed = _settings.allowBmsWrites;
   }
 
   @override

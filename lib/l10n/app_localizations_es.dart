@@ -668,7 +668,7 @@ class AppL10nEs extends AppL10n {
   String get systemBytesReceived => 'Bytes recibidos';
 
   @override
-  String get systemSettingsTitle => 'Configuración del BMS (solo lectura)';
+  String get systemSettingsTitle => 'Configuración del BMS';
 
   @override
   String get settingsNotExposed =>
@@ -682,7 +682,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get systemReadOnlyNote =>
-      'Esta app nunca escribe configuración al BMS. Todo lo de arriba es solo lectura.';
+      'Con el permiso de escritura apagado, la app no cambia nada en el BMS: todo lo de arriba es solo lectura.';
 
   @override
   String get systemLanguageTitle => 'Idioma';
@@ -1298,7 +1298,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String adviceBalancerNeverSeenBody(String voltage) {
-    return 'Las celdas están desparejas en reposo pero el balanceador no ha trabajado desde que se conectó el pack. O está apagado, o su voltaje de arranque ($voltage V) está por encima de donde llegan tus celdas. Se revisa en los ajustes del BMS con su app oficial: esta app no cambia nada en el BMS.';
+    return 'Las celdas están desparejas en reposo pero el balanceador no ha trabajado desde que se conectó el pack. O está apagado, o su voltaje de arranque ($voltage V) está por encima de donde llegan tus celdas. El voltaje de arranque se cambia con la app oficial del BMS. El interruptor del balanceador se puede encender desde Sistema, en Configuración del BMS, si activas el permiso de escritura en Ajustes; con el permiso apagado, la app no cambia nada en el BMS.';
   }
 
   @override
@@ -4123,7 +4123,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String verdictConfigOvpDangerousBody(String value, String limit) {
-    return 'El BMS corta la carga a $value V por celda y el máximo seguro para esta química es $limit V. Cada carga completa está haciendo daño. Se cambia desde la app oficial del BMS, bajo tu responsabilidad; esta app nunca escribe nada en la batería.';
+    return 'El BMS corta la carga a $value V por celda y el máximo seguro para esta química es $limit V. Cada carga completa está haciendo daño. Se cambia desde la app oficial del BMS, bajo tu responsabilidad; esta app no escribe valores de configuración en la batería.';
   }
 
   @override
@@ -4291,7 +4291,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get configAuditReadOnly =>
-      'Solo lectura. Esta app nunca escribe en el BMS: un valor mal escrito en una batería es un incendio, y el camino de escritura del protocolo está sacado a base de ingeniería inversa. Lo que haya que cambiar se cambia desde la app oficial del BMS, y esa decisión es tuya.';
+      'Solo lectura. Esta app no escribe valores de configuración en el BMS: un valor mal escrito en una batería es un incendio, y el camino de escritura del protocolo está sacado a base de ingeniería inversa. Lo que haya que cambiar se cambia desde la app oficial del BMS, y esa decisión es tuya. Lo único que la app puede tocar son los interruptores de carga, descarga y balanceador, y solo con el permiso de escritura encendido en Ajustes.';
 
   @override
   String get configAuditSettings => 'Todo lo que se ha mirado';
@@ -5771,4 +5771,127 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get workshopSaveFailed => 'No se pudo guardar.';
+
+  @override
+  String get linkEventBmsWriteRefused =>
+      'Cambio en el BMS rechazado por la app';
+
+  @override
+  String get linkEventBmsWriteNotSent => 'Cambio en el BMS sin enviar';
+
+  @override
+  String get linkEventBmsWriteSent => 'Cambio enviado al BMS';
+
+  @override
+  String get linkEventBmsWriteConfirmed => 'El BMS confirmó el cambio';
+
+  @override
+  String get linkEventBmsWriteUnconfirmed => 'El BMS no confirmó el cambio';
+
+  @override
+  String get settingsSectionBmsWrites => 'Cambios en el BMS';
+
+  @override
+  String get bmsWritesTitle => 'Permitir que la app cambie el BMS';
+
+  @override
+  String get bmsWritesHint =>
+      'Apagado, la app no cambia nada en el BMS. Encendido, puede encender y apagar la carga, la descarga y el balanceador desde Sistema, en Configuración del BMS, y cada vez te pide confirmación. Solo en un JK. Ningún valor de configuración (voltajes, corrientes, temperaturas) se escribe nunca.';
+
+  @override
+  String get bmsWritesConfirmTitle => '¿Permitir cambios en el BMS?';
+
+  @override
+  String get bmsWritesConfirmBody =>
+      'Con esto encendido, la app puede apagar la carga, la descarga y el balanceador del BMS. Apagar la descarga corta la corriente: la moto se queda sin potencia y sin luces. Cada cambio te pide confirmación, la app no apaga la descarga con la moto en marcha, y solo da un cambio por hecho cuando el BMS lo confirma. El protocolo está sacado a base de ingeniería inversa: úsalo bajo tu responsabilidad.';
+
+  @override
+  String get bmsWritesConfirmAction => 'Permitir';
+
+  @override
+  String get bmsSwitchesLocked =>
+      'Solo lectura. Para cambiarlos, activa «Permitir que la app cambie el BMS» en Ajustes.';
+
+  @override
+  String get bmsSwitchesHint =>
+      'Lo que se ve es lo último que dijo el BMS. Cada cambio pide confirmación y se da por hecho solo cuando el BMS lo confirma.';
+
+  @override
+  String get bmsSwitchSending => 'Enviado. Esperando a que el BMS lo confirme.';
+
+  @override
+  String bmsSwitchConfirmTitle(String action) {
+    String _temp0 = intl.Intl.selectLogic(action, {
+      'chargeOff': '¿Apagar la carga?',
+      'chargeOn': '¿Encender la carga?',
+      'dischargeOff': '¿Apagar la descarga?',
+      'dischargeOn': '¿Encender la descarga?',
+      'balancerOff': '¿Apagar el balanceador?',
+      'balancerOn': '¿Encender el balanceador?',
+      'other': '¿Cambiar el interruptor?',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String bmsSwitchConfirmBody(String action) {
+    String _temp0 = intl.Intl.selectLogic(action, {
+      'chargeOff':
+          'El BMS deja de aceptar carga: con el cargador enchufado, la batería no carga hasta que lo vuelvas a encender. Con la batería baja, no lo dejes así.',
+      'chargeOn':
+          'El BMS vuelve a aceptar carga. Sus propias protecciones siguen cortando como siempre.',
+      'dischargeOff':
+          'La batería deja de dar corriente: la moto se queda sin potencia, sin luces y sin controlador hasta que lo vuelvas a encender, desde aquí o desde la app oficial. Hazlo solo con la moto parada y en un sitio seguro.',
+      'dischargeOn':
+          'La batería vuelve a dar corriente. Comprueba antes que el acelerador está en reposo.',
+      'balancerOff':
+          'El balanceador deja de igualar las celdas. Con el tiempo se separan, el pack pierde capacidad útil y una celda llega antes al corte. Vuelve a encenderlo cuando termines.',
+      'balancerOn':
+          'El balanceador vuelve a igualar las celdas según su voltaje de arranque.',
+      'other': 'El BMS cambia este interruptor.',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get bmsSwitchConfirmAction => 'Enviar al BMS';
+
+  @override
+  String get bmsSwitchApplied => 'Aplicado: el BMS lo confirma.';
+
+  @override
+  String get bmsSwitchUnconfirmed =>
+      'El BMS no confirmó el cambio. Lo que ves es lo último que dijo; queda anotado en el historial de conexión.';
+
+  @override
+  String get bmsSwitchNotSent =>
+      'No se pudo enviar: el Bluetooth no aceptó la escritura. No cambió nada.';
+
+  @override
+  String bmsSwitchRefused(String reason) {
+    String _temp0 = intl.Intl.selectLogic(reason, {
+      'notPermitted':
+          'La app no tiene permiso para cambiar el BMS. Se activa en Ajustes.',
+      'notJk': 'Solo se puede en un JK. En un ANT la app no escribe nada.',
+      'notConnected': 'No hay conexión con el BMS.',
+      'variantUnsupported':
+          'Este BMS habla un formato (JK04 o desconocido) en el que la app no escribe. No se envió nada.',
+      'noSettings':
+          'El BMS todavía no mandó su configuración, así que no se sabe cómo está ahora.',
+      'noRecentReading':
+          'No hay lecturas recientes: sin ellas la app no puede saber si la moto anda ni esperar la respuesta del BMS.',
+      'readingImplausible':
+          'Las lecturas no cuadran con el formato en uso. Mientras no cuadren, la app no escribe nada.',
+      'alreadySet': 'El BMS ya lo tiene así.',
+      'riding':
+          'Para la moto primero: con la moto en marcha o un viaje grabándose, la app no apaga la descarga.',
+      'busy': 'Hay otro cambio esperando la respuesta del BMS.',
+      'other': 'No se envió nada.',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get systemWritesOnNote =>
+      'El permiso de escritura está encendido: la app solo puede encender y apagar los tres interruptores de arriba, cada vez con tu confirmación. Ningún otro valor se escribe nunca.';
 }

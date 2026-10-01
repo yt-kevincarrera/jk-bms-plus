@@ -43,6 +43,7 @@ class AppSettings extends ChangeNotifier {
   static const _deltaWarnKey = 'alert_delta_warn';
   static const _tempWarnKey = 'alert_temp_warn';
   static const _lowChargeWarnKey = 'alert_low_charge_warn';
+  static const _allowBmsWritesKey = 'allow_bms_writes';
 
   /// A GitHub token, only for checking and fetching updates.
   ///
@@ -144,6 +145,16 @@ class AppSettings extends ChangeNotifier {
   /// backup.
   bool recordRawFrames = true;
 
+  /// Whether the app may turn the BMS's charge, discharge and balancer
+  /// switches on and off. Nothing else on a BMS is ever written.
+  ///
+  /// Off by default and off until the rider turns it on here, after a
+  /// warning: the app spent its life read-only, and a rider who never asked
+  /// for writes must never get one. Deliberately left out of the backup, so
+  /// restoring a file on another phone, or a file somebody else made, can
+  /// never switch writes on.
+  bool allowBmsWrites = false;
+
   Future<void> load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -169,6 +180,7 @@ class AppSettings extends ChangeNotifier {
       alertTempWarn = prefs.getDouble(_tempWarnKey) ?? defaultTempWarn;
       alertLowChargeWarn =
           prefs.getDouble(_lowChargeWarnKey) ?? defaultLowChargeWarn;
+      allowBmsWrites = prefs.getBool(_allowBmsWritesKey) ?? false;
       notifyListeners();
     } on Exception catch (_) {
       // Defaults are usable; a broken preference store is not worth failing on.
@@ -272,6 +284,12 @@ class AppSettings extends ChangeNotifier {
     recordRawFrames = value;
     notifyListeners();
     await _writeBool(_rawFramesKey, value);
+  }
+
+  Future<void> setAllowBmsWrites(bool value) async {
+    allowBmsWrites = value;
+    notifyListeners();
+    await _writeBool(_allowBmsWritesKey, value);
   }
 
   Future<void> setNotifyAlerts(bool value) async {

@@ -668,7 +668,7 @@ class AppL10nEn extends AppL10n {
   String get systemBytesReceived => 'Bytes received';
 
   @override
-  String get systemSettingsTitle => 'BMS settings (read-only)';
+  String get systemSettingsTitle => 'BMS settings';
 
   @override
   String get settingsNotExposed =>
@@ -682,7 +682,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get systemReadOnlyNote =>
-      'This app never writes settings to the BMS. Everything above is read-only.';
+      'With the write permission off, the app changes nothing on the BMS: everything above is read-only.';
 
   @override
   String get systemLanguageTitle => 'Language';
@@ -1296,7 +1296,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String adviceBalancerNeverSeenBody(String voltage) {
-    return 'The cells sit apart at rest but the balancer has not worked since the pack connected. Either it is switched off, or its start voltage ($voltage V) is above where your cells get to. Check it in the BMS settings with its official app: this app changes nothing on the BMS.';
+    return 'The cells sit apart at rest but the balancer has not worked since the pack connected. Either it is switched off, or its start voltage ($voltage V) is above where your cells get to. The start voltage is changed with the BMS\'s official app. The balancer switch can be turned on from System, under BMS settings, if you turn on the write permission in Settings; with the permission off, this app changes nothing on the BMS.';
   }
 
   @override
@@ -4104,7 +4104,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String verdictConfigOvpDangerousBody(String value, String limit) {
-    return 'The BMS stops charging at $value V a cell and the safe maximum for this chemistry is $limit V. Every full charge is doing damage. Change it in the official BMS app, on your own responsibility; this app never writes anything to a battery.';
+    return 'The BMS stops charging at $value V a cell and the safe maximum for this chemistry is $limit V. Every full charge is doing damage. Change it in the official BMS app, on your own responsibility; this app does not write setting values to a battery.';
   }
 
   @override
@@ -4271,7 +4271,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get configAuditReadOnly =>
-      'Read only. This app never writes to a BMS: a wrong value written to a battery is a fire, and the protocol\'s write path is reverse-engineered. Anything that needs changing is changed in the official BMS app, and that decision is yours.';
+      'Read only. This app does not write setting values to a BMS: a wrong value written to a battery is a fire, and the protocol\'s write path is reverse-engineered. Anything that needs changing is changed in the official BMS app, and that decision is yours. The only things the app can touch are the charge, discharge and balancer switches, and only with the write permission on in Settings.';
 
   @override
   String get configAuditSettings => 'Everything that was looked at';
@@ -5740,4 +5740,127 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get workshopSaveFailed => 'Could not save it.';
+
+  @override
+  String get linkEventBmsWriteRefused => 'BMS change refused by the app';
+
+  @override
+  String get linkEventBmsWriteNotSent => 'BMS change not sent';
+
+  @override
+  String get linkEventBmsWriteSent => 'Change sent to the BMS';
+
+  @override
+  String get linkEventBmsWriteConfirmed => 'The BMS confirmed the change';
+
+  @override
+  String get linkEventBmsWriteUnconfirmed =>
+      'The BMS did not confirm the change';
+
+  @override
+  String get settingsSectionBmsWrites => 'Changes to the BMS';
+
+  @override
+  String get bmsWritesTitle => 'Let the app change the BMS';
+
+  @override
+  String get bmsWritesHint =>
+      'Off, the app changes nothing on the BMS. On, it can turn charging, discharging and the balancer on and off from System, under BMS settings, asking you to confirm every time. JK only. No setting value (voltages, currents, temperatures) is ever written.';
+
+  @override
+  String get bmsWritesConfirmTitle => 'Allow changes to the BMS?';
+
+  @override
+  String get bmsWritesConfirmBody =>
+      'With this on, the app can switch off the BMS\'s charging, discharging and balancer. Switching discharging off cuts the power: the bike loses drive and lights. Every change asks you to confirm, the app will not switch discharging off while the bike is moving, and a change only counts as done once the BMS confirms it. The protocol is reverse-engineered: use it on your own responsibility.';
+
+  @override
+  String get bmsWritesConfirmAction => 'Allow';
+
+  @override
+  String get bmsSwitchesLocked =>
+      'Read-only. To change them, turn on \"Let the app change the BMS\" in Settings.';
+
+  @override
+  String get bmsSwitchesHint =>
+      'What you see is what the BMS last said. Every change asks you to confirm and only counts as done once the BMS confirms it.';
+
+  @override
+  String get bmsSwitchSending => 'Sent. Waiting for the BMS to confirm.';
+
+  @override
+  String bmsSwitchConfirmTitle(String action) {
+    String _temp0 = intl.Intl.selectLogic(action, {
+      'chargeOff': 'Switch charging off?',
+      'chargeOn': 'Switch charging on?',
+      'dischargeOff': 'Switch discharging off?',
+      'dischargeOn': 'Switch discharging on?',
+      'balancerOff': 'Switch the balancer off?',
+      'balancerOn': 'Switch the balancer on?',
+      'other': 'Change the switch?',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String bmsSwitchConfirmBody(String action) {
+    String _temp0 = intl.Intl.selectLogic(action, {
+      'chargeOff':
+          'The BMS stops accepting charge: with the charger plugged in, the battery will not charge until you switch it back on. With the battery low, do not leave it like that.',
+      'chargeOn':
+          'The BMS accepts charge again. Its own protections still cut as they always do.',
+      'dischargeOff':
+          'The battery stops giving current: the bike loses drive, lights and controller until you switch it back on, here or in the official app. Only do it with the bike stopped somewhere safe.',
+      'dischargeOn':
+          'The battery gives current again. Check the throttle is at rest first.',
+      'balancerOff':
+          'The balancer stops evening out the cells. Over time they drift apart, the pack loses usable capacity and one cell reaches the cutoff first. Switch it back on when you are done.',
+      'balancerOn':
+          'The balancer evens out the cells again, from its start voltage.',
+      'other': 'The BMS changes this switch.',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get bmsSwitchConfirmAction => 'Send to the BMS';
+
+  @override
+  String get bmsSwitchApplied => 'Applied: the BMS confirms it.';
+
+  @override
+  String get bmsSwitchUnconfirmed =>
+      'The BMS did not confirm the change. What you see is what it last said; the attempt is in the connection log.';
+
+  @override
+  String get bmsSwitchNotSent =>
+      'Could not send it: Bluetooth did not take the write. Nothing changed.';
+
+  @override
+  String bmsSwitchRefused(String reason) {
+    String _temp0 = intl.Intl.selectLogic(reason, {
+      'notPermitted':
+          'The app has no permission to change the BMS. It is turned on in Settings.',
+      'notJk': 'Only on a JK. On an ANT the app writes nothing.',
+      'notConnected': 'There is no connection to the BMS.',
+      'variantUnsupported':
+          'This BMS speaks a framing (JK04 or unknown) the app does not write to. Nothing was sent.',
+      'noSettings':
+          'The BMS has not sent its settings yet, so its current state is not known.',
+      'noRecentReading':
+          'No recent readings: without them the app cannot tell whether the bike is moving, nor wait for the BMS\'s answer.',
+      'readingImplausible':
+          'The readings do not add up with the framing in use. Until they do, the app writes nothing.',
+      'alreadySet': 'The BMS already has it that way.',
+      'riding':
+          'Stop the bike first: while it is moving or a ride is recording, the app will not switch discharging off.',
+      'busy': 'Another change is waiting for the BMS to answer.',
+      'other': 'Nothing was sent.',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get systemWritesOnNote =>
+      'The write permission is on: the app can only switch the three switches above on and off, asking you every time. No other value is ever written.';
 }

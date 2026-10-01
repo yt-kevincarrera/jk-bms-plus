@@ -36,4 +36,9 @@ String linkEventLabel(AppL10n t, LinkEventKind k) => switch (k) {
   LinkEventKind.jkFrameRejected => t.linkEventJkFrameRejected,
   LinkEventKind.jkFrameUndecoded => t.linkEventJkFrameUndecoded,
   LinkEventKind.antCurrentSignInverted => t.linkEventAntCurrentSignInverted,
+  LinkEventKind.bmsWriteRefused => t.linkEventBmsWriteRefused,
+  LinkEventKind.bmsWriteNotSent => t.linkEventBmsWriteNotSent,
+  LinkEventKind.bmsWriteSent => t.linkEventBmsWriteSent,
+  LinkEventKind.bmsWriteConfirmed => t.linkEventBmsWriteConfirmed,
+  LinkEventKind.bmsWriteUnconfirmed => t.linkEventBmsWriteUnconfirmed,
 };

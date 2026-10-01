@@ -166,6 +166,32 @@ enum LinkEventKind {
   /// pack from then on. Detail carries the state and the raw current that
   /// settled it. Written once per pack per session.
   antCurrentSignInverted,
+
+  // --- What the app changed on the BMS ---
+  //
+  // The only writes the app can make are the three JK switches, with the
+  // rider's permission on. Every attempt leaves a row, refused or not, so a
+  // pack that stopped charging can be traced to a tap or ruled out.
+
+  /// A switch write the gate refused: nothing went out. Detail carries the
+  /// switch, the state asked for and the reason.
+  bmsWriteRefused,
+
+  /// The gate allowed a switch write and the radio would not take it.
+  /// Detail carries the switch, the register, the value and the frame.
+  bmsWriteNotSent,
+
+  /// A switch write went out. Detail carries the switch, the register, the
+  /// value and the frame, as written.
+  bmsWriteSent,
+
+  /// A settings frame after the write showed the new state.
+  bmsWriteConfirmed,
+
+  /// No settings frame showed the new state within the window. The pack may
+  /// have done it without saying so; the rows on screen keep showing what it
+  /// last said.
+  bmsWriteUnconfirmed,
 }
 
 /// The kind a stored row names, or null for a name this build does not know

@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 import '../protocol/bms_brand.dart';
+import '../protocol/jk_commands.dart';
 import '../protocol/jk_constants.dart';
 import 'bms_link.dart';
+import 'bms_write_gate.dart';
 import 'connect_recovery.dart';
 import 'fbp_recovery_radio.dart';
 import 'link_script.dart';
@@ -1161,15 +1163,41 @@ class BleTransport implements BmsLink {
     }
   }
 
-  /// Sends one frame.
+  /// Asks for the settings frame again with the script's opening requests,
+  /// the ones the pack answers on every connect.
+  @override
+  Future<void> askSettings() async {
+    for (final f in _script.onConnect) {
+      await _write(f);
+    }
+  }
+
+  /// Writes a switch write the gate granted. The one path a frame that is not
+  /// a read request can take to the pack; see [RegisterWrite].
+  @override
+  Future<bool> writeRegister(RegisterWrite write) => _send(write.frame);
+
+  /// Sends one frame a [LinkScript] produced: read requests only.
   ///
-  /// This is the only place the app ever writes to a BMS, and it only writes
-  /// frames a [LinkScript] produced, all of them read requests. Writing
-  /// settings is out of scope: the protocols are reverse-engineered, and a
-  /// wrong value can disable a protection.
+  /// A register write is refused here even if one somehow ended up in a
+  /// script. The only way one reaches a pack is [writeRegister], which takes
+  /// nothing but what the write gate granted, so a bug anywhere else can at
+  /// worst ask a question the pack ignores. Settings values (voltages,
+  /// currents, temperatures) are never written at all: the protocols are
+  /// reverse-engineered, and a wrong value can disable a protection.
   Future<void> _write(List<int> frame) async {
+    if (isJkRegisterWrite(frame)) {
+      assert(false, 'a register write reached the read path');
+      return;
+    }
+    await _send(frame);
+  }
+
+  /// Puts [frame] on the radio. Private: [_write] and [writeRegister] are the
+  /// two ways in, and each decides what it lets through.
+  Future<bool> _send(List<int> frame) async {
     final c = _characteristic;
-    if (c == null) return;
+    if (c == null) return false;
 
     try {
       await c.write(frame, withoutResponse: c.properties.writeWithoutResponse);
@@ -1177,8 +1205,10 @@ class BleTransport implements BmsLink {
       // the errors stream, and showing its bytes as sent would claim
       // something the radio never did.
       if (!_writesController.isClosed) _writesController.add(frame);
+      return true;
     } on Exception catch (e) {
       _errorController.add(BleLinkError.from(e));
+      return false;
     }
   }
 

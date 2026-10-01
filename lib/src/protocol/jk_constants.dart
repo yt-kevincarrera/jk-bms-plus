@@ -51,13 +51,43 @@ const int maxResponseBufferSize = 384 + 16;
 /// Source: `build_frame()` in jk_bms_ble.cpp.
 const int commandFrameSize = 20;
 
-/// Register addresses used as commands. We only ever use the read-only ones:
-/// this app does not write settings to the BMS.
+/// Register addresses used as read commands.
 ///
 /// Source: `COMMAND_CELL_INFO`, `COMMAND_DEVICE_INFO`, `COMMAND_LOGBOOK`.
 const int commandCellInfo = 0x96;
 const int commandDeviceInfo = 0x97;
 const int commandLogbook = 0xA1;
+
+/// Holding registers of the three on/off switches: the only registers this
+/// app can ever write, and only with the rider's write permission on (see
+/// `decideSwitchWrite` in ble/bms_write_gate.dart). No setting value (a
+/// voltage, a current, a temperature) is ever written.
+///
+/// Source: `SWITCHES` in
+/// https://github.com/syssi/esphome-jk-bms/blob/main/components/jk_bms_ble/switch/__init__.py
+/// which lists each switch as `[JK04, JK02_24S, JK02_32S]`:
+///
+///   CONF_CHARGING:    [0x00, 0x1D, 0x1D]
+///   CONF_DISCHARGING: [0x00, 0x1E, 0x1E]
+///   CONF_BALANCER:    [0x6C, 0x1F, 0x1F]
+///
+/// The same address on both JK02 framings. JK04 has no charging or
+/// discharging register at all (0x00 means "not supported" there), and a
+/// different balancer register written with a different length, so JK04 is
+/// refused outright rather than mapped.
+///
+/// `JkSwitch::write_state()` in switch/jk_switch.cpp writes these on JK02 as
+/// `write_register(address, state ? 0x00000001 : 0x00000000, 0x04)`: value 1
+/// or 0, length 4.
+///
+/// The state each one sets is read back from the settings frame at bytes 118
+/// (charge), 122 (discharge) and 126 (balancer), `decode_jk02_settings_()`.
+const int registerChargeSwitch = 0x1D;
+const int registerDischargeSwitch = 0x1E;
+const int registerBalancerSwitch = 0x1F;
+
+/// Value length, in bytes, of a JK02 switch write. Source: as above.
+const int switchValueLength = 4;
 
 /// Record type, at byte 4 of a response frame.
 ///

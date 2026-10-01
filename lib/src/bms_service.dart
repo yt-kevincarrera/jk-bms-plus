@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'ble/ble_transport.dart';
 import 'ble/bms_link.dart';
+import 'ble/bms_write_gate.dart';
 import 'ble/connect_recovery.dart';
 import 'ble/link_script.dart';
 import 'ble/link_lost_alarm.dart';
@@ -1677,6 +1678,132 @@ class BmsService {
     // connected battery produces real health figures instead of dashes.
     unawaited(_adoptCapacityFromBms(settings));
     _settingsController.add(settings);
+  }
+
+  // --- Switch writes ---
+  //
+  // The one thing the app can change on a BMS: the charge, discharge and
+  // balancer switches of a JK02, and only with the rider's permission on.
+  // Every attempt goes through [decideSwitchWrite], the only code that can
+  // make a write frame, and every attempt leaves a row in the link events.
+
+  /// The rider's "let the app change the BMS" setting. Off until the
+  /// settings say otherwise; with it off [decideSwitchWrite] refuses every
+  /// write before a frame is built.
+  bool bmsWritesAllowed = false;
+
+  bool _switchWriteInFlight = false;
+
+  /// How long a write waits for a settings frame showing the new state.
+  @visibleForTesting
+  Duration switchConfirmWindow = const Duration(seconds: 5);
+
+  /// What the gate would answer for setting [target] to [on] right now.
+  /// Pure: nothing is written and nothing is recorded, so a screen can ask
+  /// before showing a confirmation.
+  WriteDecision checkSwitchWrite(BmsSwitch target, bool on) {
+    final snapshot = _lastSnapshot;
+    return decideSwitchWrite(
+      target,
+      on,
+      WriteContext(
+        permitted: bmsWritesAllowed,
+        brand: _brand,
+        link: lastLinkState,
+        variant: _variant,
+        settings: _lastSettings,
+        snapshot: snapshot,
+        snapshotPlausible:
+            snapshot != null && plausibility.reject(snapshot).isEmpty,
+        now: _now(),
+        riding: _riding || ridingGate.isRiding,
+        tripRecording: trip.isRecording,
+        busy: _switchWriteInFlight,
+      ),
+    );
+  }
+
+  /// Sets [target] to [on] on the pack, if the gate allows it, and waits for
+  /// the pack to say it did.
+  ///
+  /// Confirmed only by a settings frame showing the new state, asked for
+  /// straight after the write and once more halfway through the window. The
+  /// switch rows show what the settings frame says, so the screen never
+  /// claims a state the pack has not reported.
+  Future<SwitchWriteOutcome> setBmsSwitch(BmsSwitch target, bool on) async {
+    final what = '${target.name} ${on ? 'on' : 'off'}';
+    final device = activeDeviceId;
+    final decision = checkSwitchWrite(target, on);
+    final RegisterWrite write;
+    switch (decision) {
+      case WriteRefused(:final reason):
+        await (repository?.note(
+              LinkEventKind.bmsWriteRefused,
+              detail: '$what: ${reason.name}',
+              deviceId: device,
+            ) ??
+            Future<void>.value());
+        return SwitchWriteOutcome(SwitchWriteStatus.refused, refusal: reason);
+      case WriteGranted(write: final w):
+        write = w;
+    }
+
+    _switchWriteInFlight = true;
+    final answered = Completer<bool>();
+    // Listening before the write, so an answer that arrives quickly is not
+    // missed. A frame with the old state is not an answer: it may have been
+    // on its way before the pack read the write.
+    final sub = _settingsController.stream.listen((s) {
+      if (target.stateIn(s) == on && !answered.isCompleted) {
+        answered.complete(true);
+      }
+    });
+    Timer? again;
+    final detail =
+        '$what: register 0x${write.address.toRadixString(16).toUpperCase()} '
+        'value ${on ? 1 : 0} ${write.hex}';
+    try {
+      final sent = await _transport.writeRegister(write);
+      if (!sent) {
+        await (repository?.note(
+              LinkEventKind.bmsWriteNotSent,
+              detail: detail,
+              deviceId: device,
+            ) ??
+            Future<void>.value());
+        return const SwitchWriteOutcome(SwitchWriteStatus.notSent);
+      }
+      await (repository?.note(
+            LinkEventKind.bmsWriteSent,
+            detail: detail,
+            deviceId: device,
+          ) ??
+          Future<void>.value());
+      await _transport.askSettings();
+      again = Timer(
+        switchConfirmWindow ~/ 2,
+        () => unawaited(_transport.askSettings()),
+      );
+      final confirmed = await answered.future.timeout(
+        switchConfirmWindow,
+        onTimeout: () => false,
+      );
+      await (repository?.note(
+            confirmed
+                ? LinkEventKind.bmsWriteConfirmed
+                : LinkEventKind.bmsWriteUnconfirmed,
+            detail: what,
+            deviceId: device,
+          ) ??
+          Future<void>.value());
+      return SwitchWriteOutcome(
+        confirmed ? SwitchWriteStatus.confirmed : SwitchWriteStatus.unconfirmed,
+      );
+    } finally {
+      again?.cancel();
+      await sub.cancel();
+      _switchWriteInFlight = false;
+    }
   }
 
   // --- Trip recording ---

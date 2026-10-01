@@ -205,6 +205,9 @@ class JkFrameBuilder {
     required int cellCount,
     required double nominalCapacityAh,
     required double balanceStartVoltage,
+    bool chargeSwitchOn = true,
+    bool dischargeSwitchOn = true,
+    bool balancerSwitchOn = true,
   }) {
     final f = _blank(JkRecordType.settings.code, counter);
     _u32(f, 10, (cellUvp * 1000).round());
@@ -230,9 +233,9 @@ class JkFrameBuilder {
     _i32(f, 106, 900); // MOSFET OTP, 90.0 degC
     _i32(f, 110, 700); // MOSFET OTP recovery
     _u32(f, 114, cellCount);
-    f[118] = 1; // charge switch
-    f[122] = 1; // discharge switch
-    f[126] = 1; // balancer switch
+    f[118] = chargeSwitchOn ? 1 : 0; // charge switch
+    f[122] = dischargeSwitchOn ? 1 : 0; // discharge switch
+    f[126] = balancerSwitchOn ? 1 : 0; // balancer switch
     _u32(f, 130, (nominalCapacityAh * 1000).round());
     _u32(f, 134, 1500); // SCP delay, microseconds
     _u32(f, 138, (balanceStartVoltage * 1000).round());

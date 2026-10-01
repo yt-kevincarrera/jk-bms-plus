@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'ble_transport.dart';
 import 'bms_link.dart';
+import 'bms_write_gate.dart';
 import 'link_script.dart';
 import 'simulator/simulated_link.dart';
 import 'simulator/simulated_pack.dart';
@@ -71,7 +72,7 @@ class SwitchableLink implements BmsLink {
   void frameAccepted({bool deviceInfo = false}) =>
       _active.frameAccepted(deviceInfo: deviceInfo);
 
-  /// Always the radio's: the simulator writes nothing, and the brand being
+  /// Always the radio's: the simulator needs no script, and the brand being
   /// spoken belongs to the real pack whether or not demo mode is on.
   @override
   set script(LinkScript value) => _real.script = value;
@@ -79,6 +80,15 @@ class SwitchableLink implements BmsLink {
   /// Nothing in demo mode, where there is no pack to ask.
   @override
   Future<void> askAgain() => isSimulated ? Future.value() : _real.askAgain();
+
+  /// To whichever pack is on the other end: in demo mode the simulator
+  /// honours the write, so the switches can be seen working with no BMS.
+  @override
+  Future<bool> writeRegister(RegisterWrite write) =>
+      _active.writeRegister(write);
+
+  @override
+  Future<void> askSettings() => _active.askSettings();
 
   @override
   set persistRetries(bool value) => _active.persistRetries = value;
@@ -160,6 +170,10 @@ class _Uninitialised implements BmsLink {
   set script(LinkScript value) {}
   @override
   Future<void> askAgain() async {}
+  @override
+  Future<bool> writeRegister(RegisterWrite write) async => false;
+  @override
+  Future<void> askSettings() async {}
 
   @override
   set persistRetries(bool value) {}

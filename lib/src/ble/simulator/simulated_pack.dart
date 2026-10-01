@@ -133,16 +133,25 @@ class SimulatedPack {
 
   List<double> get cellResistances => List.unmodifiable(_resistances);
 
+  /// The three switches the app can write, as the settings frame reports
+  /// them. On, as a pack arrives; the simulator honours a write to any of
+  /// them, so demo mode shows the switches doing what they do.
+  bool chargeSwitchOn = true;
+  bool dischargeSwitchOn = true;
+  bool balancerSwitchOn = true;
+
   bool get balancerActive =>
-      _scenario == DemoScenario.weakCell ||
-      (_scenario == DemoScenario.charging && _openCircuitVoltage > 4.02);
+      balancerSwitchOn &&
+      (_scenario == DemoScenario.weakCell ||
+          (_scenario == DemoScenario.charging && _openCircuitVoltage > 4.02));
 
   int get balancingAction => balancerActive ? 0x01 : 0x00;
 
   double get balanceCurrent => balancerActive ? 0.58 : 0.0;
 
-  bool get chargeMosfetOn => true;
-  bool get dischargeMosfetOn => _scenario != DemoScenario.charging;
+  bool get chargeMosfetOn => chargeSwitchOn;
+  bool get dischargeMosfetOn =>
+      dischargeSwitchOn && _scenario != DemoScenario.charging;
   bool get chargerPlugged => _scenario == DemoScenario.charging;
 
   int get errorBitmask {
@@ -219,8 +228,9 @@ class SimulatedPack {
   /// Puts the pack at a given charge, for reaching a state worth looking at
   /// without waiting for it.
   ///
-  /// Demo only, and nothing like it exists for a real pack: this app never
-  /// writes to a BMS, and a charge level is not something it could set anyway.
+  /// Demo only, and nothing like it exists for a real pack: a charge level is
+  /// not something the app could set, and the only things it can ever write
+  /// to a BMS are the three switches below.
   void setCharge(double fraction) {
     final was = _soc;
     _soc = fraction.clamp(0.03, 1.0);
@@ -273,9 +283,19 @@ class SimulatedPack {
         _throttle = 0;
     }
 
+    // A switch turned off from the app does what it does on a real pack: an
+    // open discharge MOSFET gives nothing, an open charge MOSFET takes
+    // nothing.
+    if (_current < 0 && !dischargeSwitchOn) {
+      _current = 0;
+      _throttle = 0;
+    }
+    if (_current > 0 && !chargeSwitchOn) _current = 0;
+
     // Speed roughly tracks throttle, with a lag. Demo mode needs a distance to
     // feed the range estimator with; the real one arrives from GPS in M3.
     final targetSpeed = switch (_scenario) {
+      _ when !dischargeSwitchOn => 0.0,
       DemoScenario.riding || DemoScenario.weakCell => 12 + _throttle * 58,
       // Wheel in the air on the stand: current without kilometres.
       _ => 0.0,

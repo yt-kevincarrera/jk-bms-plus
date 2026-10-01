@@ -4,6 +4,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jk_bms/src/ble/ble_transport.dart';
 import 'package:jk_bms/src/ble/bms_link.dart';
+import 'package:jk_bms/src/ble/bms_write_gate.dart';
 import 'package:jk_bms/src/ble/link_script.dart';
 import 'package:jk_bms/src/bms_service.dart';
 import 'package:jk_bms/src/data/database.dart';
@@ -42,6 +43,10 @@ class FakeLink implements BmsLink {
   set script(LinkScript value) {}
   @override
   Future<void> askAgain() async {}
+  @override
+  Future<bool> writeRegister(RegisterWrite write) async => false;
+  @override
+  Future<void> askSettings() async {}
 
   @override
   set persistRetries(bool value) {}

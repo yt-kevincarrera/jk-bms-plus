@@ -615,6 +615,40 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                 ),
               ],
             ),
+            // Its own section, with its own warning, and never next to a
+            // switch somebody flicks without reading. Turning it on asks
+            // first; turning it off does not, because off is the safe way.
+            Section(
+              title: t.settingsSectionBmsWrites,
+              accent: settings.allowBmsWrites ? AppTheme.watch : null,
+              children: [
+                SwitchListTile(
+                  key: const ValueKey('allow-bms-writes'),
+                  value: settings.allowBmsWrites,
+                  onChanged: (v) async {
+                    if (v && !await _confirmBmsWrites(t)) return;
+                    await settings.setAllowBmsWrites(v);
+                    widget.service.bmsWritesAllowed = v;
+                    if (mounted) setState(() {});
+                  },
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    t.bmsWritesTitle,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                  subtitle: Text(
+                    t.bmsWritesHint,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      height: 1.4,
+                      color: AppTheme.textFaint,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+              ],
+            ),
             Section(
               title: t.settingsSectionApp,
               children: [
@@ -684,6 +718,33 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
         ),
       ),
     );
+  }
+
+  Future<bool> _confirmBmsWrites(AppL10n t) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surfaceRaised,
+        title: Text(t.bmsWritesConfirmTitle),
+        content: Text(
+          t.bmsWritesConfirmBody,
+          style: const TextStyle(fontSize: 13, height: 1.45),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(t.cancel),
+          ),
+          TextButton(
+            key: const ValueKey('allow-bms-writes-confirm'),
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.watch),
+            child: Text(t.bmsWritesConfirmAction),
+          ),
+        ],
+      ),
+    );
+    return ok ?? false;
   }
 
   /// One movable threshold. The value shows next to the label, because a

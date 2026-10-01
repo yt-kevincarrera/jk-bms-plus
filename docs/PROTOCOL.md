@@ -157,12 +157,45 @@ Every one of the questions above could turn out to have been decoded wrongly for
 months. Storing the raw 300-byte frames means the fix is a reparse rather than a
 loss. See section 8 of the PRD.
 
-## What this app never does
+## What this app writes
 
-It never writes settings to the BMS. The only writes are the 20-byte read
-requests in `BleTransport._writeCommand`, and the only registers used are the
-read-only ones. The protocol is reverse-engineered; a wrong value written to a
-protection register can brick the BMS or disable a protection.
+It never writes setting values (voltages, currents, temperatures) to the BMS.
+The protocol is reverse-engineered; a wrong value written to a protection
+register can brick the BMS or disable a protection.
+
+On its own it writes only the 20-byte read requests its `LinkScript` produces
+(`0x97` device info, `0x96` cell info on a JK). The transport's script path,
+`BleTransport._write`, refuses any frame whose value length is not zero.
+
+With the rider's "let the app change the BMS" setting on (off by default, not
+carried in a backup), it can also write the three JK02 switches, from System,
+BMS settings:
+
+| Switch | Register (JK02_24S and JK02_32S) | Read back from settings byte |
+|---|---|---|
+| Charging | `0x1D` | 118 |
+| Discharging | `0x1E` | 122 |
+| Balancer | `0x1F` | 126 |
+
+Source: `SWITCHES` in `components/jk_bms_ble/switch/__init__.py` (listed as
+`[JK04, JK02_24S, JK02_32S]`), `JkSwitch::write_state()` in
+`switch/jk_switch.cpp` (value 1 or 0, length 4 on JK02) and `build_frame()` in
+`jk_bms_ble.cpp`. Discharging off, for example, is
+`AA 55 90 EB 1E 04 00 00 00 00 00 00 00 00 00 00 00 00 00 9C`.
+
+Every write goes through `decideSwitchWrite` in `lib/src/ble/bms_write_gate.dart`,
+the only code that can build one: it refuses with the setting off, on an ANT,
+on JK04 or an unknown framing, without a settings frame or a recent plausible
+reading, and turning discharging off while the bike is ridden (riding gate,
+ride recording, or more than 2 A drawn). A change counts as applied only when a
+settings frame after it shows the new state within five seconds, and every
+attempt, refused or not, is a row in the connection log.
+
+Open question: which request makes a JK02 send its settings frame again
+mid-connection. After a write the app sends the same pair it sends on connect
+(`0x97`, then `0x96`) twice in the window; if the pack does not answer with a
+settings frame, the app says the change was not confirmed rather than claiming
+it.
 
 ## What the app does with all this
 

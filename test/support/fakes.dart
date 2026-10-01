@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jk_bms/src/ble/ble_transport.dart';
 import 'package:jk_bms/src/ble/bms_link.dart';
+import 'package:jk_bms/src/ble/bms_write_gate.dart';
 import 'package:jk_bms/src/ble/link_script.dart';
 import 'package:jk_bms/src/gps/location_source.dart';
 
@@ -69,6 +70,39 @@ class FakeLink implements BmsLink {
 
   @override
   Future<void> askAgain() async => asks++;
+
+  /// Every switch write the service handed over, in order. A test that
+  /// expects none checks this is empty: it is the bytes that would have
+  /// reached the pack.
+  final List<RegisterWrite> registerWrites = [];
+
+  /// What the radio answers to a write: true for "the bytes went out".
+  bool acceptWrites = true;
+
+  /// Runs on every write, so a test can play the pack answering with a
+  /// settings frame.
+  Future<void> Function(RegisterWrite write)? onRegisterWrite;
+
+  @override
+  Future<bool> writeRegister(RegisterWrite write) async {
+    registerWrites.add(write);
+    if (acceptWrites) _writes.add(write.frame);
+    await onRegisterWrite?.call(write);
+    return acceptWrites;
+  }
+
+  /// Times the service asked for the settings again.
+  int settingsAsks = 0;
+
+  /// Runs on every settings request, for a pack that answers only when
+  /// asked.
+  Future<void> Function()? onAskSettings;
+
+  @override
+  Future<void> askSettings() async {
+    settingsAsks++;
+    await onAskSettings?.call();
+  }
 
   /// What the radio would report, said from the test.
   void fail(BleLinkError error) => _errors.add(error);
