@@ -8012,12 +8012,6 @@ abstract class AppL10n {
   /// **'celda {cell}: {pct} %'**
   String balanceRankingEntry(String cell, String pct);
 
-  /// No description provided for @balanceRankingNeedsReadings.
-  ///
-  /// In es, this message translates to:
-  /// **'hacen falta más lecturas con las celdas separadas'**
-  String get balanceRankingNeedsReadings;
-
   /// No description provided for @capacityNoFullMark.
   ///
   /// In es, this message translates to:
@@ -9053,6 +9047,24 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Día uno guardado de nuevo, con la lectura de ahora.'**
   String get profileBaselineRedone;
+
+  /// No description provided for @balanceRankingNeedsHistory.
+  ///
+  /// In es, this message translates to:
+  /// **'necesita más histórico'**
+  String get balanceRankingNeedsHistory;
+
+  /// No description provided for @balanceRankingProgress.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} de {needed} lecturas en reposo con las celdas separadas al menos 10 mV, en los últimos 30 días.'**
+  String balanceRankingProgress(String count, String needed);
+
+  /// No description provided for @balanceRankingBasis.
+  ///
+  /// In es, this message translates to:
+  /// **'De {count} lecturas en reposo de los últimos 30 días con las celdas separadas al menos 10 mV. La más baja en reposo es la que tiene menos carga: dice dónde mirar, no que esa celda esté mal.'**
+  String balanceRankingBasis(String count);
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

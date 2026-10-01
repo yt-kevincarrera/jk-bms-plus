@@ -4785,10 +4785,6 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String get balanceRankingNeedsReadings =>
-      'needs more readings with the cells apart';
-
-  @override
   String get capacityNoFullMark =>
       'Where this pack is full is unknown: the BMS has not said what it charges to and the chemistry is not known. Set it in the pack details to be able to start the test.';
 
@@ -5417,4 +5413,17 @@ class AppL10nEn extends AppL10n {
   @override
   String get profileBaselineRedone =>
       'Day one saved again, from the reading now.';
+
+  @override
+  String get balanceRankingNeedsHistory => 'needs more history';
+
+  @override
+  String balanceRankingProgress(String count, String needed) {
+    return '$count of $needed resting readings with the cells at least 10 mV apart, over the last 30 days.';
+  }
+
+  @override
+  String balanceRankingBasis(String count) {
+    return 'From $count resting readings over the last 30 days with the cells at least 10 mV apart. The lowest at rest is the one holding the least charge: it says where to look, not that the cell is bad.';
+  }
 }

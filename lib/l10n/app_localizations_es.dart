@@ -4804,10 +4804,6 @@ class AppL10nEs extends AppL10n {
   }
 
   @override
-  String get balanceRankingNeedsReadings =>
-      'hacen falta más lecturas con las celdas separadas';
-
-  @override
   String get capacityNoFullMark =>
       'No se sabe dónde está lleno este pack: el BMS no ha dicho a cuánto carga y la química no se conoce. Indícala en los datos del pack para poder empezar el test.';
 
@@ -5446,4 +5442,17 @@ class AppL10nEs extends AppL10n {
   @override
   String get profileBaselineRedone =>
       'Día uno guardado de nuevo, con la lectura de ahora.';
+
+  @override
+  String get balanceRankingNeedsHistory => 'necesita más histórico';
+
+  @override
+  String balanceRankingProgress(String count, String needed) {
+    return '$count de $needed lecturas en reposo con las celdas separadas al menos 10 mV, en los últimos 30 días.';
+  }
+
+  @override
+  String balanceRankingBasis(String count) {
+    return 'De $count lecturas en reposo de los últimos 30 días con las celdas separadas al menos 10 mV. La más baja en reposo es la que tiene menos carga: dice dónde mirar, no que esa celda esté mal.';
+  }
 }

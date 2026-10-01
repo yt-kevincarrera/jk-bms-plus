@@ -9,9 +9,11 @@ import '../inspection/inspection_series.dart';
 import '../metrics/capacity_cycle_detector.dart';
 import '../metrics/capacity_endpoints.dart';
 import '../metrics/maintenance.dart';
+import '../metrics/snapshot_history.dart';
 import '../metrics/trip_energy_repair.dart';
 import '../metrics/trip_learning.dart';
 import '../metrics/trip_recorder.dart';
+import '../metrics/weak_cell_ranking.dart';
 import '../model/bms_snapshot.dart';
 import '../protocol/bms_brand.dart';
 import '../protocol/raw_bms_frame.dart';
@@ -761,6 +763,29 @@ class BmsRepository {
     final since = await historyStart(deviceId);
     if (since != null && since.isAfter(from)) from = since;
     return db.snapshotsBetween(deviceId, from, now);
+  }
+
+  /// Which cells sat clearly lowest at rest over the last month, from the
+  /// stored readings. See [WeakCellRanking]. From no earlier than the last
+  /// cell replacement, like every other figure about the cells.
+  Future<WeakCellRanking> weakCellRanking(
+    String deviceId, {
+    DateTime? now,
+  }) async {
+    await flush();
+    final at = now ?? DateTime.now().toUtc();
+    var from = at.subtract(WeakCellRanking.window);
+    final since = await historyStart(deviceId);
+    if (since != null && since.isAfter(from)) from = since;
+    final rows = await db.restingCellReadings(
+      deviceId,
+      from,
+      restingAmps: WeakCellRanking.restingAmps,
+      chargingAmps: WeakCellRanking.chargingAmps,
+      minDeltaVolts: SessionAggregates.weakCellMinDelta,
+      thinSeconds: WeakCellRanking.thinTo.inSeconds,
+    );
+    return WeakCellRanking.from(rows);
   }
 
   /// The capacity tests run since the last cell replacement: the ones that

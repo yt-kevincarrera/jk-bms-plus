@@ -1054,6 +1054,49 @@ class AppDatabase extends _$AppDatabase {
             ..orderBy([(s) => OrderingTerm.asc(s.timestamp)]))
           .get();
 
+  /// Resting, not-charging readings with the cells at least [minDeltaVolts]
+  /// apart, thinned to one per [thinSeconds], for the weak-cell ranking.
+  ///
+  /// Filtered and thinned in SQL rather than in Dart: a month of a pack that
+  /// spends its nights on the charger watch is millions of rows, and the
+  /// ranking only needs the few that can answer it. Only the two columns it
+  /// reads come back. The kept row of each bucket is a real reading (the
+  /// newest), never an average.
+  Future<List<({double current, String cellVoltagesJson})>> restingCellReadings(
+    String deviceId,
+    DateTime from, {
+    double restingAmps = 1.0,
+    double chargingAmps = 0.05,
+    double minDeltaVolts = 0.010,
+    int thinSeconds = 10,
+  }) async {
+    final rows = await customSelect(
+      'SELECT MAX(id) AS id, current, cell_voltages_json FROM snapshots '
+      'WHERE device_id = ?1 AND timestamp >= ?2 '
+      'AND current > -?3 AND current < ?3 AND current <= ?4 '
+      // A hair under the threshold, so a stored 0.0099999 is not lost to
+      // rounding before the Dart side rounds it to the millivolt.
+      'AND delta_volts >= ?5 - 0.0005 '
+      'GROUP BY timestamp / ?6',
+      variables: [
+        Variable<String>(deviceId),
+        Variable<int>(from.millisecondsSinceEpoch ~/ 1000),
+        Variable<double>(restingAmps),
+        Variable<double>(chargingAmps),
+        Variable<double>(minDeltaVolts),
+        Variable<int>(thinSeconds <= 0 ? 1 : thinSeconds),
+      ],
+      readsFrom: {snapshots},
+    ).get();
+    return [
+      for (final r in rows)
+        (
+          current: r.read<double>('current'),
+          cellVoltagesJson: r.read<String>('cell_voltages_json'),
+        ),
+    ];
+  }
+
   // --- Raw frames ---
 
   Future<void> insertRawFrames(List<RawFramesCompanion> rows) =>

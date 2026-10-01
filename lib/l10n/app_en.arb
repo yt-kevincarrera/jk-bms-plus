@@ -3065,7 +3065,6 @@
       }
     }
   },
-  "balanceRankingNeedsReadings": "needs more readings with the cells apart",
   "capacityNoFullMark": "Where this pack is full is unknown: the BMS has not said what it charges to and the chemistry is not known. Set it in the pack details to be able to start the test.",
   "capacityStopEarly": "Finish here",
   "capacityStopEarlyHint": "Finishing before the cutoff keeps it as a partial: what it counted is real, but it is a slice of the pack and it is never turned into a capacity.",
@@ -3300,5 +3299,25 @@
     }
   },
   "profileBaselineRedoConfirm": "Delete and save the new one",
-  "profileBaselineRedone": "Day one saved again, from the reading now."
+  "profileBaselineRedone": "Day one saved again, from the reading now.",
+  "balanceRankingNeedsHistory": "needs more history",
+  "balanceRankingProgress": "{count} of {needed} resting readings with the cells at least 10 mV apart, over the last 30 days.",
+  "@balanceRankingProgress": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "needed": {
+        "type": "String"
+      }
+    }
+  },
+  "balanceRankingBasis": "From {count} resting readings over the last 30 days with the cells at least 10 mV apart. The lowest at rest is the one holding the least charge: it says where to look, not that the cell is bad.",
+  "@balanceRankingBasis": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -57,7 +57,10 @@ void main() {
     final now = DateTime.utc(2026, 10, 1, 9);
     await repo.redoBaseline(
       id,
-      PackBaseline.capture(snapshot: buildSnapshot(timestamp: now), at: now),
+      PackBaseline.capture(
+        snapshot: buildSnapshot(timestamp: now),
+        at: now,
+      ),
     );
     expect((await repo.baseline(id))!.capturedAt, now);
     expect(await repo.baselineNote(id), 'Comprada usada a un vecino');
@@ -70,9 +73,7 @@ void main() {
       harness(
         license,
         Scaffold(
-          body: SingleChildScrollView(
-            child: PackProfileCard(service: service),
-          ),
+          body: SingleChildScrollView(child: PackProfileCard(service: service)),
         ),
       ),
     );

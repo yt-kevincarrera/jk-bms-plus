@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../bms_service.dart';
 import '../../metrics/advice_engine.dart';
+import '../../metrics/weak_cell_ranking.dart';
 import '../../model/bms_snapshot.dart';
 import '../../protocol/ant_constants.dart';
 import '../../protocol/bms_brand.dart';
@@ -33,7 +34,6 @@ class CellsTab extends StatelessWidget {
 
     final avg = s.averageCellVoltage;
     final hasResistances = s.cellResistances?.isNotEmpty ?? false;
-    final ranking = _ranking(t, service.history.session.weakCellCounts);
     // The BMS's own list where it gives one (an ANT does), the inference
     // from the cell voltages where it does not (a JK).
     final balancing = s.balancingCells;
@@ -191,15 +191,12 @@ class CellsTab extends StatelessWidget {
                   : t.balanceWhichCellsNoneReported,
               dim: reported == null || !reported.contains(true),
             ),
-            // Which cells were clearly the lowest since the pack connected,
-            // counted the way the weak-cell finding counts them. It read
-            // "needs more history" here for ever: nothing filled it.
-            InfoRow(
-              t.balanceRanking,
-              ranking ?? t.balanceRankingNeedsReadings,
-              dim: ranking == null,
-              last: true,
-            ),
+            // Which cells were clearly the lowest at rest over the last
+            // month, from the stored readings. It used to count only the
+            // current connection, loaded readings included, so it started
+            // from nothing every time and ranked lead resistance alongside
+            // charge.
+            WeakCellRankingRow(service: service),
           ],
         ),
         // An "estimated internal resistance" row used to sit here reading
@@ -247,24 +244,6 @@ class CellsTab extends StatelessWidget {
     ],
   );
 
-  /// The three cells most often clearly the lowest, with their share, or null
-  /// until there are as many readings as the weak-cell finding asks for.
-  static String? _ranking(AppL10n t, Map<int, int> counts) {
-    final total = counts.values.fold<int>(0, (a, b) => a + b);
-    if (total < VerdictThresholds.defaults.weakCellMinReadings) return null;
-    final ranked = counts.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    return ranked
-        .take(3)
-        .map(
-          (e) => t.balanceRankingEntry(
-            '${e.key}',
-            (e.value / total * 100).toStringAsFixed(0),
-          ),
-        )
-        .join(',  ');
-  }
-
   /// Colour for the delta readout, where any value is a magnitude rather than a
   /// direction.
   Color _colourFor(double deviation) {
@@ -286,5 +265,71 @@ class CellsTab extends StatelessWidget {
     if (oneBased == s.maxCellIndex) return AppTheme.cool;
     if (deviation.abs() > _watchDeviation) return AppTheme.watch;
     return AppTheme.textPrimary;
+  }
+}
+
+/// The weak-cell ranking row, read from the stored month rather than the
+/// connection. Loads once per pack: a ranking over thirty days does not move
+/// in the minutes a tab stays open.
+class WeakCellRankingRow extends StatefulWidget {
+  const WeakCellRankingRow({required this.service, super.key});
+
+  final BmsService service;
+
+  @override
+  State<WeakCellRankingRow> createState() => _WeakCellRankingRowState();
+}
+
+class _WeakCellRankingRowState extends State<WeakCellRankingRow> {
+  String? _device;
+  Future<WeakCellRanking>? _ranking;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final repo = widget.service.repository;
+    final device = widget.service.activeDeviceId;
+    if (device != _device) {
+      _device = device;
+      _ranking = repo == null || device == null
+          ? null
+          : repo.weakCellRanking(device);
+    }
+    final needed = VerdictThresholds.defaults.weakCellMinReadings;
+    return FutureBuilder<WeakCellRanking>(
+      future: _ranking,
+      builder: (context, snap) {
+        final r = snap.data;
+        if (r == null) {
+          return InfoRow(
+            t.balanceRanking,
+            _ranking == null ? t.balanceRankingNeedsHistory : '...',
+            dim: true,
+            last: true,
+          );
+        }
+        if (!r.isEnough(needed)) {
+          return InfoRow(
+            t.balanceRanking,
+            t.balanceRankingNeedsHistory,
+            dim: true,
+            hint: t.balanceRankingProgress('${r.readings}', '$needed'),
+            last: true,
+          );
+        }
+        return InfoRow(
+          t.balanceRanking,
+          [
+            for (final e in r.top)
+              t.balanceRankingEntry(
+                '${e.cell}',
+                (e.share * 100).toStringAsFixed(0),
+              ),
+          ].join(',  '),
+          hint: t.balanceRankingBasis('${r.readings}'),
+          last: true,
+        );
+      },
+    );
   }
 }

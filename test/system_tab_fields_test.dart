@@ -68,11 +68,7 @@ void main() {
 
     final list = find.byType(Scrollable).first;
     Future<void> see(String text) async {
-      await tester.scrollUntilVisible(
-        find.text(text),
-        200,
-        scrollable: list,
-      );
+      await tester.scrollUntilVisible(find.text(text), 200, scrollable: list);
       expect(find.text(text), findsOneWidget);
     }
 

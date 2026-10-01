@@ -3238,7 +3238,6 @@
       }
     }
   },
-  "balanceRankingNeedsReadings": "hacen falta más lecturas con las celdas separadas",
   "capacityNoFullMark": "No se sabe dónde está lleno este pack: el BMS no ha dicho a cuánto carga y la química no se conoce. Indícala en los datos del pack para poder empezar el test.",
   "capacityStopEarly": "Terminar aquí",
   "capacityStopEarlyHint": "Si terminas antes del corte se guarda como parcial: lo contado es real, pero es un pedazo del pack y no se convierte en capacidad.",
@@ -3630,5 +3629,25 @@
     }
   },
   "profileBaselineRedoConfirm": "Borrar y guardar el nuevo",
-  "profileBaselineRedone": "Día uno guardado de nuevo, con la lectura de ahora."
+  "profileBaselineRedone": "Día uno guardado de nuevo, con la lectura de ahora.",
+  "balanceRankingNeedsHistory": "necesita más histórico",
+  "balanceRankingProgress": "{count} de {needed} lecturas en reposo con las celdas separadas al menos 10 mV, en los últimos 30 días.",
+  "@balanceRankingProgress": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "needed": {
+        "type": "String"
+      }
+    }
+  },
+  "balanceRankingBasis": "De {count} lecturas en reposo de los últimos 30 días con las celdas separadas al menos 10 mV. La más baja en reposo es la que tiene menos carga: dice dónde mirar, no que esa celda esté mal.",
+  "@balanceRankingBasis": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  }
 }
