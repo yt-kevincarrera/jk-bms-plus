@@ -31,13 +31,31 @@ class TripLearning {
   /// An integrated ride that came to nothing is the link having dropped
   /// before the first reading could be integrated, not a ride that cost
   /// nothing, and the repair already reads it that way.
-  static bool isMeasured(Trip t) {
-    if (unmeasuredSources.contains(t.energySource)) return false;
-    if (t.energySource == EnergySource.integrated.name && t.energyOutWh <= 0) {
+  static bool isMeasured(Trip t) => isMeasuredParts(
+    energySource: t.energySource,
+    energyOutWh: t.energyOutWh,
+  );
+
+  /// [isMeasured], for a ride that is not a stored row yet.
+  static bool isMeasuredParts({
+    required String? energySource,
+    required double energyOutWh,
+  }) {
+    if (unmeasuredSources.contains(energySource)) return false;
+    if (energySource == EnergySource.integrated.name && energyOutWh <= 0) {
       return false;
     }
     return true;
   }
+
+  /// Whether the ride's start and end charge came from readings that may
+  /// stop well short of either end of it: the link was down for part of the
+  /// ride, so the percentage used is a lower bound, not a figure.
+  static bool socIsPartial(String? energySource) =>
+      energySource == EnergySource.partialCoulombCount.name ||
+      energySource == EnergySource.bracketedCoulombCount.name ||
+      energySource == EnergySource.unmeasurable.name ||
+      energySource == EnergySource.unmeasurableBracketed.name;
 
   /// Whether the ride teaches the range: finished, long enough, measured,
   /// with energy leaving the pack, and not marked as an exception.

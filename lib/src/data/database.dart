@@ -209,6 +209,12 @@ class Trips extends Table {
   /// its conclusions and never shown to anybody.
   BoolColumn get summarySeen =>
       boolean().withDefault(const Constant(false))();
+
+  /// The pack's apparent resistance over the ride, in milliohms: the median
+  /// slope of voltage against current over the stretches where the current
+  /// swung. Null when the ride had too few such stretches to say, and on
+  /// every ride from before it was measured. See [PackResistance].
+  RealColumn get packResistanceMilliohms => real().nullable()();
 }
 
 /// The track of a ride, one row per fix, with what the pack was doing at that
@@ -455,7 +461,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 17;
+  int get schemaVersion => 18;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -597,7 +603,14 @@ class AppDatabase extends _$AppDatabase {
         // Every earlier step has already added whatever columns these tables
         // gained, so by this point the old table carries all of them and the
         // copy needs no newColumns.
-        await m.alterTable(TableMigration(trips));
+        // Except the one a later step adds: the rebuilt table is built from
+        // today's classes, so it has to be told that column is new.
+        await m.alterTable(
+          TableMigration(
+            trips,
+            newColumns: [trips.packResistanceMilliohms],
+          ),
+        );
         await m.alterTable(TableMigration(snapshots));
         // An ANT has no cycle counter, and every one of its readings stored
         // a 0 that read as a pack that had never been cycled. Those zeros are
@@ -628,6 +641,15 @@ class AppDatabase extends _$AppDatabase {
         await customStatement(
           "UPDATE capacity_tests SET end_reason = 'legacy' WHERE completed = 1",
         );
+      }
+      if (from < 18) {
+        // Older than 16 had trips rebuilt from the current classes by the
+        // from < 16 step, which already carries this column. Nothing to
+        // backfill: a ride's resistance comes from readings a month old or
+        // newer, and the trends screen works it out from those on its own.
+        if (from >= 16) {
+          await m.addColumn(trips, trips.packResistanceMilliohms);
+        }
       }
     },
   );

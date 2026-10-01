@@ -197,10 +197,84 @@ void main() {
     test('a ride too short to bother reporting says so', () {
       // Below this the split is three numbers that round to zero.
       expect(profileOf(route([(lengthM: 80, grade: 0)])).hasAnything, isFalse);
+      expect(profileOf(route([(lengthM: 3000, grade: 0)])).hasAnything, isTrue);
+    });
+  });
+
+  group("a stored track, counted the recorder's way", () {
+    final t0 = DateTime.utc(2026, 9, 1, 8);
+
+    /// [route] as fixes four seconds apart at 36 km/h.
+    List<GradeFix> fixes(List<GradeSample> samples, {DateTime? from}) => [
+      for (var i = 0; i < samples.length; i++)
+        (
+          latitude: samples[i].latitude,
+          longitude: samples[i].longitude,
+          altitudeM: samples[i].altitudeM,
+          at: (from ?? t0).add(Duration(seconds: 4 * i)),
+          speedKmh: 36,
+        ),
+    ];
+
+    test('standing still adds nothing, so the split matches the distance', () {
+      // Two kilometres, then a phone at a red light wandering a few metres
+      // between fixes at walking-pace speeds. The recorder ignores the
+      // wander; the split used to count it, and added up to more.
+      final ride = fixes(route([(lengthM: 2000, grade: 0)]));
+      final last = ride.last;
+      final jitter = <GradeFix>[
+        for (var i = 1; i <= 60; i++)
+          (
+            latitude: last.latitude + (i.isEven ? 3 : -3) / _metresPerDegree,
+            longitude: last.longitude,
+            altitudeM: last.altitudeM,
+            at: last.at.add(Duration(seconds: 2 * i)),
+            speedKmh: 0.8,
+          ),
+      ];
+      final p = profileOfTrack([...ride, ...jitter]);
+      expect(p.totalKm, closeTo(2.0, 0.05));
       expect(
-        profileOf(route([(lengthM: 3000, grade: 0)])).hasAnything,
-        isTrue,
+        profileOf([
+          for (final f in [...ride, ...jitter])
+            (
+              latitude: f.latitude,
+              longitude: f.longitude,
+              altitudeM: f.altitudeM,
+            ),
+        ]).totalKm,
+        greaterThan(2.3),
       );
+    });
+
+    test('a GPS gap is not drawn as a straight line', () {
+      final a = fixes(route([(lengthM: 1000, grade: 0)]));
+      final rest = leg(
+        lengthM: 1000,
+        grade: 0,
+        startLat: a.last.latitude + 2000 / _metresPerDegree,
+      );
+      final b = fixes(rest, from: a.last.at.add(const Duration(minutes: 2)));
+      final p = profileOfTrack([...a, ...b]);
+      expect(p.totalKm, closeTo(2.0, 0.05));
+    });
+
+    test('a single altitude spike does not make a hill', () {
+      final ride = fixes(route([(lengthM: 3000, grade: 0)]));
+      final spiked = [
+        for (var i = 0; i < ride.length; i++)
+          i == 30
+              ? (
+                  latitude: ride[i].latitude,
+                  longitude: ride[i].longitude,
+                  altitudeM: ride[i].altitudeM + 25,
+                  at: ride[i].at,
+                  speedKmh: ride[i].speedKmh,
+                )
+              : ride[i],
+      ];
+      final p = profileOfTrack(spiked);
+      expect(p.flatKm, closeTo(p.totalKm, 0.01));
     });
   });
 }

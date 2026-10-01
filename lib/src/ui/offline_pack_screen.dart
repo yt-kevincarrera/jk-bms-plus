@@ -112,12 +112,14 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
     // of rows pulled into memory to answer two questions that are one SQL
     // query each. Six months is what the cell-drift analysis needs, and that
     // one genuinely needs the readings themselves.
-    final readings = await repo.allSnapshots(id, days: 180);
+    // From the last cell replacement, where there was one: what came before
+    // describes cells that are no longer in the pack.
+    final readings = await repo.currentPackSnapshots(id, days: 180);
     final totalReadings = await repo.db.snapshotCountFor(id);
     final oldest = await repo.db.firstSnapshotAt(id);
     final newest = await repo.db.lastSnapshotFor(id);
     final trips = await repo.db.recentTrips(id, limit: 500);
-    final tests = await repo.capacityTests(id);
+    final tests = await repo.currentPackCapacityTests(id);
     final maintenance = await MaintenanceLog(repo.db).forPack(id);
 
     // The range is rebuilt from this pack's own rides rather than read off the

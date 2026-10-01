@@ -47,9 +47,10 @@ class _ComparePacksScreenState extends State<ComparePacksScreen> {
           device: d,
           // Bounded, like the offline summary: the comparison needs recent
           // figures, not every reading ever taken.
-          readings: await repo.allSnapshots(d.id, days: 180),
+          // From the last cell replacement, where there was one.
+          readings: await repo.currentPackSnapshots(d.id, days: 180),
           trips: await repo.db.recentTrips(d.id, limit: 500),
-          tests: await repo.capacityTests(d.id),
+          tests: await repo.currentPackCapacityTests(d.id),
         ),
       );
     }

@@ -79,9 +79,10 @@ class _HealthTabState extends State<HealthTab> {
     final device = widget.service.activeDeviceId;
     if (repo == null || device == null) return;
 
-    final readings = await repo.allSnapshots(device, days: 365);
+    // From the last cell replacement, where there was one.
+    final readings = await repo.currentPackSnapshots(device, days: 365);
     final result = Degradation.from(
-      tests: await repo.capacityTests(device),
+      tests: await repo.currentPackCapacityTests(device),
       readings: readings,
       advertisedAh: widget.service.advertisedCapacityAh,
     );

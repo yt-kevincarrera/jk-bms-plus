@@ -496,7 +496,7 @@
   "tripEnergyIn": "Recuperada",
   "tripSocUsed": "Carga gastada",
   "tripSocPerKm": "Carga por km",
-  "tripSag": "Caída máxima",
+  "tripResistance": "Resistencia del pack (aprox.)",
   "tripMaxCurrent": "Corriente máxima",
   "tripMaxTemp": "Temperatura máxima",
   "tripMaxDelta": "Delta máximo",
@@ -846,7 +846,7 @@
   "trendsTitle": "Con el tiempo",
   "trendsConsumption": "Consumo por viaje",
   "trendsCapacity": "Capacidad medida",
-  "trendsSag": "Caída bajo carga",
+  "trendsSag": "Resistencia aparente del pack",
   "trendsDeltaVsCharge": "Delta contra carga",
   "trendsSpan": "{days} días de histórico",
   "@trendsSpan": {
@@ -868,7 +868,7 @@
   "trendsLegendLoaded": "Bajo carga",
   "trendsLegendResting": "En reposo",
   "trendsDeltaHint": "A lo ancho va el nivel de carga, no el tiempo. Cada punto es la mediana del delta (la celda más alta menos la más baja) de las lecturas de los últimos 90 días a ese porcentaje de carga: una línea en reposo y otra descargando a más de 5 A. Las lecturas cargando no entran. Que se abra cerca de vacía y de llena es normal en casi cualquier pack, porque ahí la curva de voltaje es empinada. Lo que dice algo es la línea de reposo abriéndose en el medio, donde la curva es plana, o la de carga muy por encima de la de reposo: eso es resistencia, y casi siempre una conexión y no una celda.",
-  "trendsSagHint": "Cuántos miliohmios de resistencia interna implica cada viaje, sacado de cuánto cayó el voltaje para la corriente que se pidió. El más viejo a la izquierda. La resistencia subiendo es lo primero que se degrada en una batería y se nota mucho antes que la pérdida de capacidad, así que una subida aquí es un aviso temprano y no un veredicto. Un salto de golpe casi siempre es una conexión, no las celdas.",
+  "trendsSagHint": "Un punto por viaje: la resistencia aparente del pack, sacada de cómo se movió el voltaje en los tramos en que la corriente subía y bajaba deprisa, la mediana de esos tramos. Incluye el cableado y el BMS, y es aproximada, porque la corriente y el voltaje de una lectura no siempre son del mismo instante. Lo que vale es la tendencia: subiendo despacio con los meses es desgaste; un salto de golpe casi siempre es una conexión. Los viajes con pocos tramos así no tienen punto.",
   "alertTitle": "Aviso",
   "alertBmsFault": "El BMS levantó una alarma",
   "alertCellSpread": "Las celdas se separaron mucho",
@@ -1521,9 +1521,9 @@
   "learnWhySignWarning": "Si es el signo, también estaría desactivando la energía de los viajes, el consumo y la detección de capacidad, mientras cada lectura en vivo sigue pareciendo correcta. Vale la pena comprobarlo: rodando, la corriente en la pantalla principal debería ser negativa.",
   "learnWhyNeedMore": "Aprende del primer viaje de más de 200 m que consuma energía. No hay nada más que hacer.",
   "trendsIntro": "Cuatro gráficas, y de cada una lo que sirve es la pendiente, no la altura. Un número que se queda quieto es una batería sana; uno que se va para un lado durante meses es la batería diciéndote algo.",
-  "trendsConsumptionHint": "Un punto por viaje grabado, el más viejo a la izquierda. La altura es lo que costó ese viaje por kilómetro. La forma de manejar y el clima lo mueven mucho, así que ignora los puntos suertos y mira si la nube va subiendo con los meses: que la misma ruta cueste más significa que la batería está trabajando más para lograrlo.",
+  "trendsConsumptionHint": "Un punto por viaje medido que cuenta para la autonomía: lo que costó por kilómetro. Lo mueven sobre todo la ruta, cómo manejas, el viento, la temperatura y las llantas, no la batería, así que no es una medida de desgaste: sirve para ver cómo vas gastando. Los viajes sin medir, los marcados como excepción y los de un consumo imposible no entran.",
   "trendsCapacityHint": "Un punto por descarga completa medida, la más vieja a la izquierda: de celdas arriba a celda en el corte, vigilada entera y sin carga en medio. La altura es los amperios-hora que salieron esa vez. Es la única medida real de desgaste que hay aquí, y la más lenta en llenarse: espera que baje un poco cada año, y desconfía de una caída de golpe.",
-  "trendsAxisTime": "de izquierda a derecha: del más viejo al más nuevo",
+  "trendsAxisTime": "a lo ancho, el tiempo: del más viejo al más nuevo, con los huecos donde no hubo datos",
   "trendsAxisCharge": "de izquierda a derecha: de vacía a llena",
   "learnWhyImplausible": "{n} dieron un consumo que ninguna moto puede producir, así que se rechazaron. Eso fue un fallo de esta app y no algo del manejo, y está arreglado: los viajes grabados desde entonces deberían salir bien. Los viejos que conservan sus lecturas se pueden medir de nuevo con «Volver a medir» en su detalle.",
   "@learnWhyImplausible": {
@@ -3484,6 +3484,52 @@
   "@learnWhyExcluded": {
     "placeholders": {
       "n": {
+        "type": "String"
+      }
+    }
+  },
+  "tripNotMeasured": "sin medir",
+  "tripEnergyUnmeasuredWhy": "La conexión con la batería se cortó durante buena parte del viaje y no quedaron lecturas para saber cuánta energía salió. No cuenta para la autonomía.",
+  "tripEnergySourceLabel": "Cómo se midió",
+  "tripEnergySourceBms": "contador del BMS, todo el viaje",
+  "tripEnergySourceIntegrated": "sumado de las lecturas recibidas",
+  "tripEnergySourceBracketed": "contador del BMS, de las lecturas de antes y después",
+  "tripEnergySourcePartial": "parcial: la conexión se cortó",
+  "tripEnergySourceUnmeasurable": "no se pudo medir",
+  "tripResistanceHint": "La mediana de la pendiente del voltaje contra la corriente en los tramos en que la corriente cambió mucho. Aproximada: sirve para seguir el mismo pack con los meses, no para compararlo con una hoja de datos.",
+  "trendsCapacityHollow": "Los círculos huecos son descargas que la app no da por buenas (faltaron minutos, hubo carga en medio o se cerraron por el porcentaje) o que detectó sola al rodar. Se ven, pero no entran en la tendencia.",
+  "maintDeleteConfirmTitle": "¿Borrar esta anotación?",
+  "maintDeleteConfirmBody": "Se quita del registro de mantenimiento y de las gráficas.",
+  "maintDeleteConfirmCellBody": "Se quita del registro, y el historial de la batería vuelve a contar desde antes del cambio de celda: la deriva, la capacidad y las gráficas incluirán otra vez las celdas viejas.",
+  "orphansDiscardConfirmTitle": "¿Descartar este historial?",
+  "orphansDiscardConfirmBody": "Se borran para siempre {count} filas guardadas sin batería asignada. No se puede deshacer.",
+  "@orphansDiscardConfirmBody": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "tripEnergySoFarOffline": "{wh} Wh hasta que se cortó la conexión",
+  "@tripEnergySoFarOffline": {
+    "placeholders": {
+      "wh": {
+        "type": "String"
+      }
+    }
+  },
+  "tripReadingAgeSeconds": "hace {s} s",
+  "@tripReadingAgeSeconds": {
+    "placeholders": {
+      "s": {
+        "type": "String"
+      }
+    }
+  },
+  "tripReadingAgeMinutes": "hace {m} min",
+  "@tripReadingAgeMinutes": {
+    "placeholders": {
+      "m": {
         "type": "String"
       }
     }

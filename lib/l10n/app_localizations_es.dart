@@ -1094,7 +1094,7 @@ class AppL10nEs extends AppL10n {
   String get tripSocPerKm => 'Carga por km';
 
   @override
-  String get tripSag => 'Caída máxima';
+  String get tripResistance => 'Resistencia del pack (aprox.)';
 
   @override
   String get tripMaxCurrent => 'Corriente máxima';
@@ -1593,7 +1593,7 @@ class AppL10nEs extends AppL10n {
   String get trendsCapacity => 'Capacidad medida';
 
   @override
-  String get trendsSag => 'Caída bajo carga';
+  String get trendsSag => 'Resistencia aparente del pack';
 
   @override
   String get trendsDeltaVsCharge => 'Delta contra carga';
@@ -1624,7 +1624,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get trendsSagHint =>
-      'Cuántos miliohmios de resistencia interna implica cada viaje, sacado de cuánto cayó el voltaje para la corriente que se pidió. El más viejo a la izquierda. La resistencia subiendo es lo primero que se degrada en una batería y se nota mucho antes que la pérdida de capacidad, así que una subida aquí es un aviso temprano y no un veredicto. Un salto de golpe casi siempre es una conexión, no las celdas.';
+      'Un punto por viaje: la resistencia aparente del pack, sacada de cómo se movió el voltaje en los tramos en que la corriente subía y bajaba deprisa, la mediana de esos tramos. Incluye el cableado y el BMS, y es aproximada, porque la corriente y el voltaje de una lectura no siempre son del mismo instante. Lo que vale es la tendencia: subiendo despacio con los meses es desgaste; un salto de golpe casi siempre es una conexión. Los viajes con pocos tramos así no tienen punto.';
 
   @override
   String get alertTitle => 'Aviso';
@@ -2639,7 +2639,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get trendsConsumptionHint =>
-      'Un punto por viaje grabado, el más viejo a la izquierda. La altura es lo que costó ese viaje por kilómetro. La forma de manejar y el clima lo mueven mucho, así que ignora los puntos suertos y mira si la nube va subiendo con los meses: que la misma ruta cueste más significa que la batería está trabajando más para lograrlo.';
+      'Un punto por viaje medido que cuenta para la autonomía: lo que costó por kilómetro. Lo mueven sobre todo la ruta, cómo manejas, el viento, la temperatura y las llantas, no la batería, así que no es una medida de desgaste: sirve para ver cómo vas gastando. Los viajes sin medir, los marcados como excepción y los de un consumo imposible no entran.';
 
   @override
   String get trendsCapacityHint =>
@@ -2647,7 +2647,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get trendsAxisTime =>
-      'de izquierda a derecha: del más viejo al más nuevo';
+      'a lo ancho, el tiempo: del más viejo al más nuevo, con los huecos donde no hubo datos';
 
   @override
   String get trendsAxisCharge => 'de izquierda a derecha: de vacía a llena';
@@ -5167,5 +5167,73 @@ class AppL10nEs extends AppL10n {
   @override
   String learnWhyExcluded(String n) {
     return '$n los marcaste como una excepción, así que no cuentan.';
+  }
+
+  @override
+  String get tripNotMeasured => 'sin medir';
+
+  @override
+  String get tripEnergyUnmeasuredWhy =>
+      'La conexión con la batería se cortó durante buena parte del viaje y no quedaron lecturas para saber cuánta energía salió. No cuenta para la autonomía.';
+
+  @override
+  String get tripEnergySourceLabel => 'Cómo se midió';
+
+  @override
+  String get tripEnergySourceBms => 'contador del BMS, todo el viaje';
+
+  @override
+  String get tripEnergySourceIntegrated => 'sumado de las lecturas recibidas';
+
+  @override
+  String get tripEnergySourceBracketed =>
+      'contador del BMS, de las lecturas de antes y después';
+
+  @override
+  String get tripEnergySourcePartial => 'parcial: la conexión se cortó';
+
+  @override
+  String get tripEnergySourceUnmeasurable => 'no se pudo medir';
+
+  @override
+  String get tripResistanceHint =>
+      'La mediana de la pendiente del voltaje contra la corriente en los tramos en que la corriente cambió mucho. Aproximada: sirve para seguir el mismo pack con los meses, no para compararlo con una hoja de datos.';
+
+  @override
+  String get trendsCapacityHollow =>
+      'Los círculos huecos son descargas que la app no da por buenas (faltaron minutos, hubo carga en medio o se cerraron por el porcentaje) o que detectó sola al rodar. Se ven, pero no entran en la tendencia.';
+
+  @override
+  String get maintDeleteConfirmTitle => '¿Borrar esta anotación?';
+
+  @override
+  String get maintDeleteConfirmBody =>
+      'Se quita del registro de mantenimiento y de las gráficas.';
+
+  @override
+  String get maintDeleteConfirmCellBody =>
+      'Se quita del registro, y el historial de la batería vuelve a contar desde antes del cambio de celda: la deriva, la capacidad y las gráficas incluirán otra vez las celdas viejas.';
+
+  @override
+  String get orphansDiscardConfirmTitle => '¿Descartar este historial?';
+
+  @override
+  String orphansDiscardConfirmBody(String count) {
+    return 'Se borran para siempre $count filas guardadas sin batería asignada. No se puede deshacer.';
+  }
+
+  @override
+  String tripEnergySoFarOffline(String wh) {
+    return '$wh Wh hasta que se cortó la conexión';
+  }
+
+  @override
+  String tripReadingAgeSeconds(String s) {
+    return 'hace $s s';
+  }
+
+  @override
+  String tripReadingAgeMinutes(String m) {
+    return 'hace $m min';
   }
 }

@@ -1939,11 +1939,11 @@ abstract class AppL10n {
   /// **'Carga por km'**
   String get tripSocPerKm;
 
-  /// No description provided for @tripSag.
+  /// No description provided for @tripResistance.
   ///
   /// In es, this message translates to:
-  /// **'Caída máxima'**
-  String get tripSag;
+  /// **'Resistencia del pack (aprox.)'**
+  String get tripResistance;
 
   /// No description provided for @tripMaxCurrent.
   ///
@@ -2764,7 +2764,7 @@ abstract class AppL10n {
   /// No description provided for @trendsSag.
   ///
   /// In es, this message translates to:
-  /// **'Caída bajo carga'**
+  /// **'Resistencia aparente del pack'**
   String get trendsSag;
 
   /// No description provided for @trendsDeltaVsCharge.
@@ -2812,7 +2812,7 @@ abstract class AppL10n {
   /// No description provided for @trendsSagHint.
   ///
   /// In es, this message translates to:
-  /// **'Cuántos miliohmios de resistencia interna implica cada viaje, sacado de cuánto cayó el voltaje para la corriente que se pidió. El más viejo a la izquierda. La resistencia subiendo es lo primero que se degrada en una batería y se nota mucho antes que la pérdida de capacidad, así que una subida aquí es un aviso temprano y no un veredicto. Un salto de golpe casi siempre es una conexión, no las celdas.'**
+  /// **'Un punto por viaje: la resistencia aparente del pack, sacada de cómo se movió el voltaje en los tramos en que la corriente subía y bajaba deprisa, la mediana de esos tramos. Incluye el cableado y el BMS, y es aproximada, porque la corriente y el voltaje de una lectura no siempre son del mismo instante. Lo que vale es la tendencia: subiendo despacio con los meses es desgaste; un salto de golpe casi siempre es una conexión. Los viajes con pocos tramos así no tienen punto.'**
   String get trendsSagHint;
 
   /// No description provided for @alertTitle.
@@ -4546,7 +4546,7 @@ abstract class AppL10n {
   /// No description provided for @trendsConsumptionHint.
   ///
   /// In es, this message translates to:
-  /// **'Un punto por viaje grabado, el más viejo a la izquierda. La altura es lo que costó ese viaje por kilómetro. La forma de manejar y el clima lo mueven mucho, así que ignora los puntos suertos y mira si la nube va subiendo con los meses: que la misma ruta cueste más significa que la batería está trabajando más para lograrlo.'**
+  /// **'Un punto por viaje medido que cuenta para la autonomía: lo que costó por kilómetro. Lo mueven sobre todo la ruta, cómo manejas, el viento, la temperatura y las llantas, no la batería, así que no es una medida de desgaste: sirve para ver cómo vas gastando. Los viajes sin medir, los marcados como excepción y los de un consumo imposible no entran.'**
   String get trendsConsumptionHint;
 
   /// No description provided for @trendsCapacityHint.
@@ -4558,7 +4558,7 @@ abstract class AppL10n {
   /// No description provided for @trendsAxisTime.
   ///
   /// In es, this message translates to:
-  /// **'de izquierda a derecha: del más viejo al más nuevo'**
+  /// **'a lo ancho, el tiempo: del más viejo al más nuevo, con los huecos donde no hubo datos'**
   String get trendsAxisTime;
 
   /// No description provided for @trendsAxisCharge.
@@ -8573,6 +8573,114 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'{n} los marcaste como una excepción, así que no cuentan.'**
   String learnWhyExcluded(String n);
+
+  /// No description provided for @tripNotMeasured.
+  ///
+  /// In es, this message translates to:
+  /// **'sin medir'**
+  String get tripNotMeasured;
+
+  /// No description provided for @tripEnergyUnmeasuredWhy.
+  ///
+  /// In es, this message translates to:
+  /// **'La conexión con la batería se cortó durante buena parte del viaje y no quedaron lecturas para saber cuánta energía salió. No cuenta para la autonomía.'**
+  String get tripEnergyUnmeasuredWhy;
+
+  /// No description provided for @tripEnergySourceLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Cómo se midió'**
+  String get tripEnergySourceLabel;
+
+  /// No description provided for @tripEnergySourceBms.
+  ///
+  /// In es, this message translates to:
+  /// **'contador del BMS, todo el viaje'**
+  String get tripEnergySourceBms;
+
+  /// No description provided for @tripEnergySourceIntegrated.
+  ///
+  /// In es, this message translates to:
+  /// **'sumado de las lecturas recibidas'**
+  String get tripEnergySourceIntegrated;
+
+  /// No description provided for @tripEnergySourceBracketed.
+  ///
+  /// In es, this message translates to:
+  /// **'contador del BMS, de las lecturas de antes y después'**
+  String get tripEnergySourceBracketed;
+
+  /// No description provided for @tripEnergySourcePartial.
+  ///
+  /// In es, this message translates to:
+  /// **'parcial: la conexión se cortó'**
+  String get tripEnergySourcePartial;
+
+  /// No description provided for @tripEnergySourceUnmeasurable.
+  ///
+  /// In es, this message translates to:
+  /// **'no se pudo medir'**
+  String get tripEnergySourceUnmeasurable;
+
+  /// No description provided for @tripResistanceHint.
+  ///
+  /// In es, this message translates to:
+  /// **'La mediana de la pendiente del voltaje contra la corriente en los tramos en que la corriente cambió mucho. Aproximada: sirve para seguir el mismo pack con los meses, no para compararlo con una hoja de datos.'**
+  String get tripResistanceHint;
+
+  /// No description provided for @trendsCapacityHollow.
+  ///
+  /// In es, this message translates to:
+  /// **'Los círculos huecos son descargas que la app no da por buenas (faltaron minutos, hubo carga en medio o se cerraron por el porcentaje) o que detectó sola al rodar. Se ven, pero no entran en la tendencia.'**
+  String get trendsCapacityHollow;
+
+  /// No description provided for @maintDeleteConfirmTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Borrar esta anotación?'**
+  String get maintDeleteConfirmTitle;
+
+  /// No description provided for @maintDeleteConfirmBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Se quita del registro de mantenimiento y de las gráficas.'**
+  String get maintDeleteConfirmBody;
+
+  /// No description provided for @maintDeleteConfirmCellBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Se quita del registro, y el historial de la batería vuelve a contar desde antes del cambio de celda: la deriva, la capacidad y las gráficas incluirán otra vez las celdas viejas.'**
+  String get maintDeleteConfirmCellBody;
+
+  /// No description provided for @orphansDiscardConfirmTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Descartar este historial?'**
+  String get orphansDiscardConfirmTitle;
+
+  /// No description provided for @orphansDiscardConfirmBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Se borran para siempre {count} filas guardadas sin batería asignada. No se puede deshacer.'**
+  String orphansDiscardConfirmBody(String count);
+
+  /// No description provided for @tripEnergySoFarOffline.
+  ///
+  /// In es, this message translates to:
+  /// **'{wh} Wh hasta que se cortó la conexión'**
+  String tripEnergySoFarOffline(String wh);
+
+  /// No description provided for @tripReadingAgeSeconds.
+  ///
+  /// In es, this message translates to:
+  /// **'hace {s} s'**
+  String tripReadingAgeSeconds(String s);
+
+  /// No description provided for @tripReadingAgeMinutes.
+  ///
+  /// In es, this message translates to:
+  /// **'hace {m} min'**
+  String tripReadingAgeMinutes(String m);
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

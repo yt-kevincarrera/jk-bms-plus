@@ -53,7 +53,10 @@ class _MaintenanceCardState extends State<MaintenanceCard> {
       children: [
         // Dating the history that still describes this pack. Readings from
         // before a cell was replaced are about a battery that no longer
-        // exists, and every long-term figure quietly includes them.
+        // exists, and from this date the drift, the measured capacity, the
+        // capacity scan, the lowest cell and the trend charts leave them out
+        // (see MaintenanceLog.historyStart). It used to say this and filter
+        // nothing.
         if (lastCell != null)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
@@ -127,6 +130,33 @@ class _MaintenanceCardState extends State<MaintenanceCard> {
   }
 
   Future<void> _delete(MaintenanceEvent e) async {
+    final t = AppL10n.of(context);
+    // Asked first. Deleting a cell replacement also moves where the pack's
+    // history starts, which is more than an icon tap should do unasked.
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(t.maintDeleteConfirmTitle),
+        content: Text(
+          MaintenanceKind.parse(e.kind) == MaintenanceKind.cellReplaced
+              ? t.maintDeleteConfirmCellBody
+              : t.maintDeleteConfirmBody,
+          style: const TextStyle(fontSize: 13, height: 1.45),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(t.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.bad),
+            child: Text(t.maintDelete),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
     await _log.remove(e.id);
     await _load();
     widget.onChanged?.call();

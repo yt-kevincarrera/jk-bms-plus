@@ -1093,7 +1093,7 @@ class AppL10nEn extends AppL10n {
   String get tripSocPerKm => 'Charge per km';
 
   @override
-  String get tripSag => 'Worst sag';
+  String get tripResistance => 'Pack resistance (approx.)';
 
   @override
   String get tripMaxCurrent => 'Peak current';
@@ -1588,7 +1588,7 @@ class AppL10nEn extends AppL10n {
   String get trendsCapacity => 'Measured capacity';
 
   @override
-  String get trendsSag => 'Sag under load';
+  String get trendsSag => 'Apparent pack resistance';
 
   @override
   String get trendsDeltaVsCharge => 'Delta against charge';
@@ -1619,7 +1619,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get trendsSagHint =>
-      'How many milliohms of internal resistance each ride implies, worked out from how far the voltage fell for the current drawn. Oldest on the left. Rising resistance is the first thing to go on an ageing pack and shows up long before capacity does, so a climb here is an early warning rather than a verdict. A sudden jump is usually a connection, not the cells.';
+      'One dot per ride: the pack\'s apparent resistance, worked out from how the voltage moved over the stretches where the current swung quickly, the median of those stretches. It includes the wiring and the BMS, and it is approximate, because a reading\'s current and voltage are not always the same instant. What counts is the trend: a slow climb over months is wear; a sudden jump is nearly always a connection. Rides with few such stretches have no dot.';
 
   @override
   String get alertTitle => 'Alert';
@@ -2629,14 +2629,15 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get trendsConsumptionHint =>
-      'One dot per recorded ride, oldest on the left. Height is what that ride cost per kilometre. Riding style and weather move it around a lot, so ignore single dots and look at whether the cloud is drifting upwards over months: the same route costing more means the pack is having to work harder for it.';
+      'One dot per measured ride that counts towards the range: what it cost per kilometre. The route, how you ride, the wind, the temperature and the tyres move it far more than the battery does, so this is not a measure of wear: it shows how your riding costs. Unmeasured rides, rides marked as an exception and impossible figures are left out.';
 
   @override
   String get trendsCapacityHint =>
       'One dot per full discharge measured, oldest on the left: cells at the top to a cell at the cutoff, watched the whole way, with no charge in the middle. Height is the amp-hours that came out that time. This is the only real measure of wear here, and it is the slowest to fill in: expect it to go down a little each year and be suspicious of a sudden drop.';
 
   @override
-  String get trendsAxisTime => 'left to right: oldest to newest';
+  String get trendsAxisTime =>
+      'across is time: oldest to newest, with gaps where there was no data';
 
   @override
   String get trendsAxisCharge => 'left to right: empty to full';
@@ -5142,5 +5143,74 @@ class AppL10nEn extends AppL10n {
   @override
   String learnWhyExcluded(String n) {
     return '$n you marked as an exception, so they do not count.';
+  }
+
+  @override
+  String get tripNotMeasured => 'not measured';
+
+  @override
+  String get tripEnergyUnmeasuredWhy =>
+      'The link to the pack dropped for much of the ride and there were no readings left to tell how much energy came out. It does not count towards the range.';
+
+  @override
+  String get tripEnergySourceLabel => 'How it was measured';
+
+  @override
+  String get tripEnergySourceBms => 'BMS counter, the whole ride';
+
+  @override
+  String get tripEnergySourceIntegrated =>
+      'added up from the readings received';
+
+  @override
+  String get tripEnergySourceBracketed =>
+      'BMS counter, from the readings before and after';
+
+  @override
+  String get tripEnergySourcePartial => 'partial: the link dropped';
+
+  @override
+  String get tripEnergySourceUnmeasurable => 'could not be measured';
+
+  @override
+  String get tripResistanceHint =>
+      'The median slope of voltage against current over the stretches where the current changed a lot. Approximate: good for following the same pack over months, not for comparing with a datasheet.';
+
+  @override
+  String get trendsCapacityHollow =>
+      'Hollow circles are discharges the app does not believe (minutes were missing, there was a charge in the middle, or they closed on the percentage) or that it found on its own while riding. They are shown, but kept out of the trend.';
+
+  @override
+  String get maintDeleteConfirmTitle => 'Delete this entry?';
+
+  @override
+  String get maintDeleteConfirmBody =>
+      'It is removed from the maintenance log and from the charts.';
+
+  @override
+  String get maintDeleteConfirmCellBody =>
+      'It is removed from the log, and the pack\'s history counts from before the cell replacement again: drift, capacity and the charts will include the old cells once more.';
+
+  @override
+  String get orphansDiscardConfirmTitle => 'Discard this history?';
+
+  @override
+  String orphansDiscardConfirmBody(String count) {
+    return '$count rows stored with no pack assigned are deleted for good. This cannot be undone.';
+  }
+
+  @override
+  String tripEnergySoFarOffline(String wh) {
+    return '$wh Wh until the link dropped';
+  }
+
+  @override
+  String tripReadingAgeSeconds(String s) {
+    return '$s s ago';
+  }
+
+  @override
+  String tripReadingAgeMinutes(String m) {
+    return '$m min ago';
   }
 }

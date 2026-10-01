@@ -5,9 +5,11 @@ import '../../l10n/app_localizations.dart';
 import '../bms_service.dart';
 import '../data/database.dart';
 import '../data/repository.dart';
+import '../metrics/trip_learning.dart';
 import '../metrics/trip_recorder.dart';
 import 'theme.dart';
 import 'widgets/common.dart';
+import 'widgets/energy_source_label.dart';
 import 'widgets/representative_question.dart';
 import 'widgets/trip_grade_rows.dart';
 import 'widgets/trip_learned_section.dart';
@@ -125,10 +127,13 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
-    final net = trip.energyOutWh - trip.energyInWh;
-    final whPerKm = trip.distanceKm < 0.2 ? null : net / trip.distanceKm;
-    final socUsed = trip.startSoc - trip.endSoc;
     final view = TripSummaryView.fromStored(trip);
+    // Null for a ride too short or never measured. Dividing the stored zero
+    // of an unmeasured ride by its distance read "0 Wh/km", a ride that cost
+    // nothing.
+    final whPerKm = view.whPerKm;
+    final measured = view.energyMeasured;
+    final socUsed = trip.startSoc - trip.endSoc;
 
     return Scaffold(
       appBar: AppBar(title: Text(t.historyDetail)),
@@ -171,6 +176,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                       label: t.tripConsumption,
                       value: whPerKm?.toStringAsFixed(0) ?? '--',
                       unit: 'Wh/km',
+                      footnote: measured ? null : t.tripNotMeasured,
                     ),
                   ),
                 ],
@@ -224,9 +230,20 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
               children: [
                 InfoRow(
                   t.tripEnergyOut,
-                  '${trip.energyOutWh.toStringAsFixed(1)} Wh',
+                  measured
+                      ? '${trip.energyOutWh.toStringAsFixed(1)} Wh'
+                      : t.tripNotMeasured,
+                  dim: !measured,
+                  hint: measured ? null : t.tripEnergyUnmeasuredWhy,
                 ),
-                InfoRow(t.tripSocUsed, '${socUsed.toStringAsFixed(0)} %'),
+                if (energySourceLabel(t, trip.energySource) case final how?)
+                  InfoRow(t.tripEnergySourceLabel, how),
+                InfoRow(
+                  t.tripSocUsed,
+                  TripLearning.socIsPartial(trip.energySource)
+                      ? '≈ ${socUsed.toStringAsFixed(0)} %'
+                      : '${socUsed.toStringAsFixed(0)} %',
+                ),
                 InfoRow(
                   t.tripSocPerKm,
                   trip.distanceKm < 0.2 || socUsed <= 0
@@ -234,10 +251,14 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                       : '${(socUsed / trip.distanceKm).toStringAsFixed(2)} %/km',
                   dim: trip.distanceKm < 0.2 || socUsed <= 0,
                 ),
-                InfoRow(
-                  t.tripSag,
-                  '${(trip.maxPackVoltage - trip.minPackVoltage).toStringAsFixed(2)} V',
-                ),
+                // Not "worst sag" any more: that was the ride's highest voltage
+                // minus its lowest, which took in the whole fall in charge.
+                if (trip.packResistanceMilliohms case final r?)
+                  InfoRow(
+                    t.tripResistance,
+                    '${r.toStringAsFixed(0)} mΩ',
+                    hint: t.tripResistanceHint,
+                  ),
                 InfoRow(
                   t.tripMaxCurrent,
                   '${trip.maxDischargeCurrent.toStringAsFixed(1)} A',

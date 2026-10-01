@@ -9,7 +9,10 @@ import '../data/database.dart';
 /// chart, and anything else has the note field.
 enum MaintenanceKind {
   /// A cell swapped out. The one that most obviously changes what the history
-  /// means: capacity, delta and the weakest-cell verdict all reset.
+  /// means: from its date the cell drift, the measured capacity and its
+  /// baseline, the capacity scan, the lowest-cell count and the pack's trend
+  /// charts start again, through [MaintenanceLog.historyStart]. The range
+  /// does not: what the bike costs to ride did not change with the cell.
   cellReplaced,
 
   /// Cells brought back level by hand, rather than by the balancer.
@@ -91,6 +94,11 @@ class MaintenanceLog {
       ..sort((a, b) => a.at.compareTo(b.at));
     return inRange;
   }
+
+  /// When the history that still describes this pack began: the last cell
+  /// replacement, or null when there was none.
+  static DateTime? historyStart(List<MaintenanceEvent> events) =>
+      lastOf(events, MaintenanceKind.cellReplaced)?.at;
 
   /// The most recent event of a given kind, if there is one.
   ///

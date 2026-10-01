@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import '../data/database.dart';
 import 'capacity_endpoints.dart';
+import 'pack_resistance.dart';
 import 'trip_learning.dart';
 
 /// One point on the consumption-over-time curve.
@@ -33,10 +34,21 @@ class CapacityPoint {
     required this.at,
     required this.measuredAh,
     required this.catalogueAh,
+    this.trusted = true,
+    this.detected = false,
   });
 
   final DateTime at;
   final double measuredAh;
+
+  /// Whether the run passes [CapacityTestTrust]. Only trusted points make
+  /// the trend; the others are drawn hollow, so the rider can see a run
+  /// happened and that it is not being believed.
+  final bool trusted;
+
+  /// Found by the app in ordinary riding rather than run as a test. Also
+  /// drawn hollow: it is a measurement, but nobody watched it start.
+  final bool detected;
   /// What the pack was sold as at the time, or null if it was never stated.
   final double? catalogueAh;
 
@@ -46,17 +58,12 @@ class CapacityPoint {
       (catalogueAh ?? 0) <= 0 ? null : measuredAh / catalogueAh!;
 }
 
-/// Sag observed at a given current.
-class SagPoint {
-  const SagPoint({
-    required this.at,
-    required this.current,
-    required this.sagVolts,
-  });
+/// A ride's apparent pack resistance.
+class ResistancePoint {
+  const ResistancePoint({required this.at, required this.milliohms});
 
   final DateTime at;
-  final double current;
-  final double sagVolts;
+  final double milliohms;
 }
 
 /// The views that only mean something once there is history behind them.
@@ -142,18 +149,21 @@ class LongTermAnalysis {
     return points;
   }
 
-  /// Measured capacity over time, from the capacity tests that measured the
-  /// pack: the same [CapacityTestTrust] rule as the range and the wear
-  /// figures, so the chart cannot show a drop the rest of the app threw out.
+  /// Measured capacity over time, from every finished run. Each says
+  /// whether it passes the [CapacityTestTrust] rule the range and the wear
+  /// figures use; a trend is drawn through the ones that do, so the chart
+  /// cannot show a drop the rest of the app threw out.
   List<CapacityPoint> capacityOverTime(List<CapacityTest> tests) {
     final points = <CapacityPoint>[];
     for (final t in tests) {
-      if (!t.isTrustworthy) continue;
+      if (!t.completed || t.measuredAh <= 0) continue;
       points.add(
         CapacityPoint(
           at: t.endedAt ?? t.startedAt,
           measuredAh: t.measuredAh,
           catalogueAh: t.catalogueAh,
+          trusted: t.isTrustworthy,
+          detected: t.automatic,
         ),
       );
     }
@@ -161,33 +171,41 @@ class LongTermAnalysis {
     return points;
   }
 
-  /// Worst sag seen per ride, against the current that caused it.
+  /// The pack's apparent resistance per ride, oldest first.
   ///
-  /// Watched over months this is the cheapest early warning there is: the same
-  /// current producing a bigger drop means the pack's internal resistance is
-  /// climbing, and that shows up long before capacity does.
-  List<SagPoint> sagOverTime(List<Trip> trips) {
-    final points = <SagPoint>[];
+  /// The figure stored with the ride when there is one, otherwise worked out
+  /// from [readings] filed under it, which is how rides from before it was
+  /// stored still get a point while their readings are fine-grained enough.
+  /// See [PackResistance] for why this replaced the ride's highest voltage
+  /// minus its lowest over its peak current.
+  List<ResistancePoint> resistanceOverTime(
+    List<Trip> trips,
+    List<Snapshot> readings,
+  ) {
+    final byTrip = <int, List<Snapshot>>{};
+    for (final r in readings) {
+      final id = r.tripId;
+      if (id != null) (byTrip[id] ??= []).add(r);
+    }
+    final points = <ResistancePoint>[];
     for (final t in trips) {
-      if (t.demo || t.maxDischargeCurrent < 10) continue;
-      final sag = t.maxPackVoltage - t.minPackVoltage;
-      if (sag <= 0) continue;
-      points.add(
-        SagPoint(
-          at: t.startedAt,
-          current: t.maxDischargeCurrent,
-          sagVolts: sag,
-        ),
-      );
+      if (t.demo) continue;
+      var mohm = t.packResistanceMilliohms;
+      if (mohm == null) {
+        final rows = byTrip[t.id];
+        if (rows != null) {
+          rows.sort((x, y) => x.timestamp.compareTo(y.timestamp));
+          mohm = PackResistance.fromReadings([
+            for (final r in rows) (r.timestamp, r.packVoltage, r.current),
+          ]);
+        }
+      }
+      if (mohm == null) continue;
+      points.add(ResistancePoint(at: t.startedAt, milliohms: mohm));
     }
     points.sort((a, b) => a.at.compareTo(b.at));
     return points;
   }
-
-  /// Sag normalised to milliohms of apparent pack resistance, which is what
-  /// makes two rides at different currents comparable at all.
-  double? apparentResistanceMilliohms(SagPoint point) =>
-      point.current <= 0 ? null : point.sagVolts / point.current * 1000;
 
   /// Fits a straight line and reports the slope per 30 days.
   ///

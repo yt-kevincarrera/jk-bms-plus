@@ -1,4 +1,5 @@
 import '../../data/database.dart';
+import '../../metrics/trip_learning.dart';
 import '../../metrics/trip_recorder.dart';
 
 /// Everything the end-of-ride sheet shows, from either of the two places a
@@ -31,6 +32,8 @@ class TripSummaryView {
     required this.whPerKmAfter,
     required this.representative,
     required this.conclusions,
+    this.energySource,
+    this.packResistanceMilliohms,
   });
 
   /// Null only for a ride that was never given a row, which happens when
@@ -65,6 +68,21 @@ class TripSummaryView {
   /// Null means nobody has been asked yet.
   final bool? representative;
 
+  /// How [energyOutWh] was arrived at, by name; null on a ride from before
+  /// that was recorded.
+  final String? energySource;
+
+  /// The pack's apparent resistance over the ride, when it could be read.
+  final double? packResistanceMilliohms;
+
+  /// Whether [energyOutWh] is a measurement. A ride the link dropped on is
+  /// stored with no energy on purpose, and "0.0 Wh" read as a ride that
+  /// cost nothing.
+  bool get energyMeasured => TripLearning.isMeasuredParts(
+    energySource: energySource,
+    energyOutWh: energyOutWh,
+  );
+
   /// What the ride taught the range estimate, for [TripLearnedSection].
   ///
   /// Not in the field list the sheet's first sections need, but the sheet
@@ -74,9 +92,10 @@ class TripSummaryView {
   /// one whose confidence was never recorded.
   final TripConclusions? conclusions;
 
-  /// Consumption over this ride. Null under 200 m, where it means nothing.
+  /// Consumption over this ride. Null under 200 m, where it means nothing,
+  /// and on a ride whose energy was never measured.
   double? get whPerKm {
-    if (distanceKm < 0.2) return null;
+    if (distanceKm < 0.2 || !energyMeasured) return null;
     final net = energyOutWh - energyInWh;
     return net <= 0 ? null : net / distanceKm;
   }
@@ -99,8 +118,6 @@ class TripSummaryView {
   double? get socPerKm =>
       distanceKm < 0.2 || socUsed <= 0 ? null : socUsed / distanceKm;
 
-  /// Voltage the pack dropped under load over the trip.
-  double get sagVolts => maxPackVoltage - minPackVoltage;
 
   factory TripSummaryView.fromOutcome(TripOutcome outcome, {int? tripId}) {
     final s = outcome.summary;
@@ -126,6 +143,8 @@ class TripSummaryView {
       // A ride that has only just ended has not been asked about yet.
       representative: null,
       conclusions: outcome.conclusions,
+      energySource: s.energySource.name,
+      packResistanceMilliohms: s.packResistanceMilliohms,
     );
   }
 
@@ -149,6 +168,8 @@ class TripSummaryView {
     whPerKmBefore: trip.whPerKmBefore,
     whPerKmAfter: trip.whPerKmAfter,
     representative: trip.representative,
+    energySource: trip.energySource,
+    packResistanceMilliohms: trip.packResistanceMilliohms,
     conclusions: TripConclusions.restore(
       whPerKmBefore: trip.whPerKmBefore,
       whPerKmAfter: trip.whPerKmAfter,

@@ -1,6 +1,8 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jk_bms/src/data/database.dart';
+import 'package:jk_bms/src/data/repository.dart';
 import 'package:jk_bms/src/metrics/maintenance.dart';
 
 void main() {
@@ -166,6 +168,51 @@ void main() {
       expect(within, hasLength(2));
       expect(within.first.at.toUtc(), DateTime.utc(2026, 5, 1));
       expect(within.last.at.toUtc(), DateTime.utc(2026, 6, 1));
+    });
+  });
+
+  group('a cell replacement starts the history again', () {
+    // The card used to say "history since the cell was replaced" and filter
+    // nothing: every long-term figure still read the old cells.
+    Future<void> addTest(DateTime at, double ah) => db.insertCapacityTest(
+      CapacityTestsCompanion.insert(
+        startedAt: at,
+        endedAt: Value(at.add(const Duration(hours: 3))),
+        startSoc: 100,
+        endSoc: 0,
+        startPackVoltage: 83,
+        endPackVoltage: 61,
+        measuredAh: ah,
+        measuredWh: ah * 72,
+        completed: const Value(true),
+        deviceId: const Value('AA:BB'),
+      ),
+    );
+
+    test('the capacity tests before it are not this pack any more', () async {
+      final repo = BmsRepository(database: db);
+      addTearDown(repo.dispose);
+      await addTest(DateTime.utc(2026, 3, 1), 31.0);
+      await log.add(
+        deviceId: 'AA:BB',
+        at: DateTime.utc(2026, 5, 12),
+        kind: MaintenanceKind.cellReplaced,
+      );
+      await addTest(DateTime.utc(2026, 6, 1), 39.0);
+
+      expect((await repo.historyStart('AA:BB'))!.toUtc(), DateTime.utc(2026, 5, 12));
+      final tests = await repo.currentPackCapacityTests('AA:BB');
+      expect(tests.map((t) => t.measuredAh), [39.0]);
+      // The full list is still there for the record.
+      expect(await repo.capacityTests('AA:BB'), hasLength(2));
+    });
+
+    test('with no replacement, nothing is cut', () async {
+      final repo = BmsRepository(database: db);
+      addTearDown(repo.dispose);
+      await addTest(DateTime.utc(2026, 3, 1), 31.0);
+      expect(await repo.historyStart('AA:BB'), isNull);
+      expect(await repo.currentPackCapacityTests('AA:BB'), hasLength(1));
     });
   });
 }

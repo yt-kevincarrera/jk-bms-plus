@@ -350,6 +350,7 @@ class BackupCodec {
     // exception nobody actually called out.
     'representative': t.representative,
     'summarySeen': t.summarySeen,
+    'packResistanceMilliohms': t.packResistanceMilliohms,
   };
 
   static Map<String, Object?> _point(TripPoint p) => {
@@ -493,6 +494,7 @@ class BackupCodec {
         // learning as if the rider had called it an exception.
         representative: Value(t['representative'] as bool?),
         summarySeen: Value(t['summarySeen'] as bool? ?? false),
+        packResistanceMilliohms: Value(_dn(t['packResistanceMilliohms'])),
       );
 
   static TripPointsCompanion _pointCompanion(

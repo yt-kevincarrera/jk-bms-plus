@@ -2085,7 +2085,9 @@ class BmsService {
       bestMeasuredCapacityAh = null;
       return;
     }
-    final tests = await repo.capacityTests(device);
+    // Since the last cell replacement: a test on the old cells measured a
+    // different pack.
+    final tests = await repo.currentPackCapacityTests(device);
     double? best;
     // The one trust rule every capacity figure uses: a measurement with
     // minutes missing counts low, one charged in the middle counts two
@@ -3396,7 +3398,7 @@ class BmsService {
     final device = activeDeviceId;
     if (repo == null || device == null) return 0;
 
-    final readings = await repo.allSnapshots(device);
+    final readings = await repo.currentPackSnapshots(device);
     if (readings.length < 20) return 0;
 
     // The chemistry is judged on the stored history as well as this

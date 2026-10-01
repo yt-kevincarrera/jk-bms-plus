@@ -1,27 +1,31 @@
 import '../data/database.dart';
 import 'maintenance.dart';
 
-/// Where a maintenance event sits on a chart whose x axis is the point index.
+/// Where a maintenance event sits on a trend chart.
 class ChartMarker {
   const ChartMarker({required this.x, required this.kind, required this.at});
 
-  /// Position along the x axis, interpolated between the two readings the
-  /// event falls between. Fractional on purpose: work done midway between two
-  /// measurements belongs midway between them, not snapped onto one.
+  /// Position along the x axis: days since the chart's first point. See
+  /// [ChartMarkers.dayOf].
   final double x;
 
   final MaintenanceKind kind;
   final DateTime at;
 }
 
-/// Places maintenance events onto a series plotted by index rather than time.
+/// Places maintenance events onto a trend chart whose x axis is time.
 ///
-/// The trend charts plot point 0, 1, 2 along the x axis, because the readings
-/// are irregular and a real time axis would leave most of the chart empty. That
-/// makes putting a dated event on one a mapping problem: the date has to be
-/// turned into a position between whichever two points bracket it.
+/// The trend charts used to plot point 0, 1, 2 along the x axis, which drew
+/// three rides on consecutive days and three rides a month apart as the same
+/// line, so a gap of a season looked like no time at all and a slope per
+/// month could not be read off the picture. They now plot days since the
+/// first point, and an event is placed the same way.
 class ChartMarkers {
   const ChartMarkers();
+
+  /// Days from [first] to [at], fractional: the x of a point or an event.
+  static double dayOf(DateTime first, DateTime at) =>
+      at.difference(first).inMinutes / (24 * 60);
 
   /// Returns a marker per event that falls inside the series.
   ///
@@ -45,34 +49,16 @@ class ChartMarkers {
     for (final e in events) {
       final at = e.at;
       if (at.isBefore(first) || at.isAfter(last)) continue;
-
-      final x = _interpolate(pointDates, at);
-      if (x == null) continue;
       out.add(
-        ChartMarker(x: x, kind: MaintenanceKind.parse(e.kind), at: at),
+        ChartMarker(
+          x: dayOf(first, at),
+          kind: MaintenanceKind.parse(e.kind),
+          at: at,
+        ),
       );
     }
 
     out.sort((a, b) => a.x.compareTo(b.x));
     return out;
-  }
-
-  static double? _interpolate(List<DateTime> dates, DateTime at) {
-    for (var i = 0; i < dates.length - 1; i++) {
-      final a = dates[i];
-      final b = dates[i + 1];
-      if (at.isBefore(a) || at.isAfter(b)) continue;
-
-      final span = b.difference(a).inMilliseconds;
-      // Two readings at the same instant. Anything between them is that point.
-      if (span <= 0) return i.toDouble();
-      final into = at.difference(a).inMilliseconds;
-      return i + into / span;
-    }
-    // Exactly on the last point.
-    if (!at.isBefore(dates.last) && !at.isAfter(dates.last)) {
-      return (dates.length - 1).toDouble();
-    }
-    return null;
   }
 }

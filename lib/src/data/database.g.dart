@@ -1168,6 +1168,17 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _packResistanceMilliohmsMeta =
+      const VerificationMeta('packResistanceMilliohms');
+  @override
+  late final GeneratedColumn<double> packResistanceMilliohms =
+      GeneratedColumn<double>(
+        'pack_resistance_milliohms',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1200,6 +1211,7 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
     energySource,
     representative,
     summarySeen,
+    packResistanceMilliohms,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1470,6 +1482,15 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
         ),
       );
     }
+    if (data.containsKey('pack_resistance_milliohms')) {
+      context.handle(
+        _packResistanceMilliohmsMeta,
+        packResistanceMilliohms.isAcceptableOrUnknown(
+          data['pack_resistance_milliohms']!,
+          _packResistanceMilliohmsMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1599,6 +1620,10 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
         DriftSqlType.bool,
         data['${effectivePrefix}summary_seen'],
       )!,
+      packResistanceMilliohms: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}pack_resistance_milliohms'],
+      ),
     );
   }
 
@@ -1694,6 +1719,12 @@ class Trip extends DataClass implements Insertable<Trip> {
   /// button and by nothing else, so a ride that closed itself was stored with
   /// its conclusions and never shown to anybody.
   final bool summarySeen;
+
+  /// The pack's apparent resistance over the ride, in milliohms: the median
+  /// slope of voltage against current over the stretches where the current
+  /// swung. Null when the ride had too few such stretches to say, and on
+  /// every ride from before it was measured. See [PackResistance].
+  final double? packResistanceMilliohms;
   const Trip({
     required this.id,
     required this.startedAt,
@@ -1725,6 +1756,7 @@ class Trip extends DataClass implements Insertable<Trip> {
     this.energySource,
     this.representative,
     required this.summarySeen,
+    this.packResistanceMilliohms,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1779,6 +1811,11 @@ class Trip extends DataClass implements Insertable<Trip> {
       map['representative'] = Variable<bool>(representative);
     }
     map['summary_seen'] = Variable<bool>(summarySeen);
+    if (!nullToAbsent || packResistanceMilliohms != null) {
+      map['pack_resistance_milliohms'] = Variable<double>(
+        packResistanceMilliohms,
+      );
+    }
     return map;
   }
 
@@ -1834,6 +1871,9 @@ class Trip extends DataClass implements Insertable<Trip> {
           ? const Value.absent()
           : Value(representative),
       summarySeen: Value(summarySeen),
+      packResistanceMilliohms: packResistanceMilliohms == null && nullToAbsent
+          ? const Value.absent()
+          : Value(packResistanceMilliohms),
     );
   }
 
@@ -1875,6 +1915,9 @@ class Trip extends DataClass implements Insertable<Trip> {
       energySource: serializer.fromJson<String?>(json['energySource']),
       representative: serializer.fromJson<bool?>(json['representative']),
       summarySeen: serializer.fromJson<bool>(json['summarySeen']),
+      packResistanceMilliohms: serializer.fromJson<double?>(
+        json['packResistanceMilliohms'],
+      ),
     );
   }
   @override
@@ -1911,6 +1954,9 @@ class Trip extends DataClass implements Insertable<Trip> {
       'energySource': serializer.toJson<String?>(energySource),
       'representative': serializer.toJson<bool?>(representative),
       'summarySeen': serializer.toJson<bool>(summarySeen),
+      'packResistanceMilliohms': serializer.toJson<double?>(
+        packResistanceMilliohms,
+      ),
     };
   }
 
@@ -1945,6 +1991,7 @@ class Trip extends DataClass implements Insertable<Trip> {
     Value<String?> energySource = const Value.absent(),
     Value<bool?> representative = const Value.absent(),
     bool? summarySeen,
+    Value<double?> packResistanceMilliohms = const Value.absent(),
   }) => Trip(
     id: id ?? this.id,
     startedAt: startedAt ?? this.startedAt,
@@ -1982,6 +2029,9 @@ class Trip extends DataClass implements Insertable<Trip> {
         ? representative.value
         : this.representative,
     summarySeen: summarySeen ?? this.summarySeen,
+    packResistanceMilliohms: packResistanceMilliohms.present
+        ? packResistanceMilliohms.value
+        : this.packResistanceMilliohms,
   );
   Trip copyWithCompanion(TripsCompanion data) {
     return Trip(
@@ -2051,6 +2101,9 @@ class Trip extends DataClass implements Insertable<Trip> {
       summarySeen: data.summarySeen.present
           ? data.summarySeen.value
           : this.summarySeen,
+      packResistanceMilliohms: data.packResistanceMilliohms.present
+          ? data.packResistanceMilliohms.value
+          : this.packResistanceMilliohms,
     );
   }
 
@@ -2086,7 +2139,8 @@ class Trip extends DataClass implements Insertable<Trip> {
           ..write('ahOut: $ahOut, ')
           ..write('energySource: $energySource, ')
           ..write('representative: $representative, ')
-          ..write('summarySeen: $summarySeen')
+          ..write('summarySeen: $summarySeen, ')
+          ..write('packResistanceMilliohms: $packResistanceMilliohms')
           ..write(')'))
         .toString();
   }
@@ -2123,6 +2177,7 @@ class Trip extends DataClass implements Insertable<Trip> {
     energySource,
     representative,
     summarySeen,
+    packResistanceMilliohms,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -2157,7 +2212,8 @@ class Trip extends DataClass implements Insertable<Trip> {
           other.ahOut == this.ahOut &&
           other.energySource == this.energySource &&
           other.representative == this.representative &&
-          other.summarySeen == this.summarySeen);
+          other.summarySeen == this.summarySeen &&
+          other.packResistanceMilliohms == this.packResistanceMilliohms);
 }
 
 class TripsCompanion extends UpdateCompanion<Trip> {
@@ -2191,6 +2247,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
   final Value<String?> energySource;
   final Value<bool?> representative;
   final Value<bool> summarySeen;
+  final Value<double?> packResistanceMilliohms;
   const TripsCompanion({
     this.id = const Value.absent(),
     this.startedAt = const Value.absent(),
@@ -2222,6 +2279,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     this.energySource = const Value.absent(),
     this.representative = const Value.absent(),
     this.summarySeen = const Value.absent(),
+    this.packResistanceMilliohms = const Value.absent(),
   });
   TripsCompanion.insert({
     this.id = const Value.absent(),
@@ -2254,6 +2312,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     this.energySource = const Value.absent(),
     this.representative = const Value.absent(),
     this.summarySeen = const Value.absent(),
+    this.packResistanceMilliohms = const Value.absent(),
   }) : startedAt = Value(startedAt),
        endedAt = Value(endedAt),
        distanceKm = Value(distanceKm),
@@ -2301,6 +2360,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     Expression<String>? energySource,
     Expression<bool>? representative,
     Expression<bool>? summarySeen,
+    Expression<double>? packResistanceMilliohms,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -2334,6 +2394,8 @@ class TripsCompanion extends UpdateCompanion<Trip> {
       if (energySource != null) 'energy_source': energySource,
       if (representative != null) 'representative': representative,
       if (summarySeen != null) 'summary_seen': summarySeen,
+      if (packResistanceMilliohms != null)
+        'pack_resistance_milliohms': packResistanceMilliohms,
     });
   }
 
@@ -2368,6 +2430,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     Value<String?>? energySource,
     Value<bool?>? representative,
     Value<bool>? summarySeen,
+    Value<double?>? packResistanceMilliohms,
   }) {
     return TripsCompanion(
       id: id ?? this.id,
@@ -2400,6 +2463,8 @@ class TripsCompanion extends UpdateCompanion<Trip> {
       energySource: energySource ?? this.energySource,
       representative: representative ?? this.representative,
       summarySeen: summarySeen ?? this.summarySeen,
+      packResistanceMilliohms:
+          packResistanceMilliohms ?? this.packResistanceMilliohms,
     );
   }
 
@@ -2498,6 +2563,11 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     if (summarySeen.present) {
       map['summary_seen'] = Variable<bool>(summarySeen.value);
     }
+    if (packResistanceMilliohms.present) {
+      map['pack_resistance_milliohms'] = Variable<double>(
+        packResistanceMilliohms.value,
+      );
+    }
     return map;
   }
 
@@ -2533,7 +2603,8 @@ class TripsCompanion extends UpdateCompanion<Trip> {
           ..write('ahOut: $ahOut, ')
           ..write('energySource: $energySource, ')
           ..write('representative: $representative, ')
-          ..write('summarySeen: $summarySeen')
+          ..write('summarySeen: $summarySeen, ')
+          ..write('packResistanceMilliohms: $packResistanceMilliohms')
           ..write(')'))
         .toString();
   }
@@ -7689,6 +7760,7 @@ typedef $$TripsTableCreateCompanionBuilder =
       Value<String?> energySource,
       Value<bool?> representative,
       Value<bool> summarySeen,
+      Value<double?> packResistanceMilliohms,
     });
 typedef $$TripsTableUpdateCompanionBuilder =
     TripsCompanion Function({
@@ -7722,6 +7794,7 @@ typedef $$TripsTableUpdateCompanionBuilder =
       Value<String?> energySource,
       Value<bool?> representative,
       Value<bool> summarySeen,
+      Value<double?> packResistanceMilliohms,
     });
 
 final class $$TripsTableReferences
@@ -7902,6 +7975,11 @@ class $$TripsTableFilterComposer extends Composer<_$AppDatabase, $TripsTable> {
 
   ColumnFilters<bool> get summarySeen => $composableBuilder(
     column: $table.summarySeen,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get packResistanceMilliohms => $composableBuilder(
+    column: $table.packResistanceMilliohms,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8089,6 +8167,11 @@ class $$TripsTableOrderingComposer
     column: $table.summarySeen,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get packResistanceMilliohms => $composableBuilder(
+    column: $table.packResistanceMilliohms,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$TripsTableAnnotationComposer
@@ -8226,6 +8309,11 @@ class $$TripsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<double> get packResistanceMilliohms => $composableBuilder(
+    column: $table.packResistanceMilliohms,
+    builder: (column) => column,
+  );
+
   Expression<T> tripPointsRefs<T extends Object>(
     Expression<T> Function($$TripPointsTableAnnotationComposer a) f,
   ) {
@@ -8310,6 +8398,7 @@ class $$TripsTableTableManager
                 Value<String?> energySource = const Value.absent(),
                 Value<bool?> representative = const Value.absent(),
                 Value<bool> summarySeen = const Value.absent(),
+                Value<double?> packResistanceMilliohms = const Value.absent(),
               }) => TripsCompanion(
                 id: id,
                 startedAt: startedAt,
@@ -8341,6 +8430,7 @@ class $$TripsTableTableManager
                 energySource: energySource,
                 representative: representative,
                 summarySeen: summarySeen,
+                packResistanceMilliohms: packResistanceMilliohms,
               ),
           createCompanionCallback:
               ({
@@ -8374,6 +8464,7 @@ class $$TripsTableTableManager
                 Value<String?> energySource = const Value.absent(),
                 Value<bool?> representative = const Value.absent(),
                 Value<bool> summarySeen = const Value.absent(),
+                Value<double?> packResistanceMilliohms = const Value.absent(),
               }) => TripsCompanion.insert(
                 id: id,
                 startedAt: startedAt,
@@ -8405,6 +8496,7 @@ class $$TripsTableTableManager
                 energySource: energySource,
                 representative: representative,
                 summarySeen: summarySeen,
+                packResistanceMilliohms: packResistanceMilliohms,
               ),
           withReferenceMapper: (p0) => p0
               .map(

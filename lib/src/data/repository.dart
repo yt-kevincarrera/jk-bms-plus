@@ -8,6 +8,7 @@ import '../pack/pack_baseline.dart';
 import '../inspection/inspection_series.dart';
 import '../metrics/capacity_cycle_detector.dart';
 import '../metrics/capacity_endpoints.dart';
+import '../metrics/maintenance.dart';
 import '../metrics/trip_energy_repair.dart';
 import '../metrics/trip_learning.dart';
 import '../metrics/trip_recorder.dart';
@@ -193,6 +194,7 @@ class BmsRepository {
         descentM: Value(summary.descentM),
         ahOut: Value(summary.ahOut),
         energySource: Value(summary.energySource.name),
+        packResistanceMilliohms: Value(summary.packResistanceMilliohms),
         whPerKmBefore: Value(conclusions?.whPerKmBefore),
         whPerKmAfter: Value(conclusions?.whPerKmAfter),
         learnedKm: Value(conclusions?.learnedKm),
@@ -739,6 +741,39 @@ class BmsRepository {
         DateTime.now().toUtc().subtract(Duration(days: days)),
         DateTime.now().toUtc(),
       );
+
+  /// When the history that still describes this pack began. See
+  /// [MaintenanceLog.historyStart].
+  Future<DateTime?> historyStart(String deviceId) async =>
+      MaintenanceLog.historyStart(await db.maintenanceFor(deviceId));
+
+  /// [allSnapshots], from no earlier than the last cell replacement.
+  ///
+  /// The maintenance card used to say the history ran from the replacement
+  /// while every figure behind it still read the readings of a pack that no
+  /// longer exists.
+  Future<List<Snapshot>> currentPackSnapshots(
+    String deviceId, {
+    int days = 180,
+  }) async {
+    final now = DateTime.now().toUtc();
+    var from = now.subtract(Duration(days: days));
+    final since = await historyStart(deviceId);
+    if (since != null && since.isAfter(from)) from = since;
+    return db.snapshotsBetween(deviceId, from, now);
+  }
+
+  /// The capacity tests run since the last cell replacement: the ones that
+  /// measured this pack as it now is.
+  Future<List<CapacityTest>> currentPackCapacityTests(String deviceId) async {
+    final tests = await capacityTests(deviceId);
+    final since = await historyStart(deviceId);
+    if (since == null) return tests;
+    return [
+      for (final t in tests)
+        if (!t.startedAt.isBefore(since)) t,
+    ];
+  }
 
   // --- Packs ---
 

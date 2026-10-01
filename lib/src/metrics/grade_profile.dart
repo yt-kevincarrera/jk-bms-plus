@@ -7,6 +7,15 @@ import 'dart:math' as math;
 /// either of them having to know this file exists.
 typedef GradeSample = ({double latitude, double longitude, double altitudeM});
 
+/// A stored fix, with what the recorder judged its distance by.
+typedef GradeFix = ({
+  double latitude,
+  double longitude,
+  double altitudeM,
+  DateTime at,
+  double speedKmh,
+});
+
 /// How far a ride went uphill, downhill, and along the flat.
 ///
 /// This replaces total climb and descent, which were two numbers nobody could
@@ -75,7 +84,77 @@ GradeProfile profileOf(
     along.add(travelled);
     altitude.add(samples[i].altitudeM);
   }
-  if (travelled <= 0) return GradeProfile.empty;
+  return _split(along, altitude, binMetres: binMetres, flatGrade: flatGrade);
+}
+
+/// [profileOf] for a stored track, counting distance the way the recorder
+/// did, so the three figures add up to the ride's distance tile.
+///
+/// The plain version summed every step between fixes, including the jitter
+/// of a phone standing still and straight lines across GPS gaps, all of which
+/// the recorder leaves out: the split added up to more than the ride. Here a
+/// step counts only where the recorder counted it (under [maxGap], at least
+/// 1.5 m and 1.5 km/h), and the altitude is first put through a running
+/// median of five fixes, which takes out the single-fix spikes a phone's
+/// altitude is prone to before a grade is read from it.
+GradeProfile profileOfTrack(
+  List<GradeFix> fixes, {
+  double binMetres = 100,
+  double flatGrade = 0.015,
+  Duration maxGap = const Duration(seconds: 30),
+}) {
+  if (fixes.length < 2) return GradeProfile.empty;
+  final smoothed = _runningMedian([for (final f in fixes) f.altitudeM], 5);
+  final along = <double>[0];
+  final altitude = <double>[smoothed.first];
+  var travelled = 0.0;
+  for (var i = 1; i < fixes.length; i++) {
+    final a = fixes[i - 1];
+    final b = fixes[i];
+    final dt = b.at.difference(a.at);
+    final metres = _metresBetween(
+      (latitude: a.latitude, longitude: a.longitude, altitudeM: 0),
+      (latitude: b.latitude, longitude: b.longitude, altitudeM: 0),
+    );
+    final counted = dt > Duration.zero &&
+        dt <= maxGap &&
+        metres >= 1.5 &&
+        b.speedKmh >= 1.5;
+    if (!counted) {
+      // No distance, but the altitude moves on to where the ride resumed,
+      // so a gap is not read later as a cliff.
+      altitude[altitude.length - 1] = smoothed[i];
+      continue;
+    }
+    travelled += metres;
+    along.add(travelled);
+    altitude.add(smoothed[i]);
+  }
+  return _split(along, altitude, binMetres: binMetres, flatGrade: flatGrade);
+}
+
+List<double> _runningMedian(List<double> v, int width) {
+  final half = width ~/ 2;
+  return [
+    for (var i = 0; i < v.length; i++)
+      () {
+        final lo = math.max(0, i - half);
+        final hi = math.min(v.length, i + half + 1);
+        final w = v.sublist(lo, hi)..sort();
+        final m = w.length ~/ 2;
+        return w.length.isOdd ? w[m] : (w[m - 1] + w[m]) / 2;
+      }(),
+  ];
+}
+
+GradeProfile _split(
+  List<double> along,
+  List<double> altitude, {
+  required double binMetres,
+  required double flatGrade,
+}) {
+  final travelled = along.last;
+  if (along.length < 2 || travelled <= 0) return GradeProfile.empty;
 
   var cursor = 1;
   double altitudeAt(double target) {

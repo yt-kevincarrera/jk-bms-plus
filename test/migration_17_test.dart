@@ -5,7 +5,9 @@ import 'package:jk_bms/src/data/database.dart';
 import 'package:jk_bms/src/metrics/capacity_endpoints.dart';
 import 'package:sqlite3/sqlite3.dart';
 
-/// The two tables the from < 17 step touches, as version 16 shipped them.
+/// The tables the steps from 16 touch, as version 16 shipped them: the two
+/// the from < 17 step changes, and trips, which the from < 18 step adds a
+/// column to (added here when that step arrived).
 /// Written out longhand, like the older schemas, so the step runs against
 /// what is on the phone rather than against the current classes.
 const _v16Schema = [
@@ -41,6 +43,39 @@ const _v16Schema = [
     gap_seconds INTEGER NOT NULL DEFAULT 0,
     note TEXT NOT NULL DEFAULT '',
     device_id TEXT
+  )''',
+  '''
+  CREATE TABLE trips (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    started_at INTEGER NOT NULL,
+    ended_at INTEGER NOT NULL,
+    distance_km REAL NOT NULL,
+    moving_seconds INTEGER NOT NULL,
+    total_seconds INTEGER NOT NULL,
+    max_speed_kmh REAL NOT NULL,
+    energy_out_wh REAL NOT NULL,
+    energy_in_wh REAL NOT NULL,
+    start_soc REAL NOT NULL,
+    end_soc REAL NOT NULL,
+    min_pack_voltage REAL NOT NULL,
+    max_pack_voltage REAL NOT NULL,
+    max_discharge_current REAL NOT NULL,
+    max_temperature REAL,
+    max_delta_volts REAL NOT NULL,
+    climb_m REAL NOT NULL,
+    descent_m REAL NOT NULL,
+    note TEXT NOT NULL DEFAULT '',
+    demo INTEGER NOT NULL DEFAULT 0 CHECK (demo IN (0, 1)),
+    device_id TEXT,
+    wh_per_km_before REAL,
+    wh_per_km_after REAL,
+    learned_km REAL,
+    range_km_at_end REAL,
+    confidence TEXT,
+    ah_out REAL,
+    energy_source TEXT,
+    representative INTEGER CHECK (representative IN (0, 1)),
+    summary_seen INTEGER NOT NULL DEFAULT 0 CHECK (summary_seen IN (0, 1))
   )''',
 ];
 
