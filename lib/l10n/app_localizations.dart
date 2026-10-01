@@ -8735,6 +8735,270 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Exportar recorrido (GPX)'**
   String get tripExportGpx;
+
+  /// No description provided for @settingsGroupCell.
+  ///
+  /// In es, this message translates to:
+  /// **'Protecciones de celda'**
+  String get settingsGroupCell;
+
+  /// No description provided for @settingsGroupCurrent.
+  ///
+  /// In es, this message translates to:
+  /// **'Corriente'**
+  String get settingsGroupCurrent;
+
+  /// No description provided for @settingsGroupTemperature.
+  ///
+  /// In es, this message translates to:
+  /// **'Temperatura'**
+  String get settingsGroupTemperature;
+
+  /// No description provided for @settingsGroupBalance.
+  ///
+  /// In es, this message translates to:
+  /// **'Balanceo'**
+  String get settingsGroupBalance;
+
+  /// No description provided for @settingsGroupOther.
+  ///
+  /// In es, this message translates to:
+  /// **'Otros'**
+  String get settingsGroupOther;
+
+  /// No description provided for @settingSmartSleep.
+  ///
+  /// In es, this message translates to:
+  /// **'Voltaje de reposo inteligente'**
+  String get settingSmartSleep;
+
+  /// No description provided for @settingRequestCharge.
+  ///
+  /// In es, this message translates to:
+  /// **'Voltaje de carga pedido por celda'**
+  String get settingRequestCharge;
+
+  /// No description provided for @settingRequestFloat.
+  ///
+  /// In es, this message translates to:
+  /// **'Voltaje de flotación pedido por celda'**
+  String get settingRequestFloat;
+
+  /// No description provided for @settingChargeOcpDelay.
+  ///
+  /// In es, this message translates to:
+  /// **'Retardo de sobrecorriente en carga'**
+  String get settingChargeOcpDelay;
+
+  /// No description provided for @settingChargeOcpRecovery.
+  ///
+  /// In es, this message translates to:
+  /// **'Recuperación de sobrecorriente en carga'**
+  String get settingChargeOcpRecovery;
+
+  /// No description provided for @settingDischargeOcpDelay.
+  ///
+  /// In es, this message translates to:
+  /// **'Retardo de sobrecorriente en descarga'**
+  String get settingDischargeOcpDelay;
+
+  /// No description provided for @settingDischargeOcpRecovery.
+  ///
+  /// In es, this message translates to:
+  /// **'Recuperación de sobrecorriente en descarga'**
+  String get settingDischargeOcpRecovery;
+
+  /// No description provided for @settingScpDelay.
+  ///
+  /// In es, this message translates to:
+  /// **'Retardo de cortocircuito'**
+  String get settingScpDelay;
+
+  /// No description provided for @settingScpRecovery.
+  ///
+  /// In es, this message translates to:
+  /// **'Recuperación de cortocircuito'**
+  String get settingScpRecovery;
+
+  /// No description provided for @settingChargeOtpRecovery.
+  ///
+  /// In es, this message translates to:
+  /// **'Recuperación de sobretemperatura en carga'**
+  String get settingChargeOtpRecovery;
+
+  /// No description provided for @settingDischargeOtpRecovery.
+  ///
+  /// In es, this message translates to:
+  /// **'Recuperación de sobretemperatura en descarga'**
+  String get settingDischargeOtpRecovery;
+
+  /// No description provided for @settingChargeUtpRecovery.
+  ///
+  /// In es, this message translates to:
+  /// **'Recuperación de subtemperatura en carga'**
+  String get settingChargeUtpRecovery;
+
+  /// No description provided for @settingMosfetOtpRecovery.
+  ///
+  /// In es, this message translates to:
+  /// **'Recuperación de sobretemperatura de MOSFET'**
+  String get settingMosfetOtpRecovery;
+
+  /// No description provided for @settingWireResistances.
+  ///
+  /// In es, this message translates to:
+  /// **'Resistencia de los cables de balanceo'**
+  String get settingWireResistances;
+
+  /// No description provided for @settingWireResistancesCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} celdas'**
+  String settingWireResistancesCount(int count);
+
+  /// No description provided for @settingWireResistancesHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que el BMS tiene configurado para compensar el cable de cada celda, en miliohmios. Es un ajuste, no una medición de la celda.'**
+  String get settingWireResistancesHint;
+
+  /// No description provided for @systemSetupPasscode.
+  ///
+  /// In es, this message translates to:
+  /// **'Contraseña de ajustes que entrega el BMS'**
+  String get systemSetupPasscode;
+
+  /// No description provided for @bmsStateTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Estado del BMS'**
+  String get bmsStateTitle;
+
+  /// No description provided for @bmsStateIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Tal como lo informa el BMS en cada lectura.'**
+  String get bmsStateIntro;
+
+  /// No description provided for @bmsStatePrecharge.
+  ///
+  /// In es, this message translates to:
+  /// **'Precarga'**
+  String get bmsStatePrecharge;
+
+  /// No description provided for @bmsStateChargerPlugged.
+  ///
+  /// In es, this message translates to:
+  /// **'Ve un cargador conectado'**
+  String get bmsStateChargerPlugged;
+
+  /// No description provided for @bmsStateChargeStatus.
+  ///
+  /// In es, this message translates to:
+  /// **'Fase de carga'**
+  String get bmsStateChargeStatus;
+
+  /// No description provided for @bmsStateBatteryType.
+  ///
+  /// In es, this message translates to:
+  /// **'Tipo de batería configurado'**
+  String get bmsStateBatteryType;
+
+  /// No description provided for @bmsStateBatteryTypeHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Es lo que alguien eligió al configurar el BMS, no algo que el BMS mida en las celdas.'**
+  String get bmsStateBatteryTypeHint;
+
+  /// No description provided for @bmsStateRuntime.
+  ///
+  /// In es, this message translates to:
+  /// **'Tiempo de funcionamiento total'**
+  String get bmsStateRuntime;
+
+  /// No description provided for @bmsStateEnabledCells.
+  ///
+  /// In es, this message translates to:
+  /// **'Celdas habilitadas'**
+  String get bmsStateEnabledCells;
+
+  /// No description provided for @bmsStateCycleCapacity.
+  ///
+  /// In es, this message translates to:
+  /// **'Carga total que pasó por el pack'**
+  String get bmsStateCycleCapacity;
+
+  /// No description provided for @bmsStateCycleCapacityHint.
+  ///
+  /// In es, this message translates to:
+  /// **'El contador acumulado del propio BMS. Dividido por la capacidad da los ciclos completos reales.'**
+  String get bmsStateCycleCapacityHint;
+
+  /// No description provided for @chargeStatusBulk.
+  ///
+  /// In es, this message translates to:
+  /// **'corriente constante'**
+  String get chargeStatusBulk;
+
+  /// No description provided for @chargeStatusAbsorption.
+  ///
+  /// In es, this message translates to:
+  /// **'absorción'**
+  String get chargeStatusAbsorption;
+
+  /// No description provided for @chargeStatusFloat.
+  ///
+  /// In es, this message translates to:
+  /// **'flotación'**
+  String get chargeStatusFloat;
+
+  /// No description provided for @batteryTypeLfp.
+  ///
+  /// In es, this message translates to:
+  /// **'LFP (LiFePO4)'**
+  String get batteryTypeLfp;
+
+  /// No description provided for @batteryTypeLiIon.
+  ///
+  /// In es, this message translates to:
+  /// **'Litio-ion'**
+  String get batteryTypeLiIon;
+
+  /// No description provided for @batteryTypeLto.
+  ///
+  /// In es, this message translates to:
+  /// **'LTO'**
+  String get batteryTypeLto;
+
+  /// No description provided for @bmsUnknownCode.
+  ///
+  /// In es, this message translates to:
+  /// **'código {code}'**
+  String bmsUnknownCode(String code);
+
+  /// No description provided for @nowChargerByBms.
+  ///
+  /// In es, this message translates to:
+  /// **'Según el BMS'**
+  String get nowChargerByBms;
+
+  /// No description provided for @nowChargerSeen.
+  ///
+  /// In es, this message translates to:
+  /// **'ve el cargador conectado'**
+  String get nowChargerSeen;
+
+  /// No description provided for @nowChargerNotSeen.
+  ///
+  /// In es, this message translates to:
+  /// **'no ve ningún cargador'**
+  String get nowChargerNotSeen;
+
+  /// No description provided for @nowChargePhase.
+  ///
+  /// In es, this message translates to:
+  /// **'fase: {phase}'**
+  String nowChargePhase(String phase);
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

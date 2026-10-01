@@ -5244,4 +5244,146 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get tripExportGpx => 'Export track (GPX)';
+
+  @override
+  String get settingsGroupCell => 'Cell protection';
+
+  @override
+  String get settingsGroupCurrent => 'Current';
+
+  @override
+  String get settingsGroupTemperature => 'Temperature';
+
+  @override
+  String get settingsGroupBalance => 'Balancing';
+
+  @override
+  String get settingsGroupOther => 'Other';
+
+  @override
+  String get settingSmartSleep => 'Smart sleep voltage';
+
+  @override
+  String get settingRequestCharge => 'Requested charge voltage per cell';
+
+  @override
+  String get settingRequestFloat => 'Requested float voltage per cell';
+
+  @override
+  String get settingChargeOcpDelay => 'Charge overcurrent delay';
+
+  @override
+  String get settingChargeOcpRecovery => 'Charge overcurrent recovery';
+
+  @override
+  String get settingDischargeOcpDelay => 'Discharge overcurrent delay';
+
+  @override
+  String get settingDischargeOcpRecovery => 'Discharge overcurrent recovery';
+
+  @override
+  String get settingScpDelay => 'Short-circuit delay';
+
+  @override
+  String get settingScpRecovery => 'Short-circuit recovery';
+
+  @override
+  String get settingChargeOtpRecovery => 'Charge overtemperature recovery';
+
+  @override
+  String get settingDischargeOtpRecovery =>
+      'Discharge overtemperature recovery';
+
+  @override
+  String get settingChargeUtpRecovery => 'Charge undertemperature recovery';
+
+  @override
+  String get settingMosfetOtpRecovery => 'MOSFET overtemperature recovery';
+
+  @override
+  String get settingWireResistances => 'Balance lead resistance';
+
+  @override
+  String settingWireResistancesCount(int count) {
+    return '$count cells';
+  }
+
+  @override
+  String get settingWireResistancesHint =>
+      'What the BMS is configured to compensate for each cell\'s lead, in milliohms. A setting, not a measurement of the cell.';
+
+  @override
+  String get systemSetupPasscode => 'Settings passcode the BMS hands out';
+
+  @override
+  String get bmsStateTitle => 'BMS state';
+
+  @override
+  String get bmsStateIntro => 'As the BMS reports it in every reading.';
+
+  @override
+  String get bmsStatePrecharge => 'Precharge';
+
+  @override
+  String get bmsStateChargerPlugged => 'Sees a charger plugged in';
+
+  @override
+  String get bmsStateChargeStatus => 'Charge phase';
+
+  @override
+  String get bmsStateBatteryType => 'Battery type configured';
+
+  @override
+  String get bmsStateBatteryTypeHint =>
+      'What somebody chose when setting the BMS up, not something it measures in the cells.';
+
+  @override
+  String get bmsStateRuntime => 'Total running time';
+
+  @override
+  String get bmsStateEnabledCells => 'Cells enabled';
+
+  @override
+  String get bmsStateCycleCapacity => 'Total charge through the pack';
+
+  @override
+  String get bmsStateCycleCapacityHint =>
+      'The BMS\'s own running total. Divided by the capacity it gives the real number of full cycles.';
+
+  @override
+  String get chargeStatusBulk => 'bulk';
+
+  @override
+  String get chargeStatusAbsorption => 'absorption';
+
+  @override
+  String get chargeStatusFloat => 'float';
+
+  @override
+  String get batteryTypeLfp => 'LFP (LiFePO4)';
+
+  @override
+  String get batteryTypeLiIon => 'Li-ion';
+
+  @override
+  String get batteryTypeLto => 'LTO';
+
+  @override
+  String bmsUnknownCode(String code) {
+    return 'code $code';
+  }
+
+  @override
+  String get nowChargerByBms => 'According to the BMS';
+
+  @override
+  String get nowChargerSeen => 'it sees the charger';
+
+  @override
+  String get nowChargerNotSeen => 'it sees no charger';
+
+  @override
+  String nowChargePhase(String phase) {
+    return 'phase: $phase';
+  }
 }

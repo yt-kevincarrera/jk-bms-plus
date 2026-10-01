@@ -5267,4 +5267,152 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get tripExportGpx => 'Exportar recorrido (GPX)';
+
+  @override
+  String get settingsGroupCell => 'Protecciones de celda';
+
+  @override
+  String get settingsGroupCurrent => 'Corriente';
+
+  @override
+  String get settingsGroupTemperature => 'Temperatura';
+
+  @override
+  String get settingsGroupBalance => 'Balanceo';
+
+  @override
+  String get settingsGroupOther => 'Otros';
+
+  @override
+  String get settingSmartSleep => 'Voltaje de reposo inteligente';
+
+  @override
+  String get settingRequestCharge => 'Voltaje de carga pedido por celda';
+
+  @override
+  String get settingRequestFloat => 'Voltaje de flotación pedido por celda';
+
+  @override
+  String get settingChargeOcpDelay => 'Retardo de sobrecorriente en carga';
+
+  @override
+  String get settingChargeOcpRecovery =>
+      'Recuperación de sobrecorriente en carga';
+
+  @override
+  String get settingDischargeOcpDelay =>
+      'Retardo de sobrecorriente en descarga';
+
+  @override
+  String get settingDischargeOcpRecovery =>
+      'Recuperación de sobrecorriente en descarga';
+
+  @override
+  String get settingScpDelay => 'Retardo de cortocircuito';
+
+  @override
+  String get settingScpRecovery => 'Recuperación de cortocircuito';
+
+  @override
+  String get settingChargeOtpRecovery =>
+      'Recuperación de sobretemperatura en carga';
+
+  @override
+  String get settingDischargeOtpRecovery =>
+      'Recuperación de sobretemperatura en descarga';
+
+  @override
+  String get settingChargeUtpRecovery =>
+      'Recuperación de subtemperatura en carga';
+
+  @override
+  String get settingMosfetOtpRecovery =>
+      'Recuperación de sobretemperatura de MOSFET';
+
+  @override
+  String get settingWireResistances => 'Resistencia de los cables de balanceo';
+
+  @override
+  String settingWireResistancesCount(int count) {
+    return '$count celdas';
+  }
+
+  @override
+  String get settingWireResistancesHint =>
+      'Lo que el BMS tiene configurado para compensar el cable de cada celda, en miliohmios. Es un ajuste, no una medición de la celda.';
+
+  @override
+  String get systemSetupPasscode => 'Contraseña de ajustes que entrega el BMS';
+
+  @override
+  String get bmsStateTitle => 'Estado del BMS';
+
+  @override
+  String get bmsStateIntro => 'Tal como lo informa el BMS en cada lectura.';
+
+  @override
+  String get bmsStatePrecharge => 'Precarga';
+
+  @override
+  String get bmsStateChargerPlugged => 'Ve un cargador conectado';
+
+  @override
+  String get bmsStateChargeStatus => 'Fase de carga';
+
+  @override
+  String get bmsStateBatteryType => 'Tipo de batería configurado';
+
+  @override
+  String get bmsStateBatteryTypeHint =>
+      'Es lo que alguien eligió al configurar el BMS, no algo que el BMS mida en las celdas.';
+
+  @override
+  String get bmsStateRuntime => 'Tiempo de funcionamiento total';
+
+  @override
+  String get bmsStateEnabledCells => 'Celdas habilitadas';
+
+  @override
+  String get bmsStateCycleCapacity => 'Carga total que pasó por el pack';
+
+  @override
+  String get bmsStateCycleCapacityHint =>
+      'El contador acumulado del propio BMS. Dividido por la capacidad da los ciclos completos reales.';
+
+  @override
+  String get chargeStatusBulk => 'corriente constante';
+
+  @override
+  String get chargeStatusAbsorption => 'absorción';
+
+  @override
+  String get chargeStatusFloat => 'flotación';
+
+  @override
+  String get batteryTypeLfp => 'LFP (LiFePO4)';
+
+  @override
+  String get batteryTypeLiIon => 'Litio-ion';
+
+  @override
+  String get batteryTypeLto => 'LTO';
+
+  @override
+  String bmsUnknownCode(String code) {
+    return 'código $code';
+  }
+
+  @override
+  String get nowChargerByBms => 'Según el BMS';
+
+  @override
+  String get nowChargerSeen => 've el cargador conectado';
+
+  @override
+  String get nowChargerNotSeen => 'no ve ningún cargador';
+
+  @override
+  String nowChargePhase(String phase) {
+    return 'fase: $phase';
+  }
 }

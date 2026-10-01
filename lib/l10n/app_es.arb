@@ -3549,5 +3549,70 @@
   "exportRangeMonth": "30 días",
   "exportRangeAll": "Todo",
   "exportRangeNote": "Los frames crudos se guardan 30 días, así que «Todo» trae como mucho esos. Las lecturas de más de un mes están guardadas una por minuto.",
-  "tripExportGpx": "Exportar recorrido (GPX)"
+  "tripExportGpx": "Exportar recorrido (GPX)",
+  "settingsGroupCell": "Protecciones de celda",
+  "settingsGroupCurrent": "Corriente",
+  "settingsGroupTemperature": "Temperatura",
+  "settingsGroupBalance": "Balanceo",
+  "settingsGroupOther": "Otros",
+  "settingSmartSleep": "Voltaje de reposo inteligente",
+  "settingRequestCharge": "Voltaje de carga pedido por celda",
+  "settingRequestFloat": "Voltaje de flotación pedido por celda",
+  "settingChargeOcpDelay": "Retardo de sobrecorriente en carga",
+  "settingChargeOcpRecovery": "Recuperación de sobrecorriente en carga",
+  "settingDischargeOcpDelay": "Retardo de sobrecorriente en descarga",
+  "settingDischargeOcpRecovery": "Recuperación de sobrecorriente en descarga",
+  "settingScpDelay": "Retardo de cortocircuito",
+  "settingScpRecovery": "Recuperación de cortocircuito",
+  "settingChargeOtpRecovery": "Recuperación de sobretemperatura en carga",
+  "settingDischargeOtpRecovery": "Recuperación de sobretemperatura en descarga",
+  "settingChargeUtpRecovery": "Recuperación de subtemperatura en carga",
+  "settingMosfetOtpRecovery": "Recuperación de sobretemperatura de MOSFET",
+  "settingWireResistances": "Resistencia de los cables de balanceo",
+  "settingWireResistancesCount": "{count} celdas",
+  "@settingWireResistancesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingWireResistancesHint": "Lo que el BMS tiene configurado para compensar el cable de cada celda, en miliohmios. Es un ajuste, no una medición de la celda.",
+  "systemSetupPasscode": "Contraseña de ajustes que entrega el BMS",
+  "bmsStateTitle": "Estado del BMS",
+  "bmsStateIntro": "Tal como lo informa el BMS en cada lectura.",
+  "bmsStatePrecharge": "Precarga",
+  "bmsStateChargerPlugged": "Ve un cargador conectado",
+  "bmsStateChargeStatus": "Fase de carga",
+  "bmsStateBatteryType": "Tipo de batería configurado",
+  "bmsStateBatteryTypeHint": "Es lo que alguien eligió al configurar el BMS, no algo que el BMS mida en las celdas.",
+  "bmsStateRuntime": "Tiempo de funcionamiento total",
+  "bmsStateEnabledCells": "Celdas habilitadas",
+  "bmsStateCycleCapacity": "Carga total que pasó por el pack",
+  "bmsStateCycleCapacityHint": "El contador acumulado del propio BMS. Dividido por la capacidad da los ciclos completos reales.",
+  "chargeStatusBulk": "corriente constante",
+  "chargeStatusAbsorption": "absorción",
+  "chargeStatusFloat": "flotación",
+  "batteryTypeLfp": "LFP (LiFePO4)",
+  "batteryTypeLiIon": "Litio-ion",
+  "batteryTypeLto": "LTO",
+  "bmsUnknownCode": "código {code}",
+  "@bmsUnknownCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "nowChargerByBms": "Según el BMS",
+  "nowChargerSeen": "ve el cargador conectado",
+  "nowChargerNotSeen": "no ve ningún cargador",
+  "nowChargePhase": "fase: {phase}",
+  "@nowChargePhase": {
+    "placeholders": {
+      "phase": {
+        "type": "String"
+      }
+    }
+  }
 }

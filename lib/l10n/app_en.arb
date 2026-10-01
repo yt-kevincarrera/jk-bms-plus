@@ -3219,5 +3219,70 @@
   "exportRangeMonth": "30 days",
   "exportRangeAll": "All",
   "exportRangeNote": "Raw frames are kept for 30 days, so “All” brings at most those. Readings older than a month are stored one a minute.",
-  "tripExportGpx": "Export track (GPX)"
+  "tripExportGpx": "Export track (GPX)",
+  "settingsGroupCell": "Cell protection",
+  "settingsGroupCurrent": "Current",
+  "settingsGroupTemperature": "Temperature",
+  "settingsGroupBalance": "Balancing",
+  "settingsGroupOther": "Other",
+  "settingSmartSleep": "Smart sleep voltage",
+  "settingRequestCharge": "Requested charge voltage per cell",
+  "settingRequestFloat": "Requested float voltage per cell",
+  "settingChargeOcpDelay": "Charge overcurrent delay",
+  "settingChargeOcpRecovery": "Charge overcurrent recovery",
+  "settingDischargeOcpDelay": "Discharge overcurrent delay",
+  "settingDischargeOcpRecovery": "Discharge overcurrent recovery",
+  "settingScpDelay": "Short-circuit delay",
+  "settingScpRecovery": "Short-circuit recovery",
+  "settingChargeOtpRecovery": "Charge overtemperature recovery",
+  "settingDischargeOtpRecovery": "Discharge overtemperature recovery",
+  "settingChargeUtpRecovery": "Charge undertemperature recovery",
+  "settingMosfetOtpRecovery": "MOSFET overtemperature recovery",
+  "settingWireResistances": "Balance lead resistance",
+  "settingWireResistancesCount": "{count} cells",
+  "@settingWireResistancesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingWireResistancesHint": "What the BMS is configured to compensate for each cell's lead, in milliohms. A setting, not a measurement of the cell.",
+  "systemSetupPasscode": "Settings passcode the BMS hands out",
+  "bmsStateTitle": "BMS state",
+  "bmsStateIntro": "As the BMS reports it in every reading.",
+  "bmsStatePrecharge": "Precharge",
+  "bmsStateChargerPlugged": "Sees a charger plugged in",
+  "bmsStateChargeStatus": "Charge phase",
+  "bmsStateBatteryType": "Battery type configured",
+  "bmsStateBatteryTypeHint": "What somebody chose when setting the BMS up, not something it measures in the cells.",
+  "bmsStateRuntime": "Total running time",
+  "bmsStateEnabledCells": "Cells enabled",
+  "bmsStateCycleCapacity": "Total charge through the pack",
+  "bmsStateCycleCapacityHint": "The BMS's own running total. Divided by the capacity it gives the real number of full cycles.",
+  "chargeStatusBulk": "bulk",
+  "chargeStatusAbsorption": "absorption",
+  "chargeStatusFloat": "float",
+  "batteryTypeLfp": "LFP (LiFePO4)",
+  "batteryTypeLiIon": "Li-ion",
+  "batteryTypeLto": "LTO",
+  "bmsUnknownCode": "code {code}",
+  "@bmsUnknownCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "nowChargerByBms": "According to the BMS",
+  "nowChargerSeen": "it sees the charger",
+  "nowChargerNotSeen": "it sees no charger",
+  "nowChargePhase": "phase: {phase}",
+  "@nowChargePhase": {
+    "placeholders": {
+      "phase": {
+        "type": "String"
+      }
+    }
+  }
 }

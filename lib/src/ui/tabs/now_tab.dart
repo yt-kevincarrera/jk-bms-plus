@@ -13,6 +13,7 @@ import '../../metrics/charge_eta.dart';
 import '../../metrics/range_outlook.dart';
 import '../../metrics/soc_trust.dart';
 import '../../model/bms_snapshot.dart';
+import '../bms_code_labels.dart';
 import '../theme.dart';
 import '../warning_labels.dart';
 import '../widgets/common.dart';
@@ -235,6 +236,7 @@ class _NowTabState extends State<NowTab> {
         // question with a charger plugged in, and "how long do I wait" is the
         // only one anybody is actually asking.
         if (s.isCharging) _chargeEta(t, s, service),
+        if (s.isCharging || s.chargerPlugged == true) _chargerState(t, s),
         _TripStrip(service: service, settings: widget.settings),
         const SizedBox(height: 6),
         Row(
@@ -790,6 +792,31 @@ Widget _chargeEta(AppL10n t, BmsSnapshot s, BmsService service) {
             ),
           ),
         ],
+      ),
+    ),
+  );
+}
+
+/// What the BMS itself says about the charge: whether it sees a charger, and
+/// the phase it reports. Decoded from every reading and never shown, while
+/// the one screen a rider watches during a charge guessed at both from the
+/// current alone. Said as the BMS's, and left out where it reports neither.
+Widget _chargerState(AppL10n t, BmsSnapshot s) {
+  final parts = [
+    if (s.chargerPlugged case final plugged?)
+      plugged ? t.nowChargerSeen : t.nowChargerNotSeen,
+    if (s.chargeStatusCode case final code?)
+      t.nowChargePhase(chargeStatusLabel(t, code)),
+  ];
+  if (parts.isEmpty) return const SizedBox.shrink();
+  return Padding(
+    padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+    child: Text(
+      '${t.nowChargerByBms}: ${parts.join('  ·  ')}',
+      style: const TextStyle(
+        fontSize: 12,
+        height: 1.4,
+        color: AppTheme.textSecondary,
       ),
     ),
   );
