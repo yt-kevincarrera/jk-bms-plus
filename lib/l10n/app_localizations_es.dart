@@ -5581,4 +5581,156 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get cellHistoryEmpty => 'No hay lecturas guardadas en este intervalo.';
+
+  @override
+  String get linkEventRidingCurrentSeen => 'Corriente de marcha vista';
+
+  @override
+  String get linkEventIdleSpeedSeen => 'Velocidad vista sin viaje abierto';
+
+  @override
+  String get linkEventLocationArmed => 'GPS encendido';
+
+  @override
+  String get linkEventLocationStoodDown => 'GPS apagado';
+
+  @override
+  String get linkEventLocationRefused => 'El GPS no arrancó';
+
+  @override
+  String get linkEventTripWithoutFixes => 'Viaje sin posición GPS';
+
+  @override
+  String get linkEventLocationStreamError => 'Error del GPS';
+
+  @override
+  String get linkEventForegroundServiceRefused =>
+      'Android no dejó arrancar el servicio';
+
+  @override
+  String get linkEventForegroundServiceLost => 'Android paró el servicio';
+
+  @override
+  String get linkEventAutoTripStarted => 'Viaje abierto solo';
+
+  @override
+  String get linkEventAutoTripStopped => 'Viaje cerrado solo';
+
+  @override
+  String get linkEventAutoTripBlocked => 'No se pudo abrir el viaje';
+
+  @override
+  String get linkEventReadingsResumed => 'Vuelven las lecturas';
+
+  @override
+  String get linkEventLinkDropped => 'Conexión perdida';
+
+  @override
+  String get linkEventMuteLinkReleased => 'Conexión muda soltada';
+
+  @override
+  String get linkEventReconnectAttempted => 'Intento de reconexión';
+
+  @override
+  String get linkEventReconnectFailed => 'Reconexión fallida';
+
+  @override
+  String get linkEventReconnectGaveUp => 'Dejó de intentar reconectar';
+
+  @override
+  String get linkEventReconnectPersisting =>
+      'Reconexión sin rendirse (viaje en curso)';
+
+  @override
+  String get linkEventReconnectRelaxed => 'Reconexión normal otra vez';
+
+  @override
+  String get linkEventConnectAttempt => 'Intento de conexión';
+
+  @override
+  String get linkEventBluetoothLooksStuck =>
+      'El Bluetooth del teléfono parece atascado';
+
+  @override
+  String get linkEventBluetoothRemedy => 'Remedio de Bluetooth';
+
+  @override
+  String get linkEventBluetoothRecovered => 'Conectó tras el atasco';
+
+  @override
+  String get linkEventProtocolSwitched => 'Cambio de protocolo';
+
+  @override
+  String get linkEventAntFrameRejected => 'Frame ANT descartado';
+
+  @override
+  String get linkEventAntDecodeFailed => 'Frame ANT sin descifrar';
+
+  @override
+  String get linkEventOldAntProtocolSeen => 'Protocolo ANT antiguo';
+
+  @override
+  String get linkEventJkFrameRejected => 'Bytes JK descartados';
+
+  @override
+  String get linkEventJkFrameUndecoded => 'Frame JK sin descifrar';
+
+  @override
+  String get linkEventAntCurrentSignInverted =>
+      'Signo de corriente ANT invertido';
+
+  @override
+  String get linkEventsTitle => 'Historial de conexión';
+
+  @override
+  String get linkEventsIntro =>
+      'Lo que la app decidió y cuándo: cada intento de conexión, cada caída, cada viaje que se abrió o no. Se guarda 14 días.';
+
+  @override
+  String get linkEventsThisPack => 'Esta batería';
+
+  @override
+  String get linkEventsAllPacks => 'Todas';
+
+  @override
+  String get linkEventsThisPackHint =>
+      'Lo que pasa mientras se conecta casi nunca tiene batería asignada todavía: está en «Todas».';
+
+  @override
+  String get linkEventsAnyKind => 'Todos los tipos';
+
+  @override
+  String get linkEventsEmpty => 'Nada registrado con estos filtros.';
+
+  @override
+  String get linkEventsNoPack => 'sin batería';
+
+  @override
+  String linkEventsBytes(int count) {
+    return '$count bytes';
+  }
+
+  @override
+  String get linkEventsCopyBytes => 'Copiar los bytes';
+
+  @override
+  String get linkEventsBytesCopied => 'Bytes copiados';
+
+  @override
+  String get linkEventsCopyAll => 'Copiar todo lo mostrado';
+
+  @override
+  String linkEventsCopiedAll(int count) {
+    return 'Copiado: $count filas';
+  }
+
+  @override
+  String linkEventsCount(int count) {
+    return '$count filas';
+  }
+
+  @override
+  String linkEventsUnknownKind(String name) {
+    return 'Tipo desconocido: $name';
+  }
 }

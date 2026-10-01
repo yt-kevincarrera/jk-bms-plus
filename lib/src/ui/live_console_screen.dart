@@ -12,6 +12,7 @@ import '../model/bms_device_info.dart';
 import '../model/bms_snapshot.dart';
 import '../protocol/bms_brand.dart';
 import '../protocol/jk_frame.dart';
+import 'link_events_screen.dart';
 
 /// Milestone 1 deliverable: prove the link decodes correctly, live, for as long
 /// as you care to watch.
@@ -299,6 +300,22 @@ class _LiveConsoleScreenState extends State<LiveConsoleScreen> {
       appBar: AppBar(
         title: Text(widget.deviceName),
         actions: [
+          // The decisions behind what the console shows: every connect
+          // attempt and drop, kept for a fortnight rather than for as long
+          // as this screen is open.
+          if (widget.service.repository case final repo?)
+            IconButton(
+              tooltip: t.linkEventsTitle,
+              icon: const Icon(Icons.list_alt),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => LinkEventsScreen(
+                    repository: repo,
+                    deviceId: widget.service.activeDeviceId,
+                  ),
+                ),
+              ),
+            ),
           IconButton(
             tooltip: _follow ? t.consoleFollow : t.consolePaused,
             icon: Icon(_follow ? Icons.vertical_align_bottom : Icons.pause),

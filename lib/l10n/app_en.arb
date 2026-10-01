@@ -3413,5 +3413,79 @@
       }
     }
   },
-  "cellHistoryEmpty": "No readings stored in this stretch."
+  "cellHistoryEmpty": "No readings stored in this stretch.",
+  "linkEventRidingCurrentSeen": "Riding current seen",
+  "linkEventIdleSpeedSeen": "Speed seen with no ride open",
+  "linkEventLocationArmed": "GPS switched on",
+  "linkEventLocationStoodDown": "GPS switched off",
+  "linkEventLocationRefused": "GPS refused to start",
+  "linkEventTripWithoutFixes": "Ride with no GPS fix",
+  "linkEventLocationStreamError": "GPS error",
+  "linkEventForegroundServiceRefused": "Android refused the service",
+  "linkEventForegroundServiceLost": "Android stopped the service",
+  "linkEventAutoTripStarted": "Ride opened itself",
+  "linkEventAutoTripStopped": "Ride closed itself",
+  "linkEventAutoTripBlocked": "Ride could not open",
+  "linkEventReadingsResumed": "Readings resumed",
+  "linkEventLinkDropped": "Link dropped",
+  "linkEventMuteLinkReleased": "Silent link let go",
+  "linkEventReconnectAttempted": "Reconnect attempt",
+  "linkEventReconnectFailed": "Reconnect failed",
+  "linkEventReconnectGaveUp": "Stopped trying to reconnect",
+  "linkEventReconnectPersisting": "Reconnecting without giving up (ride on)",
+  "linkEventReconnectRelaxed": "Reconnecting as usual again",
+  "linkEventConnectAttempt": "Connect attempt",
+  "linkEventBluetoothLooksStuck": "The phone's Bluetooth looks stuck",
+  "linkEventBluetoothRemedy": "Bluetooth remedy",
+  "linkEventBluetoothRecovered": "Connected after being stuck",
+  "linkEventProtocolSwitched": "Protocol switched",
+  "linkEventAntFrameRejected": "ANT frame rejected",
+  "linkEventAntDecodeFailed": "ANT frame not decoded",
+  "linkEventOldAntProtocolSeen": "Old ANT protocol",
+  "linkEventJkFrameRejected": "JK bytes rejected",
+  "linkEventJkFrameUndecoded": "JK frame not decoded",
+  "linkEventAntCurrentSignInverted": "ANT current sign reversed",
+  "linkEventsTitle": "Connection history",
+  "linkEventsIntro": "What the app decided and when: every connect attempt, every drop, every ride that opened or did not. Kept for 14 days.",
+  "linkEventsThisPack": "This battery",
+  "linkEventsAllPacks": "All",
+  "linkEventsThisPackHint": "What happens while connecting has almost never been filed under a battery yet: it is under \"All\".",
+  "linkEventsAnyKind": "Every kind",
+  "linkEventsEmpty": "Nothing recorded with these filters.",
+  "linkEventsNoPack": "no battery",
+  "linkEventsBytes": "{count} bytes",
+  "@linkEventsBytes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "linkEventsCopyBytes": "Copy the bytes",
+  "linkEventsBytesCopied": "Bytes copied",
+  "linkEventsCopyAll": "Copy everything shown",
+  "linkEventsCopiedAll": "Copied: {count} rows",
+  "@linkEventsCopiedAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "linkEventsCount": "{count} rows",
+  "@linkEventsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "linkEventsUnknownKind": "Unknown kind: {name}",
+  "@linkEventsUnknownKind": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

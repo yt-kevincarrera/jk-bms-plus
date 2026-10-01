@@ -5552,4 +5552,154 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get cellHistoryEmpty => 'No readings stored in this stretch.';
+
+  @override
+  String get linkEventRidingCurrentSeen => 'Riding current seen';
+
+  @override
+  String get linkEventIdleSpeedSeen => 'Speed seen with no ride open';
+
+  @override
+  String get linkEventLocationArmed => 'GPS switched on';
+
+  @override
+  String get linkEventLocationStoodDown => 'GPS switched off';
+
+  @override
+  String get linkEventLocationRefused => 'GPS refused to start';
+
+  @override
+  String get linkEventTripWithoutFixes => 'Ride with no GPS fix';
+
+  @override
+  String get linkEventLocationStreamError => 'GPS error';
+
+  @override
+  String get linkEventForegroundServiceRefused => 'Android refused the service';
+
+  @override
+  String get linkEventForegroundServiceLost => 'Android stopped the service';
+
+  @override
+  String get linkEventAutoTripStarted => 'Ride opened itself';
+
+  @override
+  String get linkEventAutoTripStopped => 'Ride closed itself';
+
+  @override
+  String get linkEventAutoTripBlocked => 'Ride could not open';
+
+  @override
+  String get linkEventReadingsResumed => 'Readings resumed';
+
+  @override
+  String get linkEventLinkDropped => 'Link dropped';
+
+  @override
+  String get linkEventMuteLinkReleased => 'Silent link let go';
+
+  @override
+  String get linkEventReconnectAttempted => 'Reconnect attempt';
+
+  @override
+  String get linkEventReconnectFailed => 'Reconnect failed';
+
+  @override
+  String get linkEventReconnectGaveUp => 'Stopped trying to reconnect';
+
+  @override
+  String get linkEventReconnectPersisting =>
+      'Reconnecting without giving up (ride on)';
+
+  @override
+  String get linkEventReconnectRelaxed => 'Reconnecting as usual again';
+
+  @override
+  String get linkEventConnectAttempt => 'Connect attempt';
+
+  @override
+  String get linkEventBluetoothLooksStuck =>
+      'The phone\'s Bluetooth looks stuck';
+
+  @override
+  String get linkEventBluetoothRemedy => 'Bluetooth remedy';
+
+  @override
+  String get linkEventBluetoothRecovered => 'Connected after being stuck';
+
+  @override
+  String get linkEventProtocolSwitched => 'Protocol switched';
+
+  @override
+  String get linkEventAntFrameRejected => 'ANT frame rejected';
+
+  @override
+  String get linkEventAntDecodeFailed => 'ANT frame not decoded';
+
+  @override
+  String get linkEventOldAntProtocolSeen => 'Old ANT protocol';
+
+  @override
+  String get linkEventJkFrameRejected => 'JK bytes rejected';
+
+  @override
+  String get linkEventJkFrameUndecoded => 'JK frame not decoded';
+
+  @override
+  String get linkEventAntCurrentSignInverted => 'ANT current sign reversed';
+
+  @override
+  String get linkEventsTitle => 'Connection history';
+
+  @override
+  String get linkEventsIntro =>
+      'What the app decided and when: every connect attempt, every drop, every ride that opened or did not. Kept for 14 days.';
+
+  @override
+  String get linkEventsThisPack => 'This battery';
+
+  @override
+  String get linkEventsAllPacks => 'All';
+
+  @override
+  String get linkEventsThisPackHint =>
+      'What happens while connecting has almost never been filed under a battery yet: it is under \"All\".';
+
+  @override
+  String get linkEventsAnyKind => 'Every kind';
+
+  @override
+  String get linkEventsEmpty => 'Nothing recorded with these filters.';
+
+  @override
+  String get linkEventsNoPack => 'no battery';
+
+  @override
+  String linkEventsBytes(int count) {
+    return '$count bytes';
+  }
+
+  @override
+  String get linkEventsCopyBytes => 'Copy the bytes';
+
+  @override
+  String get linkEventsBytesCopied => 'Bytes copied';
+
+  @override
+  String get linkEventsCopyAll => 'Copy everything shown';
+
+  @override
+  String linkEventsCopiedAll(int count) {
+    return 'Copied: $count rows';
+  }
+
+  @override
+  String linkEventsCount(int count) {
+    return '$count rows';
+  }
+
+  @override
+  String linkEventsUnknownKind(String name) {
+    return 'Unknown kind: $name';
+  }
 }

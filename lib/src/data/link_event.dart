@@ -167,3 +167,45 @@ enum LinkEventKind {
   /// settled it. Written once per pack per session.
   antCurrentSignInverted,
 }
+
+/// The kind a stored row names, or null for a name this build does not know
+/// (a row written by a newer version, or by an older one whose kind was
+/// since retired). Rows are stored by name precisely so this can be asked.
+LinkEventKind? linkEventKindNamed(String name) {
+  for (final k in LinkEventKind.values) {
+    if (k.name == name) return k;
+  }
+  return null;
+}
+
+/// A row's detail split into its words and the bytes it carries, if any.
+///
+/// The frame-rejection kinds write the bytes as one run of hex after the
+/// reason, which on a screen is a wall of characters burying the reason. A
+/// run of at least eight bytes of hex is taken as that; anything shorter is
+/// left in the text, where a checksum or a code belongs.
+({String text, String? hex}) splitLinkEventDetail(String detail) {
+  final match = _hexRun.firstMatch(detail);
+  if (match == null) return (text: detail, hex: null);
+  final hex = match.group(0)!;
+  final text = (detail.substring(0, match.start) + detail.substring(match.end))
+      .replaceAll(RegExp(r'\s{2,}'), ' ')
+      .trim();
+  return (text: text, hex: hex);
+}
+
+final RegExp _hexRun = RegExp(
+  r'(?<![0-9A-Za-z])(?:[0-9a-fA-F]{2}){8,}(?![0-9A-Za-z])',
+);
+
+/// Hex as pairs, sixteen to a line, the way the console prints bytes.
+String spacedHex(String hex) {
+  final pairs = [
+    for (var i = 0; i + 1 < hex.length; i += 2) hex.substring(i, i + 2),
+  ];
+  final lines = <String>[];
+  for (var i = 0; i < pairs.length; i += 16) {
+    lines.add(pairs.skip(i).take(16).join(' ').toUpperCase());
+  }
+  return lines.join('\n');
+}

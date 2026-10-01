@@ -9275,6 +9275,282 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'No hay lecturas guardadas en este intervalo.'**
   String get cellHistoryEmpty;
+
+  /// No description provided for @linkEventRidingCurrentSeen.
+  ///
+  /// In es, this message translates to:
+  /// **'Corriente de marcha vista'**
+  String get linkEventRidingCurrentSeen;
+
+  /// No description provided for @linkEventIdleSpeedSeen.
+  ///
+  /// In es, this message translates to:
+  /// **'Velocidad vista sin viaje abierto'**
+  String get linkEventIdleSpeedSeen;
+
+  /// No description provided for @linkEventLocationArmed.
+  ///
+  /// In es, this message translates to:
+  /// **'GPS encendido'**
+  String get linkEventLocationArmed;
+
+  /// No description provided for @linkEventLocationStoodDown.
+  ///
+  /// In es, this message translates to:
+  /// **'GPS apagado'**
+  String get linkEventLocationStoodDown;
+
+  /// No description provided for @linkEventLocationRefused.
+  ///
+  /// In es, this message translates to:
+  /// **'El GPS no arrancó'**
+  String get linkEventLocationRefused;
+
+  /// No description provided for @linkEventTripWithoutFixes.
+  ///
+  /// In es, this message translates to:
+  /// **'Viaje sin posición GPS'**
+  String get linkEventTripWithoutFixes;
+
+  /// No description provided for @linkEventLocationStreamError.
+  ///
+  /// In es, this message translates to:
+  /// **'Error del GPS'**
+  String get linkEventLocationStreamError;
+
+  /// No description provided for @linkEventForegroundServiceRefused.
+  ///
+  /// In es, this message translates to:
+  /// **'Android no dejó arrancar el servicio'**
+  String get linkEventForegroundServiceRefused;
+
+  /// No description provided for @linkEventForegroundServiceLost.
+  ///
+  /// In es, this message translates to:
+  /// **'Android paró el servicio'**
+  String get linkEventForegroundServiceLost;
+
+  /// No description provided for @linkEventAutoTripStarted.
+  ///
+  /// In es, this message translates to:
+  /// **'Viaje abierto solo'**
+  String get linkEventAutoTripStarted;
+
+  /// No description provided for @linkEventAutoTripStopped.
+  ///
+  /// In es, this message translates to:
+  /// **'Viaje cerrado solo'**
+  String get linkEventAutoTripStopped;
+
+  /// No description provided for @linkEventAutoTripBlocked.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo abrir el viaje'**
+  String get linkEventAutoTripBlocked;
+
+  /// No description provided for @linkEventReadingsResumed.
+  ///
+  /// In es, this message translates to:
+  /// **'Vuelven las lecturas'**
+  String get linkEventReadingsResumed;
+
+  /// No description provided for @linkEventLinkDropped.
+  ///
+  /// In es, this message translates to:
+  /// **'Conexión perdida'**
+  String get linkEventLinkDropped;
+
+  /// No description provided for @linkEventMuteLinkReleased.
+  ///
+  /// In es, this message translates to:
+  /// **'Conexión muda soltada'**
+  String get linkEventMuteLinkReleased;
+
+  /// No description provided for @linkEventReconnectAttempted.
+  ///
+  /// In es, this message translates to:
+  /// **'Intento de reconexión'**
+  String get linkEventReconnectAttempted;
+
+  /// No description provided for @linkEventReconnectFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'Reconexión fallida'**
+  String get linkEventReconnectFailed;
+
+  /// No description provided for @linkEventReconnectGaveUp.
+  ///
+  /// In es, this message translates to:
+  /// **'Dejó de intentar reconectar'**
+  String get linkEventReconnectGaveUp;
+
+  /// No description provided for @linkEventReconnectPersisting.
+  ///
+  /// In es, this message translates to:
+  /// **'Reconexión sin rendirse (viaje en curso)'**
+  String get linkEventReconnectPersisting;
+
+  /// No description provided for @linkEventReconnectRelaxed.
+  ///
+  /// In es, this message translates to:
+  /// **'Reconexión normal otra vez'**
+  String get linkEventReconnectRelaxed;
+
+  /// No description provided for @linkEventConnectAttempt.
+  ///
+  /// In es, this message translates to:
+  /// **'Intento de conexión'**
+  String get linkEventConnectAttempt;
+
+  /// No description provided for @linkEventBluetoothLooksStuck.
+  ///
+  /// In es, this message translates to:
+  /// **'El Bluetooth del teléfono parece atascado'**
+  String get linkEventBluetoothLooksStuck;
+
+  /// No description provided for @linkEventBluetoothRemedy.
+  ///
+  /// In es, this message translates to:
+  /// **'Remedio de Bluetooth'**
+  String get linkEventBluetoothRemedy;
+
+  /// No description provided for @linkEventBluetoothRecovered.
+  ///
+  /// In es, this message translates to:
+  /// **'Conectó tras el atasco'**
+  String get linkEventBluetoothRecovered;
+
+  /// No description provided for @linkEventProtocolSwitched.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambio de protocolo'**
+  String get linkEventProtocolSwitched;
+
+  /// No description provided for @linkEventAntFrameRejected.
+  ///
+  /// In es, this message translates to:
+  /// **'Frame ANT descartado'**
+  String get linkEventAntFrameRejected;
+
+  /// No description provided for @linkEventAntDecodeFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'Frame ANT sin descifrar'**
+  String get linkEventAntDecodeFailed;
+
+  /// No description provided for @linkEventOldAntProtocolSeen.
+  ///
+  /// In es, this message translates to:
+  /// **'Protocolo ANT antiguo'**
+  String get linkEventOldAntProtocolSeen;
+
+  /// No description provided for @linkEventJkFrameRejected.
+  ///
+  /// In es, this message translates to:
+  /// **'Bytes JK descartados'**
+  String get linkEventJkFrameRejected;
+
+  /// No description provided for @linkEventJkFrameUndecoded.
+  ///
+  /// In es, this message translates to:
+  /// **'Frame JK sin descifrar'**
+  String get linkEventJkFrameUndecoded;
+
+  /// No description provided for @linkEventAntCurrentSignInverted.
+  ///
+  /// In es, this message translates to:
+  /// **'Signo de corriente ANT invertido'**
+  String get linkEventAntCurrentSignInverted;
+
+  /// No description provided for @linkEventsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Historial de conexión'**
+  String get linkEventsTitle;
+
+  /// No description provided for @linkEventsIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que la app decidió y cuándo: cada intento de conexión, cada caída, cada viaje que se abrió o no. Se guarda 14 días.'**
+  String get linkEventsIntro;
+
+  /// No description provided for @linkEventsThisPack.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta batería'**
+  String get linkEventsThisPack;
+
+  /// No description provided for @linkEventsAllPacks.
+  ///
+  /// In es, this message translates to:
+  /// **'Todas'**
+  String get linkEventsAllPacks;
+
+  /// No description provided for @linkEventsThisPackHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que pasa mientras se conecta casi nunca tiene batería asignada todavía: está en «Todas».'**
+  String get linkEventsThisPackHint;
+
+  /// No description provided for @linkEventsAnyKind.
+  ///
+  /// In es, this message translates to:
+  /// **'Todos los tipos'**
+  String get linkEventsAnyKind;
+
+  /// No description provided for @linkEventsEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Nada registrado con estos filtros.'**
+  String get linkEventsEmpty;
+
+  /// No description provided for @linkEventsNoPack.
+  ///
+  /// In es, this message translates to:
+  /// **'sin batería'**
+  String get linkEventsNoPack;
+
+  /// No description provided for @linkEventsBytes.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} bytes'**
+  String linkEventsBytes(int count);
+
+  /// No description provided for @linkEventsCopyBytes.
+  ///
+  /// In es, this message translates to:
+  /// **'Copiar los bytes'**
+  String get linkEventsCopyBytes;
+
+  /// No description provided for @linkEventsBytesCopied.
+  ///
+  /// In es, this message translates to:
+  /// **'Bytes copiados'**
+  String get linkEventsBytesCopied;
+
+  /// No description provided for @linkEventsCopyAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Copiar todo lo mostrado'**
+  String get linkEventsCopyAll;
+
+  /// No description provided for @linkEventsCopiedAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Copiado: {count} filas'**
+  String linkEventsCopiedAll(int count);
+
+  /// No description provided for @linkEventsCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} filas'**
+  String linkEventsCount(int count);
+
+  /// No description provided for @linkEventsUnknownKind.
+  ///
+  /// In es, this message translates to:
+  /// **'Tipo desconocido: {name}'**
+  String linkEventsUnknownKind(String name);
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

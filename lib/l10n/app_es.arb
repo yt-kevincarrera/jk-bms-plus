@@ -3743,5 +3743,79 @@
       }
     }
   },
-  "cellHistoryEmpty": "No hay lecturas guardadas en este intervalo."
+  "cellHistoryEmpty": "No hay lecturas guardadas en este intervalo.",
+  "linkEventRidingCurrentSeen": "Corriente de marcha vista",
+  "linkEventIdleSpeedSeen": "Velocidad vista sin viaje abierto",
+  "linkEventLocationArmed": "GPS encendido",
+  "linkEventLocationStoodDown": "GPS apagado",
+  "linkEventLocationRefused": "El GPS no arrancó",
+  "linkEventTripWithoutFixes": "Viaje sin posición GPS",
+  "linkEventLocationStreamError": "Error del GPS",
+  "linkEventForegroundServiceRefused": "Android no dejó arrancar el servicio",
+  "linkEventForegroundServiceLost": "Android paró el servicio",
+  "linkEventAutoTripStarted": "Viaje abierto solo",
+  "linkEventAutoTripStopped": "Viaje cerrado solo",
+  "linkEventAutoTripBlocked": "No se pudo abrir el viaje",
+  "linkEventReadingsResumed": "Vuelven las lecturas",
+  "linkEventLinkDropped": "Conexión perdida",
+  "linkEventMuteLinkReleased": "Conexión muda soltada",
+  "linkEventReconnectAttempted": "Intento de reconexión",
+  "linkEventReconnectFailed": "Reconexión fallida",
+  "linkEventReconnectGaveUp": "Dejó de intentar reconectar",
+  "linkEventReconnectPersisting": "Reconexión sin rendirse (viaje en curso)",
+  "linkEventReconnectRelaxed": "Reconexión normal otra vez",
+  "linkEventConnectAttempt": "Intento de conexión",
+  "linkEventBluetoothLooksStuck": "El Bluetooth del teléfono parece atascado",
+  "linkEventBluetoothRemedy": "Remedio de Bluetooth",
+  "linkEventBluetoothRecovered": "Conectó tras el atasco",
+  "linkEventProtocolSwitched": "Cambio de protocolo",
+  "linkEventAntFrameRejected": "Frame ANT descartado",
+  "linkEventAntDecodeFailed": "Frame ANT sin descifrar",
+  "linkEventOldAntProtocolSeen": "Protocolo ANT antiguo",
+  "linkEventJkFrameRejected": "Bytes JK descartados",
+  "linkEventJkFrameUndecoded": "Frame JK sin descifrar",
+  "linkEventAntCurrentSignInverted": "Signo de corriente ANT invertido",
+  "linkEventsTitle": "Historial de conexión",
+  "linkEventsIntro": "Lo que la app decidió y cuándo: cada intento de conexión, cada caída, cada viaje que se abrió o no. Se guarda 14 días.",
+  "linkEventsThisPack": "Esta batería",
+  "linkEventsAllPacks": "Todas",
+  "linkEventsThisPackHint": "Lo que pasa mientras se conecta casi nunca tiene batería asignada todavía: está en «Todas».",
+  "linkEventsAnyKind": "Todos los tipos",
+  "linkEventsEmpty": "Nada registrado con estos filtros.",
+  "linkEventsNoPack": "sin batería",
+  "linkEventsBytes": "{count} bytes",
+  "@linkEventsBytes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "linkEventsCopyBytes": "Copiar los bytes",
+  "linkEventsBytesCopied": "Bytes copiados",
+  "linkEventsCopyAll": "Copiar todo lo mostrado",
+  "linkEventsCopiedAll": "Copiado: {count} filas",
+  "@linkEventsCopiedAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "linkEventsCount": "{count} filas",
+  "@linkEventsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "linkEventsUnknownKind": "Tipo desconocido: {name}",
+  "@linkEventsUnknownKind": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

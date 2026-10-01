@@ -29,6 +29,7 @@ import '../pack/config_audit_screen.dart';
 import '../pack/pack_profile_card.dart';
 import '../bms_code_labels.dart';
 import '../fault_history_screen.dart';
+import '../link_events_screen.dart';
 import '../widgets/pro_gate.dart';
 import '../locale_controller.dart';
 import '../theme.dart';
@@ -310,6 +311,24 @@ class _SystemTabState extends State<SystemTab> {
                 ),
               ),
             ),
+        // The app's own record of what it decided about the link and the
+        // rides, which used to be readable only inside a backup file.
+        if (service.repository case final repo?)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.list_alt, size: 18),
+              label: Text(t.linkEventsTitle),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => LinkEventsScreen(
+                    repository: repo,
+                    deviceId: service.activeDeviceId,
+                  ),
+                ),
+              ),
+            ),
+          ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: OutlinedButton.icon(
