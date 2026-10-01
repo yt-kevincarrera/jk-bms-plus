@@ -30,13 +30,11 @@ void main() {
     });
     test('pack, current, charge', () {
       expect(s.packVoltage, closeTo(52.84, 1e-9));
-      // Decoded as it stands, not inverted. This pins the decode and not the
-      // sign convention: the state byte says idle (0x01), not charging, so
-      // the frame cannot say which way 0.3 A flows. The service checks the
-      // sign against the state on real traffic (AntCurrentSign).
+      // The field says +0.3 and the parser reverses it, as it does for every
+      // ANT (see the 20S charging capture below). Idle (0x01), so this frame
+      // says nothing about the sign itself.
       expect(st.batteryState, 0x01);
-      expect(s.current, closeTo(0.3, 1e-9));
-      expect(s.isCharging, isTrue);
+      expect(s.current, closeTo(-0.3, 1e-9));
       expect(s.soc, 91);
       expect(s.soh, 100);
     });
@@ -62,6 +60,42 @@ void main() {
       expect(s.cycleCount, isNull);
       expect(s.frameCounter, isNull);
       expect(s.heatingOn, isNull);
+    });
+  });
+
+  group("20S / 4T, the rider's pack charging, 14 bytes longer", () {
+    test('decodes although the frame is longer than the fields read', () {
+      final st = p.parseStatus(frame(antStatus20s4tCharging));
+      final s = st.snapshot;
+      expect(antStatus20s4tCharging.length, 178);
+      expect(s.cellCount, 20);
+      expect(s.cellVoltages.first, closeTo(3.689, 1e-9));
+      expect(s.cellVoltages.last, closeTo(3.689, 1e-9));
+      expect(s.packVoltage, closeTo(73.78, 1e-9));
+      expect(s.soc, 48);
+      expect(s.soh, 100);
+      expect(s.nominalCapacityAh, closeTo(45.0, 1e-6));
+      expect(s.remainingCapacityAh, closeTo(21.626934, 1e-6));
+      expect(s.temperatures, [30.0, 30.0, 30.0, 30.0]);
+      expect(s.mosfetTemp, 32.0);
+      expect(st.balancerTemp, 33.0);
+      expect(s.chargeMosfetOn, isTrue);
+      expect(s.dischargeMosfetOn, isTrue);
+    });
+
+    test('charging reads positive, as on a JK', () {
+      final st = p.parseStatus(frame(antStatus20s4tCharging));
+      expect(st.batteryState, 0x02);
+      expect(st.snapshot.current, closeTo(5.1, 1e-9));
+      expect(st.snapshot.isCharging, isTrue);
+    });
+
+    test('a frame shorter than its fields is still refused', () {
+      final short = antStatus20s4tCharging.sublist(0, 150);
+      expect(
+        () => p.parseStatus(frame(short)),
+        throwsA(isA<AntParseException>()),
+      );
     });
   });
 

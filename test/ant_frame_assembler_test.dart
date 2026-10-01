@@ -23,13 +23,19 @@ void main() {
 
   for (final chunk in [20, 244, 1000]) {
     test('whole frames in $chunk-byte notifications', () {
-      for (final f in [antStatus16s, antStatus14s4t, antInfo16zm, antInfo22ph]) {
+      for (final f in [
+        antStatus16s,
+        antStatus14s4t,
+        antStatus20s4tCharging,
+        antInfo16zm,
+        antInfo22ph,
+      ]) {
         final out = feed(f, chunk);
         expect(out, hasLength(1));
         expect(out.single.bytes, f);
       }
       expect(rejected, isEmpty);
-      expect(a.stats.accepted, 4);
+      expect(a.stats.accepted, 5);
     });
   }
 

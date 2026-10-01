@@ -80,8 +80,14 @@ class AntParser {
     if (n == 0 || n > 32 || t > 8) {
       throw AntParseException('Implausible layout: $n cells, $t probes.');
     }
+    // A minimum, not an exact size. The assembler has already held the frame
+    // to its own data_len, which is the check the reference makes; this one
+    // only guarantees every offset read below is inside the frame. It was an
+    // exact match, and the rider's 20S ANT (firmware 22AAUB00-240401A) sends
+    // 14 bytes more than the fields read here: every status frame it sent was
+    // refused, and the pack never produced a reading.
     final expected = 116 + 2 * (n + t);
-    if (b.length != expected) {
+    if (b.length < expected) {
       throw AntParseException(
           '$n cells and $t probes need $expected bytes, frame has ${b.length}.');
     }
@@ -118,11 +124,14 @@ class AntParser {
       cellResistances: null,
       enabledCellMask: null,
       packVoltage: u16(38 + o) / 100,
-      // Taken as positive while charging, this app's convention. Unverified
-      // on real ANT hardware: every capture so far is an idle pack. The
-      // service checks it against the battery state byte and reverses it for
-      // a pack whose own state contradicts it (AntCurrentSign).
-      current: i16(40 + o) / 10,
+      // Reversed, because an ANT reports charge as negative. Measured on the
+      // rider's 20S pack on 2026-09-30: state byte "charge", the field at
+      // -5.1 A, the remaining capacity climbing 2.9 mAh every two seconds
+      // (+5.2 A) and the power field negative too. This app's convention is
+      // positive while charging. The service still checks the sign against
+      // the state byte, so a firmware that reports the other way round is
+      // caught and reversed back (AntCurrentSign).
+      current: -i16(40 + o) / 10,
       temperatures: probes,
       temperatureSensorMask: null,
       mosfetTemp: i16(34 + o).toDouble(),

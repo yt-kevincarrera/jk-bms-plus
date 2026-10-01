@@ -278,9 +278,9 @@ void main() {
   });
 
   group('an ANT whose current runs against its own state', () {
-    // The sign convention is assumed for ANT, not measured. The state byte
-    // is the witness: charging at a clearly negative current, three frames
-    // running, means the pack reports the other way round.
+    // The parser reverses the field, measured on one real pack. The state
+    // byte is the witness for any other: charging at a clearly negative
+    // current, three frames running, means the pack reports the other way.
     Future<List<double>> feed(List<Uint8List> frames) async {
       await service.connect('ANT1', name: 'ANT-BLE16ZMUB');
       link.announce(BleLinkState.connected);
@@ -312,6 +312,28 @@ void main() {
       );
       expect(rows, hasLength(1));
       expect(rows.single.detail, contains('Charge'));
+    });
+
+    test("the rider's 20S pack: a longer frame reads, charging positive",
+        () async {
+      // Every status frame this pack sent was refused as the wrong size,
+      // and the connect ended in "no readings have arrived".
+      final seen = await feed([
+        antStatus20s4tCharging,
+        antStatus20s4tCharging,
+        antStatus20s4tCharging,
+        antStatus20s4tCharging,
+      ]);
+      expect(seen, everyElement(closeTo(5.1, 1e-9)));
+      expect(service.decodeFailures, 0);
+      expect(service.lastSnapshot!.cellCount, 20);
+      final events = await service.repository!.recentLinkEvents();
+      expect(
+        events.where(
+          (e) => e.kind == LinkEventKind.antCurrentSignInverted.name,
+        ),
+        isEmpty,
+      );
     });
 
     test('and a pack whose state agrees is left alone', () async {
@@ -530,10 +552,12 @@ class _CountingLink extends FakeLink {
 
 /// A copy of the 16S fixture with its battery state byte and current set, and
 /// the CRC recomputed. Current is at 40+o, o = 2 * (16 cells + 2 probes).
+/// [amps] is what the parser reads out, so the field gets its negation: an
+/// ANT reports charge as negative and the parser reverses it.
 Uint8List antFrameWithState(int state, double amps) {
   final b = Uint8List.fromList(antStatus16s);
   b[7] = state;
-  final raw = (amps * 10).round() & 0xFFFF;
+  final raw = (-amps * 10).round() & 0xFFFF;
   b[40 + 36] = raw & 0xFF;
   b[41 + 36] = raw >> 8;
   final crc = antCrc16(b, 1, b.length - 4);
