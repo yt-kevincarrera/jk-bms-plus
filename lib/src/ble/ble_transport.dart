@@ -5,6 +5,8 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import '../protocol/bms_brand.dart';
 import '../protocol/jk_constants.dart';
 import 'bms_link.dart';
+import 'connect_recovery.dart';
+import 'fbp_recovery_radio.dart';
 import 'link_script.dart';
 import 'link_trouble.dart';
 import 'reconnect_backoff.dart';
@@ -191,7 +193,28 @@ class BleTransport implements BmsLink {
     this.muteBefore = const Duration(seconds: 20),
     this.muteRetryDelay = const Duration(seconds: 3),
     this.attachTimeout = const Duration(seconds: 25),
-  }) : _script = LinkScript.jk(tickEvery: pollInterval);
+    ConnectRecovery? recovery,
+  }) : _script = LinkScript.jk(tickEvery: pollInterval),
+       recovery =
+           recovery ??
+           ConnectRecovery(
+             radio: FbpRecoveryRadio(),
+             memory: PrefsRecoveryMemory(),
+             bootTime: readBootTime,
+             normalTimeout: connectTimeout,
+           );
+
+  /// What runs before each attempt, and the record of how each one went. See
+  /// [ConnectRecovery] for the morning that made it necessary.
+  final ConnectRecovery recovery;
+
+  /// The attempt in flight, or waiting out its hold time.
+  PreparedAttempt? _attempt;
+
+  /// How long the preparation before an escalated attempt may take before the
+  /// attempt is written off. Each step inside it has its own bound; this is
+  /// the backstop for the sum.
+  static const _prepareBudget = Duration(seconds: 40);
 
   /// MTU we ask for on connect. 244 is the largest an Android BLE stack will
   /// grant over a 247-byte ATT MTU, and it drops a 300-byte frame from 15
@@ -477,6 +500,7 @@ class BleTransport implements BmsLink {
             ? r.advertisementData.advName
             : r.device.platformName;
         final id = r.device.remoteId.str;
+        recovery.adverts.saw(id, rssi: r.rssi, at: r.timeStamp);
         final existing = found[id];
         if (existing == null || existing.rssi != r.rssi) {
           found[id] = classifyAdvertisement(
@@ -545,6 +569,22 @@ class BleTransport implements BmsLink {
     _attachDeadline = null;
     _attachId++;
     _attaching = false;
+    recovery.cancelled(_attempt);
+    _attempt = null;
+    // A different pack takes the place of the one before, and the one before
+    // has to be given back. Nothing else would: the attempt in flight on it is
+    // retired by number above, and a retired attempt touches nothing, so a
+    // link that came up for it, or was already up and not yet proven, stayed
+    // open with nobody listening. The BMS then had its one connection held by
+    // this phone, and the next tap on it timed out.
+    final previous = _device;
+    if (previous != null && previous.remoteId.str != deviceId) {
+      _pollTimer?.cancel();
+      await _notifySub?.cancel();
+      _notifySub = null;
+      _characteristic = null;
+      unawaited(_letGo(previous));
+    }
     final device = BluetoothDevice.fromId(deviceId);
     _device = device;
 
@@ -572,23 +612,44 @@ class BleTransport implements BmsLink {
     if (_attaching) return;
     _attaching = true;
     final id = ++_attachId;
+    final attempt = recovery.begin(device.remoteId.str);
+    _attempt = attempt;
     _attachDeadline?.cancel();
-    _attachDeadline = Timer(attachTimeout, _abandonStalledAttach);
+    _attachDeadline = Timer(
+      attempt.releases ? _prepareBudget : attachTimeout,
+      _abandonStalledAttach,
+    );
 
     try {
       _setState(BleLinkState.connecting);
       await FlutterBluePlus.stopScan();
+      // Whatever the streak calls for before connecting: nothing at first,
+      // then letting go of everything held and waiting to hear the pack.
+      await recovery.prepare(
+        attempt,
+        stillWanted: () => id == _attachId && _wantConnection && !_disposed,
+      );
+      if (await _abandonedMidway(device, id)) return;
+      // The deadline proper starts with the connect, and stretches by as much
+      // as the connect timeout does, so a longer connect is not cut short by
+      // a deadline sized for the ordinary one.
+      _attachDeadline?.cancel();
+      _attachDeadline = Timer(
+        attachTimeout + (attempt.connectTimeout - connectTimeout),
+        _abandonStalledAttach,
+      );
       await device.connect(
         // flutter_blue_plus requires this declaration. This app is a personal
         // tool for one rider and one motorcycle, and section 2 of the PRD rules
         // out publishing it, so the nonprofit terms apply. Revisit if that ever
         // changes.
         license: License.nonprofit,
-        timeout: connectTimeout,
+        timeout: attempt.connectTimeout,
         // Null so the MTU request below is ours to observe and report on.
         mtu: null,
         autoConnect: false,
       );
+      recovery.linkUp(attempt);
 
       // A disconnect that arrived while the connect was in flight wins. The
       // attach used to carry on regardless: the screen had given up, told the
@@ -649,6 +710,7 @@ class BleTransport implements BmsLink {
       if (await _abandonedMidway(device, id)) return;
 
       _setState(BleLinkState.connected);
+      recovery.connected(attempt);
       _connectedAt = DateTime.now();
       _nudgesThisLink = 0;
       _bytesThisLink = 0;
@@ -672,18 +734,30 @@ class BleTransport implements BmsLink {
     } on NotABmsException catch (e) {
       // The wrong device, not a bad link. Stop wanting it so the reconnect
       // loop does not chase it, and let go so it is not held either.
+      recovery.failed(attempt, e);
       _wantConnection = false;
       _setState(BleLinkState.failed);
       _errorController.add(BleLinkError.from(e));
       await _letGo(device);
     } on Exception catch (e) {
       // Superseded: the deadline let go of this device already, and a later
-      // attempt may be using it by now. Nothing here is this attempt's to do.
-      if (id != _attachId) return;
+      // attempt may be using it by now. Nothing here is this attempt's to do,
+      // unless nothing later is using it: then the link this attempt got as
+      // far as opening is nobody's, and it is given back.
+      if (id != _attachId) {
+        if (_orphaned(device)) await _letGo(device);
+        return;
+      }
       // An attempt that disconnect() abandoned midway is not trouble: the
       // cancelled connect throws, and reporting that would land a generic
       // Bluetooth complaint on top of whatever the screen was about to say.
-      if (!_wantConnection) return;
+      if (!_wantConnection) {
+        recovery.cancelled(attempt);
+        return;
+      }
+      // Before the error goes out, so a screen redrawing for it already sees
+      // the streak this failure belongs to.
+      recovery.failed(attempt, e);
       // Give the device back before asking for it again. The plugin cancels
       // the attempt itself when its own connect timeout fires, and nothing
       // cancels the rest: a discovery or a subscribe that throws on a link
@@ -723,6 +797,8 @@ class BleTransport implements BmsLink {
     final device = _device;
     final detail = 'connect attempt gave up after ${attachTimeout.inSeconds} s '
         'without finishing; letting go of the link so the next one can start';
+    final attempt = _attempt;
+    if (attempt != null) recovery.failed(attempt, detail, timedOut: true);
     _errorController.add(
       // Not packMute: that wording tells the rider the pack was connected and
       // sent nothing for twenty seconds despite being asked, and this attempt
@@ -747,9 +823,14 @@ class BleTransport implements BmsLink {
     // Superseded rather than abandoned: the deadline already let go of this
     // device and a later attempt owns everything below. Touching any of it
     // from here would tear down a link that is being built, so this one just
-    // stops.
-    if (id != _attachId) return true;
+    // stops -- unless nothing later is using this device, in which case
+    // what this attempt opened is nobody's and is given back.
+    if (id != _attachId) {
+      if (_orphaned(device)) await _letGo(device);
+      return true;
+    }
     if (_wantConnection && !_disposed) return false;
+    recovery.cancelled(_attempt);
     _pollTimer?.cancel();
     await _notifySub?.cancel();
     _notifySub = null;
@@ -771,12 +852,66 @@ class BleTransport implements BmsLink {
   /// new connections", for every app on the phone. That is the state a reboot
   /// was clearing. Skipping the queue is what the plugin documents this flag
   /// for: cancelling an attempt in progress.
+  ///
+  /// `timeout: 6` because of what the wait costs. The plugin holds the
+  /// device's disconnect mutex until Android confirms, and its own connect
+  /// takes that same mutex first, so with the default 35 s every attempt after
+  /// a letting-go that Android never confirmed sat for half a minute inside
+  /// `connect` before it could even start. The disconnect itself was sent on
+  /// the first line; the wait only decides how long the next attempt is held.
   Future<void> _letGo(BluetoothDevice device) async {
     try {
-      await device.disconnect(queue: false);
+      await device.disconnect(queue: false, timeout: 6);
     } on Exception catch (_) {
       // Already gone, which was the point.
     }
+  }
+
+  /// Whether a link to [device] that a retired attempt opened is nobody's.
+  ///
+  /// It is still somebody's only if the transport still wants this very
+  /// device and has an attempt or a retry that will use it.
+  bool _orphaned(BluetoothDevice device) {
+    if (!_wantConnection || _disposed) return true;
+    if (_device?.remoteId != device.remoteId) return true;
+    return _backoff.hasGivenUp && !_attaching && _reconnectTimer == null;
+  }
+
+  /// Whether the radio is busy with a link or a scan of its own, so a
+  /// background scan should keep out of its way. Android has a long record of
+  /// failing connects with 133 when a scan starts while one is being set up,
+  /// and the plugin runs one scan at a time, so a background sweep starting
+  /// or stopping cuts the connect screen's search short.
+  bool get busy =>
+      _attaching ||
+      _reconnectTimer != null ||
+      switch (_currentState) {
+        BleLinkState.scanning ||
+        BleLinkState.connecting ||
+        BleLinkState.negotiating ||
+        BleLinkState.connected ||
+        BleLinkState.reconnecting => true,
+        _ => false,
+      };
+
+  /// The phone was found holding [deviceId] with nothing in this app owning
+  /// it. The next attempt closes that link before opening its own, instead of
+  /// refusing to try: on Android a connect from here joins whatever link the
+  /// phone already has, so a stranded one can be reached and let go of.
+  void suspectStranded(String deviceId) => recovery.suspectStranded(deviceId);
+
+  /// The stuck card's first step: everything this app holds on the radio, let
+  /// go of at once.
+  ///
+  /// Stops the reconnect loop and any attempt in flight, releases every
+  /// device the plugin lists, stops any scan, and has the plugin close every
+  /// native GATT handle it still keeps. What it cannot reach is anything below
+  /// the app, which is the point of offering it first: if this fixes the
+  /// morning, the fault was in this process; if only a force-stop or a reboot
+  /// does, it was not.
+  Future<String> resetRadio() async {
+    await disconnect();
+    return recovery.resetEverything();
   }
 
   /// Whether the phone itself already holds a connection to this device.
@@ -837,6 +972,9 @@ class BleTransport implements BmsLink {
     // giving-up let go of reports itself gone a moment later, and counting
     // that as a fresh drop would restate a decision already made.
     if (_backoff.hasGivenUp) return;
+    // A link that came up and went straight away is a failed attempt, and
+    // the recovery counts it as one.
+    recovery.dropped();
     drops++;
     // Forgotten on a drop, so the first check after reconnecting nudges rather
     // than trusting a timestamp from before the link went away.
@@ -1058,6 +1196,8 @@ class BleTransport implements BmsLink {
     _attachDeadline = null;
     _attachId++;
     _attaching = false;
+    recovery.cancelled(_attempt);
+    _attempt = null;
     // A pack the rider let go of starts the next connection from nothing,
     // rather than inheriting the failures of the one before it.
     _backoff.forgive();
@@ -1081,6 +1221,7 @@ class BleTransport implements BmsLink {
     await _bytesController.close();
     await _writesController.close();
     await _errorController.close();
+    await recovery.dispose();
   }
 
   void _setState(BleLinkState s) {

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'ble/ble_transport.dart';
 import 'ble/bms_link.dart';
+import 'ble/connect_recovery.dart';
 import 'ble/link_script.dart';
 import 'ble/link_lost_alarm.dart';
 import 'ble/link_trouble.dart';
@@ -122,7 +123,104 @@ class BmsService {
       unawaited(_updateForegroundService());
     });
     _errorSub = _transport.errors.listen(_onLinkError);
+    _recoverySub = _switchable?.real.recovery.events.listen(_onRecovery);
   }
+
+  StreamSubscription<RecoveryEvent>? _recoverySub;
+  final _recoveryController = StreamController<RecoveryEvent>.broadcast();
+
+  /// Everything the connect recovery reports, for a screen that shows the
+  /// stuck card to redraw on.
+  Stream<RecoveryEvent> get recoveryEvents => _recoveryController.stream;
+
+  /// The last few connect attempts, newest first, for the console's
+  /// diagnostic copy. All of them, including any the hourly budget kept out
+  /// of the database.
+  final List<ConnectAttemptRecord> recentAttempts = [];
+
+  /// Thirty attempt rows an hour at most. A retry loop on a stuck stack makes
+  /// one every few seconds, and the log exists to explain that morning, not to
+  /// be buried by it.
+  final AttemptBudget _attemptBudget = AttemptBudget();
+
+  void _onRecovery(RecoveryEvent e) {
+    final repo = repository;
+    switch (e) {
+      case AttemptRecorded(:final record):
+        recentAttempts.insert(0, record);
+        if (recentAttempts.length > 8) recentAttempts.removeLast();
+        final skipped = _attemptBudget.admit(record.endedAt);
+        if (skipped != null) {
+          unawaited(
+            repo?.note(
+                  LinkEventKind.connectAttempt,
+                  detail: skipped == 0
+                      ? record.detail
+                      : '${record.detail} · $skipped attempt(s) before this '
+                            'one not written (hourly budget)',
+                  deviceId: record.deviceId,
+                ) ??
+                Future.value(),
+          );
+        }
+      case StuckDeclared(:final deviceId, :final failures):
+        unawaited(
+          repo?.note(
+                LinkEventKind.bluetoothLooksStuck,
+                detail: '$failures failed attempts in a row',
+                deviceId: deviceId,
+              ) ??
+              Future.value(),
+        );
+      case RemedyTaken(:final remedy, :final detail):
+        unawaited(
+          repo?.note(
+                LinkEventKind.bluetoothRemedy,
+                detail: detail.isEmpty ? remedy.name : '${remedy.name}: $detail',
+              ) ??
+              Future.value(),
+        );
+      case RecoveredAfterStuck(:final detail):
+        unawaited(
+          repo?.note(LinkEventKind.bluetoothRecovered, detail: detail) ??
+              Future.value(),
+        );
+    }
+    if (!_recoveryController.isClosed) _recoveryController.add(e);
+  }
+
+  /// Whether enough attempts have failed in a row, with the pack within
+  /// reach, that the phone's Bluetooth is the suspect. False for the
+  /// simulator and for a test link.
+  bool get bluetoothLooksStuck {
+    if (isDemo) return false;
+    return _switchable?.real.recovery.looksStuck ?? false;
+  }
+
+  /// Reads what the previous process left about a stuck stack. Called once
+  /// at startup, after the repository is set, so a restart taken as a remedy
+  /// is written down.
+  Future<void> loadLinkRecovery() async =>
+      _switchable?.real.recovery.load() ?? Future.value();
+
+  /// Whether the radio is busy with a link, so a background scan keeps out of
+  /// its way.
+  bool get radioBusy => !isDemo && (_switchable?.real.busy ?? false);
+
+  /// The stuck card's button. See [BleTransport.resetRadio].
+  Future<String> resetBluetooth() async {
+    final real = _switchable?.real;
+    if (real == null || isDemo) return '';
+    // The service lets go first, so nothing decoded from the pack outlives
+    // the link and the drop that follows is not reported as an outage.
+    await disconnect();
+    return real.resetRadio();
+  }
+
+  /// The phone holds this pack with nothing here owning the link. The next
+  /// attempt closes it first.
+  void suspectStranded(String deviceId) =>
+      _switchable?.real.suspectStranded(deviceId);
 
   /// What the radio said, kept and written down.
   ///
@@ -3174,6 +3272,8 @@ class BmsService {
     await _writesSub.cancel();
     await _stateSub.cancel();
     await _errorSub.cancel();
+    await _recoverySub?.cancel();
+    await _recoveryController.close();
     await _transport.dispose();
     await traffic.dispose();
     await _snapshotController.close();

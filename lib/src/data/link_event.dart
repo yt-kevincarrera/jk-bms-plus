@@ -84,6 +84,34 @@ enum LinkEventKind {
   /// And told the ride is over, so the usual rules apply again.
   reconnectRelaxed,
 
+  // --- Why the phone would not connect ---
+  //
+  // For the morning a phone restart was the only fix. Each attempt says what
+  // the app could see before it, so a backup can tell a pack that was not
+  // advertising (it thought it was still connected) from one that was and
+  // could not be reached (the phone was the problem).
+
+  /// One connect attempt, first or retry, on the connect screen or in the
+  /// reconnect loop. Detail carries the outcome and how long it took, its
+  /// number in the streak, what was done before it, whether and how loudly
+  /// the pack was heard advertising, what the plugin and Android list as
+  /// connected, the adapter state, process uptime and time since the last
+  /// success. At most 30 an hour; the row after a gap says how many were
+  /// skipped.
+  connectAttempt,
+
+  /// Enough attempts in a row failed that the phone, not the pack, is the
+  /// suspect, and the rider was shown what to try.
+  bluetoothLooksStuck,
+
+  /// One of those steps was taken, or the app saw it happen: the in-app
+  /// reset, Bluetooth switched off, the app restarted, the phone rebooted.
+  bluetoothRemedy,
+
+  /// The first connection after the phone looked stuck. Detail says what had
+  /// been tried by then, which is the answer: app-side or Android-side.
+  bluetoothRecovered,
+
   // --- Which protocol the pack speaks ---
 
   /// The bytes said the pack speaks another brand than the one chosen, and

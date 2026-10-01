@@ -66,6 +66,11 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
+  # Already resolved through flutter_blue_plus; named here so a test can stand
+  # a fake radio under the real transport. The transport's attach, retry and
+  # letting-go logic had no test at all, because nothing could answer it.
+  flutter_blue_plus_platform_interface: ^9.0.3
+
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your

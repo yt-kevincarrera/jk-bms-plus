@@ -39,7 +39,11 @@ class _JkBmsAppState extends State<JkBmsApp> {
   late final BmsService _service = BmsService();
   final LocaleController _locale = LocaleController();
   final BmsRepository _repository = BmsRepository();
-  final ProximityWatcher _proximity = ProximityWatcher();
+  /// Keeps its scans out of the way of a link being set up or held: Android
+  /// fails connects that a scan starts in the middle of.
+  late final ProximityWatcher _proximity = ProximityWatcher(
+    radioBusy: () => _service.radioBusy,
+  );
   final AppSettings _settings = AppSettings();
 
   /// What this phone has paid for. One instance, handed down through
@@ -70,6 +74,9 @@ class _JkBmsAppState extends State<JkBmsApp> {
     super.initState();
     _locale.load();
     _service.repository = _repository;
+    // After the repository, so a restart that cleared a stuck stack is
+    // written down as the remedy it was.
+    unawaited(_service.loadLinkRecovery());
     _autoTripSub = _service.autoTripEvents.listen((action) {
       final text = _autoTripMessage?.call(action);
       if (text == null) return;
