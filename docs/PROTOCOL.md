@@ -79,11 +79,13 @@ against the Yoazaky 20S pack.
 ### 1. Current sign convention
 
 `BmsSnapshot.isCharging` assumes positive current means charging, following the
-reference's use of `std::max(0.0f, power)` for charging power. **The captured
-frames are all from an idle pack (current = 0), so this is unverified.**
+reference's use of `std::max(0.0f, power)` for charging power.
 
-To settle it: connect, note the sign while discharging under load, then note it
-while charging. Fix `isCharging` / `isDischarging` if reversed.
+**Settled for JK.** On the owner's JK-BD6A20S6P (firmware JK02_32S), the backup
+of 2026-09-02 shows discharge as negative: every reading of a 21-minute ride
+sits between -45.9 A and 0.0 A, and charging reads positive. `isCharging` and
+`isDischarging` are right as they are. (An ANT reports the opposite way round on
+the wire and is turned to this convention in its parser.)
 
 ### 2. Temperature sensor bitmask at byte 182
 

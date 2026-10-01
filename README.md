@@ -53,12 +53,14 @@ buzzes when the spread, the temperature, a cell near cutoff or the BMS itself
 crosses a line. Each one fires once and needs to genuinely clear before it can
 fire again.
 
-**Over time.** Consumption per ride, measured capacity, sag as apparent internal
-resistance, and delta plotted against charge — all from rows already being
-stored. Each says how many days of history is behind it.
+**Over time.** Consumption per ride, measured capacity, the pack's apparent
+resistance from the stretches where the current swung, and delta plotted
+against charge, all from rows already being stored and drawn against time.
+Each says how many days of history is behind it.
 
-**Export.** Trips and readings as CSV, tracks as GPX, and the raw frames as hex
-so the history can be re-read if a byte offset here turns out to be wrong.
+**Export.** Trips and readings as CSV, a ride's track as GPX from its detail,
+and the raw frames as hex so the history can be re-read if a byte offset here
+turns out to be wrong.
 
 **ANT BMS (2021 and later).** Read the same way as a JK, read-only: the app
 only ever sends the two ANT read requests. If a pack does not decode, connect
@@ -161,9 +163,10 @@ watching the first real connection, settle these:
 flutter test
 ```
 
-679 tests, no device needed. The protocol ones run against 11 real 300-byte
-frames captured from JK hardware, with expected values taken from the reference
-implementation's byte-layout tables rather than from this parser's own output.
+No device needed for any of them. The protocol ones run against 11 real
+300-byte frames captured from JK hardware, with expected values taken from the
+reference implementation's byte-layout tables rather than from this parser's
+own output.
 
 ## Layout
 
@@ -238,5 +241,5 @@ cutting one.
 ## Out of scope
 
 
-Writing to the BMS. Multi-pack support. Cloud, accounts, sync. Store
-publication. Other BMS brands, for now.
+Writing to the BMS. Cloud, accounts, sync. Store publication. BMS brands
+other than JK and ANT, for now.
