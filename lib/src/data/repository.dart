@@ -76,7 +76,7 @@ class BmsRepository {
         packVoltage: s.packVoltage,
         current: s.current,
         soc: s.soc,
-        soh: s.soh,
+        soh: Value(s.soh),
         remainingAh: s.remainingCapacityAh,
         // Null when the BMS keeps no counter (an ANT does not): a 0 here read
         // as a pack that had never been cycled.

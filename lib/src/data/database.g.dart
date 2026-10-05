@@ -3289,9 +3289,9 @@ class $SnapshotsTable extends Snapshots
   late final GeneratedColumn<double> soh = GeneratedColumn<double>(
     'soh',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.double,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _remainingAhMeta = const VerificationMeta(
     'remainingAh',
@@ -3512,8 +3512,6 @@ class $SnapshotsTable extends Snapshots
         _sohMeta,
         soh.isAcceptableOrUnknown(data['soh']!, _sohMeta),
       );
-    } else if (isInserting) {
-      context.missing(_sohMeta);
     }
     if (data.containsKey('remaining_ah')) {
       context.handle(
@@ -3661,7 +3659,7 @@ class $SnapshotsTable extends Snapshots
       soh: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}soh'],
-      )!,
+      ),
       remainingAh: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}remaining_ah'],
@@ -3726,7 +3724,9 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
   final double packVoltage;
   final double current;
   final double soc;
-  final double soh;
+
+  /// Null when the BMS does not report one (the pre-2021 ANT frame).
+  final double? soh;
   final double remainingAh;
 
   /// The BMS's own cycle counter. Null when the BMS does not report one: an
@@ -3767,7 +3767,7 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
     required this.packVoltage,
     required this.current,
     required this.soc,
-    required this.soh,
+    this.soh,
     required this.remainingAh,
     this.cycleCount,
     required this.cycleCapacityAh,
@@ -3792,7 +3792,9 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
     map['pack_voltage'] = Variable<double>(packVoltage);
     map['current'] = Variable<double>(current);
     map['soc'] = Variable<double>(soc);
-    map['soh'] = Variable<double>(soh);
+    if (!nullToAbsent || soh != null) {
+      map['soh'] = Variable<double>(soh);
+    }
     map['remaining_ah'] = Variable<double>(remainingAh);
     if (!nullToAbsent || cycleCount != null) {
       map['cycle_count'] = Variable<double>(cycleCount);
@@ -3826,7 +3828,7 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
       packVoltage: Value(packVoltage),
       current: Value(current),
       soc: Value(soc),
-      soh: Value(soh),
+      soh: soh == null && nullToAbsent ? const Value.absent() : Value(soh),
       remainingAh: Value(remainingAh),
       cycleCount: cycleCount == null && nullToAbsent
           ? const Value.absent()
@@ -3862,7 +3864,7 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
       packVoltage: serializer.fromJson<double>(json['packVoltage']),
       current: serializer.fromJson<double>(json['current']),
       soc: serializer.fromJson<double>(json['soc']),
-      soh: serializer.fromJson<double>(json['soh']),
+      soh: serializer.fromJson<double?>(json['soh']),
       remainingAh: serializer.fromJson<double>(json['remainingAh']),
       cycleCount: serializer.fromJson<double?>(json['cycleCount']),
       cycleCapacityAh: serializer.fromJson<double>(json['cycleCapacityAh']),
@@ -3887,7 +3889,7 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
       'packVoltage': serializer.toJson<double>(packVoltage),
       'current': serializer.toJson<double>(current),
       'soc': serializer.toJson<double>(soc),
-      'soh': serializer.toJson<double>(soh),
+      'soh': serializer.toJson<double?>(soh),
       'remainingAh': serializer.toJson<double>(remainingAh),
       'cycleCount': serializer.toJson<double?>(cycleCount),
       'cycleCapacityAh': serializer.toJson<double>(cycleCapacityAh),
@@ -3910,7 +3912,7 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
     double? packVoltage,
     double? current,
     double? soc,
-    double? soh,
+    Value<double?> soh = const Value.absent(),
     double? remainingAh,
     Value<double?> cycleCount = const Value.absent(),
     double? cycleCapacityAh,
@@ -3930,7 +3932,7 @@ class Snapshot extends DataClass implements Insertable<Snapshot> {
     packVoltage: packVoltage ?? this.packVoltage,
     current: current ?? this.current,
     soc: soc ?? this.soc,
-    soh: soh ?? this.soh,
+    soh: soh.present ? soh.value : this.soh,
     remainingAh: remainingAh ?? this.remainingAh,
     cycleCount: cycleCount.present ? cycleCount.value : this.cycleCount,
     cycleCapacityAh: cycleCapacityAh ?? this.cycleCapacityAh,
@@ -4074,7 +4076,7 @@ class SnapshotsCompanion extends UpdateCompanion<Snapshot> {
   final Value<double> packVoltage;
   final Value<double> current;
   final Value<double> soc;
-  final Value<double> soh;
+  final Value<double?> soh;
   final Value<double> remainingAh;
   final Value<double?> cycleCount;
   final Value<double> cycleCapacityAh;
@@ -4115,7 +4117,7 @@ class SnapshotsCompanion extends UpdateCompanion<Snapshot> {
     required double packVoltage,
     required double current,
     required double soc,
-    required double soh,
+    this.soh = const Value.absent(),
     required double remainingAh,
     this.cycleCount = const Value.absent(),
     this.cycleCapacityAh = const Value.absent(),
@@ -4132,7 +4134,6 @@ class SnapshotsCompanion extends UpdateCompanion<Snapshot> {
        packVoltage = Value(packVoltage),
        current = Value(current),
        soc = Value(soc),
-       soh = Value(soh),
        remainingAh = Value(remainingAh),
        deltaVolts = Value(deltaVolts),
        minCellVoltage = Value(minCellVoltage),
@@ -4191,7 +4192,7 @@ class SnapshotsCompanion extends UpdateCompanion<Snapshot> {
     Value<double>? packVoltage,
     Value<double>? current,
     Value<double>? soc,
-    Value<double>? soh,
+    Value<double?>? soh,
     Value<double>? remainingAh,
     Value<double?>? cycleCount,
     Value<double>? cycleCapacityAh,
@@ -8960,7 +8961,7 @@ typedef $$SnapshotsTableCreateCompanionBuilder =
       required double packVoltage,
       required double current,
       required double soc,
-      required double soh,
+      Value<double?> soh,
       required double remainingAh,
       Value<double?> cycleCount,
       Value<double> cycleCapacityAh,
@@ -8982,7 +8983,7 @@ typedef $$SnapshotsTableUpdateCompanionBuilder =
       Value<double> packVoltage,
       Value<double> current,
       Value<double> soc,
-      Value<double> soh,
+      Value<double?> soh,
       Value<double> remainingAh,
       Value<double?> cycleCount,
       Value<double> cycleCapacityAh,
@@ -9332,7 +9333,7 @@ class $$SnapshotsTableTableManager
                 Value<double> packVoltage = const Value.absent(),
                 Value<double> current = const Value.absent(),
                 Value<double> soc = const Value.absent(),
-                Value<double> soh = const Value.absent(),
+                Value<double?> soh = const Value.absent(),
                 Value<double> remainingAh = const Value.absent(),
                 Value<double?> cycleCount = const Value.absent(),
                 Value<double> cycleCapacityAh = const Value.absent(),
@@ -9374,7 +9375,7 @@ class $$SnapshotsTableTableManager
                 required double packVoltage,
                 required double current,
                 required double soc,
-                required double soh,
+                Value<double?> soh = const Value.absent(),
                 required double remainingAh,
                 Value<double?> cycleCount = const Value.absent(),
                 Value<double> cycleCapacityAh = const Value.absent(),

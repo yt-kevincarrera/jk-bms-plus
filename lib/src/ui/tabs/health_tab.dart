@@ -129,12 +129,16 @@ class _HealthTabState extends State<HealthTab> {
     final catalogue = service.advertisedCapacityAh;
     final degradation = _degradation;
     final lost = degradation?.lostFraction;
-    final healthPercent = lost != null ? (1 - lost) * 100 : s.soh;
+    // Null with nothing measured on a BMS that reports no health figure (a
+    // pre-2021 ANT): the gauge then says so instead of showing a number.
+    final double? healthPercent = lost != null ? (1 - lost) * 100 : s.soh;
     // With nothing measured the gauge shows what the BMS reports, and only
     // that: neutral, with no sentence drawn from it. The app calls this same
     // figure decorative elsewhere, and on a pack reporting 0 it used to print
     // "quite worn" in red off a number nobody measured.
-    final tone = lost != null ? _healthTone(healthPercent) : AppTheme.textFaint;
+    final tone = lost != null
+        ? _healthTone(healthPercent!)
+        : AppTheme.textFaint;
     // The figure beside the gauge: measured when there is a test, otherwise
     // the configured capacity read back off the counter, and labelled so.
     final measuredNow = degradation?.current?.ah;
@@ -147,12 +151,16 @@ class _HealthTabState extends State<HealthTab> {
             Expanded(
               child: Center(
                 child: SocGauge(
-                  soc: healthPercent.clamp(0.0, 100.0),
+                  soc: (healthPercent ?? 0).clamp(0.0, 100.0),
                   color: tone,
                   centreLabel: t.healthGaugeLabel,
-                  centreValue: '${healthPercent.toStringAsFixed(0)}%',
+                  centreValue: healthPercent == null
+                      ? '--'
+                      : '${healthPercent.toStringAsFixed(0)}%',
                   subtitle: lost != null
                       ? t.healthGaugeMeasured
+                      : healthPercent == null
+                      ? t.notReported
                       : t.healthGaugeReported,
                   size: 166,
                 ),
@@ -167,7 +175,7 @@ class _HealthTabState extends State<HealthTab> {
                   children: [
                     Text(
                       lost != null
-                          ? _verdict(t, healthPercent)
+                          ? _verdict(t, healthPercent!)
                           : t.healthVerdictReported,
                       style: TextStyle(
                         fontSize: 15.5,

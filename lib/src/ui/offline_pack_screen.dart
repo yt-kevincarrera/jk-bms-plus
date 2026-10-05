@@ -427,7 +427,9 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
                 : t.offlineImpliedHint,
           ),
           if (last != null) ...[
-            InfoRow(t.offlineSoh, '${last.soh.toStringAsFixed(0)} %'),
+            // Hidden rather than invented when the BMS reports none.
+            if (last.soh case final soh?)
+              InfoRow(t.offlineSoh, '${soh.toStringAsFixed(0)} %'),
             // Hidden rather than 0 when the BMS keeps no counter (an ANT).
             if (last.cycleCount != null)
               InfoRow(t.offlineCycles, last.cycleCount!.toStringAsFixed(0)),

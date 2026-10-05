@@ -90,7 +90,7 @@ void main() {
         packVoltage: 78.4,
         current: -19.2,
         soc: 88,
-        soh: 97,
+        soh: const Value(97.0),
         remainingAh: 39.6,
         cycleCount: const Value(61),
         cycleCapacityAh: const Value(2843.5),

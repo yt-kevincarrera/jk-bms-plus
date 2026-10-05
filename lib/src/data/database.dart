@@ -246,7 +246,8 @@ class Snapshots extends Table {
   RealColumn get packVoltage => real()();
   RealColumn get current => real()();
   RealColumn get soc => real()();
-  RealColumn get soh => real()();
+  /// Null when the BMS does not report one (the pre-2021 ANT frame).
+  RealColumn get soh => real().nullable()();
   RealColumn get remainingAh => real()();
 
   /// The BMS's own cycle counter. Null when the BMS does not report one: an
@@ -464,7 +465,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 18;
+  int get schemaVersion => 19;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -652,6 +653,22 @@ class AppDatabase extends _$AppDatabase {
         // newer, and the trends screen works it out from those on its own.
         if (from >= 16) {
           await m.addColumn(trips, trips.packResistanceMilliohms);
+        }
+      }
+      if (from < 19) {
+        // A reading's SOH becomes nullable: the pre-2021 ANT frame has no
+        // such field. SQLite cannot drop a NOT NULL in place, so the table
+        // is rebuilt. Older than 16 already had it rebuilt from the current
+        // classes by the from < 16 step, nullable SOH included. Every stored
+        // value is kept: they were all reported by a BMS that has the field.
+        // Checked rather than assumed, so a database holding only some
+        // tables (the older steps' tests build exactly that) upgrades too.
+        final hasReadings = await customSelect(
+          "SELECT 1 FROM sqlite_master WHERE type = 'table' "
+          "AND name = 'snapshots'",
+        ).get();
+        if (from >= 16 && hasReadings.isNotEmpty) {
+          await m.alterTable(TableMigration(snapshots));
         }
       }
     },

@@ -115,7 +115,7 @@ void main() {
           packVoltage: 52,
           current: 0,
           soc: 50,
-          soh: 100,
+          soh: const Value(100.0),
           remainingAh: 10,
           deltaVolts: 0.01,
           minCellVoltage: 3.7,

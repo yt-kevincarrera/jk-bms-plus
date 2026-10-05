@@ -35,7 +35,7 @@ void main() {
           packVoltage: 78,
           current: -10,
           soc: soc,
-          soh: 97,
+          soh: const Value(97.0),
           remainingAh: 30,
           cycleCount: const Value(60),
           cycleCapacityAh: const Value(2000),

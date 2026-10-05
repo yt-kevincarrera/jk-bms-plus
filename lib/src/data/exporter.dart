@@ -121,7 +121,7 @@ class BmsExporter {
         _n(r.current, 3),
         _n(r.packVoltage * r.current, 1),
         _n(r.soc, 1),
-        _n(r.soh, 1),
+        r.soh == null ? '' : _n(r.soh!, 1),
         _n(r.remainingAh, 3),
         r.cycleCount == null ? '' : _n(r.cycleCount!, 0),
         _n(r.deltaVolts, 4),

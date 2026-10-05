@@ -45,7 +45,7 @@ void main() {
           packVoltage: packVoltage,
           current: current,
           soc: soc,
-          soh: 100,
+          soh: const Value(100.0),
           remainingAh: remainingAh,
           cycleCount: const Value(2),
           deltaVolts: 0.003,

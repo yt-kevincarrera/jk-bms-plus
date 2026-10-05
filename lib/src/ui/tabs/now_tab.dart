@@ -427,7 +427,11 @@ class _NowTabState extends State<NowTab> {
               s.cycleCount == null ? t.notReported : '${s.cycleCount}',
               dim: s.cycleCount == null,
             ),
-            InfoRow(t.packSoh, '${s.soh.toStringAsFixed(0)} %'),
+            InfoRow(
+              t.packSoh,
+              s.soh == null ? t.notReported : '${s.soh!.toStringAsFixed(0)} %',
+              dim: s.soh == null,
+            ),
             InfoRow(
               t.packSag,
               history.sagVolts == null
