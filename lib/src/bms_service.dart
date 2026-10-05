@@ -1682,10 +1682,13 @@ class BmsService {
 
   // --- Switch writes ---
   //
-  // The one thing the app can change on a BMS: the charge, discharge and
-  // balancer switches of a JK02, and only with the rider's permission on.
-  // Every attempt goes through [decideSwitchWrite], the only code that can
-  // make a write frame, and every attempt leaves a row in the link events.
+  // Dormant: the app is read-only (bmsWritesShipped is false), so
+  // [decideSwitchWrite] refuses every attempt with notShipped, no
+  // [RegisterWrite] is ever made and [BmsLink.writeRegister] is never
+  // reached from here. Kept compiled for a later decision. When shipped: the
+  // charge, discharge and balancer switches of a JK02, only with the rider's
+  // permission on. Every attempt goes through [decideSwitchWrite], the only
+  // code that can make a write frame, and leaves a row in the link events.
 
   /// The rider's "let the app change the BMS" setting. Off until the
   /// settings say otherwise; with it off [decideSwitchWrite] refuses every

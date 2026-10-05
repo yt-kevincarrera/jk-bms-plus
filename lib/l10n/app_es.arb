@@ -304,11 +304,11 @@
   "systemFramesUnsupported": "Tipo no soportado",
   "systemAcceptRate": "Tasa de aceptación",
   "systemBytesReceived": "Bytes recibidos",
-  "systemSettingsTitle": "Configuración del BMS",
+  "systemSettingsTitle": "Configuración del BMS (solo lectura)",
   "settingsNotExposed": "Este BMS no expone su configuración a la app.",
   "systemNotices": "Avisos",
   "systemRawConsole": "Consola de frames crudos",
-  "systemReadOnlyNote": "Con el permiso de escritura apagado, la app no cambia nada en el BMS: todo lo de arriba es solo lectura.",
+  "systemReadOnlyNote": "La app no cambia nada en el BMS: solo le envía peticiones de lectura. Todo lo de arriba es solo lectura.",
   "systemLanguageTitle": "Idioma",
   "systemLanguageSpanish": "Español",
   "systemLanguageEnglish": "English",
@@ -625,7 +625,7 @@
     }
   },
   "adviceBalancerNeverSeenTitle": "El balanceador nunca arrancó",
-  "adviceBalancerNeverSeenBody": "Las celdas están desparejas en reposo pero el balanceador no ha trabajado desde que se conectó el pack. O está apagado, o su voltaje de arranque ({voltage} V) está por encima de donde llegan tus celdas. El voltaje de arranque se cambia con la app oficial del BMS. El interruptor del balanceador se puede encender desde Sistema, en Configuración del BMS, si activas el permiso de escritura en Ajustes; con el permiso apagado, la app no cambia nada en el BMS.",
+  "adviceBalancerNeverSeenBody": "Las celdas están desparejas en reposo pero el balanceador no ha trabajado desde que se conectó el pack. O está apagado, o su voltaje de arranque ({voltage} V) está por encima de donde llegan tus celdas. Se revisa en los ajustes del BMS con su app oficial: esta app no cambia nada en el BMS, solo le envía peticiones de lectura.",
   "@adviceBalancerNeverSeenBody": {
     "placeholders": {
       "voltage": {
@@ -2605,7 +2605,7 @@
   "reportSectionDayOne": "El día uno de esta batería",
   "reportDayOneNote": "Comparación contra el estado guardado el día que se dio de alta la batería. No es una medida de capacidad: una foto de los voltajes no puede medir lo que aguanta un pack, y aquí no se presenta como tal.",
   "verdictConfigOvpDangerousTitle": "El corte de carga está por encima de lo que aguantan las celdas",
-  "verdictConfigOvpDangerousBody": "El BMS corta la carga a {value} V por celda y el máximo seguro para esta química es {limit} V. Cada carga completa está haciendo daño. Se cambia desde la app oficial del BMS, bajo tu responsabilidad; esta app no escribe valores de configuración en la batería.",
+  "verdictConfigOvpDangerousBody": "El BMS corta la carga a {value} V por celda y el máximo seguro para esta química es {limit} V. Cada carga completa está haciendo daño. Se cambia desde la app oficial del BMS, bajo tu responsabilidad. La app no cambia nada en el BMS: solo le envía peticiones de lectura.",
   "@verdictConfigOvpDangerousBody": {
     "placeholders": {
       "value": {
@@ -2767,7 +2767,7 @@
   "configAuditTitle": "Auditoría de configuración",
   "configAuditIntro": "Lo que el BMS está configurado para hacer, comparado con lo que aguantan las celdas que dijiste que lleva.",
   "configAuditOpen": "Auditar la configuración",
-  "configAuditReadOnly": "Solo lectura. Esta app no escribe valores de configuración en el BMS: un valor mal escrito en una batería es un incendio, y el camino de escritura del protocolo está sacado a base de ingeniería inversa. Lo que haya que cambiar se cambia desde la app oficial del BMS, y esa decisión es tuya. Lo único que la app puede tocar son los interruptores de carga, descarga y balanceador, y solo con el permiso de escritura encendido en Ajustes.",
+  "configAuditReadOnly": "Solo lectura. La app no cambia nada en el BMS: solo le envía peticiones de lectura. Un valor mal escrito en una batería es un incendio, y el camino de escritura del protocolo está sacado a base de ingeniería inversa. Lo que haya que cambiar se cambia desde la app oficial del BMS, y esa decisión es tuya.",
   "configAuditSettings": "Todo lo que se ha mirado",
   "configAuditNoSettings": "El BMS todavía no ha mandado su configuración. Espera unos segundos con la batería conectada.",
   "configAuditChemistryRow": "Química declarada",

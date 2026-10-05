@@ -668,7 +668,7 @@ class AppL10nEs extends AppL10n {
   String get systemBytesReceived => 'Bytes recibidos';
 
   @override
-  String get systemSettingsTitle => 'Configuración del BMS';
+  String get systemSettingsTitle => 'Configuración del BMS (solo lectura)';
 
   @override
   String get settingsNotExposed =>
@@ -682,7 +682,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get systemReadOnlyNote =>
-      'Con el permiso de escritura apagado, la app no cambia nada en el BMS: todo lo de arriba es solo lectura.';
+      'La app no cambia nada en el BMS: solo le envía peticiones de lectura. Todo lo de arriba es solo lectura.';
 
   @override
   String get systemLanguageTitle => 'Idioma';
@@ -1298,7 +1298,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String adviceBalancerNeverSeenBody(String voltage) {
-    return 'Las celdas están desparejas en reposo pero el balanceador no ha trabajado desde que se conectó el pack. O está apagado, o su voltaje de arranque ($voltage V) está por encima de donde llegan tus celdas. El voltaje de arranque se cambia con la app oficial del BMS. El interruptor del balanceador se puede encender desde Sistema, en Configuración del BMS, si activas el permiso de escritura en Ajustes; con el permiso apagado, la app no cambia nada en el BMS.';
+    return 'Las celdas están desparejas en reposo pero el balanceador no ha trabajado desde que se conectó el pack. O está apagado, o su voltaje de arranque ($voltage V) está por encima de donde llegan tus celdas. Se revisa en los ajustes del BMS con su app oficial: esta app no cambia nada en el BMS, solo le envía peticiones de lectura.';
   }
 
   @override
@@ -4123,7 +4123,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String verdictConfigOvpDangerousBody(String value, String limit) {
-    return 'El BMS corta la carga a $value V por celda y el máximo seguro para esta química es $limit V. Cada carga completa está haciendo daño. Se cambia desde la app oficial del BMS, bajo tu responsabilidad; esta app no escribe valores de configuración en la batería.';
+    return 'El BMS corta la carga a $value V por celda y el máximo seguro para esta química es $limit V. Cada carga completa está haciendo daño. Se cambia desde la app oficial del BMS, bajo tu responsabilidad. La app no cambia nada en el BMS: solo le envía peticiones de lectura.';
   }
 
   @override
@@ -4291,7 +4291,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get configAuditReadOnly =>
-      'Solo lectura. Esta app no escribe valores de configuración en el BMS: un valor mal escrito en una batería es un incendio, y el camino de escritura del protocolo está sacado a base de ingeniería inversa. Lo que haya que cambiar se cambia desde la app oficial del BMS, y esa decisión es tuya. Lo único que la app puede tocar son los interruptores de carga, descarga y balanceador, y solo con el permiso de escritura encendido en Ajustes.';
+      'Solo lectura. La app no cambia nada en el BMS: solo le envía peticiones de lectura. Un valor mal escrito en una batería es un incendio, y el camino de escritura del protocolo está sacado a base de ingeniería inversa. Lo que haya que cambiar se cambia desde la app oficial del BMS, y esa decisión es tuya.';
 
   @override
   String get configAuditSettings => 'Todo lo que se ha mirado';

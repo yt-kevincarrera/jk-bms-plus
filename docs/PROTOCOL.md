@@ -159,17 +159,25 @@ loss. See section 8 of the PRD.
 
 ## What this app writes
 
-It never writes setting values (voltages, currents, temperatures) to the BMS.
-The protocol is reverse-engineered; a wrong value written to a protection
+Read requests only. The app changes nothing on the BMS: it writes only the
+read requests its `LinkScript` produces (`0x97` device info, `0x96` cell info
+on a JK; the status and device-info requests on an ANT). The transport's
+script path, `BleTransport._write`, refuses any frame whose value length is
+not zero. It never writes setting values (voltages, currents, temperatures):
+the protocol is reverse-engineered, and a wrong value written to a protection
 register can brick the BMS or disable a protection.
 
-On its own it writes only the 20-byte read requests its `LinkScript` produces
-(`0x97` device info, `0x96` cell info on a JK). The transport's script path,
-`BleTransport._write`, refuses any frame whose value length is not zero.
+Writes exist in the code but are not shipped. 2.29 added the three JK02
+switches behind a rider setting; since then the app is read-only again
+(owner's decision, 2026-10-05) and the code is kept dormant for a later
+decision: `bmsWritesShipped` in `lib/src/ble/bms_write_gate.dart` is a
+compile-time `false`, `decideSwitchWrite` refuses every write with
+`notShipped` before looking at anything else (a 2.29 preference stored as on
+included), so no write frame can be built and none can reach the transport.
+The settings row and the switch controls are not shown. What follows
+documents the dormant code, so it stays correct.
 
-With the rider's "let the app change the BMS" setting on (off by default, not
-carried in a backup), it can also write the three JK02 switches, from System,
-BMS settings:
+The three JK02 switches it would write:
 
 | Switch | Register (JK02_24S and JK02_32S) | Read back from settings byte |
 |---|---|---|
@@ -184,7 +192,8 @@ Source: `SWITCHES` in `components/jk_bms_ble/switch/__init__.py` (listed as
 `AA 55 90 EB 1E 04 00 00 00 00 00 00 00 00 00 00 00 00 00 9C`.
 
 Every write goes through `decideSwitchWrite` in `lib/src/ble/bms_write_gate.dart`,
-the only code that can build one: it refuses with the setting off, on an ANT,
+the only code that can build one: today it refuses everything (not shipped);
+once shipped it would refuse with the setting off, on an ANT,
 on JK04 or an unknown framing, without a settings frame or a recent plausible
 reading, and turning discharging off while the bike is ridden (riding gate,
 ride recording, or more than 2 A drawn). A change counts as applied only when a

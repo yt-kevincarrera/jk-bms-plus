@@ -1156,7 +1156,7 @@ abstract class AppL10n {
   /// No description provided for @systemSettingsTitle.
   ///
   /// In es, this message translates to:
-  /// **'Configuración del BMS'**
+  /// **'Configuración del BMS (solo lectura)'**
   String get systemSettingsTitle;
 
   /// No description provided for @settingsNotExposed.
@@ -1180,7 +1180,7 @@ abstract class AppL10n {
   /// No description provided for @systemReadOnlyNote.
   ///
   /// In es, this message translates to:
-  /// **'Con el permiso de escritura apagado, la app no cambia nada en el BMS: todo lo de arriba es solo lectura.'**
+  /// **'La app no cambia nada en el BMS: solo le envía peticiones de lectura. Todo lo de arriba es solo lectura.'**
   String get systemReadOnlyNote;
 
   /// No description provided for @systemLanguageTitle.
@@ -2290,7 +2290,7 @@ abstract class AppL10n {
   /// No description provided for @adviceBalancerNeverSeenBody.
   ///
   /// In es, this message translates to:
-  /// **'Las celdas están desparejas en reposo pero el balanceador no ha trabajado desde que se conectó el pack. O está apagado, o su voltaje de arranque ({voltage} V) está por encima de donde llegan tus celdas. El voltaje de arranque se cambia con la app oficial del BMS. El interruptor del balanceador se puede encender desde Sistema, en Configuración del BMS, si activas el permiso de escritura en Ajustes; con el permiso apagado, la app no cambia nada en el BMS.'**
+  /// **'Las celdas están desparejas en reposo pero el balanceador no ha trabajado desde que se conectó el pack. O está apagado, o su voltaje de arranque ({voltage} V) está por encima de donde llegan tus celdas. Se revisa en los ajustes del BMS con su app oficial: esta app no cambia nada en el BMS, solo le envía peticiones de lectura.'**
   String adviceBalancerNeverSeenBody(String voltage);
 
   /// No description provided for @adviceOvervoltageHighTitle.
@@ -6981,7 +6981,7 @@ abstract class AppL10n {
   /// No description provided for @verdictConfigOvpDangerousBody.
   ///
   /// In es, this message translates to:
-  /// **'El BMS corta la carga a {value} V por celda y el máximo seguro para esta química es {limit} V. Cada carga completa está haciendo daño. Se cambia desde la app oficial del BMS, bajo tu responsabilidad; esta app no escribe valores de configuración en la batería.'**
+  /// **'El BMS corta la carga a {value} V por celda y el máximo seguro para esta química es {limit} V. Cada carga completa está haciendo daño. Se cambia desde la app oficial del BMS, bajo tu responsabilidad. La app no cambia nada en el BMS: solo le envía peticiones de lectura.'**
   String verdictConfigOvpDangerousBody(String value, String limit);
 
   /// No description provided for @verdictConfigOvpHighTitle.
@@ -7227,7 +7227,7 @@ abstract class AppL10n {
   /// No description provided for @configAuditReadOnly.
   ///
   /// In es, this message translates to:
-  /// **'Solo lectura. Esta app no escribe valores de configuración en el BMS: un valor mal escrito en una batería es un incendio, y el camino de escritura del protocolo está sacado a base de ingeniería inversa. Lo que haya que cambiar se cambia desde la app oficial del BMS, y esa decisión es tuya. Lo único que la app puede tocar son los interruptores de carga, descarga y balanceador, y solo con el permiso de escritura encendido en Ajustes.'**
+  /// **'Solo lectura. La app no cambia nada en el BMS: solo le envía peticiones de lectura. Un valor mal escrito en una batería es un incendio, y el camino de escritura del protocolo está sacado a base de ingeniería inversa. Lo que haya que cambiar se cambia desde la app oficial del BMS, y esa decisión es tuya.'**
   String get configAuditReadOnly;
 
   /// No description provided for @configAuditSettings.

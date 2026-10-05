@@ -30,6 +30,7 @@ import '../pack/pack_profile_card.dart';
 import '../bms_code_labels.dart';
 import '../fault_history_screen.dart';
 import '../link_events_screen.dart';
+import '../../ble/bms_write_gate.dart';
 import '../widgets/bms_switches.dart';
 import '../widgets/pro_gate.dart';
 import '../locale_controller.dart';
@@ -345,22 +346,16 @@ class _SystemTabState extends State<SystemTab> {
             ),
           ),
         ),
-        // Says what is true now. It used to say the app never writes, which
-        // stopped being true the day the switches arrived; with the
-        // permission off it still is.
-        ListenableBuilder(
-          listenable: widget.settings,
-          builder: (context, _) => Padding(
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
-            child: Text(
-              widget.settings.allowBmsWrites
-                  ? t.systemWritesOnNote
-                  : t.systemReadOnlyNote,
-              style: const TextStyle(
-                fontSize: 11.5,
-                height: 1.4,
-                color: AppTheme.textFaint,
-              ),
+        // Read-only again (bmsWritesShipped is false), whatever the
+        // preference stored by 2.29 says, so the note does not look at it.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+          child: Text(
+            t.systemReadOnlyNote,
+            style: const TextStyle(
+              fontSize: 11.5,
+              height: 1.4,
+              color: AppTheme.textFaint,
             ),
           ),
         ),
@@ -892,11 +887,11 @@ class _SystemTabState extends State<SystemTab> {
     return Section(
       title: t.systemSettingsTitle,
       children: [
-        // First, because they are the only rows here a rider can act on.
-        // A settings frame only ever comes from a JK; the brand check is
-        // there so an ANT can never be offered a write, whatever else
-        // changes around it.
-        if (widget.service.brand == BmsBrand.jk)
+        // The write controls exist only in a build that ships writes; this
+        // one does not (bmsWritesShipped), so the three switches are plain
+        // rows further down, in their groups. The brand check stays so an
+        // ANT could never be offered a write, whatever changes around it.
+        if (bmsWritesShipped && widget.service.brand == BmsBrand.jk)
           BmsSwitchesGroup(
             service: widget.service,
             settings: s,
@@ -978,8 +973,9 @@ class _SystemTabState extends State<SystemTab> {
             last: true,
           ),
         ]),
-        // The three switches are at the top of the section, as switches.
         ..._settingsGroup(t.settingsGroupBalance, [
+          if (!bmsWritesShipped)
+            InfoRow(t.configBalancerSwitch, _onOff(t, s.balancerSwitchOn)),
           InfoRow(
             t.settingMaxBalance,
             '${s.maxBalanceCurrent.toStringAsFixed(2)} A',
@@ -997,6 +993,10 @@ class _SystemTabState extends State<SystemTab> {
             t.settingNominalCapacity,
             '${s.nominalCapacityAh.toStringAsFixed(1)} Ah',
           ),
+          if (!bmsWritesShipped) ...[
+            InfoRow(t.configChargeSwitch, _onOff(t, s.chargeSwitchOn)),
+            InfoRow(t.configDischargeSwitch, _onOff(t, s.dischargeSwitchOn)),
+          ],
           InfoRow(t.configSoc100, _v(s.soc100Voltage)),
           InfoRow(t.configSoc0, _v(s.soc0Voltage)),
           InfoRow(t.settingRequestCharge, _v(s.cellRequestChargeVoltage)),

@@ -668,7 +668,7 @@ class AppL10nEn extends AppL10n {
   String get systemBytesReceived => 'Bytes received';
 
   @override
-  String get systemSettingsTitle => 'BMS settings';
+  String get systemSettingsTitle => 'BMS settings (read-only)';
 
   @override
   String get settingsNotExposed =>
@@ -682,7 +682,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get systemReadOnlyNote =>
-      'With the write permission off, the app changes nothing on the BMS: everything above is read-only.';
+      'The app changes nothing on the BMS: it only sends it read requests. Everything above is read-only.';
 
   @override
   String get systemLanguageTitle => 'Language';
@@ -1296,7 +1296,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String adviceBalancerNeverSeenBody(String voltage) {
-    return 'The cells sit apart at rest but the balancer has not worked since the pack connected. Either it is switched off, or its start voltage ($voltage V) is above where your cells get to. The start voltage is changed with the BMS\'s official app. The balancer switch can be turned on from System, under BMS settings, if you turn on the write permission in Settings; with the permission off, this app changes nothing on the BMS.';
+    return 'The cells sit apart at rest but the balancer has not worked since the pack connected. Either it is switched off, or its start voltage ($voltage V) is above where your cells get to. Check it in the BMS settings with its official app: this app changes nothing on the BMS, it only sends it read requests.';
   }
 
   @override
@@ -4104,7 +4104,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String verdictConfigOvpDangerousBody(String value, String limit) {
-    return 'The BMS stops charging at $value V a cell and the safe maximum for this chemistry is $limit V. Every full charge is doing damage. Change it in the official BMS app, on your own responsibility; this app does not write setting values to a battery.';
+    return 'The BMS stops charging at $value V a cell and the safe maximum for this chemistry is $limit V. Every full charge is doing damage. Change it in the official BMS app, on your own responsibility. The app changes nothing on the BMS: it only sends it read requests.';
   }
 
   @override
@@ -4271,7 +4271,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get configAuditReadOnly =>
-      'Read only. This app does not write setting values to a BMS: a wrong value written to a battery is a fire, and the protocol\'s write path is reverse-engineered. Anything that needs changing is changed in the official BMS app, and that decision is yours. The only things the app can touch are the charge, discharge and balancer switches, and only with the write permission on in Settings.';
+      'Read only. The app changes nothing on the BMS: it only sends it read requests. A wrong value written to a battery is a fire, and the protocol\'s write path is reverse-engineered. Anything that needs changing is changed in the official BMS app, and that decision is yours.';
 
   @override
   String get configAuditSettings => 'Everything that was looked at';

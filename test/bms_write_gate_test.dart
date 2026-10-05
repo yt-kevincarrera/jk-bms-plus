@@ -153,10 +153,38 @@ void main() {
       expect(settings.balancerSwitchOn, isTrue);
     });
 
+    // The app is read-only again (2026-10-05). Everything below the first
+    // test exercises the dormant gate through decideSwitchWriteAsIfShipped,
+    // so it stays correct for whenever writes are reconsidered; the first
+    // test is the one that matters today.
+    test('while the writes are not shipped, nothing is ever granted', () {
+      expect(bmsWritesShipped, isFalse);
+      // Everything right, the stored permission on included: still refused,
+      // and refused for the build, not for the preference.
+      for (final s in BmsSwitch.values) {
+        for (final on in [true, false]) {
+          for (final permitted in [true, false]) {
+            final d = decideSwitchWrite(
+              s,
+              on,
+              ctx(
+                permitted: permitted,
+                // Discharge already on in the real settings, so ask for the
+                // other state too: no request can slip through as granted.
+                settingsFrame: settings,
+              ),
+            );
+            expect(refusal(d), WriteRefusal.notShipped,
+                reason: '${s.name} $on permitted=$permitted');
+          }
+        }
+      }
+    });
+
     test('with the permission off nothing else is even looked at', () {
       // Everything else wrong too: the permission is still the answer, so
       // the setting is the one thing that decides whether a frame exists.
-      final d = decideSwitchWrite(
+      final d = decideSwitchWriteAsIfShipped(
         BmsSwitch.discharge,
         false,
         ctx(
@@ -171,7 +199,7 @@ void main() {
       for (final s in BmsSwitch.values) {
         for (final on in [true, false]) {
           expect(
-            refusal(decideSwitchWrite(s, on, ctx(permitted: false))),
+            refusal(decideSwitchWriteAsIfShipped(s, on, ctx(permitted: false))),
             WriteRefusal.notPermitted,
           );
         }
@@ -180,7 +208,7 @@ void main() {
 
     test('an ANT is never written to', () {
       expect(
-        refusal(decideSwitchWrite(BmsSwitch.balancer, false,
+        refusal(decideSwitchWriteAsIfShipped(BmsSwitch.balancer, false,
             ctx(brand: BmsBrand.ant))),
         WriteRefusal.notJk,
       );
@@ -188,12 +216,12 @@ void main() {
 
     test('JK04 and an unknown framing are refused', () {
       expect(
-        refusal(decideSwitchWrite(BmsSwitch.balancer, false,
+        refusal(decideSwitchWriteAsIfShipped(BmsSwitch.balancer, false,
             ctx(variant: JkProtocolVariant.jk04))),
         WriteRefusal.variantUnsupported,
       );
       expect(
-        refusal(decideSwitchWrite(BmsSwitch.charge, false,
+        refusal(decideSwitchWriteAsIfShipped(BmsSwitch.charge, false,
             ctx(variant: null))),
         WriteRefusal.variantUnsupported,
       );
@@ -201,27 +229,27 @@ void main() {
 
     test('no link, no settings, an old reading or an impossible one', () {
       expect(
-        refusal(decideSwitchWrite(BmsSwitch.charge, false,
+        refusal(decideSwitchWriteAsIfShipped(BmsSwitch.charge, false,
             ctx(link: BleLinkState.reconnecting))),
         WriteRefusal.notConnected,
       );
       expect(
-        refusal(decideSwitchWrite(BmsSwitch.charge, false,
+        refusal(decideSwitchWriteAsIfShipped(BmsSwitch.charge, false,
             ctx(noSettings: true))),
         WriteRefusal.noSettings,
       );
       expect(
-        refusal(decideSwitchWrite(BmsSwitch.charge, false,
+        refusal(decideSwitchWriteAsIfShipped(BmsSwitch.charge, false,
             ctx(noReading: true))),
         WriteRefusal.noRecentReading,
       );
       expect(
-        refusal(decideSwitchWrite(BmsSwitch.charge, false,
+        refusal(decideSwitchWriteAsIfShipped(BmsSwitch.charge, false,
             ctx(at: now.add(const Duration(seconds: 11))))),
         WriteRefusal.noRecentReading,
       );
       expect(
-        refusal(decideSwitchWrite(BmsSwitch.charge, false,
+        refusal(decideSwitchWriteAsIfShipped(BmsSwitch.charge, false,
             ctx(plausible: false))),
         WriteRefusal.readingImplausible,
       );
@@ -229,26 +257,26 @@ void main() {
 
     test('a switch already in that state is not written', () {
       expect(
-        refusal(decideSwitchWrite(BmsSwitch.discharge, true, ctx())),
+        refusal(decideSwitchWriteAsIfShipped(BmsSwitch.discharge, true, ctx())),
         WriteRefusal.alreadySet,
       );
     });
 
     test('discharge off is refused while riding, however that is known', () {
       expect(
-        refusal(decideSwitchWrite(BmsSwitch.discharge, false,
+        refusal(decideSwitchWriteAsIfShipped(BmsSwitch.discharge, false,
             ctx(riding: true))),
         WriteRefusal.riding,
       );
       expect(
-        refusal(decideSwitchWrite(BmsSwitch.discharge, false,
+        refusal(decideSwitchWriteAsIfShipped(BmsSwitch.discharge, false,
             ctx(tripRecording: true))),
         WriteRefusal.riding,
       );
       // Drawing 2.5 A: the riding gate has not had its ten seconds yet, and
       // the bike may already be moving.
       expect(
-        refusal(decideSwitchWrite(BmsSwitch.discharge, false,
+        refusal(decideSwitchWriteAsIfShipped(BmsSwitch.discharge, false,
             ctx(reading: snapshot.withCurrent(-2.5)))),
         WriteRefusal.riding,
       );
@@ -257,7 +285,7 @@ void main() {
     test('a parked bike can be switched off: lights, or a wheel on a stand',
         () {
       for (final amps in [0.0, -0.44, -1.5]) {
-        final d = decideSwitchWrite(BmsSwitch.discharge, false,
+        final d = decideSwitchWriteAsIfShipped(BmsSwitch.discharge, false,
             ctx(reading: snapshot.withCurrent(amps)));
         expect(d, isA<WriteGranted>(), reason: '$amps A');
       }
@@ -265,25 +293,25 @@ void main() {
 
     test('riding does not stop charge or balancer changes', () {
       expect(
-        decideSwitchWrite(BmsSwitch.charge, false, ctx(riding: true)),
+        decideSwitchWriteAsIfShipped(BmsSwitch.charge, false, ctx(riding: true)),
         isA<WriteGranted>(),
       );
       expect(
-        decideSwitchWrite(BmsSwitch.balancer, false, ctx(riding: true)),
+        decideSwitchWriteAsIfShipped(BmsSwitch.balancer, false, ctx(riding: true)),
         isA<WriteGranted>(),
       );
     });
 
     test('one write at a time', () {
       expect(
-        refusal(decideSwitchWrite(BmsSwitch.balancer, false,
+        refusal(decideSwitchWriteAsIfShipped(BmsSwitch.balancer, false,
             ctx(busy: true))),
         WriteRefusal.busy,
       );
     });
 
     test('a granted write carries the reference frame', () {
-      final d = decideSwitchWrite(BmsSwitch.discharge, false, ctx());
+      final d = decideSwitchWriteAsIfShipped(BmsSwitch.discharge, false, ctx());
       final w = (d as WriteGranted).write;
       expect(w.target, BmsSwitch.discharge);
       expect(w.on, isFalse);

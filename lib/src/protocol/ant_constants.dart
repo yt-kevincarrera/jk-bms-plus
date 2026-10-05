@@ -4,9 +4,9 @@ import '../model/bms_warning.dart';
 ///
 /// The protocol also has an authentication frame and register writes that
 /// switch MOSFETs, reset the pack and so on. They are deliberately not here,
-/// not even as constants: this app never writes to an ANT (the JK switch
-/// writes are refused for ANT in the write gate), and a write path that does
-/// not exist cannot be reached by mistake.
+/// not even as constants: this app only sends read requests (the dormant JK
+/// switch writes would refuse an ANT in the write gate too), and a write path
+/// that does not exist cannot be reached by mistake.
 const List<int> antStatusRequest = [
   0x7E, 0xA1, 0x01, 0x00, 0x00, 0xBE, 0x18, 0x55, 0xAA, 0x55, //
 ];

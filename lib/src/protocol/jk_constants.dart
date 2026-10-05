@@ -58,10 +58,11 @@ const int commandCellInfo = 0x96;
 const int commandDeviceInfo = 0x97;
 const int commandLogbook = 0xA1;
 
-/// Holding registers of the three on/off switches: the only registers this
-/// app can ever write, and only with the rider's write permission on (see
-/// `decideSwitchWrite` in ble/bms_write_gate.dart). No setting value (a
-/// voltage, a current, a temperature) is ever written.
+/// Holding registers of the three on/off switches: the only registers the
+/// dormant write code knows. Not written in this build: `bmsWritesShipped`
+/// in ble/bms_write_gate.dart is false, so `decideSwitchWrite` refuses every
+/// write. No setting value (a voltage, a current, a temperature) is ever
+/// written.
 ///
 /// Source: `SWITCHES` in
 /// https://github.com/syssi/esphome-jk-bms/blob/main/components/jk_bms_ble/switch/__init__.py

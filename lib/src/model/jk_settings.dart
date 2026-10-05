@@ -1,6 +1,6 @@
-/// Decoded settings frame (record type 0x01). No setting value here is ever
-/// written back to the BMS; the three switch flags are the only fields the app
-/// can change, through the write gate (ble/bms_write_gate.dart).
+/// Decoded settings frame (record type 0x01). Read-only: nothing here is
+/// written back to the BMS. The switch-write code in ble/bms_write_gate.dart
+/// is dormant (`bmsWritesShipped` is false).
 ///
 /// Byte layout source: `decode_jk02_settings_()` in
 /// https://github.com/syssi/esphome-jk-bms/blob/main/components/jk_bms_ble/jk_bms_ble.cpp

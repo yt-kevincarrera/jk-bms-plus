@@ -304,11 +304,11 @@
   "systemFramesUnsupported": "Unsupported type",
   "systemAcceptRate": "Accept rate",
   "systemBytesReceived": "Bytes received",
-  "systemSettingsTitle": "BMS settings",
+  "systemSettingsTitle": "BMS settings (read-only)",
   "settingsNotExposed": "This BMS does not expose its configuration to the app.",
   "systemNotices": "Notices",
   "systemRawConsole": "Raw frame console",
-  "systemReadOnlyNote": "With the write permission off, the app changes nothing on the BMS: everything above is read-only.",
+  "systemReadOnlyNote": "The app changes nothing on the BMS: it only sends it read requests. Everything above is read-only.",
   "systemLanguageTitle": "Language",
   "systemLanguageSpanish": "Español",
   "systemLanguageEnglish": "English",
@@ -625,7 +625,7 @@
     }
   },
   "adviceBalancerNeverSeenTitle": "The balancer has never started",
-  "adviceBalancerNeverSeenBody": "The cells sit apart at rest but the balancer has not worked since the pack connected. Either it is switched off, or its start voltage ({voltage} V) is above where your cells get to. The start voltage is changed with the BMS's official app. The balancer switch can be turned on from System, under BMS settings, if you turn on the write permission in Settings; with the permission off, this app changes nothing on the BMS.",
+  "adviceBalancerNeverSeenBody": "The cells sit apart at rest but the balancer has not worked since the pack connected. Either it is switched off, or its start voltage ({voltage} V) is above where your cells get to. Check it in the BMS settings with its official app: this app changes nothing on the BMS, it only sends it read requests.",
   "@adviceBalancerNeverSeenBody": {
     "placeholders": {
       "voltage": {
@@ -2470,7 +2470,7 @@
   "reportSectionDayOne": "This battery's day one",
   "reportDayOneNote": "Compared against the state kept on the day the battery was taken on. Not a capacity measurement: a snapshot of the voltages cannot measure what a pack holds, and nothing here is presented as if it could.",
   "verdictConfigOvpDangerousTitle": "The charge cutoff is above what the cells can take",
-  "verdictConfigOvpDangerousBody": "The BMS stops charging at {value} V a cell and the safe maximum for this chemistry is {limit} V. Every full charge is doing damage. Change it in the official BMS app, on your own responsibility; this app does not write setting values to a battery.",
+  "verdictConfigOvpDangerousBody": "The BMS stops charging at {value} V a cell and the safe maximum for this chemistry is {limit} V. Every full charge is doing damage. Change it in the official BMS app, on your own responsibility. The app changes nothing on the BMS: it only sends it read requests.",
   "@verdictConfigOvpDangerousBody": {
     "placeholders": {
       "value": {
@@ -2632,7 +2632,7 @@
   "configAuditTitle": "Configuration audit",
   "configAuditIntro": "What the BMS is set up to do, against what the cells you said it holds can take.",
   "configAuditOpen": "Audit the configuration",
-  "configAuditReadOnly": "Read only. This app does not write setting values to a BMS: a wrong value written to a battery is a fire, and the protocol's write path is reverse-engineered. Anything that needs changing is changed in the official BMS app, and that decision is yours. The only things the app can touch are the charge, discharge and balancer switches, and only with the write permission on in Settings.",
+  "configAuditReadOnly": "Read only. The app changes nothing on the BMS: it only sends it read requests. A wrong value written to a battery is a fire, and the protocol's write path is reverse-engineered. Anything that needs changing is changed in the official BMS app, and that decision is yours.",
   "configAuditSettings": "Everything that was looked at",
   "configAuditNoSettings": "The BMS has not sent its configuration yet. Wait a few seconds with the battery connected.",
   "configAuditChemistryRow": "Declared chemistry",

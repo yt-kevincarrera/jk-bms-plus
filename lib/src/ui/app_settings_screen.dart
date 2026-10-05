@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../app_settings.dart';
+import '../ble/bms_write_gate.dart';
 import '../bms_service.dart';
 import '../protocol/bms_brand.dart';
 import '../metrics/charge_alerts.dart';
@@ -618,7 +619,9 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
             // Its own section, with its own warning, and never next to a
             // switch somebody flicks without reading. Turning it on asks
             // first; turning it off does not, because off is the safe way.
-            Section(
+            // Not shown at all while the writes are not shipped: a setting
+            // that can do nothing would be a promise the app does not keep.
+            if (bmsWritesShipped) Section(
               title: t.settingsSectionBmsWrites,
               accent: settings.allowBmsWrites ? AppTheme.watch : null,
               children: [
