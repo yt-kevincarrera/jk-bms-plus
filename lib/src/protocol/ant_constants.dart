@@ -105,3 +105,19 @@ const Set<int> antBalancerBalancingCodes = {0x01, 0x02};
 
 /// Balancer codes that are faults rather than states.
 const Set<int> antBalancerFaultCodes = {0x03, 0x0A};
+
+/// The cell type the BMS was set up for, as the status frame reports it.
+///
+/// Source: the comment on the battery type word in `on_status_data_()`,
+/// syssi/esphome-ant-bms ant_bms_ble.cpp ("0xfaf1: Ternary Lithium, 0xfaf2:
+/// Lithium Iron Phosphate, 0xfaf3: Lithium Titanate, 0xfaf4: Custom").
+enum AntBatteryType { ternary, lfp, lto, custom }
+
+/// The type for [code], or null for a word the reference does not name.
+AntBatteryType? antBatteryTypeOf(int? code) => switch (code) {
+  0xFAF1 => AntBatteryType.ternary,
+  0xFAF2 => AntBatteryType.lfp,
+  0xFAF3 => AntBatteryType.lto,
+  0xFAF4 => AntBatteryType.custom,
+  _ => null,
+};

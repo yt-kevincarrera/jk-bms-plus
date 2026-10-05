@@ -1099,6 +1099,48 @@ abstract class AppL10n {
   /// **'Desconocido (0x{hex})'**
   String antUnknownCode(String hex);
 
+  /// No description provided for @antBatteryType.
+  ///
+  /// In es, this message translates to:
+  /// **'Tipo de celda según el BMS'**
+  String get antBatteryType;
+
+  /// No description provided for @antBatteryTypeName.
+  ///
+  /// In es, this message translates to:
+  /// **'{type, select, ternary{Litio ternario (NMC/NCA)} lfp{LiFePO4 (LFP)} lto{Titanato de litio (LTO)} custom{Personalizado} other{Desconocido}}'**
+  String antBatteryTypeName(String type);
+
+  /// No description provided for @antTotalCharged.
+  ///
+  /// In es, this message translates to:
+  /// **'Carga acumulada'**
+  String get antTotalCharged;
+
+  /// No description provided for @antTotalDischarged.
+  ///
+  /// In es, this message translates to:
+  /// **'Descarga acumulada'**
+  String get antTotalDischarged;
+
+  /// No description provided for @antChargingTime.
+  ///
+  /// In es, this message translates to:
+  /// **'Tiempo cargando'**
+  String get antChargingTime;
+
+  /// No description provided for @antDischargingTime.
+  ///
+  /// In es, this message translates to:
+  /// **'Tiempo descargando'**
+  String get antDischargingTime;
+
+  /// No description provided for @antCountersHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Contadores del propio BMS: cuentan todo lo que la placa ha visto, también lo que pasó sin esta app conectada.'**
+  String get antCountersHint;
+
   /// No description provided for @systemConnectionTitle.
   ///
   /// In es, this message translates to:

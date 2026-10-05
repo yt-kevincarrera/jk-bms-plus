@@ -550,8 +550,39 @@ class _SystemTabState extends State<SystemTab> {
       InfoRow(
         t.antBalancerTemp,
         '${st.balancerTemp.toStringAsFixed(0)} °C',
-        last: true,
+        last: st.batteryTypeCode == null && st.totalChargedAh == null,
       ),
+      if (st.batteryTypeCode case final code?)
+        InfoRow(
+          t.antBatteryType,
+          switch (antBatteryTypeOf(code)) {
+            final type? => t.antBatteryTypeName(type.name),
+            null => t.antUnknownCode(code.toRadixString(16).padLeft(4, '0')),
+          },
+          last: st.totalChargedAh == null,
+        ),
+      // The board's own lifetime counters: everything it has seen, rides
+      // this app never watched included, so they are labelled as the BMS's.
+      if (st.totalChargedAh case final charged?) ...[
+        InfoRow(
+          t.antTotalCharged,
+          '${charged.toStringAsFixed(1)} Ah',
+          hint: t.antCountersHint,
+        ),
+        InfoRow(
+          t.antTotalDischarged,
+          '${(st.totalDischargedAh ?? 0).toStringAsFixed(1)} Ah',
+        ),
+        InfoRow(
+          t.antChargingTime,
+          _duration(st.totalChargingSeconds ?? 0),
+        ),
+        InfoRow(
+          t.antDischargingTime,
+          _duration(st.totalDischargingSeconds ?? 0),
+          last: true,
+        ),
+      ],
     ],
   );
 

@@ -288,6 +288,20 @@
       }
     }
   },
+  "antBatteryType": "Cell type, as the BMS has it",
+  "antBatteryTypeName": "{type, select, ternary{Ternary lithium (NMC/NCA)} lfp{LiFePO4 (LFP)} lto{Lithium titanate (LTO)} custom{Custom} other{Unknown}}",
+  "@antBatteryTypeName": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "antTotalCharged": "Charged in total",
+  "antTotalDischarged": "Discharged in total",
+  "antChargingTime": "Time charging",
+  "antDischargingTime": "Time discharging",
+  "antCountersHint": "The BMS's own counters: everything the board has seen, including what happened with this app not connected.",
   "systemConnectionTitle": "Connection",
   "systemMtu": "MTU",
   "systemMtuValue": "{bytes} bytes",

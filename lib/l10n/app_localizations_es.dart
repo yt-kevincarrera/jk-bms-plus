@@ -639,6 +639,37 @@ class AppL10nEs extends AppL10n {
   }
 
   @override
+  String get antBatteryType => 'Tipo de celda según el BMS';
+
+  @override
+  String antBatteryTypeName(String type) {
+    String _temp0 = intl.Intl.selectLogic(type, {
+      'ternary': 'Litio ternario (NMC/NCA)',
+      'lfp': 'LiFePO4 (LFP)',
+      'lto': 'Titanato de litio (LTO)',
+      'custom': 'Personalizado',
+      'other': 'Desconocido',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get antTotalCharged => 'Carga acumulada';
+
+  @override
+  String get antTotalDischarged => 'Descarga acumulada';
+
+  @override
+  String get antChargingTime => 'Tiempo cargando';
+
+  @override
+  String get antDischargingTime => 'Tiempo descargando';
+
+  @override
+  String get antCountersHint =>
+      'Contadores del propio BMS: cuentan todo lo que la placa ha visto, también lo que pasó sin esta app conectada.';
+
+  @override
   String get systemConnectionTitle => 'Conexión';
 
   @override

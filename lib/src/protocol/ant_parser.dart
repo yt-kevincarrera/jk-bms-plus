@@ -25,6 +25,11 @@ class AntStatus {
     required this.balancerCode,
     required this.balancerTemp,
     required this.balancingCellMask,
+    this.batteryTypeCode,
+    this.totalDischargedAh,
+    this.totalChargedAh,
+    this.totalDischargingSeconds,
+    this.totalChargingSeconds,
   });
 
   final BmsSnapshot snapshot;
@@ -34,6 +39,19 @@ class AntStatus {
   final int balancerCode;
   final double balancerTemp;
   final int balancingCellMask;
+
+  /// The BMS's own cell type, the raw word at 94+o. See [antBatteryTypeOf].
+  final int? batteryTypeCode;
+
+  /// The pack's lifetime counters as the BMS keeps them (96+o to 111+o): the
+  /// amp-hours that went out and in, and the seconds it spent discharging
+  /// and charging. The BMS's numbers, not the app's: they cover whatever the
+  /// board has seen since it was set up, rides this app never watched
+  /// included.
+  final double? totalDischargedAh;
+  final double? totalChargedAh;
+  final int? totalDischargingSeconds;
+  final int? totalChargingSeconds;
 
   /// The same frame with a corrected reading, for the one correction the
   /// service makes after decoding: an ANT whose current sign contradicts its
@@ -46,6 +64,11 @@ class AntStatus {
         balancerCode: balancerCode,
         balancerTemp: balancerTemp,
         balancingCellMask: balancingCellMask,
+        batteryTypeCode: batteryTypeCode,
+        totalDischargedAh: totalDischargedAh,
+        totalChargedAh: totalChargedAh,
+        totalDischargingSeconds: totalDischargingSeconds,
+        totalChargingSeconds: totalChargingSeconds,
       );
 }
 
@@ -155,6 +178,19 @@ class AntParser {
     );
     // Power (62+o) is deliberately not stored: BmsSnapshot.power is V x I,
     // computed in one place rather than trusted from two.
+    //
+    // Past the balancing mask, `on_status_data_()` in the reference also
+    // publishes the highest and lowest cell with their index, the delta and
+    // the average (74+o to 85+o). They are not read here: the app computes
+    // all four from the cell voltages of the same frame, and on the three
+    // captures they agree to the millivolt. 86+o to 93+o (MOSFET D-S and
+    // drive voltages, "F40com") are listed in its comments with no unit and
+    // never published, so they are left alone too.
+    //
+    // The rider's firmware (22AAUB00-240401A) sends 14 bytes after 111+o
+    // that the reference does not read at all. Their last two repeat the
+    // current field (-51 on the capture), the rest have no source; nothing
+    // is decoded from them.
     return AntStatus(
       snapshot: snapshot,
       batteryState: b[7],
@@ -163,6 +199,18 @@ class AntParser {
       balancerCode: balancer,
       balancerTemp: i16(36 + o).toDouble(),
       balancingCellMask: balancingMask,
+      // Source: the comment table in `on_status_data_()`, byte 130 of the
+      // 14S layout ("0xfaf1: Ternary Lithium, 0xfaf2: Lithium Iron
+      // Phosphate, 0xfaf3: Lithium Titanate, 0xfaf4: Custom"). All three
+      // captures agree with their cells: the 16S pack at 3.30 V a cell says
+      // 0xFAF2, the 14S one at 4.11 V and the rider's NMC 20S say 0xFAF1.
+      batteryTypeCode: u16(94 + o),
+      // Published by the reference with these scales: amp-hours x 0.001,
+      // seconds as they are.
+      totalDischargedAh: u32(96 + o) / 1000,
+      totalChargedAh: u32(100 + o) / 1000,
+      totalDischargingSeconds: u32(104 + o),
+      totalChargingSeconds: u32(108 + o),
     );
   }
 

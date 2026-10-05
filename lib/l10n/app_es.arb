@@ -288,6 +288,20 @@
       }
     }
   },
+  "antBatteryType": "Tipo de celda según el BMS",
+  "antBatteryTypeName": "{type, select, ternary{Litio ternario (NMC/NCA)} lfp{LiFePO4 (LFP)} lto{Titanato de litio (LTO)} custom{Personalizado} other{Desconocido}}",
+  "@antBatteryTypeName": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "antTotalCharged": "Carga acumulada",
+  "antTotalDischarged": "Descarga acumulada",
+  "antChargingTime": "Tiempo cargando",
+  "antDischargingTime": "Tiempo descargando",
+  "antCountersHint": "Contadores del propio BMS: cuentan todo lo que la placa ha visto, también lo que pasó sin esta app conectada.",
   "systemConnectionTitle": "Conexión",
   "systemMtu": "MTU",
   "systemMtuValue": "{bytes} bytes",

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jk_bms/src/model/bms_snapshot.dart';
 import 'package:jk_bms/src/model/bms_warning.dart';
+import 'package:jk_bms/src/protocol/ant_constants.dart';
 import 'package:jk_bms/src/protocol/ant_frame.dart';
 import 'package:jk_bms/src/protocol/ant_parser.dart';
 import 'package:jk_bms/src/protocol/bms_brand.dart';
@@ -88,6 +89,40 @@ void main() {
       expect(st.batteryState, 0x02);
       expect(st.snapshot.current, closeTo(5.1, 1e-9));
       expect(st.snapshot.isCharging, isTrue);
+    });
+
+    test('the counters and cell type the reference reads past the mask', () {
+      // Read off the capture by hand: 96+o = 172 C6 79 45 00, 100+o = 176
+      // 2D 29 4D 00, 104+o B6 2A 21 00, 108+o A7 70 4A 00, 94+o F1 FA.
+      final st = p.parseStatus(frame(antStatus20s4tCharging));
+      expect(st.batteryTypeCode, 0xFAF1);
+      expect(antBatteryTypeOf(st.batteryTypeCode), AntBatteryType.ternary);
+      expect(st.totalDischargedAh, closeTo(4553.158, 1e-9));
+      expect(st.totalChargedAh, closeTo(5056.813, 1e-9));
+      expect(st.totalDischargingSeconds, 2173622);
+      expect(st.totalChargingSeconds, 4878503);
+      // The pack's "cycle capacity" is the mean of the two, which is what
+      // makes these two fields believable rather than merely decodable.
+      expect(
+        st.snapshot.cycleCapacityAh,
+        closeTo((st.totalDischargedAh! + st.totalChargedAh!) / 2, 0.001),
+      );
+      // Survives the sign correction the service may make.
+      final again = st.withSnapshot(st.snapshot.withCurrent(-5.1));
+      expect(again.totalChargedAh, st.totalChargedAh);
+      expect(again.batteryTypeCode, st.batteryTypeCode);
+    });
+
+    test('the type agrees with the cells on every capture', () {
+      expect(
+        antBatteryTypeOf(p.parseStatus(frame(antStatus16s)).batteryTypeCode),
+        AntBatteryType.lfp,
+      );
+      expect(
+        antBatteryTypeOf(p.parseStatus(frame(antStatus14s4t)).batteryTypeCode),
+        AntBatteryType.ternary,
+      );
+      expect(antBatteryTypeOf(0x1234), isNull);
     });
 
     test('a frame shorter than its fields is still refused', () {
