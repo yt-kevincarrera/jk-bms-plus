@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'ant_frame.dart';
+import 'ant_legacy.dart';
 import 'bms_brand.dart';
 import 'jk_frame.dart';
 
@@ -19,6 +20,12 @@ class RawBmsFrame {
 
   factory RawBmsFrame.ant(AntFrame f) => RawBmsFrame(
       brand: BmsBrand.ant, recordType: f.function, bytes: f.bytes,
+      receivedAt: f.receivedAt);
+
+  /// A pre-2021 ANT status frame. Record type 0xFF, its fourth header byte
+  /// (`AA 55 AA FF`), which no 2021 response uses as a function.
+  factory RawBmsFrame.antLegacy(AntLegacyFrame f) => RawBmsFrame(
+      brand: BmsBrand.ant, recordType: f.bytes[3], bytes: f.bytes,
       receivedAt: f.receivedAt);
 
   /// A buffer the ANT assembler threw away. Record type 0x00, which no ANT

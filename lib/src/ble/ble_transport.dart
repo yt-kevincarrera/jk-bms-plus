@@ -731,6 +731,9 @@ class BleTransport implements BmsLink {
       _tick = 0;
       _deviceInfoSeen = false;
       _settingsReadsSent = 0;
+      // A frame heard from whatever was connected before is not this pack
+      // talking; the script's silence rules start from this link.
+      _lastFrameAt = null;
       for (final f in _script.onConnect) {
         await _write(f);
       }

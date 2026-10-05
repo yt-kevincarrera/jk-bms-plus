@@ -31,6 +31,7 @@ import 'protocol/ant_constants.dart';
 import 'protocol/ant_current_sign.dart';
 import 'protocol/ant_frame.dart';
 import 'protocol/ant_frame_assembler.dart';
+import 'protocol/ant_legacy.dart';
 import 'protocol/ant_parser.dart';
 import 'protocol/bms_brand.dart';
 import 'protocol/frame_assembler.dart';
@@ -406,8 +407,20 @@ class BmsService {
   int _rejectedRawKept = 0;
   static const int _rejectedRawCap = 200;
 
-  /// Whether the pre-2021 ANT protocol has been named on this connection.
-  bool _oldAntNoted = false;
+  /// Whether this connection's ANT speaks the protocol from before 2021
+  /// (protocol/ant_legacy.dart). Decided by the bytes: a checksum-valid
+  /// legacy frame before anything in the 2021 protocol has decoded.
+  bool get antLegacy => _antLegacy;
+  bool _antLegacy = false;
+
+  late final AntLegacyAssembler _antLegacyAssembler = AntLegacyAssembler(
+    clock: _now,
+  )..onBadChecksum = _onAntLegacyBadChecksum;
+  final AntLegacyParser _antLegacyParser = const AntLegacyParser();
+
+  /// Legacy frames looked for on a JK connection before it proves itself,
+  /// the way [_antProbe] looks for 2021 ones.
+  final AntLegacyAssembler _antLegacyProbe = AntLegacyAssembler();
 
   /// Whether the ANT nominal capacity has been offered to the stored pack on
   /// this connection. Once is enough: it is a setting, not a reading.
@@ -638,6 +651,7 @@ class BmsService {
     // nothing on this connection: the 3000 were the last pack's.
     _assembler.stats.reset();
     _antAssembler.stats.reset();
+    _antLegacyAssembler.stats.reset();
     _bytesReceived = 0;
   }
 
@@ -677,7 +691,11 @@ class BmsService {
   /// One object, updated in place, so a screen holding it stays current.
   FrameStats get stats {
     final from =
-        _brand == BmsBrand.ant ? _antAssembler.stats : _assembler.stats;
+        _brand == BmsBrand.jk
+            ? _assembler.stats
+            : _antLegacy
+            ? _antLegacyAssembler.stats
+            : _antAssembler.stats;
     _linkStats
       ..accepted = from.accepted
       ..badChecksum = from.badChecksum
@@ -1048,7 +1066,9 @@ class BmsService {
     _antProbe.reset();
     _rejectedNoted = 0;
     _rejectedRawKept = 0;
-    _oldAntNoted = false;
+    _antLegacy = false;
+    _antLegacyAssembler.reset();
+    _antLegacyProbe.reset();
   }
 
   void _stopCellInfoRequests() {
@@ -1203,14 +1223,6 @@ class BmsService {
     _statsController.add(stats);
   }
 
-  static bool _startsWith(List<int> c, List<int> p) {
-    if (c.length < p.length) return false;
-    for (var i = 0; i < p.length; i++) {
-      if (c[i] != p[i]) return false;
-    }
-    return true;
-  }
-
   /// Reads the brand off the bytes themselves, and returns whether it
   /// switched. Writes nothing to the pack: the only evidence used is what the
   /// pack chose to send, and only a whole frame with a valid checksum counts.
@@ -1224,25 +1236,77 @@ class BmsService {
       _switchBrand(BmsBrand.jk, 'a checksum-valid JK frame arrived');
       return true;
     }
-    if (!_oldAntNoted && _startsWith(chunk, const [0xAA, 0x55, 0xAA, 0xFF])) {
-      // Named rather than decoded: the pre-2021 frames are a different
-      // protocol altogether, and a rider staring at "waiting for the first
-      // reading" deserves to know it is not their pack that is broken.
-      _oldAntNoted = true;
-      _problem(
-        'This ANT speaks the protocol from before 2021, which the app '
-        'cannot read yet. Nothing was changed on the pack.',
-      );
-      unawaited(
-        repository?.note(
-              LinkEventKind.oldAntProtocolSeen,
-              deviceId: activeDeviceId ?? _pendingDeviceId,
-            ) ??
-            Future.value(),
-      );
+    if (_brand == BmsBrand.jk) {
+      // A pre-2021 ANT frame, whole and checksum-valid, is as good a proof
+      // as a 2021 one. It used to be named and not read.
+      final legacy = _antLegacyProbe.addChunk(chunk);
+      if (legacy.isNotEmpty) {
+        _switchBrand(
+          BmsBrand.ant,
+          'a checksum-valid pre-2021 ANT frame arrived',
+        );
+        _adoptAntLegacy('it sent one on a connection taken for a JK');
+        _onAntLegacyFrames(legacy);
+        return true;
+      }
     }
     return false;
   }
+
+  /// Reads this connection's ANT with the pre-2021 protocol from now on: its
+  /// script polls with the legacy read, and its bytes go to the legacy
+  /// assembler. Only ever before anything in the 2021 protocol has decoded.
+  void _adoptAntLegacy(String why) {
+    _antLegacy = true;
+    _antAssembler.reset();
+    _antProbe.reset();
+    // The 2021 assembler threw these bytes away as overflow until now; that
+    // must not leave the legacy reading less diagnosis budget.
+    _rejectedNoted = 0;
+    _transport.script = LinkScript.antLegacy;
+    _problem(
+      'This ANT speaks the protocol from before 2021 ($why). Read with that '
+      'protocol from now on; it reports no device info, settings or health '
+      'figure.',
+    );
+    unawaited(
+      repository?.note(
+            LinkEventKind.oldAntProtocolSeen,
+            detail: why,
+            deviceId: activeDeviceId ?? _pendingDeviceId,
+          ) ??
+          Future.value(),
+    );
+  }
+
+  void _onAntLegacyFrames(List<AntLegacyFrame> frames) {
+    for (final frame in frames) {
+      _brandProved = true;
+      _transport.frameAccepted();
+      repository?.addRawFrame(RawBmsFrame.antLegacy(frame));
+      try {
+        antStatusFrames++;
+        unawaited(
+          _handleAntStatus(_antLegacyParser.parseStatus(frame), frame.bytes),
+        );
+      } on AntParseException catch (e) {
+        decodeFailures++;
+        lastDecodeError = e.message;
+        if (decodeFailures == 1 || decodeFailures % 100 == 0) {
+          _problem('Could not decode an ANT frame: ${e.message}');
+        }
+        _noteDiagnosis(
+          LinkEventKind.antDecodeFailed,
+          '${e.message} ${_hex(frame.bytes)}',
+        );
+      }
+    }
+  }
+
+  /// A 140-byte legacy buffer whose checksum failed, written down like a
+  /// 2021 one with a bad CRC.
+  void _onAntLegacyBadChecksum(Uint8List bytes) =>
+      _onAntRejected(AntRejected(AntRejection.badCrc, bytes));
 
   void _switchBrand(BmsBrand to, String why) {
     final from = _brand;
@@ -1285,6 +1349,23 @@ class BmsService {
   }
 
   void _onAntBytes(List<int> chunk) {
+    if (_antLegacy) {
+      _onAntLegacyFrames(_antLegacyAssembler.addChunk(chunk));
+      _statsController.add(stats);
+      return;
+    }
+    // Until the 2021 protocol has decoded something, a pre-2021 frame (the
+    // answer to the script's silent probe, LinkScript.silentProbe) settles
+    // it the other way.
+    if (!_brandProved) {
+      final legacy = _antLegacyAssembler.addChunk(chunk);
+      if (legacy.isNotEmpty) {
+        _adoptAntLegacy('it answered the pre-2021 read');
+        _onAntLegacyFrames(legacy);
+        _statsController.add(stats);
+        return;
+      }
+    }
     for (final frame in _antAssembler.addChunk(chunk)) {
       _brandProved = true;
       // Same proof as for JK: any CRC-valid frame is the pack talking, even
@@ -1295,7 +1376,9 @@ class BmsService {
       try {
         if (frame.isStatus) {
           antStatusFrames++;
-          unawaited(_handleAntStatus(_antParser.parseStatus(frame), frame));
+          unawaited(
+            _handleAntStatus(_antParser.parseStatus(frame), frame.bytes),
+          );
         } else if (frame.isDeviceInfo) {
           antInfoFrames++;
           _handleDeviceInfo(_antParser.parseDeviceInfo(frame));
@@ -1410,7 +1493,7 @@ class BmsService {
   static String _hex(List<int> b) =>
       b.map((x) => x.toRadixString(16).padLeft(2, '0')).join();
 
-  Future<void> _handleAntStatus(AntStatus status, AntFrame frame) async {
+  Future<void> _handleAntStatus(AntStatus status, List<int> bytes) async {
     // ANT has no framing to guess, so a reading that fails physics is not a
     // question of variant: it is a bad frame, and it is held back rather than
     // shown. Its raw frame is only stored once a pack is active, and a pack
@@ -1427,7 +1510,7 @@ class BmsService {
       }
       _noteDiagnosis(
         LinkEventKind.antDecodeFailed,
-        'implausible ${reasons.join('; ')} ${_hex(frame.bytes)}',
+        'implausible ${reasons.join('; ')} ${_hex(bytes)}',
       );
       return;
     }
@@ -1435,11 +1518,15 @@ class BmsService {
     // own battery state says which way the charge is going. Per pack, and
     // kept across reconnects, so a pack found to run backwards is corrected
     // from its first frame the next time rather than after three wrong ones.
+    // A pre-2021 frame has no state byte to check against, and its sign is
+    // the one its own captures show (see AntLegacyParser).
+    final batteryState = status.batteryState;
     final packKey = activeDeviceId ?? _pendingDeviceId ?? '';
     final sign = _antCurrentSign.putIfAbsent(packKey, AntCurrentSign.new);
     final raw = status.snapshot.current;
-    if (sign.observe(batteryState: status.batteryState, current: raw)) {
-      final state = antText(antBatteryStateText, status.batteryState);
+    if (batteryState != null &&
+        sign.observe(batteryState: batteryState, current: raw)) {
+      final state = antText(antBatteryStateText, batteryState);
       _problem(
         'This ANT reports its current with the opposite sign to its own '
         'battery state ($state at ${raw.toStringAsFixed(1)} A, several '
@@ -1454,7 +1541,7 @@ class BmsService {
             Future.value(),
       );
     }
-    if (sign.inverted) {
+    if (batteryState != null && sign.inverted) {
       status = status.withSnapshot(status.snapshot.withCurrent(-raw));
     }
     _lastAntStatus = status;

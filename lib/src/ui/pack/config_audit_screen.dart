@@ -124,7 +124,7 @@ class _ConfigAuditScreenState extends State<ConfigAuditScreen> {
     child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Text(
-        t.antSettingsPending,
+        widget.service.antLegacy ? t.antSettingsLegacy : t.antSettingsPending,
         textAlign: TextAlign.center,
         style: const TextStyle(
           fontSize: 13.5,

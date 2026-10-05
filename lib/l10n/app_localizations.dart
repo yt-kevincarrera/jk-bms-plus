@@ -1153,6 +1153,30 @@ abstract class AppL10n {
   /// **'Corte por cortocircuito'**
   String get antSettingShortCircuit;
 
+  /// No description provided for @antProtocol.
+  ///
+  /// In es, this message translates to:
+  /// **'Protocolo'**
+  String get antProtocol;
+
+  /// No description provided for @antProtocol2021.
+  ///
+  /// In es, this message translates to:
+  /// **'ANT de 2021 en adelante'**
+  String get antProtocol2021;
+
+  /// No description provided for @antProtocolLegacy.
+  ///
+  /// In es, this message translates to:
+  /// **'ANT anterior a 2021'**
+  String get antProtocolLegacy;
+
+  /// No description provided for @antSettingsLegacy.
+  ///
+  /// In es, this message translates to:
+  /// **'Este ANT habla el protocolo anterior a 2021, y en ese la app no tiene cómo pedirle su configuración por Bluetooth: no se lee.'**
+  String get antSettingsLegacy;
+
   /// No description provided for @demoScenarioAntRiding.
   ///
   /// In es, this message translates to:

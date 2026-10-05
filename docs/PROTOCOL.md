@@ -246,3 +246,20 @@ audited. Cell UVP becomes the cutoff, cell OVP feeds the chemistry hint, the
 charge and discharge overcurrent limits feed the near-limit alert, and all of
 it feeds the configuration audit. A pack that never answers leaves the app
 where it was before: chemistry cutoff, assumed.
+
+**The ANT protocol from before 2021** is read too, from
+`components/ant_bms_old_ble` in syssi/esphome-ant-bms and the status table in
+its README. Request `DB DB 00 00 00 00` (`read_registers_()`; the official
+app's Bluetooth live-data read per klotztech/VBMS). Reply: 140 bytes from
+`AA 55 AA FF`, big-endian, checksum the sum of bytes 4 to 137 at 138. The ANT
+script sends that request every fifth tick only while nothing at all has
+been heard on the link; a checksum-valid legacy frame before any 2021 frame
+has decoded switches the connection to `LinkScript.antLegacy`. Current is
+positive on discharge in this protocol: on the reference's own capture
+(`docs/pdus/model2019-req-dbdb00000000.txt`) it reads +8.0 A and +390 W while
+the remaining capacity falls frame after frame, so it is negated. The frame
+has no state byte (so no sign cross-check), no SOH (stored as none, which
+needed schema 19), no device info and no settings read; its six temperatures
+are unlabelled and all taken as probes, with -40 meaning an empty input as in
+2021. Fixtures are the reference's captures, including a 2021 board answering
+the same read.

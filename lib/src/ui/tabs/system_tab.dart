@@ -20,6 +20,7 @@ import '../../model/bms_device_info.dart';
 import '../../model/ant_settings.dart';
 import '../../model/jk_settings.dart';
 import '../../protocol/ant_constants.dart';
+import '../../protocol/ant_legacy.dart';
 import '../../protocol/ant_parser.dart';
 import '../../protocol/bms_brand.dart';
 import '../../protocol/jk_frame.dart';
@@ -517,42 +518,56 @@ class _SystemTabState extends State<SystemTab> {
   Widget _antStatusSection(AppL10n t, AntStatus st) => Section(
     title: t.antStatusTitle,
     children: [
+      // The protocol first: the rows below mean slightly different things
+      // in each, and the pre-2021 one leaves several out.
       InfoRow(
-        t.antBatteryState,
-        _antCode(
-          t,
-          antBatteryStateText,
-          t.antBatteryStateCode,
-          st.batteryState,
-        ),
+        t.antProtocol,
+        st.legacy ? t.antProtocolLegacy : t.antProtocol2021,
       ),
+      // No state byte in the pre-2021 frame: left out, not shown as unknown.
+      if (st.batteryState case final state?)
+        InfoRow(
+          t.antBatteryState,
+          _antCode(t, antBatteryStateText, t.antBatteryStateCode, state),
+        ),
       InfoRow(
         t.antChargeMosfet,
-        _antCode(
-          t,
-          antChargeMosfetText,
-          t.antChargeMosfetCode,
-          st.chargeMosfetCode,
-        ),
+        st.legacy &&
+                !antLegacyCodeKnown(st.chargeMosfetCode, charge: true)
+            ? _unknownCode(t, st.chargeMosfetCode)
+            : _antCode(
+                t,
+                antChargeMosfetText,
+                t.antChargeMosfetCode,
+                st.chargeMosfetCode,
+              ),
       ),
       InfoRow(
         t.antDischargeMosfet,
-        _antCode(
-          t,
-          antDischargeMosfetText,
-          t.antDischargeMosfetCode,
-          st.dischargeMosfetCode,
-        ),
+        st.legacy &&
+                !antLegacyCodeKnown(st.dischargeMosfetCode, charge: false)
+            ? _unknownCode(t, st.dischargeMosfetCode)
+            : _antCode(
+                t,
+                antDischargeMosfetText,
+                t.antDischargeMosfetCode,
+                st.dischargeMosfetCode,
+              ),
       ),
       InfoRow(
         t.antBalancer,
         _antCode(t, antBalancerText, t.antBalancerCode, st.balancerCode),
+        last:
+            st.balancerTemp == null &&
+            st.batteryTypeCode == null &&
+            st.totalChargedAh == null,
       ),
-      InfoRow(
-        t.antBalancerTemp,
-        '${st.balancerTemp.toStringAsFixed(0)} °C',
-        last: st.batteryTypeCode == null && st.totalChargedAh == null,
-      ),
+      if (st.balancerTemp case final temp?)
+        InfoRow(
+          t.antBalancerTemp,
+          '${temp.toStringAsFixed(0)} °C',
+          last: st.batteryTypeCode == null && st.totalChargedAh == null,
+        ),
       if (st.batteryTypeCode case final code?)
         InfoRow(
           t.antBatteryType,
@@ -599,7 +614,9 @@ class _SystemTabState extends State<SystemTab> {
         children: [
           InfoRow(
             t.systemSettingsTitle,
-            t.antSettingsPending,
+            widget.service.antLegacy
+                ? t.antSettingsLegacy
+                : t.antSettingsPending,
             dim: true,
             last: true,
           ),
@@ -707,9 +724,10 @@ class _SystemTabState extends State<SystemTab> {
     List<String> table,
     String Function(String code) text,
     int code,
-  ) => code < table.length
-      ? text('$code')
-      : t.antUnknownCode(code.toRadixString(16).padLeft(2, '0'));
+  ) => code < table.length ? text('$code') : _unknownCode(t, code);
+
+  static String _unknownCode(AppL10n t, int code) =>
+      t.antUnknownCode(code.toRadixString(16).padLeft(2, '0'));
 
   Widget _proximitySection(AppL10n t) {
     final watcher = widget.proximity;

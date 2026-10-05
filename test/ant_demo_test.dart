@@ -108,7 +108,7 @@ void main() {
       for (var i = 0; i < 5; i++) {
         expect(
           sign.observe(
-            batteryState: st.batteryState,
+            batteryState: st.batteryState!,
             current: st.snapshot.current,
           ),
           isFalse,

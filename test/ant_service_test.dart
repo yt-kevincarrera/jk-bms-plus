@@ -157,14 +157,20 @@ void main() {
     expect(service.brand, BmsBrand.jk);
   });
 
-  test('old ANT bytes are named, and nothing switches', () async {
+  // It used to be named and not read; ant_legacy_test.dart covers the
+  // reading. A frame of zeros has a valid checksum and no cells: the
+  // protocol is still recognised, and the empty frame refused.
+  test('old ANT bytes are recognised, and an empty frame is not a reading',
+      () async {
     await service.connect('X', name: 'ANT-BLE16ZMUB');
     link.announce(BleLinkState.connected);
     await link.deliver(
       Uint8List.fromList([0xAA, 0x55, 0xAA, 0xFF, ...List.filled(136, 0)]),
     );
-    expect(service.recentProblems.first, contains('2021'));
+    expect(service.recentProblems.join(' '), contains('2021'));
+    expect(service.antLegacy, isTrue);
     expect(service.brand, BmsBrand.ant);
+    expect(service.lastSnapshot, isNull);
   });
 
   test('a bad CRC is counted and written down with its bytes', () async {

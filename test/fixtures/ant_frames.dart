@@ -60,3 +60,25 @@ final Uint8List antInfo22ph = hex(
 final Uint8List antSettingCellOvpReply = hex(
   '7E A1 12 00 00 02 36 10 1F 14 AA 55',
 );
+
+/// Pre-2021 protocol (AA 55 AA FF, 140 bytes, big-endian), the answer to the
+/// Bluetooth live-data read DB DB 00 00 00 00. Copied verbatim from
+/// syssi/esphome-ant-bms docs/pdus/model2019-req-dbdb00000000.txt, first
+/// line (also STATUS_FRAME_14S in tests/components/ant_bms_old_ble). 14S,
+/// 48.8 V, +8.0 A on the wire, SOC 41, 170 Ah, 68.770 Ah left.
+final Uint8List antLegacyStatus14s = hex(
+  'AA 55 AA FF 01 E8 0D AA 0D 9C 0D A4 0D 8E 0D 9C 0D 90 0D B4 0D 97 0D B5 0D B5 0D A8 0D 91 0D 9E 0D 8C 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 50 29 0A 21 FE 80 04 19 58 93 00 A9 84 0F 00 FA 08 31 00 16 00 15 00 15 00 15 00 15 00 15 01 01 00 03 E8 00 17 00 00 00 01 86 09 0D B5 0E 0D 8C 0D 9F 0E 00 00 00 70 00 6B 02 AC 00 00 00 00 40 01 15 F4',
+);
+
+/// The same capture's ninth line: 12.0 A on the wire, and 90 mAh less left
+/// than the first, 38 s of runtime later.
+final Uint8List antLegacyStatus14sLater = hex(
+  'AA 55 AA FF 01 E6 0D 96 0D 87 0D 90 0D 7B 0D 88 0D 7D 0D A3 0D 85 0D A6 0D A7 0D 92 0D 7E 0D 85 0D 83 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 78 29 0A 21 FE 80 04 17 F6 3A 00 A9 84 69 00 FA 08 57 00 16 00 15 00 15 00 15 00 15 00 15 01 01 00 03 E8 00 17 00 00 00 02 46 0A 0D A7 04 0D 7B 0D 8D 0E 00 00 00 6F 00 6B 02 AC 00 00 00 00 50 01 15 71',
+);
+
+/// A 2021 board answering the same read in the old format, from
+/// docs/pdus/model2021-req-dbdb00000000.txt, first line. 16S, 0 A, probes
+/// 23, 25, 21, 22 and two empty inputs at -40.
+final Uint8List antLegacyStatus16sFrom2021Board = hex(
+  'AA 55 AA FF 02 7D 0F 8F 0F 8F 0F 8E 0F 8E 0F 8D 0F 90 0F 90 0F 91 0F 8F 0F 8F 0F 90 0F 8D 0F 8C 0F 8E 0F 8C 0F 8F 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 54 0D F2 8E 80 0B A3 90 F8 00 04 34 E2 00 17 B8 D0 00 17 00 19 00 15 00 16 FF D8 FF D8 01 01 00 00 00 00 00 FF 00 00 00 00 08 0F 91 11 0F 8C 0F 8E 10 00 01 00 7F 00 7B 02 AF 00 00 00 00 00 00 1A 5E',
+);

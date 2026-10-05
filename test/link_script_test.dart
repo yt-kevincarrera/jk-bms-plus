@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jk_bms/src/ble/link_script.dart';
 import 'package:jk_bms/src/protocol/ant_constants.dart';
+import 'package:jk_bms/src/protocol/ant_legacy.dart';
 import 'package:jk_bms/src/protocol/jk_commands.dart';
 
 String h(List<int> b) => b.map((x) => x.toRadixString(16).padLeft(2, '0')).join();
@@ -125,7 +126,10 @@ void main() {
     for (var n = 1; n <= 500; n++) {
       final a = LinkScript.ant.tick(
           now: t0.add(Duration(seconds: 2 * n)),
-          lastFrameAt: n % 7 == 0 ? null : t0.add(Duration(seconds: 2 * n - 3)),
+          // Silent at tick 3, early enough to be probed rather than let go.
+          lastFrameAt: n % 7 == 0 || n == 3
+              ? null
+              : t0.add(Duration(seconds: 2 * n - 3)),
           connectedAt: t0,
           tickNumber: n,
           deviceInfoSeen: n > 40,
@@ -142,11 +146,14 @@ void main() {
       h(antStatusRequest),
       h(antDeviceInfoRequest),
       for (final f in antSettingsReadRequests) h(f),
+      // The pre-2021 live-data read, asked of a pack silent on this link.
+      h(antLegacyStatusRequest),
     });
     expect(LinkScript.ant.everyFrameHex, written);
-    // Every one of them is function 0x01 (status) or 0x02 (read): never the
+    // Every 2021 one is function 0x01 (status) or 0x02 (read): never the
     // 0x51 register write or the 0x23 authentication the protocol also has.
     for (final f in written) {
+      if (f == h(antLegacyStatusRequest)) continue;
       expect(['01', '02'], contains(f.substring(4, 6)), reason: f);
     }
   });

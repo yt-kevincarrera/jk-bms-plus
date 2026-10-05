@@ -31,14 +31,17 @@ class AntStatus {
     this.totalChargedAh,
     this.totalDischargingSeconds,
     this.totalChargingSeconds,
+    this.legacy = false,
   });
 
   final BmsSnapshot snapshot;
-  final int batteryState;
+  /// The battery state byte (7). Null for a pre-2021 frame, which has none.
+  final int? batteryState;
   final int chargeMosfetCode;
   final int dischargeMosfetCode;
   final int balancerCode;
-  final double balancerTemp;
+  /// Null for a pre-2021 frame, which reports six unlabelled temperatures.
+  final double? balancerTemp;
   final int balancingCellMask;
 
   /// The BMS's own cell type, the raw word at 94+o. See [antBatteryTypeOf].
@@ -53,6 +56,10 @@ class AntStatus {
   final double? totalChargedAh;
   final int? totalDischargingSeconds;
   final int? totalChargingSeconds;
+
+  /// Whether this came from the pre-2021 protocol (ant_legacy.dart), whose
+  /// MOSFET tables differ from 2021 at a few codes.
+  final bool legacy;
 
   /// The same frame with a corrected reading, for the one correction the
   /// service makes after decoding: an ANT whose current sign contradicts its
@@ -70,6 +77,7 @@ class AntStatus {
         totalChargedAh: totalChargedAh,
         totalDischargingSeconds: totalDischargingSeconds,
         totalChargingSeconds: totalChargingSeconds,
+        legacy: legacy,
       );
 }
 

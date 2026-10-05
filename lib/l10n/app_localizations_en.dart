@@ -677,6 +677,19 @@ class AppL10nEn extends AppL10n {
   String get antSettingShortCircuit => 'Short-circuit cutoff';
 
   @override
+  String get antProtocol => 'Protocol';
+
+  @override
+  String get antProtocol2021 => 'ANT, 2021 and later';
+
+  @override
+  String get antProtocolLegacy => 'ANT, before 2021';
+
+  @override
+  String get antSettingsLegacy =>
+      'This ANT speaks the protocol from before 2021, which gives the app no way to ask for its configuration over Bluetooth: it is not read.';
+
+  @override
   String get demoScenarioAntRiding => 'ANT, riding';
 
   @override

@@ -74,6 +74,13 @@ connection, its protection settings one register at a time. If a pack does not d
 for a minute, make a backup with raw frames and use it as a fixture in
 `test/ant_backup_replay_test.dart`.
 
+**ANT BMS (before 2021).** An ANT that answers nothing in the 2021 protocol
+is asked, now and then, with the older live-data read (`DB DB 00 00 00 00`);
+one that answers with a checksum-valid 140-byte frame is read in that
+protocol from then on. It carries cells, current, charge, capacities,
+runtime, six temperatures and the MOSFET and balancer states, and no device
+info, settings or health figure, so those stay empty rather than invented.
+
 **Updates from inside the app.** There is no store, so the System tab asks
 GitHub whether a newer release exists and installs it if you say so. Nothing
 checks on a timer, nothing downloads on its own, and Android's own install
