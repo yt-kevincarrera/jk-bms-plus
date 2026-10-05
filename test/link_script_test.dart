@@ -65,11 +65,63 @@ void main() {
     expect(at(5, true).bytes, antStatusRequest);
   });
 
-  test('read-only: across a long ANT session only the two requests are written', () {
+  test('ANT reads each setting once, every other tick, after it identified '
+      'itself', () {
+    final s = LinkScript.ant;
+    var sent = 0;
+    final settings = <List<int>>[];
+    var statuses = 0;
+    for (var n = 1; n <= 60; n++) {
+      final a = s.tick(
+          now: t0.add(Duration(seconds: 2 * n)),
+          lastFrameAt: t0.add(Duration(seconds: 2 * n - 1)),
+          connectedAt: t0,
+          tickNumber: n,
+          deviceInfoSeen: true,
+          quietBefore: quiet,
+          muteBefore: mute,
+          settingsReadsSent: sent) as WriteFrame;
+      if (a.settingsRead) {
+        expect(n.isEven, isTrue);
+        settings.add(a.bytes);
+        sent++;
+      } else {
+        expect(a.bytes, antStatusRequest);
+        statuses++;
+      }
+    }
+    expect(settings, antSettingsReadRequests);
+    expect(statuses, 60 - antSettingsReadRequests.length);
+  });
+
+  test('ANT reads no settings before device info, nor from a quiet pack', () {
+    WriteFrame at({required bool seen, required int sinceFrame}) =>
+        LinkScript.ant.tick(
+            now: t0.add(Duration(seconds: sinceFrame)),
+            lastFrameAt: t0,
+            connectedAt: t0,
+            tickNumber: 2,
+            deviceInfoSeen: seen,
+            quietBefore: quiet,
+            muteBefore: mute) as WriteFrame;
+    expect(at(seen: false, sinceFrame: 1).bytes, antStatusRequest);
+    final q = at(seen: true, sinceFrame: 8);
+    expect(q.bytes, antStatusRequest);
+    expect(q.countsAsNudge, isTrue);
+    expect(at(seen: true, sinceFrame: 1).settingsRead, isTrue);
+  });
+
+  test('a JK script has no settings reads', () {
+    expect(LinkScript.jk().settingsReads, isEmpty);
+  });
+
+  test('read-only: across a long ANT session only read requests are written',
+      () {
     final written = <String>{};
     for (final f in LinkScript.ant.onConnect) {
       written.add(h(f));
     }
+    var sent = 0;
     for (var n = 1; n <= 500; n++) {
       final a = LinkScript.ant.tick(
           now: t0.add(Duration(seconds: 2 * n)),
@@ -78,11 +130,24 @@ void main() {
           tickNumber: n,
           deviceInfoSeen: n > 40,
           quietBefore: quiet,
-          muteBefore: mute);
-      if (a is WriteFrame) written.add(h(a.bytes));
+          muteBefore: mute,
+          settingsReadsSent: sent);
+      if (a is WriteFrame) {
+        written.add(h(a.bytes));
+        if (a.settingsRead) sent++;
+      }
     }
     written.add(h(LinkScript.ant.askAgain));
-    expect(written, {h(antStatusRequest), h(antDeviceInfoRequest)});
+    expect(written, {
+      h(antStatusRequest),
+      h(antDeviceInfoRequest),
+      for (final f in antSettingsReadRequests) h(f),
+    });
     expect(LinkScript.ant.everyFrameHex, written);
+    // Every one of them is function 0x01 (status) or 0x02 (read): never the
+    // 0x51 register write or the 0x23 authentication the protocol also has.
+    for (final f in written) {
+      expect(['01', '02'], contains(f.substring(4, 6)), reason: f);
+    }
   });
 }

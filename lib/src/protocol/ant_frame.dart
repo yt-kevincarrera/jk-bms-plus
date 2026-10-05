@@ -19,6 +19,11 @@ class AntFrame {
   bool get isStatus => function == antFnStatusReply;
   bool get isDeviceInfo =>
       function == antFnReadReply && address == antDeviceInfoAddress;
+
+  /// A read reply from any other address: one settings register. The
+  /// reference routes them the same way (`on_ant_bms_ble_data_()`).
+  bool get isSettingsReply =>
+      function == antFnReadReply && address != antDeviceInfoAddress;
 }
 
 enum AntRejection {

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../model/ant_settings.dart';
 import '../model/bms_device_info.dart';
 import '../model/bms_snapshot.dart';
 import '../model/bms_warning.dart';
@@ -212,6 +213,25 @@ class AntParser {
       totalDischargingSeconds: u32(104 + o),
       totalChargingSeconds: u32(108 + o),
     );
+  }
+
+  /// One settings register reply, or null for a reply this app does not
+  /// read: an address outside [AntSetting], or a data length that is not
+  /// the two or four bytes a value takes (a pack refusing a read answers
+  /// with none). Value at byte 6, little-endian; the scale is the
+  /// register's. Source: `on_settings_data_()` in ant_bms_ble.cpp.
+  (AntSetting, double)? parseSetting(AntFrame f) {
+    if (!f.isSettingsReply) {
+      throw const AntParseException('Not a settings reply.');
+    }
+    final b = f.bytes;
+    final len = f.dataLength;
+    if ((len != 2 && len != 4) || b.length < 6 + len + 4) return null;
+    final setting = AntSetting.byAddress(f.address);
+    if (setting == null) return null;
+    var raw = b[6] | (b[7] << 8);
+    if (len == 4) raw |= (b[8] << 16) | (b[9] << 24);
+    return (setting, raw * setting.scale);
   }
 
   BmsDeviceInfo parseDeviceInfo(AntFrame f) {

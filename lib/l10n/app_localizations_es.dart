@@ -670,6 +670,21 @@ class AppL10nEs extends AppL10n {
       'Contadores del propio BMS: cuentan todo lo que la placa ha visto, también lo que pasó sin esta app conectada.';
 
   @override
+  String get antSettingsPending =>
+      'Un ANT no manda su configuración por su cuenta: la app se la pide ajuste por ajuste durante el primer minuto de conexión, con peticiones de lectura. Si no contesta, este BMS no la expone.';
+
+  @override
+  String get antSettingShortCircuit => 'Corte por cortocircuito';
+
+  @override
+  String get antSettingsNote =>
+      'Leído del propio BMS, un ajuste por petición. Un ANT no informa sus cortes de temperatura, así que aquí no salen.';
+
+  @override
+  String get verdictConfigVoltagesLookSaneBody =>
+      'Los cortes de voltaje están donde deberían para esta química. Este BMS no informa sus cortes de temperatura ni sus interruptores, así que esos no se revisaron. Esto no dice nada sobre el estado de las celdas: es una revisión de los ajustes, no de la batería.';
+
+  @override
   String get systemConnectionTitle => 'Conexión';
 
   @override

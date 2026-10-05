@@ -1141,6 +1141,30 @@ abstract class AppL10n {
   /// **'Contadores del propio BMS: cuentan todo lo que la placa ha visto, también lo que pasó sin esta app conectada.'**
   String get antCountersHint;
 
+  /// No description provided for @antSettingsPending.
+  ///
+  /// In es, this message translates to:
+  /// **'Un ANT no manda su configuración por su cuenta: la app se la pide ajuste por ajuste durante el primer minuto de conexión, con peticiones de lectura. Si no contesta, este BMS no la expone.'**
+  String get antSettingsPending;
+
+  /// No description provided for @antSettingShortCircuit.
+  ///
+  /// In es, this message translates to:
+  /// **'Corte por cortocircuito'**
+  String get antSettingShortCircuit;
+
+  /// No description provided for @antSettingsNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Leído del propio BMS, un ajuste por petición. Un ANT no informa sus cortes de temperatura, así que aquí no salen.'**
+  String get antSettingsNote;
+
+  /// No description provided for @verdictConfigVoltagesLookSaneBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Los cortes de voltaje están donde deberían para esta química. Este BMS no informa sus cortes de temperatura ni sus interruptores, así que esos no se revisaron. Esto no dice nada sobre el estado de las celdas: es una revisión de los ajustes, no de la batería.'**
+  String get verdictConfigVoltagesLookSaneBody;
+
   /// No description provided for @systemConnectionTitle.
   ///
   /// In es, this message translates to:

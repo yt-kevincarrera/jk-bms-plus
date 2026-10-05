@@ -20,11 +20,13 @@ import 'platform/alert_notifications.dart';
 import 'platform/live_notification.dart';
 import 'platform/pack_widget.dart';
 import 'platform/widget_publisher.dart';
+import 'model/ant_settings.dart';
 import 'model/bms_device_info.dart';
 import 'model/bms_snapshot.dart';
 import 'model/jk_device_info.dart';
 import 'model/jk_settings.dart';
 import 'pack/chemistry.dart';
+import 'pack/pack_config.dart';
 import 'protocol/ant_constants.dart';
 import 'protocol/ant_current_sign.dart';
 import 'protocol/ant_frame.dart';
@@ -352,6 +354,36 @@ class BmsService {
   /// Every plausible ANT status, as it arrives.
   Stream<AntStatus> get antStatus => _antStatusController.stream;
 
+  /// The ANT settings answered so far on this pack, one register at a time
+  /// (see [LinkScript.ant]), or null before the first answer. Read-only, like
+  /// a JK's settings frame.
+  AntSettings? get lastAntSettings => _antSettings;
+  AntSettings? _antSettings;
+
+  final _antSettingsController = StreamController<AntSettings>.broadcast();
+
+  /// The ANT settings, every time a register is answered.
+  Stream<AntSettings> get antSettings => _antSettingsController.stream;
+
+  /// The BMS's own charge cutoff a cell, JK or ANT, or null when it has not
+  /// said.
+  double? get configuredCellOvp =>
+      _lastSettings?.cellOvp ?? _antSettings?.cellOvp;
+
+  /// Everything the BMS has said about its configuration, in the audit's
+  /// fields, or null before it has said anything. A JK's comes whole from
+  /// its settings frame; an ANT's is whatever registers it has answered,
+  /// with the configured capacity from its status frame.
+  PackConfig? get packConfig {
+    if (_lastSettings case final s?) return PackConfig.from(s);
+    final ant = _antSettings;
+    if (ant == null || ant.isEmpty) return null;
+    return PackConfig.fromAnt(
+      ant,
+      nominalCapacityAh: _lastAntStatus?.snapshot.nominalCapacityAh,
+    );
+  }
+
   /// What the ANT path has seen on this connection, by outcome. Reset on
   /// every connect, like the JK counters.
   int antStatusFrames = 0;
@@ -435,10 +467,11 @@ class BmsService {
   double? get catalogueCapacityAh => activeDevice?.catalogueCapacityAh;
 
   /// Volts per cell at which the pack cuts off. Taken from the BMS's own
-  /// undervoltage setting once the settings frame arrives, so the usable-energy
-  /// figure follows how this pack is actually configured.
+  /// undervoltage setting once it is known (a JK's settings frame, or an
+  /// ANT's answer to the read of its cell undervoltage register), so the
+  /// usable-energy figure follows how this pack is actually configured.
   ///
-  /// Until then, and always on an ANT, which reports no settings, it is the
+  /// Until then, and on an ANT that does not answer that read, it is the
   /// usual cutoff for the pack's chemistry
   /// ([ChemistryLimits.typicalCutoffVolts]), and [cutoffIsAssumed] says so. It used to be a flat 3.0 V whatever the
   /// cells, which on an LFP pack put the "near cutoff" warning at 3.1 V, where
@@ -453,7 +486,7 @@ class BmsService {
   bool get cutoffIsAssumed => _configuredCutoff == null;
 
   double? get _configuredCutoff {
-    final configured = _lastSettings?.cellUvp;
+    final configured = _lastSettings?.cellUvp ?? _antSettings?.cellUvp;
     if (configured != null && configured > 1.5 && configured < 3.6) {
       return configured;
     }
@@ -466,7 +499,7 @@ class BmsService {
   /// else unknown.
   CellChemistry get cutoffChemistry => PackEnergy.chemistryFor(
     declared: activeDevice?.chemistry,
-    cellOvp: _lastSettings?.cellOvp,
+    cellOvp: configuredCellOvp,
     highestCellVolts:
         history.maxCellVoltageSeen ?? _lastSnapshot?.maxCellVoltage,
   );
@@ -861,6 +894,7 @@ class BmsService {
     _assembler.reset();
     _antAssembler.reset();
     _lastAntStatus = null;
+    _antSettings = null;
     _antNominalOffered = false;
     history.clear();
     _segments.reset();
@@ -1241,6 +1275,16 @@ class BmsService {
         } else if (frame.isDeviceInfo) {
           antInfoFrames++;
           _handleDeviceInfo(_antParser.parseDeviceInfo(frame));
+        } else if ((frame.isSettingsReply
+                ? _antParser.parseSetting(frame)
+                : null)
+            case (final setting, final value)) {
+          // One register, answering one of the script's reads. Kept per pack
+          // until the source changes: settings do not move between frames.
+          final next = (_antSettings ?? const AntSettings())
+              .withValue(setting, value);
+          _antSettings = next;
+          _antSettingsController.add(next);
         } else {
           // A valid frame this app does not read, such as a refusal of the
           // device-info request. The raw frame above is dropped until a pack
@@ -2694,8 +2738,9 @@ class BmsService {
       cutoffVoltagePerCell: cutoffVoltagePerCell,
       // The pack's own configured limits, so "close to the limit" means this
       // battery's limit rather than a number picked here.
-      dischargeLimitAmps: settings?.maxDischargeCurrent,
-      chargeLimitAmps: settings?.maxChargeCurrent,
+      dischargeLimitAmps:
+          settings?.maxDischargeCurrent ?? _antSettings?.dischargeOcp,
+      chargeLimitAmps: settings?.maxChargeCurrent ?? _antSettings?.chargeOcp,
       // Its own MOSFET protection, so the switch is warned about below the
       // point where this board cuts the power.
       mosfetOtpCelsius: settings?.mosfetOtp,
@@ -3546,7 +3591,7 @@ class BmsService {
     }
     final chemistry = PackEnergy.chemistryFor(
       declared: activeDevice?.chemistry,
-      cellOvp: _lastSettings?.cellOvp,
+      cellOvp: configuredCellOvp,
       highestCellVolts: highest > 0 ? highest : null,
     );
     final detector = CapacityCycleDetector(
@@ -3663,6 +3708,7 @@ class BmsService {
     await _deviceInfoController.close();
     await _settingsController.close();
     await _antStatusController.close();
+    await _antSettingsController.close();
     await _statsController.close();
     await _problemController.close();
     await _alertController.close();

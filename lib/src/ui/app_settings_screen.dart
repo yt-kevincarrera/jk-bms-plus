@@ -115,11 +115,14 @@ class AppSettingsScreen extends StatefulWidget {
 
 class _AppSettingsScreenState extends State<AppSettingsScreen> {
   /// Whether the alert [name] cannot fire on the pack connected now. Only the
-  /// current-limit alert, and only on an ANT, which reports no limits.
+  /// current-limit alert, and only on an ANT that has not answered the read
+  /// of its discharge overcurrent limit (it does not come in the status
+  /// frame, and some packs may never answer).
   bool _unavailableHere(String name) =>
       name == RideAlert.nearCurrentLimit.name &&
       widget.service.activeDevice != null &&
-      widget.service.brand == BmsBrand.ant;
+      widget.service.brand == BmsBrand.ant &&
+      widget.service.lastAntSettings?.dischargeOcp == null;
 
   /// Whether the link-lost alert can fire at all: only while one of the two
   /// watches holds the connection. See [BmsService._noteLinkLost].

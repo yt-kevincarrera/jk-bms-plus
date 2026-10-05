@@ -670,6 +670,21 @@ class AppL10nEn extends AppL10n {
       'The BMS\'s own counters: everything the board has seen, including what happened with this app not connected.';
 
   @override
+  String get antSettingsPending =>
+      'An ANT does not send its configuration on its own: the app asks for it one setting at a time during the first minute of a connection, with read requests. If it does not answer, this BMS does not expose it.';
+
+  @override
+  String get antSettingShortCircuit => 'Short-circuit cutoff';
+
+  @override
+  String get antSettingsNote =>
+      'Read from the BMS itself, one setting per request. An ANT does not report its temperature cutoffs, so they are not here.';
+
+  @override
+  String get verdictConfigVoltagesLookSaneBody =>
+      'The voltage cutoffs are where they should be for this chemistry. This BMS does not report its temperature cutoffs or its switches, so those were not checked. This says nothing about the state of the cells: it is a review of the settings, not of the battery.';
+
+  @override
   String get systemConnectionTitle => 'Connection';
 
   @override

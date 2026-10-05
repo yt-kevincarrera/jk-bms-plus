@@ -290,6 +290,9 @@ class BleTransport implements BmsLink {
   /// that keeps asking until it does can stop.
   bool _deviceInfoSeen = false;
 
+  /// How many of the script's settings reads have gone out on this link.
+  int _settingsReadsSent = 0;
+
   /// Silence long enough to be worth a nudge.
   ///
   /// Generous next to the two or three readings a second a healthy pack sends,
@@ -727,6 +730,7 @@ class BleTransport implements BmsLink {
       // that frame, so it has to be the first request.
       _tick = 0;
       _deviceInfoSeen = false;
+      _settingsReadsSent = 0;
       for (final f in _script.onConnect) {
         await _write(f);
       }
@@ -1118,6 +1122,7 @@ class BleTransport implements BmsLink {
     if (value.brand != _script.brand) {
       _tick = 0;
       _deviceInfoSeen = false;
+      _settingsReadsSent = 0;
     }
     _script = value;
     // A brand learned mid-link takes effect on the next tick rather than the
@@ -1146,6 +1151,7 @@ class BleTransport implements BmsLink {
       connectedAt: _connectedAt,
       tickNumber: _tick,
       deviceInfoSeen: _deviceInfoSeen,
+      settingsReadsSent: _settingsReadsSent,
       quietBefore: quietBefore,
       muteBefore: muteBefore,
     );
@@ -1154,11 +1160,14 @@ class BleTransport implements BmsLink {
         return;
       case ReleaseMute():
         await _resetMuteLink();
-      case WriteFrame(:final bytes, :final countsAsNudge):
+      case WriteFrame(:final bytes, :final countsAsNudge, :final settingsRead):
         if (countsAsNudge) {
           nudges++;
           _nudgesThisLink++;
         }
+        // Counted when asked, not when answered: each register is asked
+        // once a link, and one the pack ignores is not asked again.
+        if (settingsRead) _settingsReadsSent++;
         await _write(bytes);
     }
   }

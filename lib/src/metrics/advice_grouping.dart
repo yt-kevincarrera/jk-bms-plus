@@ -90,7 +90,8 @@ AdviceSubject? subjectOf(AdviceCode code) => switch (code) {
   AdviceCode.configBalanceStartLow ||
   AdviceCode.configChangedSinceDayOne ||
   AdviceCode.configChemistryUnknown ||
-  AdviceCode.configLooksSane => AdviceSubject.configuration,
+  AdviceCode.configLooksSane ||
+  AdviceCode.configVoltagesLookSane => AdviceSubject.configuration,
 
   // --- What the BMS says about itself ---
   //

@@ -17,6 +17,7 @@ import '../../ble/simulator/simulated_pack.dart';
 import '../../bms_service.dart';
 import '../../model/bms_snapshot.dart';
 import '../../model/bms_device_info.dart';
+import '../../model/ant_settings.dart';
 import '../../model/jk_settings.dart';
 import '../../protocol/ant_constants.dart';
 import '../../protocol/ant_parser.dart';
@@ -76,6 +77,7 @@ class _SystemTabState extends State<SystemTab> {
   JkSettings? _settings;
   FrameStats? _stats;
   AntStatus? _antStatus;
+  AntSettings? _antSettings;
 
   @override
   void initState() {
@@ -85,11 +87,13 @@ class _SystemTabState extends State<SystemTab> {
     _settings = s.lastSettings;
     _stats = s.stats;
     _antStatus = s.lastAntStatus;
+    _antSettings = s.lastAntSettings;
     _subs.addAll([
       s.deviceInfo.listen((v) => setState(() => _info = v)),
       s.settings.listen((v) => setState(() => _settings = v)),
       s.frameStats.listen((v) => setState(() => _stats = v)),
       s.antStatus.listen((v) => setState(() => _antStatus = v)),
+      s.antSettings.listen((v) => setState(() => _antSettings = v)),
       s.problems.listen(
         (v) => setState(() {
           _problems.insert(0, v);
@@ -262,12 +266,7 @@ class _SystemTabState extends State<SystemTab> {
         if (_settings != null)
           _bmsSettingsSection(t, _settings!)
         else if (service.brand == BmsBrand.ant)
-          Section(
-            title: t.systemSettingsTitle,
-            children: [
-              InfoRow(t.systemSettingsTitle, t.settingsNotExposed, dim: true, last: true),
-            ],
-          ),
+          _antSettingsSection(t, _antSettings),
         if (service.repository != null)
           StorageSection(repository: service.repository!, t: t),
         _settingsSection(t),
@@ -585,6 +584,118 @@ class _SystemTabState extends State<SystemTab> {
       ],
     ],
   );
+
+  /// What an ANT has answered of its settings. There is no settings frame:
+  /// the app reads the registers one by one (see LinkScript.ant), so rows
+  /// appear as answers land, and one the pack has not answered is left out
+  /// rather than shown as zero. The reference lists no temperature
+  /// thresholds for ANT, so there is no temperature group.
+  Widget _antSettingsSection(AppL10n t, AntSettings? s) {
+    if (s == null || s.isEmpty) {
+      return Section(
+        title: t.systemSettingsTitle,
+        children: [
+          InfoRow(
+            t.systemSettingsTitle,
+            t.antSettingsPending,
+            dim: true,
+            last: true,
+          ),
+        ],
+      );
+    }
+    String volts(double v) => _v(v);
+    String amps(double v) => '${v.toStringAsFixed(1)} A';
+    String seconds(double v) => '${v.toStringAsFixed(0)} s';
+    List<Widget> rows(List<(AntSetting, String, String Function(double))> l) {
+      final present = [
+        for (final (k, label, fmt) in l)
+          if (s[k] case final v?) (label, fmt(v)),
+      ];
+      return [
+        for (var i = 0; i < present.length; i++)
+          InfoRow(
+            present[i].$1,
+            present[i].$2,
+            last: i == present.length - 1,
+          ),
+      ];
+    }
+
+    final cell = rows([
+      (AntSetting.cellOvp, t.settingCellOvp, volts),
+      (AntSetting.cellOvpRecovery, t.settingCellOvpRecovery, volts),
+      (AntSetting.cellUvp, t.settingCellUvp, volts),
+      (AntSetting.cellUvpRecovery, t.settingCellUvpRecovery, volts),
+      (AntSetting.shutdownVoltage, t.settingPowerOff, volts),
+    ]);
+    final current = rows([
+      (AntSetting.chargeOcp, t.settingMaxCharge, amps),
+      (AntSetting.chargeOcpDelay, t.settingChargeOcpDelay, seconds),
+      (AntSetting.dischargeOcp, t.settingMaxDischarge, amps),
+      (AntSetting.dischargeOcpDelay, t.settingDischargeOcpDelay, seconds),
+      (
+        AntSetting.shortCircuit,
+        t.antSettingShortCircuit,
+        (v) => '${v.toStringAsFixed(0)} A',
+      ),
+    ]);
+    final balance = rows([
+      (AntSetting.balanceStart, t.settingBalanceStart, volts),
+      (
+        AntSetting.balanceTrigger,
+        t.settingBalanceTrigger,
+        (v) => '${(v * 1000).toStringAsFixed(0)} mV',
+      ),
+      (
+        AntSetting.balanceCurrent,
+        t.settingMaxBalance,
+        (v) => '${(v / 1000).toStringAsFixed(2)} A',
+      ),
+    ]);
+    final other = rows([
+      (AntSetting.cellCount, t.settingCellCount, (v) => v.toStringAsFixed(0)),
+    ]);
+    return Section(
+      title: t.systemSettingsTitle,
+      children: [
+        // The same audit a JK gets, on whatever the ANT has answered.
+        ProGate(
+          feature: Feature.configAudit,
+          compact: true,
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: OutlinedButton.icon(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => ConfigAuditScreen(service: widget.service),
+                ),
+              ),
+              icon: const Icon(Icons.rule, size: 18),
+              label: Text(t.configAuditOpen),
+            ),
+          ),
+        ),
+        if (cell.isNotEmpty) ..._settingsGroup(t.settingsGroupCell, cell),
+        if (current.isNotEmpty)
+          ..._settingsGroup(t.settingsGroupCurrent, current),
+        if (balance.isNotEmpty)
+          ..._settingsGroup(t.settingsGroupBalance, balance),
+        if (other.isNotEmpty) ..._settingsGroup(t.settingsGroupOther, other),
+        Padding(
+          padding: const EdgeInsets.only(top: 8, bottom: 4),
+          child: Text(
+            t.antSettingsNote,
+            style: const TextStyle(
+              fontSize: 11.5,
+              height: 1.4,
+              color: AppTheme.textFaint,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
   /// An ANT state code in the rider's language. The English table stays the
   /// authority on which codes exist, so the logs and this screen agree on

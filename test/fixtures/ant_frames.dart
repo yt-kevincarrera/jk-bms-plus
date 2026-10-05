@@ -52,3 +52,11 @@ final Uint8List antInfo16zm = hex(
 final Uint8List antInfo22ph = hex(
   '7E A1 12 6C 02 20 32 32 50 48 42 38 54 42 31 33 30 41 00 00 00 00 32 32 41 41 55 42 30 30 2D 32 34 31 30 30 38 41 EF 2F FF 0B 00 00 41 F2 AA 55',
 );
+
+/// A settings read reply, the only real one the reference has:
+/// `SETTINGS_RESP_CELL_HIGH_PROTECT` in
+/// tests/components/ant_bms_ble/frames_settings.h (from issue #18). Cell
+/// overvoltage protection, register 0x0000, raw 0x1036 = 4.150 V.
+final Uint8List antSettingCellOvpReply = hex(
+  '7E A1 12 00 00 02 36 10 1F 14 AA 55',
+);

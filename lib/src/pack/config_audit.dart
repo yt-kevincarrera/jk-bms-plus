@@ -272,9 +272,20 @@ class ConfigAudit {
     )) {
       // Worth saying out loud. A rider who has just been told nothing is
       // wrong has learned something; a blank screen has told them the app
-      // did not run.
+      // did not run. But only for what was looked at: an ANT reports no
+      // temperature cutoffs and no switches, and "the temperature cutoffs
+      // are where they should be" would vouch for settings nobody read.
+      final temperaturesRead =
+          config[ConfigField.chargeOtp] != null ||
+          config[ConfigField.dischargeOtp] != null ||
+          config[ConfigField.chargeUtp] != null;
       out.add(
-        Advice(code: AdviceCode.configLooksSane, level: AdviceLevel.good),
+        Advice(
+          code: temperaturesRead
+              ? AdviceCode.configLooksSane
+              : AdviceCode.configVoltagesLookSane,
+          level: AdviceLevel.good,
+        ),
       );
     }
 

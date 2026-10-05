@@ -310,7 +310,7 @@ class _PackProfileCardState extends State<PackProfileCard> {
       service: widget.service,
       device: device,
       suggestion: ChemistryHint.from(
-        cellOvp: widget.service.lastSettings?.cellOvp,
+        cellOvp: widget.service.configuredCellOvp,
         highestCellVolts: widget.service.lastSnapshot?.maxCellVoltage,
       ),
       offerBaseline: true,

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
@@ -35,10 +37,23 @@ class _ConfigAuditScreenState extends State<ConfigAuditScreen> {
   PackBaseline? _baseline;
   bool _loading = true;
 
+  /// An ANT answers its settings one register at a time, over the first
+  /// minute of a connection, so the audit redraws as each one lands.
+  StreamSubscription<Object?>? _antSettingsSub;
+
   @override
   void initState() {
     super.initState();
     _load();
+    _antSettingsSub = widget.service.antSettings.listen((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _antSettingsSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -62,7 +77,7 @@ class _ConfigAuditScreenState extends State<ConfigAuditScreen> {
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
-    final settings = widget.service.lastSettings;
+    final config = widget.service.packConfig;
 
     return Scaffold(
       appBar: AppBar(title: Text(t.configAuditTitle)),
@@ -78,11 +93,11 @@ class _ConfigAuditScreenState extends State<ConfigAuditScreen> {
                   ),
                 ),
               )
-            : settings == null
+            : config == null
             ? (widget.service.brand == BmsBrand.ant
-                  ? _notExposed(t)
+                  ? _antPending(t)
                   : _waiting(t))
-            : _body(t, PackConfig.from(settings)),
+            : _body(t, config),
       ),
     );
   }
@@ -102,13 +117,14 @@ class _ConfigAuditScreenState extends State<ConfigAuditScreen> {
     ),
   );
 
-  /// ANT never sends a settings frame this app can read, so unlike a JK still
-  /// warming up, there is nothing to wait for here.
-  Widget _notExposed(AppL10n t) => Center(
+  /// An ANT has no settings frame: the app reads its registers one by one,
+  /// and one that never answers does not expose them. The text says both,
+  /// rather than promising a wait that may never end.
+  Widget _antPending(AppL10n t) => Center(
     child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Text(
-        t.settingsNotExposed,
+        t.antSettingsPending,
         textAlign: TextAlign.center,
         style: const TextStyle(
           fontSize: 13.5,
@@ -203,7 +219,7 @@ class _ConfigAuditScreenState extends State<ConfigAuditScreen> {
       service: widget.service,
       device: device,
       suggestion: ChemistryHint.from(
-        cellOvp: widget.service.lastSettings?.cellOvp,
+        cellOvp: widget.service.configuredCellOvp,
         highestCellVolts: widget.service.lastSnapshot?.maxCellVoltage,
       ),
     );

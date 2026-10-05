@@ -1,3 +1,4 @@
+import '../model/ant_settings.dart';
 import '../model/jk_settings.dart';
 
 /// The settings worth watching, out of everything the BMS will hand over.
@@ -134,6 +135,25 @@ class PackConfig {
     ConfigField.dischargeSwitchOn: s.dischargeSwitchOn ? 1 : 0,
     ConfigField.balancerSwitchOn: s.balancerSwitchOn ? 1 : 0,
   });
+
+  /// Reads what an ANT has answered so far, under the same fields. Partial
+  /// by nature: the ANT reports no temperature thresholds and no switches,
+  /// and any register it has not answered for is simply absent, never
+  /// filled in. [nominalCapacityAh] comes from the status frame, which the
+  /// reference calls the capacity setting.
+  static PackConfig fromAnt(AntSettings s, {double? nominalCapacityAh}) =>
+      PackConfig({
+        ConfigField.cellOvp: ?s.cellOvp,
+        ConfigField.cellUvp: ?s.cellUvp,
+        ConfigField.balanceStartVoltage: ?s[AntSetting.balanceStart],
+        ConfigField.maxChargeCurrent: ?s.chargeOcp,
+        ConfigField.maxDischargeCurrent: ?s.dischargeOcp,
+        if (s[AntSetting.balanceCurrent] case final v?)
+          ConfigField.maxBalanceCurrent: v / 1000,
+        ConfigField.cellCount: ?s[AntSetting.cellCount],
+        if (nominalCapacityAh != null && nominalCapacityAh > 0)
+          ConfigField.nominalCapacityAh: nominalCapacityAh,
+      });
 
   Map<String, Object?> toJson() => {
     for (final e in values.entries) e.key.name: e.value,

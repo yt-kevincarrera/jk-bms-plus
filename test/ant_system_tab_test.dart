@@ -5,12 +5,14 @@ import 'package:jk_bms/src/app_settings.dart';
 import 'package:jk_bms/src/ble/ble_transport.dart';
 import 'package:jk_bms/src/ble/proximity_watcher.dart';
 import 'package:jk_bms/src/bms_service.dart';
+import 'package:jk_bms/src/model/ant_settings.dart';
 import 'package:jk_bms/src/ui/locale_controller.dart';
 import 'package:jk_bms/src/ui/tabs/system_tab.dart';
 import 'package:jk_bms/src/update/app_version.dart';
 import 'package:jk_bms/src/update/update_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'ant_settings_test.dart' show settingReply;
 import 'fixtures/ant_frames.dart';
 import 'support/app_harness.dart';
 import 'support/fakes.dart';
@@ -79,6 +81,36 @@ void main() {
     await see('4553.2 Ah');
     await see(t.antChargingTime);
     await see(t.antDischargingTime);
+    service.dispose();
+  });
+
+  testWidgets('settings: pending until answered, then the answered rows only', (
+    tester,
+  ) async {
+    final (service, link) = (await tester.runAsync(connected))!;
+    await pump(tester, service);
+    final list = find.byType(Scrollable).first;
+    Future<void> see(String text) async {
+      await tester.scrollUntilVisible(find.text(text), 200, scrollable: list);
+      expect(find.text(text), findsOneWidget);
+    }
+
+    await see(t.antSettingsPending);
+    expect(find.text(t.settingsNotExposed), findsNothing);
+
+    await tester.runAsync(() async {
+      await link.deliver(antSettingCellOvpReply);
+      await link.deliver(settingReply(AntSetting.dischargeOcp, 1200));
+    });
+    await tester.pump();
+    await see(t.settingCellOvp);
+    await see('4.150 V');
+    await see(t.settingMaxDischarge);
+    await see('120.0 A');
+    await see(t.antSettingsNote);
+    expect(find.text(t.antSettingsPending), findsNothing);
+    // Not answered, so not shown, rather than shown as zero.
+    expect(find.text(t.settingCellUvp), findsNothing);
     service.dispose();
   });
 }

@@ -69,7 +69,8 @@ and the raw frames as hex so the history can be re-read if a byte offset here
 turns out to be wrong.
 
 **ANT BMS (2021 and later).** Read the same way as a JK, read-only: the app
-only ever sends the two ANT read requests. If a pack does not decode, connect
+only ever sends ANT read requests: the status, the device info and, once per
+connection, its protection settings one register at a time. If a pack does not decode, connect
 for a minute, make a backup with raw frames and use it as a fixture in
 `test/ant_backup_replay_test.dart`.
 

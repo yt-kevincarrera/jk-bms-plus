@@ -235,10 +235,12 @@ void main() {
     expect(service.stats.bytesReceived, before + antStatus16s.length);
   });
 
-  test("an ANT states no cutoff, so the chemistry's usual one is used, "
-      'and marked assumed', () async {
+  test("an ANT that has not answered for its cutoff gets the chemistry's "
+      'usual one, marked assumed', () async {
     // It used to be a flat 3.0 V for any pack without a settings frame,
-    // quoted in the alert as "the BMS cutoff". An ANT never sends settings.
+    // quoted in the alert as "the BMS cutoff". This ANT has not answered
+    // the read of its undervoltage register (ant_settings_test covers one
+    // that has).
     await service.connect('ANT1', name: 'ANT-BLE16ZMUB');
     link.announce(BleLinkState.connected);
     await link.deliver(antStatus16s);

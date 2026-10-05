@@ -161,7 +161,8 @@ loss. See section 8 of the PRD.
 
 Read requests only. The app changes nothing on the BMS: it writes only the
 read requests its `LinkScript` produces (`0x97` device info, `0x96` cell info
-on a JK; the status and device-info requests on an ANT). The transport's
+on a JK; on an ANT the status request and function `0x02` reads, which fetch
+the device info and, once per link, one settings register each). The transport's
 script path, `BleTransport._write`, refuses any frame whose value length is
 not zero. It never writes setting values (voltages, currents, temperatures):
 the protocol is reverse-engineered, and a wrong value written to a protection
@@ -229,3 +230,19 @@ fire on that framing. That is a property of the protocol, not a bug here.
 **The cutoff voltage** used by both the usable-energy figure and the near-cutoff
 alert comes from the settings frame at byte 10 (cell UVP), so it follows how the
 pack is actually configured rather than a constant chosen here.
+
+**ANT settings** have no frame of their own. The app reads them one register
+at a time with the function `0x02` read the reference's `read_settings()`
+sends (`7E A1 02 addr_lo addr_hi 02 crc_lo crc_hi AA 55`), every other poll
+tick once the pack has identified itself, each register once per link. The
+reply is function `0x12` at that address with the value little-endian at
+byte 6. Registers and scales are `SETTINGS_REGISTERS` in `ant_bms_ble.cpp`;
+the request frames are byte for byte those in
+`tests/components/ant_bms_ble/frames_settings.h`, whose one real reply (cell
+overvoltage 0x1036 = 4.150 V, from issue #18) is a fixture here. Only the
+protections and balancing figures the app uses are read (`AntSetting`). The
+reference lists no temperature thresholds, so an ANT's are never shown or
+audited. Cell UVP becomes the cutoff, cell OVP feeds the chemistry hint, the
+charge and discharge overcurrent limits feed the near-limit alert, and all of
+it feeds the configuration audit. A pack that never answers leaves the app
+where it was before: chemistry cutoff, assumed.
