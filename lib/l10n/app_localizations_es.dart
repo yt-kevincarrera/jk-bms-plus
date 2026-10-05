@@ -677,6 +677,24 @@ class AppL10nEs extends AppL10n {
   String get antSettingShortCircuit => 'Corte por cortocircuito';
 
   @override
+  String get demoScenarioAntRiding => 'ANT, rodando';
+
+  @override
+  String get demoScenarioAntRidingDesc =>
+      'Un ANT 20S simulado que contesta las peticiones de lectura de la app, en marcha';
+
+  @override
+  String get demoScenarioAntCharging => 'ANT, cargando';
+
+  @override
+  String get demoScenarioAntChargingDesc =>
+      'Un ANT 20S simulado en el cargador; manda la corriente de carga en negativo, como uno real';
+
+  @override
+  String get demoExplanationAnt =>
+      'Un ANT 20S simulado contesta las peticiones de lectura de la app con frames reales del protocolo de 2021, con su CRC. Pasan por el mismo ensamblado, CRC y parser que un ANT de verdad. Los valores en sí son modelados, no medidos.';
+
+  @override
   String get antSettingsNote =>
       'Leído del propio BMS, un ajuste por petición. Un ANT no informa sus cortes de temperatura, así que aquí no salen.';
 

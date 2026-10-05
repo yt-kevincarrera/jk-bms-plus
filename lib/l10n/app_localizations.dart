@@ -1153,6 +1153,36 @@ abstract class AppL10n {
   /// **'Corte por cortocircuito'**
   String get antSettingShortCircuit;
 
+  /// No description provided for @demoScenarioAntRiding.
+  ///
+  /// In es, this message translates to:
+  /// **'ANT, rodando'**
+  String get demoScenarioAntRiding;
+
+  /// No description provided for @demoScenarioAntRidingDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Un ANT 20S simulado que contesta las peticiones de lectura de la app, en marcha'**
+  String get demoScenarioAntRidingDesc;
+
+  /// No description provided for @demoScenarioAntCharging.
+  ///
+  /// In es, this message translates to:
+  /// **'ANT, cargando'**
+  String get demoScenarioAntCharging;
+
+  /// No description provided for @demoScenarioAntChargingDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Un ANT 20S simulado en el cargador; manda la corriente de carga en negativo, como uno real'**
+  String get demoScenarioAntChargingDesc;
+
+  /// No description provided for @demoExplanationAnt.
+  ///
+  /// In es, this message translates to:
+  /// **'Un ANT 20S simulado contesta las peticiones de lectura de la app con frames reales del protocolo de 2021, con su CRC. Pasan por el mismo ensamblado, CRC y parser que un ANT de verdad. Los valores en sí son modelados, no medidos.'**
+  String get demoExplanationAnt;
+
   /// No description provided for @antSettingsNote.
   ///
   /// In es, this message translates to:

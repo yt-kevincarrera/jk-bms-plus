@@ -747,8 +747,18 @@ class BmsService {
 
   DemoScenario? get demoScenario => _switchable?.simulator?.scenario;
 
+  /// Changes what the simulated pack does. Within a brand that is the same
+  /// pack doing something else; a scenario of the other brand is a
+  /// different pack, so demo mode starts again with it, exactly as entering
+  /// it does.
   set demoScenario(DemoScenario? value) {
-    if (value != null) _switchable?.simulator?.scenario = value;
+    final sim = _switchable?.simulator;
+    if (value == null || sim == null) return;
+    if (value.brand == sim.brand) {
+      sim.scenario = value;
+    } else {
+      unawaited(enterDemoMode(scenario: value));
+    }
   }
 
   /// Starts the simulated pack. Drops any real connection first.
@@ -758,24 +768,38 @@ class BmsService {
     final link = _switchable;
     if (link == null) return;
     _resetDecoding();
-    // The simulator speaks JK. Without this, a demo entered after an ANT
-    // session would feed its JK frames to the ANT assembler and show nothing.
+    // The simulator speaks the scenario's brand. Without this, a JK demo
+    // entered after an ANT session would feed its JK frames to the ANT
+    // assembler and show nothing, and the other way round.
     _brandChosenByRider = false;
     _resetBrandEvidence();
     // A connection like any other, so its counters start from nothing too.
     _resetCounters();
-    _useBrand(BmsBrand.jk);
+    final brand = scenario.brand;
+    _useBrand(brand);
+    if (brand == BmsBrand.ant) {
+      _stopCellInfoRequests();
+    }
     await link.useSimulator(scenario: scenario);
     // The simulated pack is a pack like any other as far as storage goes. It
     // gets its own row, so demo rides learn from demo rides and never touch
-    // what the app believes about a real battery.
-    await _activate(id: demoDeviceId, name: 'Pack demo', demo: true);
+    // what the app believes about a real battery. The simulated ANT has a
+    // row of its own too: a different BMS is a different pack.
+    final id = brand == BmsBrand.ant ? demoAntDeviceId : demoDeviceId;
+    await _activate(
+      id: id,
+      name: brand == BmsBrand.ant ? 'Pack demo ANT' : 'Pack demo',
+      demo: true,
+    );
     _armSilenceWatchdog();
-    await link.connect(demoDeviceId);
+    await link.connect(id);
   }
 
   /// The id the simulated pack is stored under.
   static const String demoDeviceId = 'demo';
+
+  /// The id the simulated ANT is stored under.
+  static const String demoAntDeviceId = 'demo-ant';
 
   /// Records which pack is connected and points storage at it.
   ///

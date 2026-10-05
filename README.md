@@ -100,7 +100,10 @@ tool that issues keys.
 **Demo mode.**
 
  A simulated 20S pack generating real 300-byte frames through the
-real parser, so every screen can be judged with no BMS in the room. Demo rides
+real parser, so every screen can be judged with no BMS in the room. Two
+scenarios simulate a 20S ANT instead: it answers the app's own read requests
+with CRC'd 2021 frames through the ANT assembler and parser, charge current
+negative on the wire as on a real one. Demo rides
 are stored and learned from in their own world, so you can watch the learning
 work without it ever touching what the app believes about the real pack.
 

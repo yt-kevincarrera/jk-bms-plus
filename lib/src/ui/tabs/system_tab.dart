@@ -373,7 +373,9 @@ class _SystemTabState extends State<SystemTab> {
     return Section(
       title: t.demoTitle,
       accent: AppTheme.cool,
-      intro: t.demoExplanation,
+      intro: service.brand == BmsBrand.ant
+          ? t.demoExplanationAnt
+          : t.demoExplanation,
       children: [
         for (final scenario in DemoScenario.values)
           RadioListTile<DemoScenario>(
@@ -1241,6 +1243,8 @@ class _SystemTabState extends State<SystemTab> {
     DemoScenario.idle => t.demoScenarioIdle,
     DemoScenario.weakCell => t.demoScenarioWeakCell,
     DemoScenario.inspection => t.demoScenarioInspection,
+    DemoScenario.antRiding => t.demoScenarioAntRiding,
+    DemoScenario.antCharging => t.demoScenarioAntCharging,
   };
 
   String _scenarioDescription(AppL10n t, DemoScenario s) => switch (s) {
@@ -1249,6 +1253,8 @@ class _SystemTabState extends State<SystemTab> {
     DemoScenario.idle => t.demoScenarioIdleDesc,
     DemoScenario.weakCell => t.demoScenarioWeakCellDesc,
     DemoScenario.inspection => t.demoScenarioInspectionDesc,
+    DemoScenario.antRiding => t.demoScenarioAntRidingDesc,
+    DemoScenario.antCharging => t.demoScenarioAntChargingDesc,
   };
 
   String _linkLabel(AppL10n t, BleLinkState state) => switch (state) {

@@ -677,6 +677,24 @@ class AppL10nEn extends AppL10n {
   String get antSettingShortCircuit => 'Short-circuit cutoff';
 
   @override
+  String get demoScenarioAntRiding => 'ANT, riding';
+
+  @override
+  String get demoScenarioAntRidingDesc =>
+      'A simulated 20S ANT answering the app\'s read requests, ridden';
+
+  @override
+  String get demoScenarioAntCharging => 'ANT, charging';
+
+  @override
+  String get demoScenarioAntChargingDesc =>
+      'A simulated 20S ANT on the charger; it sends charge current as negative, like a real one';
+
+  @override
+  String get demoExplanationAnt =>
+      'A simulated 20S ANT answers the app\'s read requests with real 2021-protocol frames, CRC and all. They go through the same reassembly, CRC check and parser as a real ANT. The values themselves are modelled, not measured.';
+
+  @override
   String get antSettingsNote =>
       'Read from the BMS itself, one setting per request. An ANT does not report its temperature cutoffs, so they are not here.';
 
