@@ -79,11 +79,13 @@ against the Yoazaky 20S pack.
 ### 1. Current sign convention
 
 `BmsSnapshot.isCharging` assumes positive current means charging, following the
-reference's use of `std::max(0.0f, power)` for charging power. **The captured
-frames are all from an idle pack (current = 0), so this is unverified.**
+reference's use of `std::max(0.0f, power)` for charging power.
 
-To settle it: connect, note the sign while discharging under load, then note it
-while charging. Fix `isCharging` / `isDischarging` if reversed.
+**Settled for JK.** On the owner's JK-BD6A20S6P (firmware JK02_32S), the backup
+of 2026-09-02 shows discharge as negative: every reading of a 21-minute ride
+sits between -45.9 A and 0.0 A, and charging reads positive. `isCharging` and
+`isDischarging` are right as they are. (An ANT reports the opposite way round on
+the wire and is turned to this convention in its parser.)
 
 ### 2. Temperature sensor bitmask at byte 182
 
@@ -93,16 +95,23 @@ MOSFET sensor and bits 1..5 for probes 1..5. The captured JK02_24S frames report
 readings (19.0, 19.1 and 21.0 °C).
 
 So either the polarity is inverted (it is a *present* mask) or the label is
-wrong. **Nothing is filtered on this field.** It is carried through raw as
-`BmsSnapshot.temperatureSensorMask`. Do not use it to hide readings until this
-is settled.
+wrong. The rider's JK02_32S reports `0xFF` with two probes fitted and two
+inputs empty, which fits neither reading. **Nothing is filtered on this
+field.** It is carried through raw as `BmsSnapshot.temperatureSensorMask`. Do
+not use it to hide readings until this is settled.
+
+It is one byte. Byte 183, right after it, is the heater flag; the parser used
+to read 182 as a u16 and so folded the heater into the mask (0x1FF instead of
+0xFF with the heater on).
 
 What *is* settled, measured on the real pack (JK-BD6A20S6P, sw 20.20, two
 probes fitted): **an input with no probe on it reads raw `-2000`, i.e.
 -200.0 °C.** The JK02_32S framing carries five probe inputs, and on this pack
 inputs 3 and 4 always carry the sentinel (the fifth slot repeats the MOSFET
-temperature on this firmware, which is worth knowing before trusting it as a
-sixth sensor). It is named
+temperature on this firmware, exactly, in every captured frame; the app treats
+slot 5 on a JK02_32S frame as that mirror whenever it equals the MOSFET to the
+tenth of a degree, see `BmsSnapshot.mosfetMirrorSlot`, and keeps it out of
+every battery figure). The sentinel is named
 `BmsSnapshot.absentProbeCelsius` and recognised in two places: the screens
 hide it, and the plausibility rules behind variant probing ignore it. The
 second was missing until 2026-09-11 and the prober rejected the pack's own
@@ -148,12 +157,45 @@ Every one of the questions above could turn out to have been decoded wrongly for
 months. Storing the raw 300-byte frames means the fix is a reparse rather than a
 loss. See section 8 of the PRD.
 
-## What this app never does
+## What this app writes
 
-It never writes settings to the BMS. The only writes are the 20-byte read
-requests in `BleTransport._writeCommand`, and the only registers used are the
-read-only ones. The protocol is reverse-engineered; a wrong value written to a
-protection register can brick the BMS or disable a protection.
+It never writes setting values (voltages, currents, temperatures) to the BMS.
+The protocol is reverse-engineered; a wrong value written to a protection
+register can brick the BMS or disable a protection.
+
+On its own it writes only the 20-byte read requests its `LinkScript` produces
+(`0x97` device info, `0x96` cell info on a JK). The transport's script path,
+`BleTransport._write`, refuses any frame whose value length is not zero.
+
+With the rider's "let the app change the BMS" setting on (off by default, not
+carried in a backup), it can also write the three JK02 switches, from System,
+BMS settings:
+
+| Switch | Register (JK02_24S and JK02_32S) | Read back from settings byte |
+|---|---|---|
+| Charging | `0x1D` | 118 |
+| Discharging | `0x1E` | 122 |
+| Balancer | `0x1F` | 126 |
+
+Source: `SWITCHES` in `components/jk_bms_ble/switch/__init__.py` (listed as
+`[JK04, JK02_24S, JK02_32S]`), `JkSwitch::write_state()` in
+`switch/jk_switch.cpp` (value 1 or 0, length 4 on JK02) and `build_frame()` in
+`jk_bms_ble.cpp`. Discharging off, for example, is
+`AA 55 90 EB 1E 04 00 00 00 00 00 00 00 00 00 00 00 00 00 9C`.
+
+Every write goes through `decideSwitchWrite` in `lib/src/ble/bms_write_gate.dart`,
+the only code that can build one: it refuses with the setting off, on an ANT,
+on JK04 or an unknown framing, without a settings frame or a recent plausible
+reading, and turning discharging off while the bike is ridden (riding gate,
+ride recording, or more than 2 A drawn). A change counts as applied only when a
+settings frame after it shows the new state within five seconds, and every
+attempt, refused or not, is a row in the connection log.
+
+Open question: which request makes a JK02 send its settings frame again
+mid-connection. After a write the app sends the same pair it sends on connect
+(`0x97`, then `0x96`) twice in the window; if the pack does not answer with a
+settings frame, the app says the change was not confirmed rather than claiming
+it.
 
 ## What the app does with all this
 

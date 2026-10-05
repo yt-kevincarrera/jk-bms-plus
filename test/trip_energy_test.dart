@@ -156,6 +156,29 @@ void main() {
       );
       expect(trip.ahOut, isNull);
     });
+
+    test('charge put back mid-ride is taken off once, not twice', () {
+      // The counter's difference is already net of it. Consumption takes the
+      // integrated energy in off the energy out, so the energy out has to be
+      // gross, or a top-up in the middle of a ride is subtracted twice and the
+      // ride comes out cheaper than it was.
+      final trip = TripRecorder()..start();
+      trip.addSnapshot(at(t0, remainingAh: 25));
+      // A minute on a charger, 10 A at 75 V: 12.5 Wh in. Held apart from the
+      // riding readings by gaps no integration crosses.
+      for (var s = 30; s <= 90; s++) {
+        trip.addSnapshot(
+          at(t0.add(Duration(seconds: s)), current: 10, remainingAh: 24.5),
+        );
+      }
+      trip.addSnapshot(at(t0.add(const Duration(minutes: 2)), remainingAh: 23));
+
+      expect(trip.energySource, EnergySource.coulombCount);
+      expect(trip.energyInWh, closeTo(12.5, 0.1));
+      // Net 2 Ah at 75 V is what the pack really lost.
+      expect(trip.energyOutWh - trip.energyInWh, closeTo(150, 0.5));
+      expect(trip.energyOutWh, closeTo(162.5, 0.5));
+    });
   });
 
   group('what it all adds up to', () {

@@ -34,6 +34,19 @@ class AntStatus {
   final int balancerCode;
   final double balancerTemp;
   final int balancingCellMask;
+
+  /// The same frame with a corrected reading, for the one correction the
+  /// service makes after decoding: an ANT whose current sign contradicts its
+  /// own battery state.
+  AntStatus withSnapshot(BmsSnapshot s) => AntStatus(
+        snapshot: s,
+        batteryState: batteryState,
+        chargeMosfetCode: chargeMosfetCode,
+        dischargeMosfetCode: dischargeMosfetCode,
+        balancerCode: balancerCode,
+        balancerTemp: balancerTemp,
+        balancingCellMask: balancingCellMask,
+      );
 }
 
 /// The MOSFET codes, in the app's warning vocabulary (spec §5.2).
@@ -67,8 +80,14 @@ class AntParser {
     if (n == 0 || n > 32 || t > 8) {
       throw AntParseException('Implausible layout: $n cells, $t probes.');
     }
+    // A minimum, not an exact size. The assembler has already held the frame
+    // to its own data_len, which is the check the reference makes; this one
+    // only guarantees every offset read below is inside the frame. It was an
+    // exact match, and the rider's 20S ANT (firmware 22AAUB00-240401A) sends
+    // 14 bytes more than the fields read here: every status frame it sent was
+    // refused, and the pack never produced a reading.
     final expected = 116 + 2 * (n + t);
-    if (b.length != expected) {
+    if (b.length < expected) {
       throw AntParseException(
           '$n cells and $t probes need $expected bytes, frame has ${b.length}.');
     }
@@ -87,6 +106,14 @@ class AntParser {
     final charge = b[46 + o];
     final discharge = b[47 + o];
     final balancer = b[48 + o];
+    // 70+o, 4 bytes: which cells are being balanced, one bit each.
+    final balancingMask = u32(70 + o);
+    // Working means charge is being moved: either the BMS names cells, or its
+    // balancer code is one of the two that describe balancing under way. It
+    // used to be "any code but 0", which called a balancer stopped by
+    // overheating "working", and one merely switched on (code 4) too.
+    final balancing =
+        balancingMask != 0 || antBalancerBalancingCodes.contains(balancer);
 
     final snapshot = BmsSnapshot(
       timestamp: f.receivedAt,
@@ -97,8 +124,14 @@ class AntParser {
       cellResistances: null,
       enabledCellMask: null,
       packVoltage: u16(38 + o) / 100,
-      // Positive while charging, which is already this app's convention.
-      current: i16(40 + o) / 10,
+      // Reversed, because an ANT reports charge as negative. Measured on the
+      // rider's 20S pack on 2026-09-30: state byte "charge", the field at
+      // -5.1 A, the remaining capacity climbing 2.9 mAh every two seconds
+      // (+5.2 A) and the power field negative too. This app's convention is
+      // positive while charging. The service still checks the sign against
+      // the state byte, so a firmware that reports the other way round is
+      // caught and reversed back (AntCurrentSign).
+      current: -i16(40 + o) / 10,
       temperatures: probes,
       temperatureSensorMask: null,
       mosfetTemp: i16(34 + o).toDouble(),
@@ -112,12 +145,13 @@ class AntParser {
       balanceCurrent: null,
       chargeMosfetOn: charge == 0x01,
       dischargeMosfetOn: discharge == 0x01,
-      balancerActive: balancer != 0,
+      balancerActive: balancing,
       heatingOn: null,
       warnings: antWarnings(charge: charge, discharge: discharge),
       wireResistanceWarningMask: null,
       heatingCurrent: null,
       totalRuntimeSeconds: u32(66 + o),
+      balancingCellMask: balancingMask,
     );
     // Power (62+o) is deliberately not stored: BmsSnapshot.power is V x I,
     // computed in one place rather than trusted from two.
@@ -128,7 +162,7 @@ class AntParser {
       dischargeMosfetCode: discharge,
       balancerCode: balancer,
       balancerTemp: i16(36 + o).toDouble(),
-      balancingCellMask: u32(70 + o),
+      balancingCellMask: balancingMask,
     );
   }
 

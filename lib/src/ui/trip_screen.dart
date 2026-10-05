@@ -101,10 +101,16 @@ class _TripScreenState extends State<TripScreen> {
     if (mounted) setState(() {});
   }
 
+  /// "12 s ago", or minutes past two of them.
+  static String _ago(AppL10n t, Duration age) => age.inSeconds < 120
+      ? t.tripReadingAgeSeconds('${age.inSeconds}')
+      : t.tripReadingAgeMinutes('${age.inMinutes}');
+
   String _problemText(AppL10n t, LocationProblem p) => switch (p) {
         LocationProblem.serviceDisabled => t.locationDisabled,
         LocationProblem.permissionDenied => t.locationDenied,
         LocationProblem.permanentlyDenied => t.locationDeniedForever,
+        LocationProblem.approximateOnly => t.locationApproximateOnly,
       };
 
   @override
@@ -112,6 +118,17 @@ class _TripScreenState extends State<TripScreen> {
     final t = AppL10n.of(context);
     final trip = widget.service.trip;
     final snapshot = widget.service.lastSnapshot;
+    // Only a speed still worth believing: the last fix's figure stays put
+    // forever once the fixes stop, and a frozen 32 read as riding at 32.
+    final speed = trip.freshSpeedKmh;
+    // How old the reading behind the charge figures is, when old enough to
+    // say. With the link down they kept showing the last value as if live.
+    final age = snapshot == null
+        ? null
+        : DateTime.now().toUtc().difference(snapshot.timestamp.toUtc());
+    final stale = age != null && age > const Duration(seconds: 10);
+    String withAge(String value) =>
+        stale ? '$value  ·  ${_ago(t, age)}' : value;
 
     // Riding is the case this screen exists for, so the awake setting is
     // honoured here too rather than only on the live tab.
@@ -151,6 +168,21 @@ class _TripScreenState extends State<TripScreen> {
               child: ListView(
                 padding: const EdgeInsets.only(bottom: 12),
                 children: [
+                  // Said while the ride is still going, when it can be acted
+                  // on. A ride that recorded no GPS used to say so only at the
+                  // end, as 0 km.
+                  if (widget.service.tripLacksGps)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                      child: Text(
+                        t.tripNoGpsFixes,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          height: 1.4,
+                          color: AppTheme.bad,
+                        ),
+                      ),
+                    ),
                   if (_problem != null)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
@@ -168,8 +200,10 @@ class _TripScreenState extends State<TripScreen> {
                     child: Column(
                       children: [
                         Text(
-                          trip.speedKmh.toStringAsFixed(0),
-                          style: AppTheme.readout(96),
+                          speed == null ? '--' : speed.toStringAsFixed(0),
+                          style: AppTheme.readout(96).copyWith(
+                            color: speed == null ? AppTheme.textFaint : null,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Caption('km/h'),
@@ -236,22 +270,36 @@ class _TripScreenState extends State<TripScreen> {
                   Section(
                     title: t.tripPackDuring,
                     children: [
+                      // With the link down long enough that the readings no
+                      // longer cover the ride, the ride's own figure is zero
+                      // on purpose (it will be measured again afterwards), and
+                      // "0.0 Wh" mid-ride read as a ride that cost nothing.
+                      // What was measured until the link went is shown, as
+                      // that.
                       InfoRow(
                         t.tripEnergyOut,
-                        '${trip.energyOutWh.toStringAsFixed(1)} Wh',
+                        trip.energyCoversRide
+                            ? '${trip.energyOutWh.toStringAsFixed(1)} Wh'
+                            : t.tripEnergySoFarOffline(
+                                trip.energyOutWhSoFar.toStringAsFixed(1),
+                              ),
+                        dim: !trip.energyCoversRide,
                       ),
                       InfoRow(
                         t.tripSocUsed,
                         trip.startSoc == null || snapshot == null
                             ? '--'
-                            : '${(trip.startSoc! - snapshot.soc).toStringAsFixed(0)} %',
-                        dim: trip.startSoc == null,
+                            : withAge(
+                                '${(trip.startSoc! - snapshot.soc).toStringAsFixed(0)} %',
+                              ),
+                        dim: trip.startSoc == null || stale,
                       ),
                       InfoRow(
                         t.soc,
                         snapshot == null
                             ? '--'
-                            : '${snapshot.soc.toStringAsFixed(0)} %',
+                            : withAge('${snapshot.soc.toStringAsFixed(0)} %'),
+                        dim: stale,
                         last: true,
                       ),
                     ],

@@ -40,4 +40,21 @@ void main() {
     expect(en.antUnknownCode('2a'), 'Unknown (0x2a)');
     expect(es.antChargeMosfetCode('2'), 'Protección por sobrecarga');
   });
+
+  test('the connection advice does not send an ANT owner to the JK app', () {
+    // These are shown whatever the brand, before a pack has even answered,
+    // and they told an ANT owner to close "the official JK app".
+    for (final t in [en, es]) {
+      final texts = [
+        t.connectOneConnectionWarning,
+        t.connectNothingFoundHelp,
+        t.connectLinkNeverCameUp,
+        t.troubleBusy,
+        t.troubleOutOfRange,
+      ];
+      for (final text in texts) {
+        expect(text, isNot(contains('JK')), reason: text);
+      }
+    }
+  });
 }

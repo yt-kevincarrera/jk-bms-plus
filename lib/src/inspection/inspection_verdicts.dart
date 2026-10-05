@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import '../metrics/advice_engine.dart';
 import 'inspection_result.dart';
 import 'inspection_session.dart';
@@ -20,8 +22,10 @@ class InspectionVerdicts {
   /// The traffic light: the worst level among the physical findings.
   InspectionLight light(InspectionResult r) {
     var worst = AdviceLevel.good;
+    var unresolved = false;
     for (final a in evaluate(r)) {
       if (a.level.index > worst.index) worst = a.level;
+      if (a.code == AdviceCode.inspectionSagUnresolved) unresolved = true;
     }
     // Anything actually found still gets said, whatever else was missed: a
     // cell that is far out at rest is a finding even with no load behind it,
@@ -37,7 +41,26 @@ class InspectionVerdicts {
     if (!r.hasHeavyLoad || r.medianHeavySagVolts == null) {
       return InspectionLight.unmeasured;
     }
+    // A load arrived, but too little of one to see a fault of the size this
+    // test exists to find. Even cells at 3 A say nothing about a cell that
+    // would only stand out at 10.
+    if (unresolved) return InspectionLight.unmeasured;
     return InspectionLight.good;
+  }
+
+  /// Whether the test loaded the pack, just not hard enough to rule a bad
+  /// cell out. The screens say this rather than "the pack was never loaded".
+  bool loadTooSmall(InspectionResult r) =>
+      evaluate(r).any((a) => a.code == AdviceCode.inspectionSagUnresolved);
+
+  /// Whether the pull was big enough for recovery times to tell a tired cell
+  /// from a good one. Unknown capacity counts as not: the claim needs a
+  /// reason to be made, not a reason to be withheld.
+  bool recoveryDiscriminates(InspectionResult r) {
+    final capacity = r.reported.configuredCapacityAh;
+    if (capacity == null || capacity <= 0) return false;
+    return r.currentStepAmps >=
+        thresholds.recoveryDiscriminatesCRate * capacity;
   }
 
   List<Advice> evaluate(InspectionResult r) {
@@ -46,10 +69,23 @@ class InspectionVerdicts {
     if (r.cells.isEmpty) return out;
 
     // --- Sag under the hard pull: the cell that gives up ---
+    //
+    // Judged as a resistance, not as millivolts. The extra sag of the worst
+    // cell is divided by the current it was pulled at, so a 4 A pull and a
+    // 40 A pull are held to the same standard, and the current also sets how
+    // small a fault the test could have seen at all. When that floor is above
+    // the line a finding is drawn at, the cells moving together proves
+    // nothing, and the verdict says so instead of coming out green.
     final worst = r.worstSag;
     final excess = r.worstSagExcess;
     final medianSag = r.medianHeavySagVolts;
-    if (worst != null && excess != null && medianSag != null) {
+    final excessOhms = r.worstExcessOhms;
+    final floor = r.detectionFloorOhms(th.sagResolutionVolts);
+    if (worst != null &&
+        excess != null &&
+        medianSag != null &&
+        excessOhms != null &&
+        floor != null) {
       final evidence = [
         Evidence(
           EvidenceKind.cellSag,
@@ -58,6 +94,12 @@ class InspectionVerdicts {
         ),
         Evidence(EvidenceKind.medianSag, value: medianSag),
         Evidence(EvidenceKind.currentStep, value: r.currentStepAmps),
+        Evidence(
+          EvidenceKind.excessResistance,
+          value: excessOhms,
+          cell: worst.index,
+        ),
+        Evidence(EvidenceKind.detectionFloor, value: floor),
         if (worst.resistanceOhms != null)
           Evidence(
             EvidenceKind.cellResistance,
@@ -69,8 +111,9 @@ class InspectionVerdicts {
             EvidenceKind.medianResistance,
             value: r.medianResistanceOhms,
           ),
+        if (r.heavyWasCharge) const Evidence(EvidenceKind.loadWasCharge),
       ];
-      if (excess >= th.sagProblemVolts) {
+      if (excessOhms >= math.max(th.sagProblemOhms, floor)) {
         out.add(
           Advice(
             code: AdviceCode.inspectionCellSagging,
@@ -80,13 +123,22 @@ class InspectionVerdicts {
             evidence: evidence,
           ),
         );
-      } else if (excess >= th.sagWatchVolts) {
+      } else if (excessOhms >= math.max(th.sagWatchOhms, floor)) {
         out.add(
           Advice(
             code: AdviceCode.inspectionCellSagging,
             level: AdviceLevel.watch,
             cellIndex: worst.index,
             value: excess,
+            evidence: evidence,
+          ),
+        );
+      } else if (floor > th.sagWatchOhms) {
+        out.add(
+          Advice(
+            code: AdviceCode.inspectionSagUnresolved,
+            level: AdviceLevel.info,
+            value: floor,
             evidence: evidence,
           ),
         );
@@ -104,7 +156,7 @@ class InspectionVerdicts {
 
     // --- Spread at rest ---
     final restEvidence = [
-      Evidence(EvidenceKind.restingDelta, value: r.restDeltaVolts),
+      Evidence(EvidenceKind.inspectionRestDelta, value: r.restDeltaVolts),
       Evidence(
         EvidenceKind.lowestRestCell,
         value: r.cells.firstWhere((c) => c.index == r.lowestRestCell).restVolts,
@@ -182,6 +234,7 @@ class InspectionVerdicts {
           cell: slow.index,
         ),
         Evidence(EvidenceKind.medianRecoverySeconds, value: medianRec),
+        Evidence(EvidenceKind.currentStep, value: r.currentStepAmps),
       ];
       if (!slow.recovered || extra >= th.recoverySlowSeconds) {
         out.add(
@@ -193,11 +246,23 @@ class InspectionVerdicts {
             evidence: evidence,
           ),
         );
-      } else {
+      } else if (recoveryDiscriminates(r)) {
         out.add(
           Advice(
             code: AdviceCode.inspectionRecoveryOk,
             level: AdviceLevel.good,
+            value: medianRec,
+            evidence: evidence,
+          ),
+        );
+      } else {
+        // At a few amps every cell, tired or not, is back within millivolts
+        // almost at once. Calling that an even recovery would be praise for
+        // something the test could not have failed.
+        out.add(
+          Advice(
+            code: AdviceCode.inspectionRecoveryNotDiscriminating,
+            level: AdviceLevel.info,
             value: medianRec,
             evidence: evidence,
           ),
@@ -208,12 +273,22 @@ class InspectionVerdicts {
     // --- Right now ---
     final hot = r.maxTemperature;
     if (hot != null && hot >= th.hotCelsius) {
+      final when = r.maxTemperatureStep;
       out.add(
         Advice(
           code: AdviceCode.inspectionHot,
           level: AdviceLevel.watch,
           value: hot,
-          evidence: [Evidence(EvidenceKind.hottestProbe, value: hot)],
+          evidence: [
+            Evidence(EvidenceKind.hottestProbe, value: hot),
+            // When it was seen decides what it means: hot with nothing drawn
+            // is one thing, hot straight after a hard pull is another.
+            if (when != null)
+              Evidence(
+                EvidenceKind.seenDuringStep,
+                value: when.index.toDouble(),
+              ),
+          ],
         ),
       );
     }
@@ -238,8 +313,11 @@ class InspectionVerdicts {
     // Cycles and configured capacity are typed into the BMS from the official
     // app. A vendor can set cycles to 3 and capacity to 45 Ah in a minute.
     // Shown, marked, and set against what was actually measured above.
-    if (r.reported.cycleCount != null ||
-        r.reported.configuredCapacityAh != null) {
+    //
+    // Only when there is a cycle count to distrust. An ANT keeps none, and
+    // this used to fire on its capacity alone and tell the rider "the BMS
+    // reports -- cycles", a sentence about a number that does not exist.
+    if (r.reported.cycleCount != null) {
       out.add(
         Advice(
           code: AdviceCode.inspectionCountersEditable,

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import '../gps/location_source.dart';
 import '../model/bms_snapshot.dart';
 import 'altitude_tracker.dart';
+import 'pack_resistance.dart';
 import 'sampling.dart';
 import 'range_estimator.dart';
 
@@ -131,6 +132,7 @@ class TripSummary {
     required this.descentM,
     this.ahOut,
     this.energySource = EnergySource.integrated,
+    this.packResistanceMilliohms,
   });
 
   final DateTime startedAt;
@@ -165,7 +167,8 @@ class TripSummary {
   final double minPackVoltage;
   final double maxPackVoltage;
   final double maxDischargeCurrent;
-  final double maxTemperature;
+  /// Hottest battery probe over the ride, or null when the pack has none.
+  final double? maxTemperature;
   final double maxDeltaVolts;
   final double climbM;
   final double descentM;
@@ -177,6 +180,10 @@ class TripSummary {
   /// by a factor of twenty-five on a real ride, and knowing which one answered
   /// is the difference between a measurement and a guess.
   final EnergySource energySource;
+
+  /// The pack's apparent resistance over the ride, or null when the ride
+  /// gave too little to say. See [PackResistance].
+  final double? packResistanceMilliohms;
 
   /// Net consumption per kilometre. Null on a trip too short to mean anything.
   double? get whPerKm {
@@ -198,8 +205,6 @@ class TripSummary {
   double? get socPerKm =>
       distanceKm < 0.2 || socUsed <= 0 ? null : socUsed / distanceKm;
 
-  /// Voltage the pack dropped under load over the trip.
-  double get sagVolts => maxPackVoltage - minPackVoltage;
 }
 
 /// Records a ride: distance and speed from GPS, everything else from the BMS.
@@ -268,6 +273,16 @@ class TripRecorder {
   double? _startRemainingAh;
   double _endRemainingAh = 0;
 
+  /// What the counter fell by while the ride was paused, taken back off.
+  ///
+  /// The counter runs through a pause and the readings stop, so the difference
+  /// from start to end used to bill the ride for whatever the pack did parked:
+  /// the lights left on outside a shop, a phone charging off it. The reading
+  /// before the pause and the first one after it bracket exactly that.
+  double _pausedAh = 0;
+  double? _ahAtPause;
+  bool _awaitingFirstAfterPause = false;
+
   /// Mean pack voltage over the ride, for turning amp-hours into watt-hours.
   double _voltageSum = 0;
   int _voltageSamples = 0;
@@ -281,11 +296,14 @@ class TripRecorder {
   double _minPackVoltage = double.infinity;
   double _maxPackVoltage = 0;
   double _maxDischargeCurrent = 0;
-  double _maxTemperature = -100;
+  double? _maxTemperature;
   double _maxDeltaVolts = 0;
 
   BmsSnapshot? _lastSnapshot;
   final List<TrackPoint> _points = [];
+
+  /// Stretches of the ride where the current swung, for its resistance.
+  final PackResistance _resistance = PackResistance();
 
   /// The recorded track, oldest first.
   List<TrackPoint> get points => List.unmodifiable(_points);
@@ -309,6 +327,14 @@ class TripRecorder {
   }
   double get maxSpeedKmh => _maxSpeedKmh;
   Duration get movingDuration => _movingDuration;
+
+  /// When the ride began, and when its last GPS fix arrived. Null fix time
+  /// means none has, which is what a watchdog on the GPS needs to know.
+  DateTime? get startedAt => _startedAt;
+  DateTime? get lastFixAt => _lastFixAt;
+
+  /// GPS fixes this ride has taken in.
+  int get fixesSeen => _points.length;
   /// Wall-clock time since the trip started, minus whatever was spent paused.
   ///
   /// Deliberately different from [movingDuration]: the gap between the two is
@@ -349,7 +375,7 @@ class TripRecorder {
     // whole trouble with the two rides that prompted this is that the figure
     // looked authoritative while being out by a factor of thirty.
     if (!_counterCoversRide) return null;
-    final used = start - _endRemainingAh;
+    final used = start - _endRemainingAh - _pausedAh;
     return used < 0.01 ? null : used;
   }
 
@@ -378,7 +404,12 @@ class TripRecorder {
   double get energyOutWh {
     final ah = ahOut;
     final volts = meanPackVoltage;
-    if (ah != null && volts > 0) return ah * volts;
+    // The counter's difference is net: whatever went back in mid-ride has
+    // already been taken off it. [whPerKm] and everything stored takes
+    // [energyInWh] off this figure, so the charge put back is added here to
+    // make it gross. Returning the net figure took it off twice, and a ride
+    // with a top-up in the middle came out cheaper than it was.
+    if (ah != null && volts > 0) return ah * volts + _integratedInWh;
     // Integrating instead would tell the same lie in a different unit: it can
     // only account for the moments the phone was listening, which here are
     // precisely the minutes that are not the ride. Zero, so every caller that
@@ -392,6 +423,30 @@ class TripRecorder {
   /// Readings arrived, and the counter among them, but not across the ride.
   bool get _counterWasSeenButMissedTheRide =>
       _firstCounterAt != null && !_counterCoversRide;
+
+  /// Energy out up to the last reading that arrived, for the live screen.
+  ///
+  /// [energyOutWh] is honest about a ride the readings do not cover and says
+  /// zero, which is right for a stored ride and wrong mid-ride: with the link
+  /// down for a few minutes the screen read "0.0 Wh" for a ride that had
+  /// already used hundreds. This is what was measured until the link went,
+  /// to be shown as that, never as the ride's figure.
+  double get energyOutWhSoFar {
+    final start = _startRemainingAh;
+    final volts = meanPackVoltage;
+    if (start != null && volts > 0) {
+      final used = start - _endRemainingAh - _pausedAh;
+      if (used >= 0.01) return used * volts + _integratedInWh;
+    }
+    return _integratedOutWh;
+  }
+
+  /// Whether the readings so far cover the ride, so [energyOutWh] is the
+  /// ride's figure rather than a floor.
+  bool get energyCoversRide => !_counterWasSeenButMissedTheRide;
+
+  /// When the last reading reached the ride, on the readings' clock.
+  DateTime? get lastReadingAt => _lastCounterAt;
 
   /// Energy back in. Only ever integrated: the coulomb difference is a net
   /// figure and cannot separate the two directions.
@@ -441,12 +496,15 @@ class TripRecorder {
     if (_state != TripState.recording) return;
     _state = TripState.paused;
     _pausedAt = _clock();
+    _ahAtPause = _startRemainingAh == null ? null : _endRemainingAh;
+    _awaitingFirstAfterPause = _ahAtPause != null;
     // Drop the timing anchors so the pause does not get integrated as riding.
     _lastFixAt = null;
     _lastSnapshotAt = null;
     _lastPower = null;
     _lastFix = null;
     _speedKmh = 0;
+    _resistance.breakChain();
   }
 
   void resume() {
@@ -486,10 +544,11 @@ class TripRecorder {
       minPackVoltage: _minPackVoltage.isFinite ? _minPackVoltage : 0,
       maxPackVoltage: _maxPackVoltage,
       maxDischargeCurrent: _maxDischargeCurrent,
-      maxTemperature: _maxTemperature > -100 ? _maxTemperature : 0,
+      maxTemperature: _maxTemperature,
       maxDeltaVolts: _maxDeltaVolts,
       climbM: _altitude.climbM,
       descentM: _altitude.descentM,
+      packResistanceMilliohms: _resistance.milliohms,
     );
   }
 
@@ -569,6 +628,14 @@ class TripRecorder {
     // 998 of its 1286 seconds with no readings at all, and the coulomb counter
     // did not care.
     if (s.remainingCapacityAh > 0) {
+      final atPause = _ahAtPause;
+      if (_awaitingFirstAfterPause && atPause != null) {
+        // Signed: a pack charged while parked comes back higher, and that
+        // charge is not the ride's either.
+        _pausedAh += atPause - s.remainingCapacityAh;
+        _awaitingFirstAfterPause = false;
+        _ahAtPause = null;
+      }
       _startRemainingAh ??= s.remainingCapacityAh;
       _endRemainingAh = s.remainingCapacityAh;
       // The span these two were read across, which is what decides whether
@@ -591,14 +658,15 @@ class TripRecorder {
     if (s.current < 0) {
       _maxDischargeCurrent = math.max(_maxDischargeCurrent, -s.current);
     }
-    final temps = <double>[
-      ...s.plausibleTemperatures,
-      if (s.mosfetTemp != null) s.mosfetTemp!,
-    ];
-    if (temps.isNotEmpty) {
-      _maxTemperature = math.max(_maxTemperature, temps.reduce(math.max));
+    // Battery probes only. The MOSFET runs hotter than the cells by design,
+    // and folding it in made every summary report the switch as the pack.
+    final hottest = s.hottestBatteryTemp;
+    if (hottest != null) {
+      final before = _maxTemperature;
+      _maxTemperature = before == null ? hottest : math.max(before, hottest);
     }
     _maxDeltaVolts = math.max(_maxDeltaVolts, s.deltaCellVoltage);
+    _resistance.add(s.timestamp, s.packVoltage, s.current);
 
     final previousAt = _lastSnapshotAt;
     final previousPower = _lastPower;
@@ -636,6 +704,9 @@ class TripRecorder {
     _integratedInWh = 0;
     _startRemainingAh = null;
     _endRemainingAh = 0;
+    _pausedAh = 0;
+    _ahAtPause = null;
+    _awaitingFirstAfterPause = false;
     _voltageSum = 0;
     _voltageSamples = 0;
     _firstCounterAt = null;
@@ -648,8 +719,9 @@ class TripRecorder {
     _minPackVoltage = double.infinity;
     _maxPackVoltage = 0;
     _maxDischargeCurrent = 0;
-    _maxTemperature = -100;
+    _maxTemperature = null;
     _maxDeltaVolts = 0;
+    _resistance.reset();
   }
 
   /// Great-circle distance in metres.

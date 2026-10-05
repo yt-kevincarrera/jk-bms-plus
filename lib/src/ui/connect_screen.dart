@@ -17,6 +17,7 @@ import '../protocol/bms_brand.dart';
 import 'home_shell.dart';
 import 'locale_controller.dart';
 import 'theme.dart';
+import 'widgets/bluetooth_stuck_card.dart';
 import 'widgets/link_trouble_text.dart';
 import '../data/database.dart';
 import 'app_settings_screen.dart';
@@ -138,6 +139,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
 
   StreamSubscription<Device?>? _deviceSub;
   StreamSubscription<BmsSnapshot>? _liveSub;
+  StreamSubscription<Object?>? _recoverySub;
 
   /// The raw exception behind [_message], when there was one.
   ///
@@ -196,6 +198,13 @@ class _ConnectScreenState extends State<ConnectScreen> {
           _busyMessage = e.likelyBusy;
         });
       }
+    });
+
+    // The stuck card comes and goes with the recovery's judgement, which can
+    // change with no error on screen: a link that came up and went straight
+    // away, or the reset that just ran.
+    _recoverySub = widget.service.recoveryEvents.listen((_) {
+      if (mounted) setState(() {});
     });
 
     _connected = widget.service.activeDevice;
@@ -278,6 +287,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
     _foundSub?.cancel();
     _deviceSub?.cancel();
     _liveSub?.cancel();
+    _recoverySub?.cancel();
     super.dispose();
   }
 
@@ -1001,6 +1011,32 @@ class _ConnectScreenState extends State<ConnectScreen> {
     await _startScan();
   }
 
+  /// Whether the stuck card's reset is running.
+  bool _resetting = false;
+
+  /// The stuck card's first step. Lets go of everything the app holds on the
+  /// radio, forgives the tap count (this is the deliberate action the refusal
+  /// was waiting for), and searches again so the pack can be tapped.
+  Future<void> _resetBluetooth() async {
+    if (_resetting) return;
+    setState(() => _resetting = true);
+    await _cancelScan();
+    await widget.service.resetBluetooth();
+    _guard.forgive();
+    if (!mounted) return;
+    final t = AppL10n.of(context);
+    setState(() => _resetting = false);
+    // The search clears the message as it starts, so the message goes in
+    // after that first step and stays while the search runs.
+    final search = _startScan();
+    setState(() {
+      _message = t.stuckResetDone;
+      _messageDetail = '';
+      _busyMessage = true;
+    });
+    await search;
+  }
+
   /// Stops a scan the user started. Cancelling the subscription also stops the
   /// radio, so this genuinely ends the scan rather than just hiding it.
   Future<void> _cancelScan({String? message}) async {
@@ -1060,19 +1096,17 @@ class _ConnectScreenState extends State<ConnectScreen> {
     }
 
     // The phone's own list of open connections, asked before attempting. If
-    // the pack is in it while this app holds nothing, its one connection
-    // belongs to another app or to a link nothing can close, and no attempt
-    // from here will win it.
+    // the pack is in it while this app holds nothing, the link is stranded,
+    // most likely by an earlier attempt from here. This used to refuse the
+    // tap and say no attempt could win it, which was wrong twice over: on
+    // Android a connect from this app joins the link the phone already has,
+    // and joining it is the only handle an app gets on a stranded link. So
+    // the attempt goes ahead, and closes that link before opening its own.
     if (widget.service.activeDevice == null &&
         await widget.service.heldByPhone(device.id)) {
-      if (!mounted) return;
-      setState(() {
-        _message = t.tapHeldByPhone;
-        _messageDetail = '';
-        _busyMessage = true;
-      });
-      return;
+      widget.service.suspectStranded(device.id);
     }
+    if (!mounted) return;
 
     await _connect(device);
   }
@@ -1173,14 +1207,17 @@ class _ConnectScreenState extends State<ConnectScreen> {
     // tap found it mute too. [FirstContact] judges from what actually happened.
     final contact = FirstContact(
       startedAt: DateTime.now(),
-      bytesBefore: widget.service.stats.bytesReceived,
+      // The lifetime total, not this connection's: the per-connection count
+      // restarts inside connect(), below, and would leave the baseline above
+      // everything the new pack sends.
+      bytesBefore: widget.service.bytesReceivedTotal,
     );
     final subs = <StreamSubscription<Object?>>[
       widget.service.linkState.listen(
         (state) => contact.onLinkState(state, DateTime.now()),
       ),
       widget.service.frameStats.listen(
-        (stats) => contact.onBytesTotal(stats.bytesReceived),
+        (_) => contact.onBytesTotal(widget.service.bytesReceivedTotal),
       ),
       widget.service.deviceInfo.listen((_) => contact.onDecoded()),
       widget.service.snapshots.listen((_) => contact.onDecoded()),
@@ -1457,6 +1494,24 @@ class _ConnectScreenState extends State<ConnectScreen> {
           children: [
             if (_inspecting) _inspectionBanner(t) else _oneConnectionNote(t),
             _connectedCard(t),
+            // The transport's own judgement or the screen's tap count, either
+            // one: the transport sees failures a tap never surfaces (the
+            // reconnect loop), and the tap count sees whole taps that ended
+            // with nothing.
+            if (_connected == null &&
+                (widget.service.bluetoothLooksStuck || _guard.saturated))
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 330),
+                  child: SingleChildScrollView(
+                    child: BluetoothStuckCard(
+                      onReset: _resetBluetooth,
+                      resetting: _resetting,
+                    ),
+                  ),
+                ),
+              ),
             if (_message != null)
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),

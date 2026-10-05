@@ -4,6 +4,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'ble_transport.dart';
+import 'connect_recovery.dart';
 
 /// Watches for a known BMS and connects to it on its own.
 ///
@@ -25,7 +26,20 @@ class ProximityWatcher {
   ProximityWatcher({
     this.scanInterval = const Duration(seconds: 45),
     this.scanDuration = const Duration(seconds: 5),
-  });
+    bool Function()? radioBusy,
+    AdvertBook? adverts,
+  }) : _radioBusy = radioBusy,
+       _adverts = adverts ?? AdvertBook.shared;
+
+  /// Whether the transport is setting up or holding a link. A sweep then has
+  /// nothing to find that the transport is not already handling, and a scan
+  /// started while Android is setting up a connection is a well-known way to
+  /// make that connection fail. The sweeps used to run regardless, every 45
+  /// seconds, straight through the connect attempts.
+  final bool Function()? _radioBusy;
+
+  /// Where every advertisement heard is written, for the connect log.
+  final AdvertBook _adverts;
 
   static const _enabledKey = 'proximity_enabled';
   static const _deviceIdKey = 'proximity_device_id';
@@ -112,6 +126,7 @@ class ProximityWatcher {
 
   Future<void> _sweep() async {
     if (!_enabled || _scanning || _deviceId == null) return;
+    if (_radioBusy?.call() ?? false) return;
 
     try {
       if (!await FlutterBluePlus.isSupported) return;
@@ -124,6 +139,9 @@ class ProximityWatcher {
     _scanning = true;
     await _scanSub?.cancel();
     _scanSub = FlutterBluePlus.scanResults.listen((results) {
+      for (final r in results) {
+        _adverts.saw(r.device.remoteId.str, rssi: r.rssi, at: r.timeStamp);
+      }
       for (final r in results) {
         if (r.device.remoteId.str != _deviceId) continue;
         _foundController.add(

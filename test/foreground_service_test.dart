@@ -1,11 +1,14 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jk_bms/src/ble/ble_transport.dart';
+import 'package:jk_bms/src/ble/bms_link.dart';
 import 'package:jk_bms/src/bms_service.dart';
 import 'package:jk_bms/src/data/database.dart';
 import 'package:jk_bms/src/data/repository.dart';
+import 'package:jk_bms/src/gps/location_source.dart';
 
 import 'fixtures/captured_frames.dart';
+import 'fixtures/snapshot_builder.dart';
 import 'support/fakes.dart';
 
 void main() {
@@ -65,17 +68,52 @@ void main() {
       expect(service.claimForTest, ServiceClaim.link);
     });
 
-    test('and lets go the moment the link drops', () async {
+    test('holds on through a drop while the link is being recovered', () async {
+      // This used to let go the moment the link dropped. A real ride drops
+      // 26 times, and every drop stood the service down just when the
+      // reconnect needed it: a backgrounded app without one loses the radio.
       link.announce(BleLinkState.connected);
       await pumpEventQueue();
       expect(service.claimForTest, ServiceClaim.link);
 
+      link.announce(BleLinkState.reconnecting);
+      await pumpEventQueue();
+      expect(service.claimForTest, ServiceClaim.link);
+    });
+
+    test('and lets go once the transport gives up', () async {
       // Readings are what normally drive this, and a dropped link stops
       // producing them, so the state change has to be able to stand it down
       // itself or the notification outlives the connection it describes.
+      link.announce(BleLinkState.connected);
+      await pumpEventQueue();
       link.announce(BleLinkState.reconnecting);
       await pumpEventQueue();
+      link.retry = const LinkRetryState(failures: 12, gaveUp: true);
+      link.announce(BleLinkState.failed);
+      await pumpEventQueue();
       expect(service.claimForTest, isNull);
+    });
+
+    test('a charge being watched keeps the reconnect from giving up', () async {
+      // The Pro half of the watch, and the only part the link watch alone
+      // does not do: overnight, six minutes of failures is not a reason to
+      // stop knocking.
+      link.announce(BleLinkState.connected);
+      await pumpEventQueue();
+      service.chargeWatchEnabled = true;
+      // The charge the last reading showed, then the link going.
+      service.chargeAlerts.evaluate(buildSnapshot(soc: 60, current: 10));
+      expect(service.chargeAlerts.isCharging, isTrue);
+      link.announce(BleLinkState.reconnecting);
+      await pumpEventQueue();
+      expect(link.persisting, isTrue);
+
+      // Watch switched off: back to giving up in the end.
+      service.chargeWatchEnabled = false;
+      link.announce(BleLinkState.connecting);
+      await pumpEventQueue();
+      expect(link.persisting, isFalse);
     });
 
     test('turning it off releases it', () async {
@@ -155,6 +193,57 @@ void main() {
       expect(service.serviceUsesLocationForTest, isFalse);
     });
 
+    test('a ride opening under a location-typed link keeps the service it has',
+        () async {
+      // The 45-minute ride that came back with 0 km. The link service was
+      // born location-typed for this very moment, then stopped and started
+      // again for the ride; Android refuses that start from the background,
+      // so the ride ran with no service and no fixes.
+      service.applySettings(haptics: false, rawFrames: false, autoTrip: true);
+      link.announce(BleLinkState.connected);
+      await pumpEventQueue();
+      expect(service.isWatchingLink, isTrue);
+      final starts = service.serviceStartsForTest;
+
+      expect(await service.startTrip(), isNull);
+      await pumpEventQueue();
+
+      expect(service.claimForTest, ServiceClaim.trip);
+      expect(service.serviceStartsForTest, starts);
+
+      // And handing back after the ride keeps it too.
+      await service.stopTrip();
+      await pumpEventQueue();
+      expect(service.isWatchingLink, isTrue);
+      expect(service.serviceStartsForTest, starts);
+    });
+
+    test('a ride with only approximate location does not start, and says why',
+        () async {
+      // Approximate fixes are hundreds of metres wide and every one fails the
+      // accuracy floor: a ride started on them records 0 km for ever.
+      final approx = BmsService(
+        transport: FakeLink(),
+        locationFactory: _ApproximateLocation.new,
+      )..repository = repo;
+      addTearDown(approx.dispose);
+      expect(await approx.startTrip(), LocationProblem.approximateOnly);
+      expect(approx.trip.isActive, isFalse);
+    });
+
+    test('a ride under a dataSync link still restarts, for the location type',
+        () async {
+      service.applySettings(haptics: false, rawFrames: false, autoTrip: false);
+      link.announce(BleLinkState.connected);
+      await pumpEventQueue();
+      final starts = service.serviceStartsForTest;
+
+      expect(await service.startTrip(), isNull);
+      await pumpEventQueue();
+
+      expect(service.serviceStartsForTest, starts + 1);
+    });
+
     test('toggling auto-start on while connected restarts with location type',
         () async {
       // The settings screen lets the rider switch auto-start on after connecting.
@@ -221,4 +310,14 @@ void main() {
       expect(service.serviceTextForTest, 'conectado');
     });
   });
+}
+
+/// Location granted as "approximate" only.
+class _ApproximateLocation implements LocationSource {
+  @override
+  Stream<GeoFix> get fixes => const Stream<GeoFix>.empty();
+  @override
+  Future<LocationProblem?> start() async => LocationProblem.approximateOnly;
+  @override
+  Future<void> stop() async {}
 }

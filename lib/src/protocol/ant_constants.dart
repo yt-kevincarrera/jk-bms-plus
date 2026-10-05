@@ -4,7 +4,8 @@ import '../model/bms_warning.dart';
 ///
 /// The protocol also has an authentication frame and register writes that
 /// switch MOSFETs, reset the pack and so on. They are deliberately not here,
-/// not even as constants: this app is read-only, and a write path that does
+/// not even as constants: this app never writes to an ANT (the JK switch
+/// writes are refused for ANT in the write gate), and a write path that does
 /// not exist cannot be reached by mistake.
 const List<int> antStatusRequest = [
   0x7E, 0xA1, 0x01, 0x00, 0x00, 0xBE, 0x18, 0x55, 0xAA, 0x55, //
@@ -84,3 +85,23 @@ const Map<int, BmsWarning> antDischargeWarnings = {
   0x0E: BmsWarning.dischargeOnFailed,
   0x11: BmsWarning.dischargeUndertemperatureAlarm,
 };
+
+/// The battery state byte (7), by what it says. Index into
+/// [antBatteryStateText].
+const int antStateCharge = 0x02;
+const int antStateDischarge = 0x03;
+
+/// Balancer codes (byte 48+o) that mean cells are being balanced right now.
+///
+/// Read off `BALANCER_STATUS` in the reference: 1 "exceeds the limit
+/// equilibrium" and 2 "charge differential pressure balance" both describe
+/// balancing that is under way. The rest do not, and two of them are faults:
+/// 3 "balanced over temperature" and 0x0A "motherboard over temperature" are
+/// the balancer stopped by heat, not the balancer working. 4 "automatic
+/// equalization" is the balancer switched on and waiting (the reference maps
+/// it to its balancer *switch*), which is not the same as moving charge.
+/// The cell bitmask at 70+o is the stronger signal and is taken as well.
+const Set<int> antBalancerBalancingCodes = {0x01, 0x02};
+
+/// Balancer codes that are faults rather than states.
+const Set<int> antBalancerFaultCodes = {0x03, 0x0A};

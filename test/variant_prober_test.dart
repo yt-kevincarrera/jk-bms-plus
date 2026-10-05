@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jk_bms/src/ble/simulator/jk_frame_builder.dart';
+import 'package:jk_bms/src/model/bms_snapshot.dart';
 import 'package:jk_bms/src/protocol/jk_frame.dart';
 import 'package:jk_bms/src/protocol/jk_parser.dart';
 import 'package:jk_bms/src/protocol/protocol_variant.dart';
@@ -9,6 +10,7 @@ import 'package:jk_bms/src/protocol/variant_prober.dart';
 
 import 'fixtures/captured_frames.dart';
 import 'fixtures/real_kevinjk_frames.dart';
+import 'fixtures/snapshot_builder.dart';
 
 /// A frame for [variant] carrying a pack that could exist.
 Uint8List sane(
@@ -265,6 +267,21 @@ void main() {
         expect(plausibility.reject(s).join(' '), contains('a probe at'),
             reason: '$temps');
       }
+    });
+
+    test('its bounds are the model\'s, so what the screen shows it accepts',
+        () {
+      // The prober stopped at 125 C while the model shows anything up to
+      // 150 C, so a probe at 140 C was on screen and held against the very
+      // decode that produced it.
+      expect(plausibility.temperatureRange, (
+        BmsSnapshot.minPlausibleTemp,
+        BmsSnapshot.maxPlausibleTemp,
+      ));
+      final hot = buildSnapshot(temperatures: const [140, 30]);
+      expect(plausibility.reject(hot), isEmpty);
+      final impossible = buildSnapshot(temperatures: const [151, 30]);
+      expect(plausibility.reject(impossible).join(' '), contains('a probe at'));
     });
   });
 

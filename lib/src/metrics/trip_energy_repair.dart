@@ -1,4 +1,6 @@
 import '../data/database.dart';
+import '../pack/chemistry.dart';
+import 'pack_energy.dart';
 import 'sampling.dart';
 import 'trip_recorder.dart';
 
@@ -222,9 +224,16 @@ class TripEnergyRepair {
     final ah = before.remainingAh - after.remainingAh;
     if (ah < minimumAh) return null;
 
-    // Priced at the mean of the two ends. There are no readings from the ride
-    // to average, and the ends are where the pack actually was.
-    final meanVolts = (before.packVoltage + after.packVoltage) / 2;
+    // There are no readings from the ride to average. The two ends are
+    // resting voltages, and the mean of the two misses the voltage the charge
+    // came out at by up to a couple of percent on a deep ride, because the
+    // curve between them is not a straight line (100 to 20 % on NMC: 2 % high). Where the chemistry is known, the mean of the ends
+    // is bent by the shape of its resting curve between the two charges; the
+    // level stays the measured one, so a curve that sits a little off this
+    // pack only corrects the shape. Otherwise the plain mean of the ends.
+    final meanVolts = (before.packVoltage + after.packVoltage) /
+        2 *
+        (_curvature(before, after, readings) ?? 1);
 
     return RepairedEnergy(
       outWh: ah * meanVolts,
@@ -234,6 +243,42 @@ class TripEnergyRepair {
       source: EnergySource.bracketedCoulombCount,
     );
   }
+}
+
+/// How much the mean of the chemistry's resting curve between [before]'s and
+/// [after]'s charge differs from the mean of its two ends, as a factor, or
+/// null when the chemistry is not known.
+///
+/// The chemistry is judged from the highest cell any of [readings] shows,
+/// which only ever identifies NMC: a pack that has not been seen above 3.8 V
+/// gets null and the mean of the ends.
+double? _curvature(
+  Snapshot before,
+  Snapshot after,
+  List<Snapshot> readings,
+) {
+  var highest = 0.0;
+  for (final r in readings) {
+    if (r.maxCellVoltage > highest) highest = r.maxCellVoltage;
+  }
+  final curve = OcvCurve.of(
+    PackEnergy.chemistryFor(highestCellVolts: highest > 0 ? highest : null),
+  );
+  if (curve == null) return null;
+  final hi = before.soc > after.soc ? before.soc : after.soc;
+  final lo = before.soc > after.soc ? after.soc : before.soc;
+  if (hi - lo < 1) return null;
+  // Sampled every tenth of a percent: the curve is piecewise linear in
+  // ten-percent steps, so this is exact to well under a millivolt.
+  const step = 0.1;
+  var sum = 0.0;
+  var n = 0;
+  for (var s = lo; s <= hi; s += step) {
+    sum += curve.voltsAt(s);
+    n++;
+  }
+  final ends = (curve.voltsAt(lo) + curve.voltsAt(hi)) / 2;
+  return n == 0 || ends <= 0 ? null : sum / n / ends;
 }
 
 /// One ride's energy, measured again.

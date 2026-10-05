@@ -39,7 +39,11 @@ class _JkBmsAppState extends State<JkBmsApp> {
   late final BmsService _service = BmsService();
   final LocaleController _locale = LocaleController();
   final BmsRepository _repository = BmsRepository();
-  final ProximityWatcher _proximity = ProximityWatcher();
+  /// Keeps its scans out of the way of a link being set up or held: Android
+  /// fails connects that a scan starts in the middle of.
+  late final ProximityWatcher _proximity = ProximityWatcher(
+    radioBusy: () => _service.radioBusy,
+  );
   final AppSettings _settings = AppSettings();
 
   /// What this phone has paid for. One instance, handed down through
@@ -65,11 +69,22 @@ class _JkBmsAppState extends State<JkBmsApp> {
   /// The stream fires from the service, which has no opinion about language.
   String Function(AutoTripAction)? _autoTripMessage;
 
+  /// Tells the service whether the app is on screen, which decides what
+  /// Android lets a service started now do with the GPS.
+  AppLifecycleListener? _lifecycle;
+
   @override
   void initState() {
     super.initState();
     _locale.load();
     _service.repository = _repository;
+    // After the repository, so a restart that cleared a stuck stack is
+    // written down as the remedy it was.
+    unawaited(_service.loadLinkRecovery());
+    _lifecycle = AppLifecycleListener(
+      onStateChange: (state) =>
+          _service.appVisible = state == AppLifecycleState.resumed,
+    );
     _autoTripSub = _service.autoTripEvents.listen((action) {
       final text = _autoTripMessage?.call(action);
       if (text == null) return;
@@ -125,10 +140,13 @@ class _JkBmsAppState extends State<JkBmsApp> {
     _repository.dispose();
     _proximity.dispose();
     _settings.dispose();
-    _license.dispose();
+    _license
+      ..removeListener(_pushSettings)
+      ..dispose();
     _updates.dispose();
     _locale.dispose();
     unawaited(_autoTripSub?.cancel());
+    _lifecycle?.dispose();
     super.dispose();
   }
 
@@ -142,9 +160,22 @@ class _JkBmsAppState extends State<JkBmsApp> {
     await _license.load();
     await _settings.load();
     _updates.token = _settings.updateToken;
-    // Holding the link open for a closed app is Pro. The preference is kept
-    // as the rider set it, so it comes back the day a key is activated, but
-    // the service only hears about it when the licence covers it.
+    _pushSettings();
+    // The licence can change while the app runs: a key activated, or one
+    // found not to cover this phone. The watch was only gated at launch, so
+    // a key activated mid-session did nothing until a restart, and one that
+    // stopped covering the phone kept the watch running until then.
+    _license.addListener(_pushSettings);
+
+    if (mounted) setState(() {});
+  }
+
+  /// Pushes the settings into the service, with the charge watch gated on
+  /// what the licence covers right now.
+  void _pushSettings() {
+    // Watching a charge through the night is Pro. The preference is kept as
+    // the rider set it, so it comes back the day a key is activated, but the
+    // service only hears about it when the licence covers it.
     final watchCharge =
         _settings.chargeWatchEnabled &&
         _license.entitlements.allows(Feature.backgroundAlerts);
@@ -160,8 +191,9 @@ class _JkBmsAppState extends State<JkBmsApp> {
       alertTempWarn: _settings.alertTempWarn,
       alertLowChargeWarn: _settings.alertLowChargeWarn,
     );
-
-    if (mounted) setState(() {});
+    // Its own assignment rather than a parameter with a default, so a caller
+    // of applySettings that forgets it cannot quietly turn writes on or off.
+    _service.bmsWritesAllowed = _settings.allowBmsWrites;
   }
 
   @override
@@ -267,15 +299,19 @@ class _JkBmsAppState extends State<JkBmsApp> {
                     (snapshot?.deltaCellVoltage ?? 0).toStringAsFixed(3),
                   ),
                 ),
+                // The value that tripped the alert: the hottest battery probe,
+                // which is what RideAlerts compares. The MOSFET has its own
+                // alert and its own words below.
                 RideAlert.temperature => (
                   t.alertTemperature,
                   t.alertNotificationBodyTemp(
-                    (snapshot?.plausibleTemperatures.isEmpty ?? true
-                            ? 0.0
-                            : snapshot!.plausibleTemperatures.reduce(
-                                (a, b) => a > b ? a : b,
-                              ))
-                        .toStringAsFixed(0),
+                    (snapshot?.hottestBatteryTemp ?? 0).toStringAsFixed(0),
+                  ),
+                ),
+                RideAlert.bmsHot => (
+                  t.alertBmsHot,
+                  t.alertNotificationBodyBmsHot(
+                    (snapshot?.mosfetTemp ?? 0).toStringAsFixed(0),
                   ),
                 ),
                 RideAlert.lowCharge => (
@@ -284,17 +320,37 @@ class _JkBmsAppState extends State<JkBmsApp> {
                     (snapshot?.soc ?? 0).toStringAsFixed(0),
                   ),
                 ),
+                // "Find somewhere to stop" only to somebody riding. At rest
+                // the same alert says to charge before setting off.
                 RideAlert.criticalCharge => (
                   t.alertCriticalCharge,
-                  t.alertNotificationBodyCritical(
-                    (snapshot?.soc ?? 0).toStringAsFixed(0),
-                  ),
+                  _service.isRiding
+                      ? t.alertNotificationBodyCritical(
+                          (snapshot?.soc ?? 0).toStringAsFixed(0),
+                        )
+                      : t.alertNotificationBodyCriticalIdle(
+                          (snapshot?.soc ?? 0).toStringAsFixed(0),
+                        ),
                 ),
+                // "Close to the BMS cutoff" only when the BMS said where that
+                // is. Otherwise the cutoff is the usual one for the chemistry,
+                // or a cautious guess when even that is unknown, and the
+                // words say which rather than claiming a setting.
                 RideAlert.cellNearCutoff => (
                   t.alertCellNearCutoff,
-                  t.alertNotificationBodyCell(
-                    (snapshot?.minCellVoltage ?? 0).toStringAsFixed(3),
-                  ),
+                  !_service.cutoffIsAssumed
+                      ? t.alertNotificationBodyCell(
+                          (snapshot?.minCellVoltage ?? 0).toStringAsFixed(3),
+                        )
+                      : _service.cutoffChemistry.isKnown
+                      ? t.alertNotificationBodyCellTypical(
+                          (snapshot?.minCellVoltage ?? 0).toStringAsFixed(3),
+                          _service.cutoffVoltagePerCell.toStringAsFixed(2),
+                        )
+                      : t.alertNotificationBodyCellAssumed(
+                          (snapshot?.minCellVoltage ?? 0).toStringAsFixed(3),
+                          _service.cutoffVoltagePerCell.toStringAsFixed(2),
+                        ),
                 ),
                 RideAlert.nearCurrentLimit => (
                   t.alertNearCurrentLimit,
@@ -319,12 +375,7 @@ class _JkBmsAppState extends State<JkBmsApp> {
                 ChargeAlert.hotWhileCharging => (
                   t.chargeAlertHot,
                   t.alertNotificationBodyChargeHot(
-                    (snapshot?.plausibleTemperatures.isEmpty ?? true
-                            ? 0.0
-                            : snapshot!.plausibleTemperatures.reduce(
-                                (a, b) => a > b ? a : b,
-                              ))
-                        .toStringAsFixed(0),
+                    (snapshot?.hottestBatteryTemp ?? 0).toStringAsFixed(0),
                   ),
                 ),
                 ChargeAlert.spreadAtTop => (
@@ -347,6 +398,7 @@ class _JkBmsAppState extends State<JkBmsApp> {
                   _service.prepareAlertNotifications(
                     channelName: t.alertsNotifyTitle,
                     channelDescription: t.alertsNotifyIntro,
+                    quietChannelName: t.alertsNotifyQuietChannel,
                   ),
                 );
               }

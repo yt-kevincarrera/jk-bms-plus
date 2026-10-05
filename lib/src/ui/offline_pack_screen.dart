@@ -6,21 +6,29 @@ import '../bms_service.dart';
 import '../data/database.dart';
 import '../metrics/advice_engine.dart';
 import '../metrics/cell_drift.dart';
+import '../metrics/capacity_endpoints.dart';
 import '../metrics/degradation.dart';
+import '../metrics/pack_energy.dart';
 import '../metrics/range_estimator.dart';
 import '../metrics/range_outlook.dart';
+import '../metrics/trip_learning.dart';
+import '../pack/chemistry.dart';
 import '../pack/pack_baseline.dart';
 import '../metrics/maintenance.dart';
 import '../license/entitlements.dart';
 import '../report/pdf_reports.dart';
 import '../report/report_data.dart';
 import '../report/report_sharing.dart';
+import '../report/workshop_branding.dart';
+import 'cell_history_screen.dart';
+import 'fault_history_screen.dart';
 import 'license_scope.dart';
 import 'widgets/pro_gate.dart';
 import 'theme.dart';
 import 'pack_trips_screen.dart';
 import 'trends_screen.dart';
 import 'widgets/advice_list.dart';
+import 'widgets/capacity_test_card.dart' show capacityTestTags;
 import 'widgets/common.dart';
 import 'widgets/representative_question.dart';
 import 'widgets/maintenance_card.dart';
@@ -58,6 +66,10 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
   DateTime? _firstAt;
   int _readingCount = 0;
   List<CellDrift> _driftRanking = const [];
+
+  /// The cell lowest most often at rest over the last month, if any resting
+  /// reading was stored.
+  LowestCellTally? _lowest;
 
   /// The learned consumption behind the range figures, kept so the verdicts
   /// can cite it.
@@ -103,22 +115,23 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
     // of rows pulled into memory to answer two questions that are one SQL
     // query each. Six months is what the cell-drift analysis needs, and that
     // one genuinely needs the readings themselves.
-    final readings = await repo.allSnapshots(id, days: 180);
+    // From the last cell replacement, where there was one: what came before
+    // describes cells that are no longer in the pack.
+    final readings = await repo.currentPackSnapshots(id, days: 180);
     final totalReadings = await repo.db.snapshotCountFor(id);
     final oldest = await repo.db.firstSnapshotAt(id);
     final newest = await repo.db.lastSnapshotFor(id);
     final trips = await repo.db.recentTrips(id, limit: 500);
-    final tests = await repo.capacityTests(id);
+    final tests = await repo.currentPackCapacityTests(id);
     final maintenance = await MaintenanceLog(repo.db).forPack(id);
 
     // The range is rebuilt from this pack's own rides rather than read off the
-    // live service, which knows only about whatever is connected.
-    final estimator = RangeEstimator();
-    for (final t in trips.where(
-      (t) => t.distanceKm >= 0.2 && t.energyOutWh > t.energyInWh,
-    )) {
-      estimator.addSegment(wh: t.energyOutWh - t.energyInWh, km: t.distanceKm);
-    }
+    // live service, which knows only about whatever is connected, and by the
+    // live service's own rule. It used to feed the rides newest first to an
+    // estimator that weights the later ones, so the oldest ride dominated,
+    // and it kept the rides marked as an exception: marking one here changed
+    // nothing, while the confirmation said the range had moved.
+    final estimator = TripLearning.estimatorFrom(trips);
 
     // Both figures, built exactly as the live screen builds them. This screen
     // used to quote one range with a label that did not say which question it
@@ -130,40 +143,69 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
     final cells = newest == null
         ? const <double>[]
         : decodeCellVoltages(newest.cellVoltagesJson);
-    final averageCell = cells.isEmpty
-        ? 0.0
-        : cells.reduce((a, b) => a + b) / cells.length;
-    // The pack's own cutoff is not stored with a reading, so the app's default
-    // stands in. It is the same figure the live screen falls back to before the
-    // settings frame arrives.
-    const cutoffPerCell = 3.0;
+    double averageOf(List<double> v) =>
+        v.isEmpty ? 0.0 : v.reduce((a, b) => a + b) / v.length;
 
-    final usableFraction = newest == null || cells.isEmpty
-        ? 1.0
-        : RangeEstimator.usableFractionOf(
-            minCellVoltage: newest.minCellVoltage,
-            averageCellVoltage: averageCell,
-            cutoffVoltagePerCell: cutoffPerCell,
-          );
+    // The same chemistry and cutoff the live screen would use without a
+    // settings frame: the pack's own cutoff is not stored with a reading.
+    var highestCell = 0.0;
+    for (final r in readings) {
+      if (r.maxCellVoltage > highestCell) highestCell = r.maxCellVoltage;
+    }
+    final chemistry = PackEnergy.chemistryFor(
+      declared: widget.device.chemistry,
+      highestCellVolts: highestCell > 0 ? highestCell : null,
+    );
+    final cutoffPerCell =
+        ChemistryLimits.of(chemistry)?.typicalCutoffVolts ??
+        ChemistryLimits.unknownCutoffVolts;
 
-    final usableNow = newest == null || cells.isEmpty
-        ? 0.0
-        : RangeEstimator.usableWh(
+    // The imbalance from a resting reading only, as live, and only one taken
+    // close enough to the last reading to describe the same charge.
+    Snapshot? resting;
+    for (final r in readings.reversed) {
+      if (newest != null &&
+          newest.timestamp.difference(r.timestamp) > _restingReadingReach) {
+        break;
+      }
+      if (r.current > -1.0 && r.current <= 0.05) {
+        resting = r;
+        break;
+      }
+    }
+    final restingCells = resting == null
+        ? const <double>[]
+        : decodeCellVoltages(resting.cellVoltagesJson);
+
+    final energy = newest == null || cells.isEmpty
+        ? PackEnergy.none
+        : PackEnergy.remaining(
             remainingAh: newest.remainingAh,
-            packVoltage: newest.packVoltage,
+            soc: newest.soc,
             cellCount: cells.length,
-            minCellVoltage: newest.minCellVoltage,
-            averageCellVoltage: averageCell,
+            chemistry: chemistry,
             cutoffVoltagePerCell: cutoffPerCell,
+            resting: resting == null || restingCells.isEmpty
+                ? null
+                : RestingCells(
+                    minCellVoltage: resting.minCellVoltage,
+                    averageCellVoltage: averageOf(restingCells),
+                    at: resting.timestamp,
+                  ),
+            liveAverageCellVoltage: averageOf(cells),
           );
 
     final outlook = RangeOutlook.from(
       estimator: estimator,
-      usableWhNow: usableNow,
+      usableWhNow: energy.usableWh,
       fullCapacityAh: capacity,
-      fullPackVoltage: cells.isEmpty ? null : cells.length * 3.7,
-      usableFraction: usableFraction,
+      fullPackVoltage: PackEnergy.fullPackVoltage(
+        cellCount: cells.length,
+        chemistry: chemistry,
+      ),
+      usableFraction: energy.usableFraction ?? 1,
       capacityWasMeasured: measured != null,
+      capacityFromBmsConfig: widget.device.catalogueFromBms,
     );
 
     if (!mounted) return;
@@ -175,6 +217,7 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
       _firstAt = oldest;
       _readingCount = totalReadings;
       _driftRanking = const CellDriftAnalysis().analyse(readings);
+      _lowest = const CellDriftAnalysis().mostOftenLowest(readings);
       _maintenance = maintenance;
       _outlook = outlook;
       _estimator = estimator;
@@ -193,14 +236,17 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
         const Duration(days: 3);
   }
 
-  /// The best capacity this pack has ever measured, ignoring tests with a hole
-  /// in the middle: those count low, and counting low here would understate
-  /// the pack for good.
+  /// How far before the last reading a resting one may be and still describe
+  /// the charge the last reading was taken at.
+  static const Duration _restingReadingReach = Duration(minutes: 30);
+
+  /// The best capacity this pack has ever measured, by the one trust rule
+  /// every capacity figure uses ([CapacityTestTrust]): a test with a hole in
+  /// it counts low, one charged in the middle counts two discharges, and one
+  /// closed on the percentage counts the configuration back.
   static double? _bestMeasured(List<CapacityTest> tests) {
     double? best;
-    for (final test in tests) {
-      if (!test.completed || test.measuredAh <= 0) continue;
-      if (test.gapSeconds > 120) continue;
+    for (final test in tests.where((t) => t.isTrustworthy)) {
       if (best == null || test.measuredAh > best) best = test.measuredAh;
     }
     return best;
@@ -266,10 +312,12 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
     // The capacity the BMS's own coulomb counter implies: remaining divided by
     // the charge it reports. Only meaningful away from the extremes, where
     // dividing by a rounded percentage is noise rather than a figure.
-    final socFraction = last == null ? 0.0 : last.soc / 100.0;
-    final implied = last != null && socFraction >= 0.15 && socFraction <= 0.95
-        ? last.remainingAh / socFraction
-        : null;
+    final implied = last == null
+        ? null
+        : Degradation.configuredCapacityFrom(
+            soc: last.soc,
+            remainingAh: last.remainingAh,
+          );
 
     // Wear, measured, or nothing. It used to be the implied capacity over the
     // catalogue figure, which on this pack was 40 divided by 40: a guaranteed
@@ -279,14 +327,18 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
     final wear = Degradation.from(
       tests: _tests,
       readings: const [],
-      advertisedAh: widget.device.catalogueCapacityAh,
+      advertisedAh: widget.device.catalogueFromBms
+          ? null
+          : widget.device.catalogueCapacityAh,
     );
     final lost = wear.lostFraction;
 
-    // Which cell sat lowest in the last reading. Not the same as the one that
-    // is always lowest, but it is what the stored row can answer.
+    // Which cell sat lowest in the last reading: only a fallback now, said as
+    // what it is. The last reading may have been under load, where the cell
+    // with the most resistance sags lowest, and calling that "the weakest
+    // cell" claimed a diagnosis from one sample.
     (int, double)? weakest;
-    if (last != null) {
+    if (_lowest == null && last != null) {
       final cells = decodeCellVoltages(last.cellVoltagesJson);
       if (cells.isNotEmpty) {
         var idx = 0;
@@ -298,11 +350,10 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
     }
 
     // The one figure here that is a measurement rather than arithmetic on what
-    // the BMS says about itself.
-    final measured = completed.map((x) => x.measuredAh).toList();
-    final bestMeasured = measured.isEmpty
-        ? null
-        : measured.reduce((a, b) => a > b ? a : b);
+    // the BMS says about itself. The same filter as the range above it: it
+    // used to take every finished test, so "best measured" could be a run
+    // the range had already refused.
+    final bestMeasured = _bestMeasured(_tests);
 
     return [
       Section(
@@ -369,24 +420,40 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
             implied == null ? '--' : '${implied.toStringAsFixed(1)} Ah',
             dim: implied == null,
             hint: implied == null
-                ? t.offlineImpliedUnusable
+                ? t.offlineImpliedUnusable(
+                    Degradation.configuredReadableMinSoc.toStringAsFixed(0),
+                    Degradation.configuredReadableMaxSoc.toStringAsFixed(0),
+                  )
                 : t.offlineImpliedHint,
           ),
           if (last != null) ...[
             InfoRow(t.offlineSoh, '${last.soh.toStringAsFixed(0)} %'),
-            InfoRow(t.offlineCycles, last.cycleCount.toStringAsFixed(0)),
-            if (weakest != null)
+            // Hidden rather than 0 when the BMS keeps no counter (an ANT).
+            if (last.cycleCount != null)
+              InfoRow(t.offlineCycles, last.cycleCount!.toStringAsFixed(0)),
+            if (_lowest case final low?)
               InfoRow(
                 t.offlineWeakest,
+                t.offlineWeakestRestValue(
+                  '${low.index + 1}',
+                  (low.share * 100).toStringAsFixed(0),
+                  '${low.readings}',
+                ),
+              )
+            else if (weakest != null)
+              InfoRow(
+                t.offlineLowestLastReading,
                 t.offlineWeakestValue(
                   '${weakest.$1 + 1}',
                   weakest.$2.toStringAsFixed(3),
                 ),
               ),
-            InfoRow(
-              t.offlineMaxTemp,
-              '${last.maxTemperature.toStringAsFixed(0)} °C',
-            ),
+            // Hidden when no battery probe is fitted, rather than 0 degC.
+            if (last.maxTemperature != null)
+              InfoRow(
+                t.offlineMaxTemp,
+                '${last.maxTemperature!.toStringAsFixed(0)} °C',
+              ),
           ],
           if (bestMeasured != null)
             InfoRow(
@@ -469,6 +536,8 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
               child: Text(
                 _outlook.fullFromMeasuredCapacity
                     ? t.rangeFullFromMeasured
+                    : _outlook.fullFromBmsConfig
+                    ? t.rangeFullFromBms
                     : t.rangeFullFromAdvert,
                 style: const TextStyle(
                   fontSize: 11,
@@ -483,11 +552,16 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
             const SizedBox(height: 4),
             for (final test in completed.take(5))
               InfoRow(
-                _date(test.endedAt ?? test.startedAt),
-                test.catalogueAh == null
+                [
+                  _date(test.endedAt ?? test.startedAt),
+                  ...capacityTestTags(t, test),
+                ].join('  ·  '),
+                // A percentage only for a run that measured the whole pack.
+                test.catalogueAh == null || !test.isTrustworthy
                     ? '${test.measuredAh.toStringAsFixed(1)} Ah'
                     : '${test.measuredAh.toStringAsFixed(1)} Ah  ·  '
                           '${(test.measuredAh / test.catalogueAh! * 100).toStringAsFixed(0)} %',
+                dim: !test.isTrustworthy,
                 last: test == completed.last,
               ),
           ],
@@ -522,8 +596,47 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
           const SizedBox(height: 6),
         ],
       ),
+      // The rest of what is stored about this pack, each on a screen of its
+      // own, all of it readable with the bike out of reach.
+      if (widget.service.repository case final repo?)
+        Section(
+          title: t.offlineMoreHistory,
+          children: [
+            OutlinedButton.icon(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => FaultHistoryScreen(
+                    repository: repo,
+                    deviceId: widget.device.id,
+                    packName: _name,
+                  ),
+                ),
+              ),
+              icon: const Icon(Icons.history, size: 18),
+              label: Text(t.faultHistoryTitle),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => CellHistoryScreen(
+                    repository: repo,
+                    deviceId: widget.device.id,
+                    packName: _name,
+                  ),
+                ),
+              ),
+              icon: const Icon(Icons.stacked_line_chart, size: 18),
+              label: Text(t.cellHistoryTitle),
+            ),
+            const SizedBox(height: 6),
+          ],
+        ),
     ];
   }
+
+  String get _name =>
+      widget.device.name.isEmpty ? widget.device.id : widget.device.name;
 
   /// Rides that actually went somewhere. A row exists from the moment
   /// recording starts, so one in progress has no distance yet; the same cut
@@ -567,13 +680,18 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
       openLicenseScreen(context);
       return;
     }
+    // The workshop's name and logo at the top, when the tier includes it.
+    // Asked before anything is awaited, while the context still answers.
+    final branded = LicenseScope.allows(context, Feature.workshopExtras);
     setState(() => _sharing = true);
     final messenger = ScaffoldMessenger.of(context);
     try {
       final wear = Degradation.from(
         tests: _tests,
         readings: const [],
-        advertisedAh: widget.device.catalogueCapacityAh,
+        advertisedAh: widget.device.catalogueFromBms
+          ? null
+          : widget.device.catalogueCapacityAh,
       );
       // The day-one copy, and today against it, when both exist. Read here
       // rather than held in state: a sheet is built once and this is the only
@@ -588,7 +706,8 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
               at: _last!.timestamp,
               cells: decodeCellVoltages(_last!.cellVoltagesJson),
               current: _last!.current,
-              cycleCount: _last!.cycleCount.round(),
+              soc: _last!.soc,
+              cycleCount: _last!.cycleCount?.round(),
             );
       final data = PackReportData.build(
         generatedAt: DateTime.now().toUtc(),
@@ -608,12 +727,20 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
         readingCount: _readingCount,
         historySince: _firstAt,
         whPerKm: _estimator?.hasLearned ?? false ? _estimator!.whPerKm : null,
-        capacityTests: _tests.where((t) => t.completed).length,
+        // Measurements of the pack, not every run that stopped: a sheet a
+        // buyer reads must not count a partial as a capacity test.
+        capacityTests: _tests.where((t) => t.isTrustworthy).length,
         appVersion: _appVersion,
         baseline: baseline,
         sinceDayOne: sinceDayOne,
       );
-      final bytes = await const PdfReports().packReport(t, data);
+      final bytes = await const PdfReports().packReport(
+        t,
+        data,
+        branding: branded
+            ? await WorkshopBrandingStore().load()
+            : ReportBranding.none,
+      );
       await const ReportSharing().share(
         bytes,
         fileName: ReportSharing.fileName(

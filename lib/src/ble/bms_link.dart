@@ -1,4 +1,5 @@
 import 'ble_transport.dart';
+import 'bms_write_gate.dart';
 import 'link_script.dart';
 
 /// How well the link has been behaving, for a screen to show.
@@ -61,6 +62,14 @@ abstract interface class BmsLink {
   /// Raw notification payloads, in arrival order.
   Stream<List<int>> get bytes;
 
+  /// Every frame written to the pack, once the write went through.
+  ///
+  /// So the console can show both sides of the conversation: a pack that
+  /// answers nothing is a different problem when it was never asked, and the
+  /// app had no way to show which. A transport that writes nothing (simulated,
+  /// captured bytes) never emits.
+  Stream<List<int>> get writes;
+
   Stream<BleLinkState> get state;
 
   Stream<BleLinkError> get errors;
@@ -105,6 +114,20 @@ abstract interface class BmsLink {
   /// Asks again now, with the script's own request. Nothing for a transport
   /// that cannot be asked.
   Future<void> askAgain() async {}
+
+  /// Writes one switch write the gate granted, and says whether the radio
+  /// took it. True is not the BMS agreeing, only the bytes leaving: the
+  /// change is confirmed by a settings frame showing it, or not at all.
+  ///
+  /// Takes a [RegisterWrite] and nothing else, and only [decideSwitchWrite]
+  /// can make one, so this cannot be reached with the write permission off.
+  /// A transport that writes nothing returns false.
+  Future<bool> writeRegister(RegisterWrite write) async => false;
+
+  /// Asks the pack for its settings again, with the same opening requests it
+  /// answers on connect, so a switch write can be confirmed by the pack's
+  /// own account of its state. Nothing for a transport that cannot be asked.
+  Future<void> askSettings() async {}
 
   /// Whether the reconnect loop should refuse to give up.
   ///

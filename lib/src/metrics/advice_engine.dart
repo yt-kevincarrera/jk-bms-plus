@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import '../model/bms_snapshot.dart';
 import '../model/jk_settings.dart';
 import 'cell_drift.dart';
@@ -36,8 +34,13 @@ enum AdviceCode {
   /// Kilometres left at this charge, from how this rider actually rides.
   rangeNow,
 
-  /// The delta under load is what it is at rest: nothing resistive going on.
+  /// The delta under a heavy load is what it is at rest: nothing resistive
+  /// going on.
   deltaUnderLoadNormal,
+
+  /// The same, but only light loads have been seen, which cannot show a
+  /// resistive fault. Said as that, not as a clean bill.
+  deltaUnderLightLoadNormal,
 
   // --- Findings ---
 
@@ -52,9 +55,14 @@ enum AdviceCode {
   /// One cell is consistently the lowest, and it sets what the pack can do.
   weakCellDominant,
 
-  /// The BMS cycle counter reads far higher than the charge actually put
-  /// through the pack.
-  cycleCounterInflated,
+  /// The BMS cycle counter reads far from the charge the BMS itself counted
+  /// through the pack, in either direction.
+  cycleCounterDisagrees,
+
+  /// What the BMS says about itself was checkable and held up: its cycle
+  /// count against the throughput, or its charge level at an end of the
+  /// range against the cells.
+  bmsClaimsConsistent,
 
   /// The charge counter reads nearly full while the cells are still well
   /// below where a charge ends.
@@ -73,14 +81,26 @@ enum AdviceCode {
   /// Nothing has ever been measured end to end.
   noCapacityTestYet,
 
-  /// The pack is running hot.
+  /// A battery probe is running hot.
   runningHot,
+
+  /// The BMS's MOSFET is running hot. Its own code, because it is not the
+  /// battery and the advice about it is not the advice about cells.
+  bmsRunningHot,
+
+  /// Battery probes are fitted and none is hot, nor is the MOSFET.
+  temperatureOk,
 
   /// The balancer has never been seen working despite a wide delta.
   balancerNeverSeen,
 
   /// The overvoltage limit is set above what this chemistry likes.
   overvoltageSetHigh,
+
+  /// The settings frame arrived and the one limit this screen checks, the
+  /// charge cutoff per cell, is not high. Not a full audit: that has its
+  /// own screen.
+  configNothingFlagged,
 
   /// Not enough kilometres behind the range figure to trust it.
   rangeStillLearning,
@@ -96,6 +116,11 @@ enum AdviceCode {
   /// Every cell sagged about the same: nothing giving up under load.
   inspectionSagUniform,
 
+  /// The cells moved together, but the pull was too small for that to rule
+  /// out a bad cell: the least fault this current could show is bigger than
+  /// the one the test looks for.
+  inspectionSagUnresolved,
+
   /// Cells sat apart with no current flowing.
   inspectionRestDeltaWide,
 
@@ -110,6 +135,10 @@ enum AdviceCode {
 
   /// Every cell climbed back at about the same pace.
   inspectionRecoveryOk,
+
+  /// The cells climbed back, but at this little load any cell would have:
+  /// the recovery says nothing either way.
+  inspectionRecoveryNotDiscriminating,
 
   /// The pack was hot during the test.
   inspectionHot,
@@ -135,6 +164,11 @@ enum AdviceCode {
 
   /// The pack measures worse than it did last time.
   inspectionRepeatWorse,
+
+  /// A setting or a counter the BMS keeps moved between visits in a way it
+  /// can move by itself or by an honest hand: the configured capacity, or a
+  /// state of health that went up.
+  inspectionRepeatConfigChanged,
 
   /// Two runs agree within noise: the first was not a fluke.
   inspectionRepeatSteady,
@@ -164,8 +198,11 @@ enum AdviceCode {
   /// The BMS will charge the pack below freezing.
   configChargesWhenFrozen,
 
-  /// It will not, which is worth saying.
+  /// It will not, with margin, which is worth saying.
   configColdCutoffOk,
+
+  /// It stops above freezing, but with less margin than the advice asks for.
+  configColdCutoffMarginal,
 
   /// The heat cutoff while charging is set high.
   configChargeHotLimit,
@@ -228,6 +265,7 @@ enum EvidenceKind {
   catalogueCapacity,
   capacityTests,
   hottestProbe,
+  mosfetTemperature,
   balanceStartVoltage,
   cellOvp,
   learnedKm,
@@ -240,7 +278,7 @@ enum EvidenceKind {
   driftDeviation,
   driftRate,
   driftSamples,
-  driftSpanWeeks,
+  driftDays,
   // Inspection
   cellSag,
   medianSag,
@@ -253,6 +291,22 @@ enum EvidenceKind {
   medianRecoverySeconds,
   alarmCount,
   peakCurrent,
+
+  /// The spread of the cells' median resting voltages in an inspection. Not
+  /// [restingDelta], which is the widest spread seen on a live connection.
+  inspectionRestDelta,
+
+  /// The worst cell's extra sag over the median, divided by the current.
+  excessResistance,
+
+  /// The least extra resistance the pull could have shown.
+  detectionFloor,
+
+  /// The load was a charger. A flag: it carries no value.
+  loadWasCharge,
+
+  /// Which inspection step a figure was seen in, by the step's index.
+  seenDuringStep,
   // Repeated inspections. Each is a figure from an earlier run, carrying the
   // date it was measured on so the sentence can say when.
   runCount,
@@ -264,6 +318,10 @@ enum EvidenceKind {
   previousSoh,
   previousConfiguredCapacity,
   previousPeakCurrent,
+  previousCycleCapacity,
+
+  /// The amp-hours the BMS says it has counted through the pack, ever.
+  cycleCapacity,
   // Configuration audit.
   configuredSetting,
   safeLimit,
@@ -316,7 +374,8 @@ class Advice {
     AdviceCode.cellDrifting ||
     AdviceCode.noCellDrifting ||
     AdviceCode.rangeNow ||
-    AdviceCode.deltaUnderLoadNormal => true,
+    AdviceCode.deltaUnderLoadNormal ||
+    AdviceCode.deltaUnderLightLoadNormal => true,
     _ => false,
   };
 }
@@ -333,12 +392,15 @@ class VerdictThresholds {
     this.restingDeltaWatch = 0.030,
     this.restingDeltaProblem = 0.060,
     this.loadDeltaExtra = 0.040,
+    this.heavyLoadMinFrames = 5,
     this.weakCellMinReadings = 50,
     this.weakCellShare = 0.6,
     this.cycleInflation = 1.4,
     this.catalogueShortfall = 0.12,
     this.hotWatchCelsius = 45,
     this.hotProblemCelsius = 55,
+    this.mosfetWatchCelsius = BmsSnapshot.mosfetWarmCelsius,
+    this.mosfetProblemCelsius = BmsSnapshot.mosfetHotCelsius,
     this.balancerDelta = 0.030,
     this.cellOvpMax = 4.22,
     this.strandedFraction = 0.08,
@@ -357,6 +419,10 @@ class VerdictThresholds {
   /// resistive fault rather than noise.
   final double loadDeltaExtra;
 
+  /// Distinct readings at a heavy load (SessionAggregates.heavyLoadAmps)
+  /// needed before a normal loaded delta is called "nothing resistive".
+  final int heavyLoadMinFrames;
+
   /// Readings needed before "always the same cell" means anything, and the
   /// share of them one cell has to win.
   final int weakCellMinReadings;
@@ -371,6 +437,11 @@ class VerdictThresholds {
 
   final double hotWatchCelsius;
   final double hotProblemCelsius;
+
+  /// The same two lines for the BMS's MOSFET, which runs hotter than the
+  /// cells by design.
+  final double mosfetWatchCelsius;
+  final double mosfetProblemCelsius;
 
   /// Delta above which a balancer that has never run is worth a remark.
   final double balancerDelta;
@@ -418,9 +489,14 @@ class AdviceEngine {
   /// the same lines and two copies of a number drift apart.
   final SocTrust trust;
 
-  /// [restingDelta] and [loadedDelta] come from the stored history — the widest
-  /// delta seen with no meaningful current, and the widest seen under load.
-  /// [weakCellCounts] is how many times each cell has been the lowest.
+  /// [restingDelta] and [loadedDelta] come from the connection's aggregates
+  /// (SessionAggregates): the widest delta seen at rest, and the delta
+  /// several readings under load reached. [restingDeltaCell] and
+  /// [loadedDeltaCell] are the cells that were lowest in those readings, which
+  /// is the cell a finding about them names; the cell lowest in [snapshot] is
+  /// only a fallback. [heavyLoadFrames] is how many readings were at a load
+  /// heavy enough to show a resistive fault. [weakCellCounts] is how many
+  /// times each cell has been clearly the lowest.
   ///
   /// [degradation], [drift] and [outlook] are optional: a caller that has not
   /// read the history gets the live findings and no headlines about it.
@@ -431,6 +507,9 @@ class AdviceEngine {
     JkSettings? settings,
     double? restingDelta,
     double? loadedDelta,
+    int? restingDeltaCell,
+    int? loadedDeltaCell,
+    int heavyLoadFrames = 0,
     Map<int, int> weakCellCounts = const {},
     bool balancerEverSeen = false,
     int capacityTestCount = 0,
@@ -453,6 +532,7 @@ class AdviceEngine {
         estimator: estimator,
         restingDelta: restingDelta,
         loadedDelta: loadedDelta,
+        heavyLoadFrames: heavyLoadFrames,
       ),
     ];
 
@@ -460,8 +540,8 @@ class AdviceEngine {
     //
     // Splitting these two apart is the useful part. A delta that is already
     // there at rest means the cells hold different amounts of charge. A delta
-    // that only opens under current means resistance, and resistance is far
-    // more often a loose busbar than a bad cell — which is a much cheaper fix.
+    // that only opens under current means resistance: a connection or a cell
+    // with more of it. Checking the connection first is the cheaper step.
     if (restingDelta != null && restingDelta > th.restingDeltaWatch) {
       advice.add(
         Advice(
@@ -470,7 +550,7 @@ class AdviceEngine {
               ? AdviceLevel.problem
               : AdviceLevel.watch,
           value: restingDelta,
-          cellIndex: snapshot.minCellIndex,
+          cellIndex: restingDeltaCell ?? snapshot.minCellIndex,
           evidence: [
             Evidence(EvidenceKind.restingDelta, value: restingDelta),
             if (loadedDelta != null)
@@ -486,7 +566,7 @@ class AdviceEngine {
           code: AdviceCode.imbalanceUnderLoad,
           level: AdviceLevel.watch,
           value: loadedDelta - restingDelta,
-          cellIndex: snapshot.minCellIndex,
+          cellIndex: loadedDeltaCell ?? snapshot.minCellIndex,
           evidence: [
             Evidence(EvidenceKind.restingDelta, value: restingDelta),
             Evidence(EvidenceKind.loadedDelta, value: loadedDelta),
@@ -538,13 +618,21 @@ class AdviceEngine {
     // 0.83, 0.70 and 0.96 on consecutive days off three counted cycles. None
     // of those would trip the threshold, but 4 counted against 2.4 equivalent
     // would, and it would mean nothing.
+    //
+    // Either direction. It used to fire only on a counter reading high, with
+    // a sentence about partial charges, when the one real pack this was
+    // checked on read lower every time. Which way a firmware errs is not
+    // something to assume.
     final inflation = report.bmsCycleCountWorthQuoting == null
         ? null
         : report.cycleInflation;
-    if (inflation != null && inflation > th.cycleInflation) {
+    final cyclesDisagree =
+        inflation != null &&
+        (inflation > th.cycleInflation || inflation < 1 / th.cycleInflation);
+    if (cyclesDisagree) {
       advice.add(
         Advice(
-          code: AdviceCode.cycleCounterInflated,
+          code: AdviceCode.cycleCounterDisagrees,
           level: AdviceLevel.info,
           value: inflation,
           evidence: [
@@ -650,6 +738,51 @@ class AdviceEngine {
         break;
     }
 
+    // The good news for this subject, said only about what was actually
+    // checkable. The charge counter can only be caught out at the ends of the
+    // range and the cycle counter only on a pack with cycles enough; "nothing
+    // found" in the middle of a young pack's range is "nothing checked", and
+    // stays unsaid.
+    final fullAnchor = SocTrust.fullAnchor(
+      soc100Volts: settings?.soc100Voltage,
+      cellOvp: settings?.cellOvp,
+    );
+    final emptyAnchor = SocTrust.emptyAnchor(soc0Volts: settings?.soc0Voltage);
+    final socCheckable =
+        !cells &&
+        ((snapshot.current > trust.restingCurrentAmps &&
+                snapshot.soc >= trust.fullAbove &&
+                fullAnchor != null) ||
+            (snapshot.current < trust.restingCurrentAmps &&
+                snapshot.soc <= trust.emptyBelow &&
+                emptyAnchor != null));
+    final cyclesCheckable = inflation != null;
+    if (socDrift == SocDrift.none &&
+        !cyclesDisagree &&
+        !report.sohLooksDecorative &&
+        (socCheckable || cyclesCheckable)) {
+      advice.add(
+        Advice(
+          code: AdviceCode.bmsClaimsConsistent,
+          level: AdviceLevel.good,
+          evidence: [
+            if (cyclesCheckable) ...[
+              Evidence(
+                EvidenceKind.reportedCycles,
+                value: report.reportedCycles!.toDouble(),
+              ),
+              Evidence(
+                EvidenceKind.equivalentCycles,
+                value: report.equivalentFullCycles,
+              ),
+            ],
+            if (socCheckable)
+              Evidence(EvidenceKind.reportedSoc, value: snapshot.soc),
+          ],
+        ),
+      );
+    }
+
     // Falling short of the advertised capacity is worth mentioning once, and
     // it is not a fault. It cannot tell a pack that has degraded from one that
     // was never the advertised size, which is the far more common case with a
@@ -694,12 +827,11 @@ class AdviceEngine {
     }
 
     // --- Right now ---
-    final temps = <double>[
-      ...snapshot.plausibleTemperatures,
-      if (snapshot.mosfetTemp != null) snapshot.mosfetTemp!,
-    ];
-    if (temps.isNotEmpty) {
-      final hottest = temps.reduce(math.max);
+    // The battery and the BMS apart. "Heat is what ages a cell fastest" is
+    // about cells, and it used to be said about the MOSFET, which runs hotter
+    // than the cells by design.
+    final hottest = snapshot.hottestBatteryTemp;
+    if (hottest != null) {
       if (hottest > th.hotWatchCelsius) {
         advice.add(
           Advice(
@@ -713,12 +845,49 @@ class AdviceEngine {
         );
       }
     }
+    final mosfet = snapshot.mosfetTemp;
+    if (mosfet != null && mosfet > th.mosfetWatchCelsius) {
+      advice.add(
+        Advice(
+          code: AdviceCode.bmsRunningHot,
+          level: mosfet > th.mosfetProblemCelsius
+              ? AdviceLevel.problem
+              : AdviceLevel.watch,
+          value: mosfet,
+          evidence: [Evidence(EvidenceKind.mosfetTemperature, value: mosfet)],
+        ),
+      );
+    }
+    // Said when it was looked at and was fine. Without it a healthy pack's
+    // health tab listed temperature as "cannot say anything yet", which was
+    // untrue of a pack with probes reading 25 degrees. Not said without a
+    // battery probe: the MOSFET alone is not the battery.
+    if (hottest != null &&
+        hottest <= th.hotWatchCelsius &&
+        (mosfet == null || mosfet <= th.mosfetWatchCelsius)) {
+      advice.add(
+        Advice(
+          code: AdviceCode.temperatureOk,
+          level: AdviceLevel.good,
+          value: hottest,
+          evidence: [
+            Evidence(EvidenceKind.hottestProbe, value: hottest),
+            if (mosfet != null)
+              Evidence(EvidenceKind.mosfetTemperature, value: mosfet),
+          ],
+        ),
+      );
+    }
 
     // A balancer that has never been seen working while the pack sits wide open
     // is either switched off or its start voltage is above where the pack ever
     // gets. Both are settings, and both are worth knowing about.
+    //
+    // Judged on the resting delta, which is what the evidence line calls it.
+    // It used to be the live delta, sag included, labelled as resting.
     if (!balancerEverSeen &&
-        snapshot.deltaCellVoltage > th.balancerDelta &&
+        restingDelta != null &&
+        restingDelta > th.balancerDelta &&
         settings != null) {
       final startsAbove = settings.balanceStartVoltage;
       if (settings.balancerSwitchOn == false ||
@@ -730,10 +899,7 @@ class AdviceEngine {
             value: startsAbove,
             evidence: [
               Evidence(EvidenceKind.balanceStartVoltage, value: startsAbove),
-              Evidence(
-                EvidenceKind.restingDelta,
-                value: snapshot.deltaCellVoltage,
-              ),
+              Evidence(EvidenceKind.restingDelta, value: restingDelta),
             ],
           ),
         );
@@ -747,6 +913,17 @@ class AdviceEngine {
         Advice(
           code: AdviceCode.overvoltageSetHigh,
           level: AdviceLevel.watch,
+          value: settings.cellOvp,
+          evidence: [Evidence(EvidenceKind.cellOvp, value: settings.cellOvp)],
+        ),
+      );
+    } else if (settings != null) {
+      // The one limit this screen checks, checked and fine. The full audit is
+      // its own screen, and this does not pretend to be it.
+      advice.add(
+        Advice(
+          code: AdviceCode.configNothingFlagged,
+          level: AdviceLevel.good,
           value: settings.cellOvp,
           evidence: [Evidence(EvidenceKind.cellOvp, value: settings.cellOvp)],
         ),
@@ -799,6 +976,7 @@ class AdviceEngine {
     RangeEstimator? estimator,
     double? restingDelta,
     double? loadedDelta,
+    int heavyLoadFrames = 0,
   }) {
     final th = thresholds;
     final out = <Advice>[];
@@ -862,9 +1040,13 @@ class AdviceEngine {
     // analysis means "not enough readings", and that is not the same as "no
     // cell is drifting". Silence is the honest answer there.
     if (drift.isNotEmpty) {
-      final worst = drift.first;
-      final weeks = worst.spanDays / 7;
-      if (worst.isWorsening) {
+      // Every cell is judged, not just the first of the ranking: "no cell is
+      // drifting" has to be true of all of them, and "the lowest" has to be
+      // the lowest one, not the one whose gap happened to move fastest.
+      final sinking = CellDriftAnalysis.worstWorsening(drift);
+      final worst = sinking ?? CellDriftAnalysis.lowest(drift)!;
+      final days = worst.days.toDouble();
+      if (sinking != null) {
         out.add(
           Advice(
             code: AdviceCode.cellDrifting,
@@ -872,7 +1054,7 @@ class AdviceEngine {
                 ? AdviceLevel.problem
                 : AdviceLevel.watch,
             cellIndex: worst.index + 1,
-            value: weeks,
+            value: days,
             evidence: [
               Evidence(
                 EvidenceKind.driftDeviation,
@@ -887,7 +1069,7 @@ class AdviceEngine {
                 EvidenceKind.driftSamples,
                 value: worst.samples.toDouble(),
               ),
-              Evidence(EvidenceKind.driftSpanWeeks, value: weeks),
+              Evidence(EvidenceKind.driftDays, value: days),
             ],
           ),
         );
@@ -896,7 +1078,7 @@ class AdviceEngine {
           Advice(
             code: AdviceCode.noCellDrifting,
             level: AdviceLevel.good,
-            value: weeks,
+            value: days,
             evidence: [
               Evidence(
                 EvidenceKind.driftDeviation,
@@ -907,7 +1089,7 @@ class AdviceEngine {
                 EvidenceKind.driftSamples,
                 value: worst.samples.toDouble(),
               ),
-              Evidence(EvidenceKind.driftSpanWeeks, value: weeks),
+              Evidence(EvidenceKind.driftDays, value: days),
             ],
           ),
         );
@@ -943,14 +1125,18 @@ class AdviceEngine {
     //
     // The positive counterpart of the two imbalance findings. Needs both
     // figures, so it is only said about a session that has actually pulled
-    // current: a pack that sat idle has not been tested.
+    // current: a pack that sat idle has not been tested. And "nothing
+    // resistive to chase" only after a load that could have shown one: ten
+    // amps for a moment cannot, and it used to be enough.
     if (restingDelta != null &&
         loadedDelta != null &&
         restingDelta <= th.restingDeltaWatch &&
         loadedDelta - restingDelta <= th.loadDeltaExtra) {
       out.add(
         Advice(
-          code: AdviceCode.deltaUnderLoadNormal,
+          code: heavyLoadFrames >= th.heavyLoadMinFrames
+              ? AdviceCode.deltaUnderLoadNormal
+              : AdviceCode.deltaUnderLightLoadNormal,
           level: AdviceLevel.good,
           value: loadedDelta,
           evidence: [

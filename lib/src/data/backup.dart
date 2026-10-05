@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import '../protocol/bms_brand.dart';
 import 'database.dart';
 
 /// Everything the app knows, in one file, and back again.
@@ -43,7 +44,16 @@ class BackupCodec {
   /// [into] is where it lands. Injected rather than always asking the platform
   /// for the documents directory, so the round trip can be tested without a
   /// device attached: a backup nobody has ever restored is not a backup.
-  Future<File> export({bool includeRawFrames = true, Directory? into}) async {
+  ///
+  /// [preferences] is the rider's own settings, as [AppSettings.toBackup]
+  /// writes them, travelling in the same file so a new phone does not start
+  /// with every threshold and muted alert back at its default. Never the
+  /// licence or the update token: those belong to one install.
+  Future<File> export({
+    bool includeRawFrames = true,
+    Directory? into,
+    Map<String, Object?>? preferences,
+  }) async {
     final devices = await db.allDevices();
     final trips = await db.allTripsForBackup();
     final points = await db.allTripPointsForBackup();
@@ -78,6 +88,7 @@ class BackupCodec {
       // half of a bug report that cannot be reconstructed from anything else.
       'linkEvents': events.map(_linkEvent).toList(),
       'rawFrames': frames.map(_frame).toList(),
+      'preferences': ?preferences,
     };
 
     final dir = into ?? await getApplicationDocumentsDirectory();
@@ -159,6 +170,7 @@ class BackupCodec {
           // Absent from every backup made before a second brand existed,
           // which restores as null -- read back as JK by BmsBrand.fromStored.
           brand: Value(d['brand'] as String?),
+          lastChargeJson: Value(d['lastChargeJson'] as String?),
         ),
       );
     }
@@ -213,8 +225,13 @@ class BackupCodec {
     }
     if (pointRows.isNotEmpty) await db.insertTripPoints(pointRows);
 
+    final antDevices = <Object?>{
+      for (final d in devices)
+        if (BmsBrand.fromStored(d['brand'] as String?) == BmsBrand.ant)
+          d['id'],
+    };
     final snapshotRows = [
-      for (final s in snapshots) _snapshotCompanion(s, tripIds),
+      for (final s in snapshots) _snapshotCompanion(s, tripIds, antDevices),
     ];
     if (snapshotRows.isNotEmpty) await db.insertSnapshots(snapshotRows);
 
@@ -270,6 +287,9 @@ class BackupCodec {
       inspections: inspections.length,
       baselines: baselines.length,
       exportedAt: _time(decoded['exportedAt']),
+      preferences: decoded['preferences'] is Map<String, dynamic>
+          ? decoded['preferences'] as Map<String, dynamic>
+          : null,
     );
   }
 
@@ -288,6 +308,7 @@ class BackupCodec {
     'lastSeenAt': d.lastSeenAt.toIso8601String(),
     'demo': d.demo,
     'brand': d.brand,
+    'lastChargeJson': d.lastChargeJson,
   };
 
   /// A pack's day one. Carried because a history without the point it is
@@ -342,6 +363,7 @@ class BackupCodec {
     // exception nobody actually called out.
     'representative': t.representative,
     'summarySeen': t.summarySeen,
+    'packResistanceMilliohms': t.packResistanceMilliohms,
   };
 
   static Map<String, Object?> _point(TripPoint p) => {
@@ -391,6 +413,8 @@ class BackupCodec {
     'completed': t.completed,
     'automatic': t.automatic,
     'gapSeconds': t.gapSeconds,
+    'endReason': t.endReason,
+    'chargedDuringRun': t.chargedDuringRun,
     'note': t.note,
   };
 
@@ -461,7 +485,9 @@ class BackupCodec {
         minPackVoltage: _d(t['minPackVoltage']),
         maxPackVoltage: _d(t['maxPackVoltage']),
         maxDischargeCurrent: _d(t['maxDischargeCurrent']),
-        maxTemperature: _d(t['maxTemperature']),
+        // Null when the pack had no probe; a backup from before that was
+        // possible carries a number, which is kept.
+        maxTemperature: Value(_double(t['maxTemperature'])),
         maxDeltaVolts: _d(t['maxDeltaVolts']),
         climbM: _d(t['climbM']),
         descentM: _d(t['descentM']),
@@ -481,6 +507,7 @@ class BackupCodec {
         // learning as if the rider had called it an exception.
         representative: Value(t['representative'] as bool?),
         summarySeen: Value(t['summarySeen'] as bool? ?? false),
+        packResistanceMilliohms: Value(_dn(t['packResistanceMilliohms'])),
       );
 
   static TripPointsCompanion _pointCompanion(
@@ -501,6 +528,7 @@ class BackupCodec {
   static SnapshotsCompanion _snapshotCompanion(
     Map<String, dynamic> s,
     Map<int, int> tripIds,
+    Set<Object?> antDevices,
   ) => SnapshotsCompanion.insert(
     deviceId: Value(s['deviceId'] as String?),
     timestamp: _time(s['timestamp'])!,
@@ -510,12 +538,16 @@ class BackupCodec {
     soc: _d(s['soc']),
     soh: _d(s['soh']),
     remainingAh: _d(s['remainingAh']),
-    cycleCount: _d(s['cycleCount']),
+    // An ANT has no cycle counter. Backups made before the column could be
+    // empty carry a filler 0 for it, which would restore as a new pack.
+    cycleCount: Value(
+      antDevices.contains(s['deviceId']) ? null : _double(s['cycleCount']),
+    ),
     cycleCapacityAh: Value(_d(s['cycleCapacityAh'])),
     deltaVolts: _d(s['deltaVolts']),
     minCellVoltage: _d(s['minCellVoltage']),
     maxCellVoltage: _d(s['maxCellVoltage']),
-    maxTemperature: _d(s['maxTemperature']),
+    maxTemperature: Value(_double(s['maxTemperature'])),
     mosfetTemp: Value(_double(s['mosfetTemp'])),
     warningsMask: _i(s['warningsMask']),
     balancerActive: s['balancerActive'] as bool? ?? false,
@@ -537,6 +569,14 @@ class BackupCodec {
         completed: Value(t['completed'] as bool? ?? false),
         automatic: Value(t['automatic'] as bool? ?? false),
         gapSeconds: Value(_i(t['gapSeconds'])),
+        // A backup made before the app stored what closed a run carries none,
+        // and every run it finished was closed on the BMS percentage: the
+        // same marking the database migration gives them.
+        endReason: Value(
+          t['endReason'] as String? ??
+              ((t['completed'] as bool? ?? false) ? 'legacy' : null),
+        ),
+        chargedDuringRun: Value(t['chargedDuringRun'] as bool? ?? false),
         note: Value(t['note'] as String? ?? ''),
       );
 
@@ -569,6 +609,7 @@ class BackupImportResult {
     this.inspections = 0,
     this.baselines = 0,
     this.exportedAt,
+    this.preferences,
   });
 
   final int devices;
@@ -581,6 +622,10 @@ class BackupImportResult {
   final int inspections;
   final int baselines;
   final DateTime? exportedAt;
+
+  /// The settings the backup carried, for [AppSettings.restoreBackup], or
+  /// null for a backup from before they travelled.
+  final Map<String, dynamic>? preferences;
 }
 
 /// The file is not a backup this app can read.

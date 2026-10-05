@@ -36,6 +36,7 @@ void main() {
     double packVoltage = 75,
     double current = -20,
     double soc = 62,
+    double maxCell = 3.674,
   }) =>
       db.insertSnapshots([
         SnapshotsCompanion.insert(
@@ -46,11 +47,11 @@ void main() {
           soc: soc,
           soh: 100,
           remainingAh: remainingAh,
-          cycleCount: 2,
+          cycleCount: const Value(2),
           deltaVolts: 0.003,
           minCellVoltage: 3.671,
-          maxCellVoltage: 3.674,
-          maxTemperature: 30,
+          maxCellVoltage: maxCell,
+          maxTemperature: const Value(30),
           warningsMask: 0,
           balancerActive: false,
           cellVoltagesJson: '[3.671]',
@@ -89,7 +90,7 @@ void main() {
           minPackVoltage: 70,
           maxPackVoltage: 78,
           maxDischargeCurrent: maxDischargeCurrent,
-          maxTemperature: maxTemperature,
+          maxTemperature: Value(maxTemperature),
           maxDeltaVolts: 0.02,
           climbM: 20,
           descentM: 20,
@@ -274,6 +275,34 @@ void main() {
       // 5.8 Ah priced at the mean of 81 and 77 V.
       expect(fixed.energyOutWh, closeTo(458.2, 0.5));
       expect(fixed.energyOutWh / fixed.distanceKm, closeTo(20.7, 0.3));
+    });
+
+    test('a deep ride on NMC is priced along the curve, not at the ends',
+        () async {
+      // From full to 20 % the mean of the two resting ends sits about 2 %
+      // above the voltage the charge actually came out at, because the curve
+      // between them bows. Known to be NMC from a cell seen above 3.8 V.
+      await blackoutTrip();
+      await reading(
+        t0.subtract(const Duration(minutes: 1)),
+        remainingAh: 40,
+        packVoltage: 83.6,
+        soc: 100,
+        maxCell: 4.18,
+      );
+      await reading(
+        t0.add(const Duration(minutes: 52)),
+        remainingAh: 8,
+        packVoltage: 71,
+        soc: 20,
+        maxCell: 3.56,
+      );
+
+      await repo.repairTripEnergy('AA:BB');
+      final fixed = (await repo.tripsForLearning('AA:BB')).single;
+      const atTheEnds = 32 * (83.6 + 71) / 2;
+      expect(fixed.energyOutWh, lessThan(atTheEnds * 0.99));
+      expect(fixed.energyOutWh, greaterThan(atTheEnds * 0.95));
     });
 
     test('gets its charge figures back too', () async {

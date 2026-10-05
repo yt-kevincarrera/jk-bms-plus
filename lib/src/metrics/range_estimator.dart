@@ -138,7 +138,8 @@ class RangeEstimator {
   /// fast day, which is the point. Named so recalibrating it is one line.
   static const double askThresholdFraction = 0.05;
 
-  /// Best estimate of how far the bike can still go, in kilometres.
+  /// Best estimate of how far the bike can still go, in kilometres, on
+  /// the usable watt-hours from PackEnergy.
   double rangeKm(double usableWh) =>
       whPerKm <= 0 ? 0 : usableWh / whPerKm;
 
@@ -146,55 +147,6 @@ class RangeEstimator {
   (double low, double high) rangeBandKm(double usableWh) {
     final centre = rangeKm(usableWh);
     return (centre * (1 - _spread), centre * (1 + _spread));
-  }
-
-  /// Energy still available, in watt-hours, accounting for the weakest cell.
-  ///
-  /// This is the number the manufacturer's SOC quietly overstates. The pack
-  /// stops when the *lowest* cell reaches cutoff, not when the average does, so
-  /// whatever the other cells still hold above that point is stranded. The
-  /// bigger the imbalance, the more optimistic a plain SOC reading is.
-  static double usableWh({
-    required double remainingAh,
-    required double packVoltage,
-    required int cellCount,
-    required double minCellVoltage,
-    required double averageCellVoltage,
-    required double cutoffVoltagePerCell,
-  }) {
-    if (cellCount <= 0) return 0;
-    final gross = remainingAh * packVoltage;
-    if (gross <= 0) return 0;
-
-    final headroomAverage = averageCellVoltage - cutoffVoltagePerCell;
-    final headroomWeakest = minCellVoltage - cutoffVoltagePerCell;
-    if (headroomAverage <= 0) return 0;
-    if (headroomWeakest <= 0) return 0;
-
-    return gross * usableFractionOf(
-      minCellVoltage: minCellVoltage,
-      averageCellVoltage: averageCellVoltage,
-      cutoffVoltagePerCell: cutoffVoltagePerCell,
-    );
-  }
-
-  /// How much of the pack's charge the imbalance actually lets you use.
-  ///
-  /// The weakest cell runs out first; the fraction of the average cell's
-  /// remaining headroom that it actually has is the fraction of the pack you
-  /// can really reach. Exposed on its own because it applies to a full pack as
-  /// much as to this moment's charge: shipped without it, the full-pack range
-  /// came out *higher* than the remaining range on a fully charged battery,
-  /// which is nonsense the rider would have found before anybody else.
-  static double usableFractionOf({
-    required double minCellVoltage,
-    required double averageCellVoltage,
-    required double cutoffVoltagePerCell,
-  }) {
-    final headroomAverage = averageCellVoltage - cutoffVoltagePerCell;
-    final headroomWeakest = minCellVoltage - cutoffVoltagePerCell;
-    if (headroomAverage <= 0 || headroomWeakest <= 0) return 0;
-    return (headroomWeakest / headroomAverage).clamp(0.0, 1.0);
   }
 
   Map<String, Object?> toJson() => {

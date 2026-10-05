@@ -80,19 +80,36 @@ class _InspectionScreenState extends State<InspectionScreen> {
       serialNumber: info?.serialNumber ?? '',
       softwareVersion: info?.softwareVersion ?? '',
       cycleCount: last?.cycleCount,
-      configuredCapacityAh:
-          settings?.nominalCapacityAh ?? last?.nominalCapacityAh,
+      // The status frame first, every time. It used to be the settings frame
+      // when one had arrived and the status frame otherwise, so two runs on
+      // the same pack could carry the capacity from two different places,
+      // and a repeat read the difference as "somebody changed the settings".
+      // The status frame comes with every reading; the settings frame only
+      // stands in when the status frame says nothing.
+      configuredCapacityAh: (last?.nominalCapacityAh ?? 0) > 0
+          ? last!.nominalCapacityAh
+          : settings?.nominalCapacityAh,
+      cycleCapacityAh: last?.cycleCapacityAh,
       soc: last?.soc,
       soh: last?.soh,
     );
     final result = const InspectionAnalysis().compute(
       _session,
       reported: reported,
+      // Carried in the result, and so in anything signed from it: a
+      // rehearsal with the demo pack must never pass for a battery.
+      simulated: service.isDemo,
     );
 
     if (!mounted) return;
-    await Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(
+    // Pushed on top, not swapped in. A replacement completed the connect
+    // screen's own push at once, with nothing, so it dropped the link and
+    // left inspection mode while the verdict was still on screen; the
+    // verdict's "repeat" then popped a true that nobody was waiting for, and
+    // repeating did exactly what discarding did. Now this screen waits for
+    // the verdict and hands its answer down.
+    final again = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
         builder: (_) => InspectionVerdictScreen(
           service: service,
           result: result,
@@ -102,6 +119,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
         ),
       ),
     );
+    if (!mounted) return;
+    Navigator.of(context).pop(again ?? false);
   }
 
   void _skip() {
@@ -251,10 +270,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
               // Says how much, not just "more". Being told a 0.44 A load was
               // too small, with no idea what would have been big enough, is
               // what left a rider revving on a stand for two minutes.
-              : t.inspectionLoadTooLow(
-                  amps,
-                  p.neededAmps.toStringAsFixed(1),
-                ));
+              : t.inspectionLoadTooLow(amps, p.neededAmps.toStringAsFixed(1)));
     final tone = p.loadDetected ? AppTheme.good : AppTheme.watch;
 
     return Container(

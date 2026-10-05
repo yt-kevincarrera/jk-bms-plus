@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 import 'package:jk_bms/l10n/app_localizations.dart';
 import 'package:jk_bms/src/data/database.dart';
 import 'package:jk_bms/src/inspection/inspection_result.dart';
@@ -17,6 +18,7 @@ import 'package:jk_bms/src/report/certificate.dart';
 import 'package:jk_bms/src/report/pdf_reports.dart';
 import 'package:jk_bms/src/report/report_data.dart';
 import 'package:jk_bms/src/report/report_sharing.dart';
+import 'package:jk_bms/src/report/workshop_branding.dart';
 
 /// The Spanish wording, which is the template the app ships against. Pure
 /// Dart: no widget tree is needed to lay out a PDF.
@@ -180,6 +182,86 @@ void main() {
     });
   });
 
+  group('a certificate and what it says about itself', () {
+    // Signed on 2.28.1, before the demo flag existed, and frozen here. Every
+    // certificate already printed and handed to a buyer looks like this, and
+    // has to keep checking out.
+    const oldToken =
+        'JKC1.H4sIAAAAAAAACp2RS2_CMBCE_0o1ZwdtDOGxNyoufahFhVMrDlayJSnOQ3GgRYj_XjkEFalc2tvOer4da_eAHThUMA0YmvQwoHGgaRmOOCQm6hHRKxQKMOYm3tzsMvkooVCDD9coii6oWKx14LcDsjalFteA-72JQipmtwdTjyKFrG4r0pH3xN5CR9VS-joV6h9q-Avq_ytq8EdqdfLPxDbm9Dw-daZ55dqGgs3WaaeLrbUKlZjNSevQG1wjVadbIJdkYdbn3FySu4voXJKXLl0hN1_L89R3s7WN3_RKITY7MWdRS1XWjST-WnmZiAXj_iG41dPxQtMcCk7qzPj24il4fpz5zicY_nr72IoDD8gPrabp-Y-ujMGjrkzBk8jvEE7iskgcONTkk02SFWsH7hMdj99pbrvJaQIAAA.J07WsmgF0v6NBgUp7povKHY7aXbZxf0d7jj_NrO3aTk.O5OOTrskrX3mHQdF-XrC9yCcOe_MDYPxTwEjSHRWVl2o9QrHLwF61ogslOGFLBJ86VfurfnOYtydXP8mRcgNDA';
+
+    test('a token signed before the demo flag still verifies', () async {
+      final check = await const Certificates().check(oldToken);
+      expect(check.ok, isTrue);
+      final cert = check.certificate!;
+      expect(cert.issuer, '4JBQ-ADTN-QRWB');
+      expect(cert.content.packName, 'Pack viejo');
+      expect(cert.content.result.reported.serialNumber, 'SN-OLD');
+      // No flag is unknown, not "a real battery".
+      expect(cert.content.result.simulated, isNull);
+      expect(cert.content.result.reported.cycleCapacityAh, isNull);
+    });
+
+    test('a new one says whether the pack was the simulator', () async {
+      final pair = await CertificateIdentity(
+        seed: List<int>.filled(32, 21),
+      ).keyPair();
+      Future<bool?> roundTrip(bool simulated) async {
+        final r = InspectionResult.fromJson({
+          ..._result().toJson(),
+          'demo': simulated,
+        });
+        final cert = await const Certificates().issue(
+          CertificateContent(
+            issuedAt: DateTime.utc(2026, 5, 4, 12),
+            packName: 'Pack',
+            result: r,
+          ),
+          pair,
+        );
+        final check = await const Certificates().check(cert.token);
+        expect(check.ok, isTrue);
+        return check.certificate!.content.result.simulated;
+      }
+
+      expect(await roundTrip(false), isFalse);
+      expect(await roundTrip(true), isTrue);
+    });
+
+    test('flipping the demo flag breaks the signature', () async {
+      final pair = await CertificateIdentity(
+        seed: List<int>.filled(32, 21),
+      ).keyPair();
+      final demo = InspectionResult.fromJson({
+        ..._result().toJson(),
+        'demo': true,
+      });
+      final cert = await const Certificates().issue(
+        CertificateContent(
+          issuedAt: DateTime.utc(2026, 5, 4, 12),
+          packName: 'Pack',
+          result: demo,
+        ),
+        pair,
+      );
+      final real = CertificateContent(
+        issuedAt: DateTime.utc(2026, 5, 4, 12),
+        packName: 'Pack',
+        result: InspectionResult.fromJson({
+          ..._result().toJson(),
+          'demo': false,
+        }),
+      ).encode();
+      final parts = cert.token.split('.');
+      final forged = [
+        parts[0],
+        base64Url.encode(real).replaceAll('=', ''),
+        parts[2],
+        parts[3],
+      ].join('.');
+      expect((await const Certificates().check(forged)).ok, isFalse);
+    });
+  });
+
   group('a certificate that carries earlier runs', () {
     test('signs them along with this one and reads them back', () async {
       final pair = await CertificateIdentity(
@@ -325,6 +407,36 @@ void main() {
       expect(bytes.length, greaterThan(1000));
       expect(_isPdf(bytes), isTrue);
     });
+
+    test(
+      'renders a simulated charger run with a cell that never came back',
+      () async {
+        // The three sheet variants this batch added: the red simulator line,
+        // "change" instead of "sag" over a charger's figures, and "> time" for
+        // a cell still not back when the window closed.
+        final base = _result().toJson();
+        final cells = (base['cells'] as List).cast<Map<String, Object?>>();
+        cells[6] = {...cells[6], 'unrecovered': true};
+        final r = InspectionResult.fromJson({
+          ...base,
+          'cells': cells,
+          'caveats': ['heavyWasCharge'],
+          'demo': true,
+        });
+        expect(r.heavyWasCharge, isTrue);
+        expect(r.cells[6].recovered, isFalse);
+        final bytes = await const PdfReports().inspectionReport(
+          t,
+          InspectionReportData(
+            generatedAt: DateTime.utc(2026, 5, 4, 12),
+            result: r,
+            light: const InspectionVerdicts().light(r),
+            advice: const InspectionVerdicts().evaluate(r),
+          ),
+        );
+        expect(_isPdf(bytes), isTrue);
+      },
+    );
 
     test('renders when the test measured almost nothing', () async {
       final bare = InspectionResult(
@@ -593,6 +705,98 @@ void main() {
       expect(data.advertisedAh, 40);
       expect(data.measuredAh, isNull);
       expect(data.totalKm, 0);
+    });
+  });
+
+  // The workshop tier promised its own logo on the PDFs and nothing printed
+  // one.
+  group('the workshop\'s details', () {
+    // A real PNG, so the library has to embed an actual image.
+    final png = Uint8List.fromList(
+      img.encodePng(img.Image(width: 4, height: 2)),
+    );
+    const branding = ReportBranding(
+      name: 'Taller Voltio',
+      line: 'Calle Mayor 3, 600 000 000',
+    );
+
+    test('are printed at the top of the battery sheet, logo and all', () async {
+      final bytes = await const PdfReports().packReport(
+        t,
+        PackReportData(
+          generatedAt: DateTime.utc(2026, 5, 4, 12),
+          packName: 'Pack de la moto',
+        ),
+        branding: ReportBranding(
+          name: branding.name,
+          line: branding.line,
+          logo: png,
+        ),
+      );
+      expect(_isPdf(bytes), isTrue);
+      final text = _textOf(bytes);
+      expect(text, contains('Taller Voltio'));
+      expect(text, contains('Calle Mayor 3'));
+      // The app's name stays: the figures are still its own.
+      expect(text, contains(t.appTitle));
+    });
+
+    test('and on the inspection sheet', () async {
+      final r = _result();
+      final bytes = await const PdfReports().inspectionReport(
+        t,
+        InspectionReportData(
+          generatedAt: DateTime.utc(2026, 5, 4, 12),
+          result: r,
+          light: const InspectionVerdicts().light(r),
+          advice: const InspectionVerdicts().evaluate(r),
+          packName: 'Pack del vendedor',
+        ),
+        branding: branding,
+      );
+      expect(_textOf(bytes), contains('Taller Voltio'));
+    });
+
+    test('a logo the library cannot read is left out, not fatal', () async {
+      // A PNG signature over garbage: refused only as the file is written.
+      final bytes = await const PdfReports().packReport(
+        t,
+        PackReportData(
+          generatedAt: DateTime.utc(2026, 5, 4, 12),
+          packName: 'Pack de la moto',
+        ),
+        branding: ReportBranding(
+          name: 'Taller Voltio',
+          logo: Uint8List.fromList([0x89, 0x50, 0x4E, 0x47, 1, 2, 3]),
+        ),
+      );
+      expect(_isPdf(bytes), isTrue);
+      expect(_textOf(bytes), contains('Taller Voltio'));
+    });
+
+    test('nothing is printed without them', () async {
+      final bytes = await const PdfReports().packReport(
+        t,
+        PackReportData(
+          generatedAt: DateTime.utc(2026, 5, 4, 12),
+          packName: 'Pack de la moto',
+        ),
+      );
+      expect(_textOf(bytes), isNot(contains('Taller Voltio')));
+    });
+
+    test('only a PNG or a JPEG is kept as the logo', () {
+      expect(WorkshopBrandingStore.looksLikeImage(png), isTrue);
+      expect(
+        WorkshopBrandingStore.looksLikeImage(
+          Uint8List.fromList([0xFF, 0xD8, 0xFF, 0xE0]),
+        ),
+        isTrue,
+      );
+      expect(
+        WorkshopBrandingStore.looksLikeImage(utf8.encode('GIF89a')),
+        isFalse,
+      );
     });
   });
 

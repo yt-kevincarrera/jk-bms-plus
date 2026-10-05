@@ -226,12 +226,17 @@ class JkParser {
         ? d.boolAt(169 + o2) || balancingByCurrent
         : balancingAction != 0 || balancingByCurrent;
 
-    // 182  2   Bitmask the reference calls "temperature sensor absent"
+    // 182  1   Bitmask the reference calls "temperature sensor absent"
     //          (bit0 MOSFET, bit1..bit5 sensors 1..5). The captured JK02_24S
-    //          frames report 0x07 while those same three sensors read fine, so
-    //          the polarity or the label is wrong. Passed through raw; nothing
-    //          is filtered on it until the real pack settles the question.
-    final sensorMask = d.u16(182 + o2);
+    //          frames report 0x07 while those same three sensors read fine,
+    //          and the rider's JK02_32S reports 0xFF with two probes fitted
+    //          and two inputs empty, so the polarity or the label is wrong.
+    //          Passed through raw; nothing is filtered on it.
+    //
+    //          One byte, not two: it used to be read as a u16, which pulled
+    //          in byte 183, the heater flag just below, so switching the
+    //          heater on changed the "sensor mask" by 0x100.
+    final sensorMask = d.u8(182 + o2);
 
     // 183  1   Heating on
     final heating = d.boolAt(183 + o2);

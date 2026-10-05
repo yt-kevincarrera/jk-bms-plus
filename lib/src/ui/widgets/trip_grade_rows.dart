@@ -40,12 +40,16 @@ class TripGradeRows extends StatelessWidget {
       builder: (context, snapshot) {
         final track = snapshot.data;
         if (track == null) return _rows(null);
-        final profile = profileOf([
+        // Counted the recorder's way, so the three add up to the distance
+        // tile above them.
+        final profile = profileOfTrack([
           for (final p in track)
             (
               latitude: p.latitude,
               longitude: p.longitude,
               altitudeM: p.altitudeM,
+              at: p.timestamp,
+              speedKmh: p.speedKmh,
             ),
         ]);
         return _rows(profile.hasAnything ? profile : null);

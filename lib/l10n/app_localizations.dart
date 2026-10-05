@@ -112,7 +112,7 @@ abstract class AppL10n {
   /// No description provided for @connectOneConnectionWarning.
   ///
   /// In es, this message translates to:
-  /// **'El JK BMS acepta una sola conexión Bluetooth a la vez. Cierra la app oficial de JK antes de conectar aquí.'**
+  /// **'El BMS acepta una sola conexión Bluetooth a la vez. Cierra la app oficial de tu BMS antes de conectar aquí.'**
   String get connectOneConnectionWarning;
 
   /// No description provided for @connectScan.
@@ -154,7 +154,7 @@ abstract class AppL10n {
   /// No description provided for @connectNothingFoundHelp.
   ///
   /// In es, this message translates to:
-  /// **'No apareció nada. Casi siempre es una de estas:\n\n• La app oficial de JK está conectada al BMS. Mientras lo está, el BMS deja de anunciarse y ningún otro teléfono lo ve. Ciérrala del todo.\n• El pack está dormido. Enciende la moto o muévela para despertarlo.\n• Estás lejos. Acércate al pack.'**
+  /// **'No apareció nada. Casi siempre es una de estas:\n\n• La app oficial de tu BMS está conectada a él. Mientras lo está, el BMS deja de anunciarse y ningún otro teléfono lo ve. Ciérrala del todo.\n• El pack está dormido. Enciende la moto o muévela para despertarlo.\n• Estás lejos. Acércate al pack.'**
   String get connectNothingFoundHelp;
 
   /// No description provided for @connectCancelScan.
@@ -238,14 +238,8 @@ abstract class AppL10n {
   /// No description provided for @tapStackSaturated.
   ///
   /// In es, this message translates to:
-  /// **'Van {count} intentos fallidos seguidos. A estas alturas el problema es el Bluetooth del teléfono, no la batería, y otro intento solo lo empeora. Apaga y enciende el Bluetooth; si sigue igual, reinicia el teléfono. Después toca Desconectar o vuelve a buscar para reintentar.'**
+  /// **'Van {count} intentos fallidos seguidos. A estas alturas el problema es el Bluetooth del teléfono, no la batería, y otro intento solo lo empeora. Sigue los pasos de la tarjeta de arriba y después vuelve a buscar para reintentar.'**
   String tapStackSaturated(String count);
-
-  /// No description provided for @tapHeldByPhone.
-  ///
-  /// In es, this message translates to:
-  /// **'El teléfono ya tiene abierta una conexión con esta batería que esta app no controla. O la tiene otra app, o quedó colgada de un intento anterior. Ningún intento desde aquí va a ganarla: cierra la otra app, o reinicia el Bluetooth del teléfono.'**
-  String get tapHeldByPhone;
 
   /// No description provided for @tileConnected.
   ///
@@ -568,7 +562,7 @@ abstract class AppL10n {
   /// No description provided for @sessionEnergy.
   ///
   /// In es, this message translates to:
-  /// **'Energía por el pack'**
+  /// **'Energía sacada del pack'**
   String get sessionEnergy;
 
   /// No description provided for @sessionDistance.
@@ -594,18 +588,6 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'necesita un viaje activo'**
   String get needsGps;
-
-  /// No description provided for @needsDatabase.
-  ///
-  /// In es, this message translates to:
-  /// **'necesita más histórico'**
-  String get needsDatabase;
-
-  /// No description provided for @needsSteps.
-  ///
-  /// In es, this message translates to:
-  /// **'necesita escalones de corriente'**
-  String get needsSteps;
 
   /// No description provided for @packTitle.
   ///
@@ -646,7 +628,7 @@ abstract class AppL10n {
   /// No description provided for @packSagNoBaseline.
   ///
   /// In es, this message translates to:
-  /// **'sin lectura en reposo aún'**
+  /// **'sin reposo reciente con qué comparar'**
   String get packSagNoBaseline;
 
   /// No description provided for @packMosfets.
@@ -784,13 +766,13 @@ abstract class AppL10n {
   /// No description provided for @balanceRanking.
   ///
   /// In es, this message translates to:
-  /// **'Ranking de celda débil'**
+  /// **'Más veces la más baja'**
   String get balanceRanking;
 
   /// No description provided for @resistanceTitle.
   ///
   /// In es, this message translates to:
-  /// **'Resistencia'**
+  /// **'Cables de balanceo'**
   String get resistanceTitle;
 
   /// No description provided for @resistanceSource.
@@ -802,14 +784,8 @@ abstract class AppL10n {
   /// No description provided for @resistanceSourceValue.
   ///
   /// In es, this message translates to:
-  /// **'medición de cableado del propio BMS'**
+  /// **'medición de cada cable de balanceo del propio BMS, no de la celda'**
   String get resistanceSourceValue;
-
-  /// No description provided for @resistanceEstimated.
-  ///
-  /// In es, this message translates to:
-  /// **'Resistencia interna estimada'**
-  String get resistanceEstimated;
 
   /// No description provided for @resistanceWireWarnings.
   ///
@@ -931,28 +907,10 @@ abstract class AppL10n {
   /// **'La máscara se muestra cruda y no se oculta ninguna lectura por su causa. La implementación de referencia la llama máscara de sensores «ausentes», pero las capturas reales encienden bits de sondas que claramente funcionan. Ver docs/PROTOCOL.md.'**
   String get thermalMaskNote;
 
-  /// No description provided for @historyEmptyTitle.
-  ///
-  /// In es, this message translates to:
-  /// **'Todavía no hay nada grabado'**
-  String get historyEmptyTitle;
-
-  /// No description provided for @historyEmptyBody.
-  ///
-  /// In es, this message translates to:
-  /// **'Los viajes que grabes quedan guardados con su recorrido, y las curvas de degradación se van dibujando solas con las semanas.'**
-  String get historyEmptyBody;
-
-  /// No description provided for @historyWhatGoesHere.
-  ///
-  /// In es, this message translates to:
-  /// **'QUÉ VA A APARECER AQUÍ'**
-  String get historyWhatGoesHere;
-
   /// No description provided for @historyItemCapacity.
   ///
   /// In es, this message translates to:
-  /// **'Capacidad medida por ciclo, y la curva de degradación que dibuja con los meses'**
+  /// **'Capacidad medida en cada descarga completa, y cómo cambia con los meses'**
   String get historyItemCapacity;
 
   /// No description provided for @historyItemTrips.
@@ -964,20 +922,14 @@ abstract class AppL10n {
   /// No description provided for @historyItemDelta.
   ///
   /// In es, this message translates to:
-  /// **'Delta graficado contra voltaje de pack, que es donde una celda corta se delata'**
+  /// **'Delta contra el nivel de carga, que es donde una celda corta se delata'**
   String get historyItemDelta;
 
   /// No description provided for @historyItemSag.
   ///
   /// In es, this message translates to:
-  /// **'Caída de tensión a una corriente dada, y cómo empeora con el tiempo'**
+  /// **'Resistencia aparente de cada viaje, sacada de la caída de tensión para la corriente pedida'**
   String get historyItemSag;
-
-  /// No description provided for @historyItemBalance.
-  ///
-  /// In es, this message translates to:
-  /// **'En qué celdas trabaja más el balanceador'**
-  String get historyItemBalance;
 
   /// No description provided for @systemDeviceTitle.
   ///
@@ -1204,7 +1156,7 @@ abstract class AppL10n {
   /// No description provided for @systemSettingsTitle.
   ///
   /// In es, this message translates to:
-  /// **'Configuración del BMS (solo lectura)'**
+  /// **'Configuración del BMS'**
   String get systemSettingsTitle;
 
   /// No description provided for @settingsNotExposed.
@@ -1228,7 +1180,7 @@ abstract class AppL10n {
   /// No description provided for @systemReadOnlyNote.
   ///
   /// In es, this message translates to:
-  /// **'Esta app nunca escribe configuración al BMS. Todo lo de arriba es solo lectura.'**
+  /// **'Con el permiso de escritura apagado, la app no cambia nada en el BMS: todo lo de arriba es solo lectura.'**
   String get systemReadOnlyNote;
 
   /// No description provided for @systemLanguageTitle.
@@ -1387,6 +1339,90 @@ abstract class AppL10n {
   /// **'Registro copiado'**
   String get consoleCopied;
 
+  /// No description provided for @consoleViewDecoded.
+  ///
+  /// In es, this message translates to:
+  /// **'Decodificado'**
+  String get consoleViewDecoded;
+
+  /// No description provided for @consoleViewBytes.
+  ///
+  /// In es, this message translates to:
+  /// **'Bytes'**
+  String get consoleViewBytes;
+
+  /// No description provided for @consoleCopyAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Copiar todo para diagnóstico'**
+  String get consoleCopyAll;
+
+  /// No description provided for @consoleCopiedAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Copiado: contadores, avisos, registro y bytes'**
+  String get consoleCopiedAll;
+
+  /// No description provided for @consoleLiveFromHere.
+  ///
+  /// In es, this message translates to:
+  /// **'--- en vivo desde aquí ---'**
+  String get consoleLiveFromHere;
+
+  /// No description provided for @consoleNoBytes.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía no pasó ningún byte por el enlace desde que se abrió la app.'**
+  String get consoleNoBytes;
+
+  /// No description provided for @consoleBytesLegend.
+  ///
+  /// In es, this message translates to:
+  /// **'← recibido del BMS · → escrito por la app. Se conserva entre conexiones.'**
+  String get consoleBytesLegend;
+
+  /// No description provided for @consoleThisConnection.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta conexión'**
+  String get consoleThisConnection;
+
+  /// No description provided for @consoleLastReading.
+  ///
+  /// In es, this message translates to:
+  /// **'última lectura hace {seconds} s'**
+  String consoleLastReading(int seconds);
+
+  /// No description provided for @consoleReportTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Consola de frames crudos'**
+  String get consoleReportTitle;
+
+  /// No description provided for @consoleReportNotices.
+  ///
+  /// In es, this message translates to:
+  /// **'Avisos, del más antiguo al más reciente'**
+  String get consoleReportNotices;
+
+  /// No description provided for @consoleReportDecoded.
+  ///
+  /// In es, this message translates to:
+  /// **'Registro decodificado'**
+  String get consoleReportDecoded;
+
+  /// No description provided for @consoleReportBytes.
+  ///
+  /// In es, this message translates to:
+  /// **'Bytes, del más antiguo al más reciente'**
+  String get consoleReportBytes;
+
+  /// No description provided for @systemCountersThisConnection.
+  ///
+  /// In es, this message translates to:
+  /// **'Frames y bytes cuentan desde la última conexión. Caídas, tiempo desconectado e insistencias cuentan desde que se abrió la app.'**
+  String get systemCountersThisConnection;
+
   /// No description provided for @tabHealth.
   ///
   /// In es, this message translates to:
@@ -1414,7 +1450,7 @@ abstract class AppL10n {
   /// No description provided for @healthRealCapacityHint.
   ///
   /// In es, this message translates to:
-  /// **'Restante dividido por el SOC informado. Si queda muy por debajo de la nominal configurada, el pack ya perdió capacidad o el contador de coulombs está desincronizado.'**
+  /// **'Sin tests de capacidad, la cifra de arriba es la capacidad configurada en el BMS: el BMS calcula los Ah restantes como el SOC por esa capacidad, así que dividir una cosa por la otra la devuelve tal cual. No dice nada del desgaste; para eso hace falta medir una descarga completa.'**
   String get healthRealCapacityHint;
 
   /// No description provided for @healthClaimedCapacity.
@@ -1444,7 +1480,7 @@ abstract class AppL10n {
   /// No description provided for @healthEquivalentCyclesHint.
   ///
   /// In es, this message translates to:
-  /// **'Ah totales que pasaron por el pack divididos por su capacidad nominal. El contador de ciclos del BMS suma cargas parciales, así que casi siempre exagera.'**
+  /// **'Ah totales que el BMS contó pasar por el pack, divididos por su capacidad configurada. El contador de ciclos del propio BMS puede quedar por encima o por debajo de esta cifra: cuenta en números enteros y cada firmware decide qué es un ciclo.'**
   String get healthEquivalentCyclesHint;
 
   /// No description provided for @healthReportedCycles.
@@ -1468,7 +1504,7 @@ abstract class AppL10n {
   /// No description provided for @healthImbalanceHint.
   ///
   /// In es, this message translates to:
-  /// **'El pack se corta cuando la celda más baja llega al límite, no cuando llega el promedio. El delta actual se traduce a los Ah que quedan atrapados en el resto de las celdas.'**
+  /// **'El pack se corta cuando la celda más baja llega al límite, no cuando llega el promedio. Se mide con las celdas en reposo: el voltaje de la más baja y el de la media se pasan a nivel de carga con la curva típica de la química, y la diferencia se traduce a la energía que queda atrapada en las demás. Bajo carga o con el cargador puesto no se calcula, porque la caída o el empuje del cargador se confundirían con desequilibrio. En LFP, en la zona plana de la curva, el voltaje no dice cuánta carga hay, así que tampoco.'**
   String get healthImbalanceHint;
 
   /// No description provided for @healthWeakestCell.
@@ -1522,7 +1558,7 @@ abstract class AppL10n {
   /// No description provided for @healthNeedsHistoryBody.
   ///
   /// In es, this message translates to:
-  /// **'La degradación medida, la vida restante estimada y la evolución de la caída de tensión necesitan meses de lecturas guardadas. Se van llenando solas a medida que uses la moto.'**
+  /// **'La degradación medida necesita al menos dos descargas completas. La deriva de una celda y la evolución de la caída de tensión necesitan semanas de lecturas guardadas. Lo que sale de viajes y lecturas se va llenando solo; la capacidad no: cada punto es una descarga completa.'**
   String get healthNeedsHistoryBody;
 
   /// No description provided for @healthNotEnoughData.
@@ -1612,7 +1648,7 @@ abstract class AppL10n {
   /// No description provided for @rangeUsableHint.
   ///
   /// In es, this message translates to:
-  /// **'Descuenta lo que queda atrapado por la celda más baja: el pack se corta cuando esa celda llega al límite, no cuando llega el promedio.'**
+  /// **'La energía que queda son los Ah restantes que informa el BMS por el voltaje medio al que van a salir hasta el corte, leído de la curva típica de la química del pack. No por el voltaje de este momento, que sube con el cargador puesto y baja al acelerar. Después se descuenta lo que deja atrapado la celda más baja. Si no se sabe la química, se usa una cifra a la baja. Las curvas son las típicas de cada química, no medidas en este pack.'**
   String get rangeUsableHint;
 
   /// No description provided for @rangeNeedsGps.
@@ -1750,7 +1786,7 @@ abstract class AppL10n {
   /// No description provided for @healthCardCapacity.
   ///
   /// In es, this message translates to:
-  /// **'Capacidad real'**
+  /// **'Restante según el BMS'**
   String get healthCardCapacity;
 
   /// No description provided for @healthCardLoss.
@@ -1762,7 +1798,7 @@ abstract class AppL10n {
   /// No description provided for @healthCardCycles.
   ///
   /// In es, this message translates to:
-  /// **'Ciclos reales'**
+  /// **'Ciclos equivalentes (según el BMS)'**
   String get healthCardCycles;
 
   /// No description provided for @healthCardUsable.
@@ -1903,11 +1939,11 @@ abstract class AppL10n {
   /// **'Carga por km'**
   String get tripSocPerKm;
 
-  /// No description provided for @tripSag.
+  /// No description provided for @tripResistance.
   ///
   /// In es, this message translates to:
-  /// **'Caída máxima'**
-  String get tripSag;
+  /// **'Resistencia del pack (aprox.)'**
+  String get tripResistance;
 
   /// No description provided for @tripMaxCurrent.
   ///
@@ -2146,7 +2182,7 @@ abstract class AppL10n {
   /// No description provided for @adviceImbalanceAtRestBody.
   ///
   /// In es, this message translates to:
-  /// **'Con la moto quieta el delta llega a {delta} V. Sin corriente de por medio eso no es resistencia: son celdas que guardan cantidades distintas de carga. Déjala cargar hasta arriba y en reposo unas horas para que el balanceador trabaje; si en varias cargas no se cierra, la celda {cell} tiene menos capacidad que el resto.'**
+  /// **'Con la moto quieta el delta llega a {delta} V, y la más baja entonces era la celda {cell}. Sin corriente de por medio eso no es resistencia: son celdas que guardan cantidades distintas de carga. Déjala cargar hasta arriba y en reposo unas horas para que el balanceador trabaje; si en varias cargas no se cierra, esa celda tiene menos capacidad que el resto.'**
   String adviceImbalanceAtRestBody(String delta, int cell);
 
   /// No description provided for @adviceImbalanceUnderLoadTitle.
@@ -2158,7 +2194,7 @@ abstract class AppL10n {
   /// No description provided for @adviceImbalanceUnderLoadBody.
   ///
   /// In es, this message translates to:
-  /// **'En reposo las celdas están parejas, pero bajo carga se separan {delta} V más. Eso es resistencia, y nueve de cada diez veces es una conexión floja u oxidada, no una celda mala. Revisa el tornillo y la barra de la celda {cell} antes de pensar en cambiar nada.'**
+  /// **'En reposo las celdas están parejas, pero bajo carga se separan {delta} V más, en varias lecturas. Eso es resistencia: puede ser una conexión o una celda con más resistencia que las demás. Revisa primero la conexión de la celda {cell}, que era la más baja con esa carga: es lo más barato de descartar.'**
   String adviceImbalanceUnderLoadBody(String delta, int cell);
 
   /// No description provided for @adviceWeakCellTitle.
@@ -2170,20 +2206,8 @@ abstract class AppL10n {
   /// No description provided for @adviceWeakCellBody.
   ///
   /// In es, this message translates to:
-  /// **'La celda {cell} fue la más baja en el {percent}% de las lecturas. No es ruido: esa celda es la que define tu autonomía real y la que llega primero al corte.'**
+  /// **'La celda {cell} fue claramente la más baja en el {percent}% de las lecturas que cuentan: con las celdas separadas al menos 10 mV, sin empate y sin contar dos veces una lectura repetida. Esa celda es la que define tu autonomía real y la que llega primero al corte.'**
   String adviceWeakCellBody(int cell, String percent);
-
-  /// No description provided for @adviceCycleInflatedTitle.
-  ///
-  /// In es, this message translates to:
-  /// **'El contador de ciclos exagera'**
-  String get adviceCycleInflatedTitle;
-
-  /// No description provided for @adviceCycleInflatedBody.
-  ///
-  /// In es, this message translates to:
-  /// **'El BMS informa {factor} veces más ciclos de los que justifica la carga que realmente pasó por el pack. Suma cargas parciales como si fueran completas. Si vas a comprar o vender un pack, el número honesto es el de ciclos equivalentes.'**
-  String adviceCycleInflatedBody(String factor);
 
   /// No description provided for @adviceSocCounterAheadTitle.
   ///
@@ -2266,7 +2290,7 @@ abstract class AppL10n {
   /// No description provided for @adviceBalancerNeverSeenBody.
   ///
   /// In es, this message translates to:
-  /// **'Las celdas están desparejas pero el balanceador no trabajó en toda la sesión. O está apagado, o su voltaje de arranque ({voltage} V) está por encima de donde llegan tus celdas. Se revisa en los ajustes del BMS con la app oficial: esta app no escribe nada.'**
+  /// **'Las celdas están desparejas en reposo pero el balanceador no ha trabajado desde que se conectó el pack. O está apagado, o su voltaje de arranque ({voltage} V) está por encima de donde llegan tus celdas. El voltaje de arranque se cambia con la app oficial del BMS. El interruptor del balanceador se puede encender desde Sistema, en Configuración del BMS, si activas el permiso de escritura en Ajustes; con el permiso apagado, la app no cambia nada en el BMS.'**
   String adviceBalancerNeverSeenBody(String voltage);
 
   /// No description provided for @adviceOvervoltageHighTitle.
@@ -2302,7 +2326,7 @@ abstract class AppL10n {
   /// No description provided for @adviceImbalanceCostingBody.
   ///
   /// In es, this message translates to:
-  /// **'Un {percent}% de la energía que el pack todavía guarda queda atrapada arriba del corte, porque la celda más baja llega antes que las demás. Cerrar el delta te devuelve esos kilómetros sin cambiar una sola celda.'**
+  /// **'Un {percent}% de la energía que el pack todavía guarda queda atrapada arriba del corte, porque la celda más baja llega antes que las demás. Si el delta es de desequilibrio y no de capacidad, balancear lo recupera; si la celda tiene menos capacidad, no.'**
   String adviceImbalanceCostingBody(String percent);
 
   /// No description provided for @statusAllClear.
@@ -2410,13 +2434,13 @@ abstract class AppL10n {
   /// No description provided for @tripLearnedTooShort.
   ///
   /// In es, this message translates to:
-  /// **'Demasiado corto para aprender algo. Hacen falta al menos 500 metros con consumo real.'**
-  String get tripLearnedTooShort;
+  /// **'No se aprendió nada de este viaje: hacen falta al menos {m} metros con la energía medida.'**
+  String tripLearnedTooShort(String m);
 
   /// No description provided for @tripLearnedRange.
   ///
   /// In es, this message translates to:
-  /// **'Autonomía ahora'**
+  /// **'Autonomía al terminar'**
   String get tripLearnedRange;
 
   /// No description provided for @tripLearnedTotalKm.
@@ -2452,7 +2476,7 @@ abstract class AppL10n {
   /// No description provided for @tripDeltaTip.
   ///
   /// In es, this message translates to:
-  /// **'El delta llegó a {delta} V bajo carga. Si en reposo las celdas están parejas, eso apunta a una conexión, no a una celda mala.'**
+  /// **'El delta máximo del viaje fue {delta} V. Si en reposo las celdas están parejas, eso apunta a una conexión, no a una celda mala.'**
   String tripDeltaTip(String delta);
 
   /// No description provided for @tripThirstyTip.
@@ -2500,7 +2524,7 @@ abstract class AppL10n {
   /// No description provided for @proximityBody.
   ///
   /// In es, this message translates to:
-  /// **'Cuando esté activado, la app busca tu BMS cada medio minuto y se conecta sola en cuanto aparece. Pensado para dejarlo un tiempo mientras calibras una batería nueva, no para siempre: mientras está conectado la app oficial de JK no puede entrar, y buscar consume algo de batería del teléfono.'**
+  /// **'Cuando esté activado, la app busca tu BMS cada medio minuto y se conecta sola en cuanto aparece. Pensado para dejarlo un tiempo mientras calibras una batería nueva, no para siempre: mientras está conectado la app oficial de tu BMS no puede entrar, y buscar consume algo de batería del teléfono.'**
   String get proximityBody;
 
   /// No description provided for @proximityLimit.
@@ -2542,7 +2566,7 @@ abstract class AppL10n {
   /// No description provided for @capacityIntro.
   ///
   /// In es, this message translates to:
-  /// **'La única medición real de la app. Todo lo demás son cuentas cruzadas sobre lo que el BMS dice de sí mismo; esto cuenta los amperios-hora que salen de verdad entre lleno y corte, y los compara con lo que te vendieron.'**
+  /// **'La única medición real de la app. Cuenta los amperios-hora que salen desde que la celda más alta está arriba, con el cargador ya soltando, hasta que la celda más baja llega al corte o el BMS corta. Los dos extremos los marcan las celdas, no el porcentaje del BMS: ese porcentaje se calcula contra la capacidad configurada, y medir con él solo devolvería esa configuración.'**
   String get capacityIntro;
 
   /// No description provided for @capacityStart.
@@ -2566,7 +2590,7 @@ abstract class AppL10n {
   /// No description provided for @capacityNotFull.
   ///
   /// In es, this message translates to:
-  /// **'Carga el pack al tope primero. Empezar a media carga solo mediría un pedazo, y el resultado saldría corto.'**
+  /// **'Carga el pack al tope primero. El test arranca cuando la celda más alta está arriba y el cargador ya suelta poca corriente, no cuando el BMS dice 100 %. Empezar a media carga solo mediría un pedazo.'**
   String get capacityNotFull;
 
   /// No description provided for @capacityNoReadings.
@@ -2632,7 +2656,7 @@ abstract class AppL10n {
   /// No description provided for @capacityAutoNote.
   ///
   /// In es, this message translates to:
-  /// **'No hace falta que te acuerdes de nada: la app revisa las lecturas guardadas y toma como medición cualquier descarga completa que ya haya ocurrido. El botón es para hacerla a propósito y ver el avance en vivo.'**
+  /// **'No hace falta que te acuerdes de nada: la app revisa las lecturas guardadas y toma como medición cualquier descarga completa que ya haya ocurrido, de celdas arriba a celda en el corte, sin cargas ni huecos largos en medio. El botón es para hacerla a propósito y ver el avance en vivo.'**
   String get capacityAutoNote;
 
   /// No description provided for @capacityAutoTag.
@@ -2644,7 +2668,7 @@ abstract class AppL10n {
   /// No description provided for @capacityGapWarning.
   ///
   /// In es, this message translates to:
-  /// **'Con {minutes} min sin conexión, así que la cifra se queda corta.'**
+  /// **'{minutes} min sin ver la batería, así que no cuenta como medición de capacidad.'**
   String capacityGapWarning(String minutes);
 
   /// No description provided for @chargeReportTitle.
@@ -2710,13 +2734,13 @@ abstract class AppL10n {
   /// No description provided for @chargeOpensAtTop.
   ///
   /// In es, this message translates to:
-  /// **'Las celdas iban parejas y se abrieron al final. Ese patrón es capacidad desigual, no una conexión floja: la celda {cell} se llena antes que las demás.'**
-  String chargeOpensAtTop(int cell);
+  /// **'Las celdas iban parejas y se abrieron al final. Ese patrón es capacidad desigual, no una conexión floja: la celda {cell} se llena antes que las demás, y la {weak} es la que va más atrás.'**
+  String chargeOpensAtTop(int cell, int weak);
 
   /// No description provided for @chargeNone.
   ///
   /// In es, this message translates to:
-  /// **'Todavía no se ha grabado ninguna carga'**
+  /// **'Todavía no hay ninguna carga grabada de esta batería. Se graba cuando la app está conectada mientras carga.'**
   String get chargeNone;
 
   /// No description provided for @trendsTitle.
@@ -2740,7 +2764,7 @@ abstract class AppL10n {
   /// No description provided for @trendsSag.
   ///
   /// In es, this message translates to:
-  /// **'Caída bajo carga'**
+  /// **'Resistencia aparente del pack'**
   String get trendsSag;
 
   /// No description provided for @trendsDeltaVsCharge.
@@ -2782,13 +2806,13 @@ abstract class AppL10n {
   /// No description provided for @trendsDeltaHint.
   ///
   /// In es, this message translates to:
-  /// **'Esta es la distinta: a lo ancho va el nivel de carga, no el tiempo. Cada punto es una lectura, colocada según lo llena que estaba la batería y cuánto se separaban su celda más alta y su más baja en ese momento. Lo que importa es la forma. Plana en el medio con un pico cerca del lleno es una celda con menos capacidad que las demás. Una curva que en cambio sigue a la corriente, más alta con carga, es resistencia en algún punto, y casi siempre una conexión y no una celda.'**
+  /// **'A lo ancho va el nivel de carga, no el tiempo. Cada punto es la mediana del delta (la celda más alta menos la más baja) de las lecturas de los últimos 90 días a ese porcentaje de carga: una línea en reposo y otra descargando a más de 5 A. Las lecturas cargando no entran. Que se abra cerca de vacía y de llena es normal en casi cualquier pack, porque ahí la curva de voltaje es empinada. Lo que dice algo es la línea de reposo abriéndose en el medio, donde la curva es plana, o la de carga muy por encima de la de reposo: eso es resistencia, y casi siempre una conexión y no una celda.'**
   String get trendsDeltaHint;
 
   /// No description provided for @trendsSagHint.
   ///
   /// In es, this message translates to:
-  /// **'Cuántos miliohmios de resistencia interna implica cada viaje, sacado de cuánto cayó el voltaje para la corriente que se pidió. El más viejo a la izquierda. La resistencia subiendo es lo primero que se degrada en una batería y se nota mucho antes que la pérdida de capacidad, así que una subida aquí es un aviso temprano y no un veredicto. Un salto de golpe casi siempre es una conexión, no las celdas.'**
+  /// **'Un punto por viaje: la resistencia aparente del pack, sacada de cómo se movió el voltaje en los tramos en que la corriente subía y bajaba deprisa, la mediana de esos tramos. Incluye el cableado y el BMS, y es aproximada, porque la corriente y el voltaje de una lectura no siempre son del mismo instante. Lo que vale es la tendencia: subiendo despacio con los meses es desgaste; un salto de golpe casi siempre es una conexión. Los viajes con pocos tramos así no tienen punto.'**
   String get trendsSagHint;
 
   /// No description provided for @alertTitle.
@@ -2848,7 +2872,7 @@ abstract class AppL10n {
   /// No description provided for @settingsCatalogueHint.
   ///
   /// In es, this message translates to:
-  /// **'Lo que dice la etiqueta del pack. Es contra este número que se mide la salud, así que conviene que sea el real.'**
+  /// **'Lo que dice la etiqueta del pack. Se usa para dos cosas: compararlo con lo que el pack mide de verdad en un test de capacidad, y calcular la autonomía con el pack lleno mientras no haya ninguna medida. El desgaste no se mide contra este número, sino contra la mejor descarga completa del propio pack.'**
   String get settingsCatalogueHint;
 
   /// No description provided for @catalogueUnset.
@@ -2860,7 +2884,7 @@ abstract class AppL10n {
   /// No description provided for @catalogueUnsetHint.
   ///
   /// In es, this message translates to:
-  /// **'Nadie ha dicho todavía con cuántos amperios-hora se vendió esta batería, y la app no se lo inventa. Hasta que lo pongas, la salud y la degradación no se pueden calcular: no hay contra qué compararlas.'**
+  /// **'Nadie ha dicho todavía con cuántos amperios-hora se vendió esta batería, y la app no se lo inventa. Sin él no hay comparación con lo anunciado, y la autonomía con el pack lleno espera a un test de capacidad. El desgaste no lo necesita: sale de las descargas completas medidas.'**
   String get catalogueUnsetHint;
 
   /// No description provided for @catalogueSetIt.
@@ -2914,7 +2938,7 @@ abstract class AppL10n {
   /// No description provided for @settingsHapticsHint.
   ///
   /// In es, this message translates to:
-  /// **'Rodando nadie mira la pantalla. Con esto el teléfono avisa aunque esté en el bolsillo.'**
+  /// **'Rodando nadie mira la pantalla. Con la app a la vista vibra el propio teléfono; con la pantalla apagada o el teléfono en el bolsillo vibra la notificación del aviso, así que para eso tienen que estar activados los avisos en la barra de notificaciones.'**
   String get settingsHapticsHint;
 
   /// No description provided for @settingsRawFrames.
@@ -2926,7 +2950,7 @@ abstract class AppL10n {
   /// No description provided for @settingsRawFramesHint.
   ///
   /// In es, this message translates to:
-  /// **'Déjalo encendido. Es lo que permite reinterpretar el histórico si aparece que un offset del protocolo estaba mal leído.'**
+  /// **'Déjalo encendido. Guarda 30 días de frames crudos para diagnosticar y reinterpretar lecturas recientes si aparece que un offset del protocolo estaba mal leído. Los más viejos se borran solos.'**
   String get settingsRawFramesHint;
 
   /// No description provided for @settingsSave.
@@ -2956,13 +2980,13 @@ abstract class AppL10n {
   /// No description provided for @exportReadings.
   ///
   /// In es, this message translates to:
-  /// **'Lecturas de la última semana (CSV)'**
+  /// **'Lecturas (CSV)'**
   String get exportReadings;
 
   /// No description provided for @exportFrames.
   ///
   /// In es, this message translates to:
-  /// **'Frames crudos del último día'**
+  /// **'Frames crudos (hex)'**
   String get exportFrames;
 
   /// No description provided for @exportTrack.
@@ -2974,7 +2998,7 @@ abstract class AppL10n {
   /// No description provided for @exportDone.
   ///
   /// In es, this message translates to:
-  /// **'Guardado en {path}'**
+  /// **'Listo para compartir: {path}'**
   String exportDone(String path);
 
   /// No description provided for @exportFailed.
@@ -3160,7 +3184,7 @@ abstract class AppL10n {
   /// No description provided for @updateIntro.
   ///
   /// In es, this message translates to:
-  /// **'La app no está en ninguna tienda, así que se actualiza desde las releases de GitHub. No comprueba nada sola ni descarga nada por su cuenta: lo pides tú.'**
+  /// **'La app no está en ninguna tienda, así que se actualiza desde las releases de GitHub. Comprueba una vez al día si hay versión nueva y te pregunta; nunca descarga nada sin que lo pidas.'**
   String get updateIntro;
 
   /// No description provided for @updateInstalled.
@@ -3544,7 +3568,7 @@ abstract class AppL10n {
   /// No description provided for @catalogueFromBmsHint.
   ///
   /// In es, this message translates to:
-  /// **'Tomado de la configuración del BMS, que es un número sobre este pack pero lo escribió quien lo armó. Si te lo vendieron con otra capacidad, ponla: la diferencia entre las dos cifras es justo lo que la salud mide.'**
+  /// **'Tomado de la configuración del BMS, que es un número sobre este pack pero lo escribió quien lo armó. Mientras venga de ahí, la app no lo trata como lo anunciado: no compara con él lo que mide, y la autonomía con el pack lleno dice de dónde sale. Si te lo vendieron con otra capacidad, ponla.'**
   String get catalogueFromBmsHint;
 
   /// No description provided for @connectRetry.
@@ -3586,8 +3610,8 @@ abstract class AppL10n {
   /// No description provided for @offlineImpliedUnusable.
   ///
   /// In es, this message translates to:
-  /// **'Solo se puede leer entre un 25 % y un 90 % de carga.'**
-  String get offlineImpliedUnusable;
+  /// **'Solo se puede leer entre un {min} % y un {max} % de carga.'**
+  String offlineImpliedUnusable(String min, String max);
 
   /// No description provided for @offlineSoh.
   ///
@@ -3604,7 +3628,7 @@ abstract class AppL10n {
   /// No description provided for @offlineWeakest.
   ///
   /// In es, this message translates to:
-  /// **'Celda más floja'**
+  /// **'Celda más baja en reposo'**
   String get offlineWeakest;
 
   /// No description provided for @offlineWeakestValue.
@@ -3652,7 +3676,7 @@ abstract class AppL10n {
   /// No description provided for @connectLinkNeverCameUp.
   ///
   /// In es, this message translates to:
-  /// **'No se pudo levantar la conexión Bluetooth con la batería en 25 segundos, y la app lo intentó más de una vez. Comprueba que la batería esté encendida y cerca, y que la app oficial de JK esté cerrada del todo, no solo en segundo plano.'**
+  /// **'No se pudo levantar la conexión Bluetooth con la batería en 25 segundos, y la app lo intentó más de una vez. Comprueba que la batería esté encendida y cerca, y que la app oficial de tu BMS esté cerrada del todo, no solo en segundo plano.'**
   String get connectLinkNeverCameUp;
 
   /// No description provided for @connectSilent.
@@ -3718,7 +3742,7 @@ abstract class AppL10n {
   /// No description provided for @backupIntro.
   ///
   /// In es, this message translates to:
-  /// **'Toda la base de datos en un archivo, y de vuelta. Las exportaciones a CSV y GPX son para leer los datos en otro sitio; esto es para no perderlos. Si cambias de teléfono o lo pierdes, es lo único que trae de vuelta meses de lecturas, los viajes con su recorrido y los frames crudos.'**
+  /// **'Toda la base de datos en un archivo, y de vuelta. Las exportaciones a CSV y GPX son para leer los datos en otro sitio; esto es para no perderlos. Trae de vuelta las baterías, los viajes con su recorrido, las pruebas de capacidad, el mantenimiento, las inspecciones, el registro de la conexión y las lecturas tal como están guardadas en el teléfono: completas las del último mes y una por minuto las más viejas. Los frames crudos solo se guardan 30 días, así que la copia lleva como mucho esos. También lleva tus ajustes de alertas, carga, viajes y pantalla. No lleva la licencia ni el token de actualizaciones, que son de este teléfono.'**
   String get backupIntro;
 
   /// No description provided for @backupExport.
@@ -3808,7 +3832,7 @@ abstract class AppL10n {
   /// No description provided for @chargeAlertTargetReached.
   ///
   /// In es, this message translates to:
-  /// **'La batería llegó al {soc} %'**
+  /// **'La batería llegó al {soc} %, según el BMS'**
   String chargeAlertTargetReached(String soc);
 
   /// No description provided for @chargeAlertComplete.
@@ -4048,7 +4072,7 @@ abstract class AppL10n {
   /// No description provided for @chargeWatchHint.
   ///
   /// In es, this message translates to:
-  /// **'Mientras la app está en segundo plano Android corta la conexión Bluetooth a los pocos minutos. Con esto activado, en cuanto detecta que estás cargando levanta un servicio en primer plano y mantiene la conexión, que es lo que hace falta para que los avisos lleguen de noche. Cuesta batería del teléfono mientras dura.'**
+  /// **'Mientras la app está en segundo plano Android corta la conexión Bluetooth a los pocos minutos. Con esto activado, en cuanto detecta que estás cargando levanta un servicio en primer plano y mantiene la conexión, y si se corta sigue intentando reconectar hasta que la carga termina, que es lo que hace falta para que los avisos lleguen de noche. No funciona si cierras la app deslizándola. Cuesta batería del teléfono mientras dura.'**
   String get chargeWatchHint;
 
   /// No description provided for @chargeWatchNotifTitle.
@@ -4096,7 +4120,7 @@ abstract class AppL10n {
   /// No description provided for @autoTripHint.
   ///
   /// In es, this message translates to:
-  /// **'Graba el viaje sin que tengas que acordarte, y lo cierra tras unos tres minutos quieto. Si lo apagas, la app solo aprende tu autonomía de los viajes que empieces a mano, y los que se olvidan no son al azar: son los cortos y los que llevabas prisa. Para arrancar necesita consumo del pack y movimiento del GPS a la vez, así que no abre un viaje porque encendiste la moto.'**
+  /// **'Abre el viaje cuando el pack consume y el GPS dice que te mueves, las dos cosas durante unos 20 segundos (si sales a paso de peatón, espera a que pases de 6 km/h), y lo cierra tras unos tres minutos quieto. Lo que recorras antes de que se abra no se graba. Si lo apagas, la app solo aprende tu autonomía de los viajes que empieces a mano, y los que se olvidan no son al azar: son los cortos y los que llevabas prisa.'**
   String get autoTripHint;
 
   /// No description provided for @autoTripStarted.
@@ -4162,13 +4186,13 @@ abstract class AppL10n {
   /// No description provided for @degSoldShort.
   ///
   /// In es, this message translates to:
-  /// **'Se vendió como {sold} Ah y lo mejor que ha dado son {real} Ah: alrededor de un {pct} % menos de autonomía de la anunciada. Eso no es desgaste, es que nunca fueron {sold}.'**
+  /// **'Se vendió como {sold} Ah y lo mejor que ha medido son {real} Ah: alrededor de un {pct} % menos de lo anunciado. Si esa medición se hizo con el pack nuevo, no es desgaste: es que nunca fueron {sold}.'**
   String degSoldShort(String sold, String real, String pct);
 
   /// No description provided for @degSoldOk.
   ///
   /// In es, this message translates to:
-  /// **'Ha dado lo que se anunció.'**
+  /// **'Lo mejor que ha medido está a la altura de lo que se anunció.'**
   String get degSoldOk;
 
   /// No description provided for @demoSetCharge.
@@ -4210,13 +4234,13 @@ abstract class AppL10n {
   /// No description provided for @etaFull.
   ///
   /// In es, this message translates to:
-  /// **'Lleno en'**
+  /// **'Lleno en aprox.'**
   String get etaFull;
 
   /// No description provided for @etaTapering.
   ///
   /// In es, this message translates to:
-  /// **'aprox., ya va bajando la corriente'**
+  /// **'ya va bajando la corriente, y el final tarda más'**
   String get etaTapering;
 
   /// No description provided for @etaDone.
@@ -4336,13 +4360,13 @@ abstract class AppL10n {
   /// No description provided for @troubleBusy.
   ///
   /// In es, this message translates to:
-  /// **'Algo más ya está conectado a la batería. El JK BMS acepta una sola conexión Bluetooth a la vez, así que cierra la app oficial de JK o cualquier otro registrador.'**
+  /// **'Algo más ya está conectado a la batería. El BMS acepta una sola conexión Bluetooth a la vez, así que cierra la app oficial de tu BMS o cualquier otro registrador.'**
   String get troubleBusy;
 
   /// No description provided for @troubleOutOfRange.
   ///
   /// In es, this message translates to:
-  /// **'La batería no respondió. O está fuera de alcance o apagada, o algo más tiene tomada su única conexión Bluetooth: la app oficial de JK, u otro registrador.'**
+  /// **'La batería no respondió. O está fuera de alcance o apagada, o algo más tiene tomada su única conexión Bluetooth: la app oficial de tu BMS, u otro registrador.'**
   String get troubleOutOfRange;
 
   /// No description provided for @troubleBluetoothOff.
@@ -4444,7 +4468,7 @@ abstract class AppL10n {
   /// No description provided for @linkWatchHint.
   ///
   /// In es, this message translates to:
-  /// **'Android deja de entregarle lecturas Bluetooth a una app poco después de que la pantalla se apaga, a menos que la app mantenga un servicio en primer plano. Esto lo mantiene mientras la batería está conectada, para que la app funcione igual con la pantalla encendida o apagada. Para eso es la notificación; no es la app anunciándose.'**
+  /// **'Android deja de entregarle lecturas Bluetooth a una app poco después de que la pantalla se apaga, a menos que la app mantenga un servicio en primer plano. Esto lo mantiene mientras la batería está conectada, y también mientras intenta recuperar la conexión si se corta, para que la app funcione igual con la pantalla encendida o apagada. Para eso es la notificación; no es la app anunciándose. Si cierras la app deslizándola, deja de leer.'**
   String get linkWatchHint;
 
   /// No description provided for @screenAwakeReason.
@@ -4498,7 +4522,7 @@ abstract class AppL10n {
   /// No description provided for @learnWhyNoEnergy.
   ///
   /// In es, this message translates to:
-  /// **'{n} grabaron distancia pero no energía saliendo de la batería. O fueron en remolque, o la batería reporta su corriente con el signo contrario al que esta app asume.'**
+  /// **'{n} se midieron, pero no salió energía neta de la batería. O fueron en remolque o casi todo cuesta abajo, o la batería reporta su corriente con el signo contrario al que esta app asume.'**
   String learnWhyNoEnergy(String n);
 
   /// No description provided for @learnWhySignWarning.
@@ -4522,19 +4546,19 @@ abstract class AppL10n {
   /// No description provided for @trendsConsumptionHint.
   ///
   /// In es, this message translates to:
-  /// **'Un punto por viaje grabado, el más viejo a la izquierda. La altura es lo que costó ese viaje por kilómetro. La forma de manejar y el clima lo mueven mucho, así que ignora los puntos suertos y mira si la nube va subiendo con los meses: que la misma ruta cueste más significa que la batería está trabajando más para lograrlo.'**
+  /// **'Un punto por viaje medido que cuenta para la autonomía: lo que costó por kilómetro. Lo mueven sobre todo la ruta, cómo manejas, el viento, la temperatura y las llantas, no la batería, así que no es una medida de desgaste: sirve para ver cómo vas gastando. Los viajes sin medir, los marcados como excepción y los de un consumo imposible no entran.'**
   String get trendsConsumptionHint;
 
   /// No description provided for @trendsCapacityHint.
   ///
   /// In es, this message translates to:
-  /// **'Un punto por descarga completa medida, la más vieja a la izquierda. La altura es los amperios-hora que la batería realmente tenía esa vez. Es la única medida real de desgaste que hay aquí, y la más lenta en llenarse: espera que baje un poco cada año, y desconfía de una caída de golpe.'**
+  /// **'Un punto por descarga completa medida, la más vieja a la izquierda: de celdas arriba a celda en el corte, vigilada entera y sin carga en medio. La altura es los amperios-hora que salieron esa vez. Es la única medida real de desgaste que hay aquí, y la más lenta en llenarse: espera que baje un poco cada año, y desconfía de una caída de golpe.'**
   String get trendsCapacityHint;
 
   /// No description provided for @trendsAxisTime.
   ///
   /// In es, this message translates to:
-  /// **'de izquierda a derecha: del más viejo al más nuevo'**
+  /// **'a lo ancho, el tiempo: del más viejo al más nuevo, con los huecos donde no hubo datos'**
   String get trendsAxisTime;
 
   /// No description provided for @trendsAxisCharge.
@@ -4546,7 +4570,7 @@ abstract class AppL10n {
   /// No description provided for @learnWhyImplausible.
   ///
   /// In es, this message translates to:
-  /// **'{n} dieron un consumo que ninguna moto puede producir, así que se rechazaron. Eso es un fallo de esta app y no algo del manejo, y quedó arreglado en esta versión: los viajes grabados de aquí en adelante deberían salir bien. Los viejos no se pueden reparar, porque las lecturas que hacían falta nunca se guardaron.'**
+  /// **'{n} dieron un consumo que ninguna moto puede producir, así que se rechazaron. Eso fue un fallo de esta app y no algo del manejo, y está arreglado: los viajes grabados desde entonces deberían salir bien. Los viejos que conservan sus lecturas se pueden medir de nuevo con «Volver a medir» en su detalle.'**
   String learnWhyImplausible(String n);
 
   /// No description provided for @connectCouldNotSearch.
@@ -4558,7 +4582,7 @@ abstract class AppL10n {
   /// No description provided for @backupShare.
   ///
   /// In es, this message translates to:
-  /// **'Enviarla a otro lugar'**
+  /// **'Enviar la copia pequeña, sin frames crudos, a otra app'**
   String get backupShare;
 
   /// No description provided for @backupSaveDialog.
@@ -4600,7 +4624,7 @@ abstract class AppL10n {
   /// No description provided for @rangeFullFromMeasured.
   ///
   /// In es, this message translates to:
-  /// **'Sale de una capacidad que esta batería midió de verdad.'**
+  /// **'Sale de una descarga completa medida en esta batería, de celdas arriba a celda en el corte.'**
   String get rangeFullFromMeasured;
 
   /// No description provided for @rangeNoneLearned.
@@ -4720,7 +4744,7 @@ abstract class AppL10n {
   /// No description provided for @licenseFreeBody.
   ///
   /// In es, this message translates to:
-  /// **'Visor completo en vivo y las últimas 24 horas de historial, gratis. Lo demás (historial ilimitado, degradación, veredictos, avisos con la app cerrada, copia de seguridad) es Pro: un pago único, de por vida, para este teléfono.'**
+  /// **'Visor completo en vivo y las últimas 24 horas de historial, gratis. Lo demás (historial ilimitado, degradación, veredictos, vigilar la carga toda la noche, copia de seguridad) es Pro: un pago único, de por vida, para este teléfono.'**
   String get licenseFreeBody;
 
   /// No description provided for @licenseProBody.
@@ -4918,7 +4942,7 @@ abstract class AppL10n {
   /// No description provided for @licenseWhyBody.
   ///
   /// In es, this message translates to:
-  /// **'Lo gratis iguala a la app oficial de JK y no se recorta nunca. Lo Pro es lo que esa app no puede hacer por diseño: recordar, comparar y concluir. Un pago único; nada de suscripciones. Sin cuenta, sin servidor y sin internet: la clave se comprueba en el teléfono con la firma del autor.'**
+  /// **'Lo gratis iguala a la app oficial de tu BMS y no se recorta nunca. Lo Pro es lo que esa app no puede hacer por diseño: recordar, comparar y concluir. Un pago único; nada de suscripciones. Sin cuenta, sin servidor y sin internet: la clave se comprueba en el teléfono con la firma del autor.'**
   String get licenseWhyBody;
 
   /// No description provided for @licenseOpen.
@@ -4972,7 +4996,7 @@ abstract class AppL10n {
   /// No description provided for @proFeatureBackgroundAlerts.
   ///
   /// In es, this message translates to:
-  /// **'Los avisos con la app cerrada'**
+  /// **'Vigilar la carga toda la noche, sin dejar de reconectar si la conexión se corta'**
   String get proFeatureBackgroundAlerts;
 
   /// No description provided for @proFeatureBackup.
@@ -5020,7 +5044,7 @@ abstract class AppL10n {
   /// No description provided for @chargeWatchProHint.
   ///
   /// In es, this message translates to:
-  /// **'Es Pro: requiere licencia para mantener la conexión con la app cerrada.'**
+  /// **'Es Pro: requiere licencia para vigilar la carga toda la noche, reconectando si se corta. Seguir leyendo con la pantalla apagada es gratis.'**
   String get chargeWatchProHint;
 
   /// No description provided for @licenseStatusAdmin.
@@ -5050,7 +5074,7 @@ abstract class AppL10n {
   /// No description provided for @adviceHonestyNote.
   ///
   /// In es, this message translates to:
-  /// **'Cada frase se apoya en un dato medido: tócala para verlo. Los ciclos y la capacidad configurada del BMS se pueden editar desde la app oficial, así que aquí se contrastan siempre con lo que dice la física.'**
+  /// **'Cada frase se apoya en un dato: tócala para verlo. Los ciclos y la capacidad configurada del BMS se pueden editar desde su app oficial, así que aquí se contrastan con lo que la app mide por su cuenta siempre que puede.'**
   String get adviceHonestyNote;
 
   /// No description provided for @verdictHealthMeasuredTitle.
@@ -5062,7 +5086,7 @@ abstract class AppL10n {
   /// No description provided for @verdictHealthMeasuredBody.
   ///
   /// In es, this message translates to:
-  /// **'Tu batería está al {pct} % de la capacidad con la que llegó: {now} Ah medidos ahora frente a {best} Ah, lo mejor que ha dado. Medido en descargas completas, no estimado.'**
+  /// **'Tu batería está al {pct} % de la mejor medición que ha hecho: {now} Ah en la última frente a {best} Ah, la mejor. Medido en descargas completas, no estimado.'**
   String verdictHealthMeasuredBody(String pct, String now, String best);
 
   /// No description provided for @verdictHealthNotMeasurableTitle.
@@ -5086,8 +5110,8 @@ abstract class AppL10n {
   /// No description provided for @verdictCellDriftingBody.
   ///
   /// In es, this message translates to:
-  /// **'Lleva {weeks} semanas alejándose: va {dev} V por debajo de la media del pack y baja unos {rate} V al mes. Coherente con una celda en camino de irse. Revísala antes de que el pack se apague en la calle.'**
-  String verdictCellDriftingBody(String weeks, String dev, String rate);
+  /// **'En {days} días con lecturas en reposo se ha ido separando: va {dev} V por debajo de la media del pack y la tendencia es de unos {rate} V más al mes. Coherente con una celda en camino de irse. Revísala antes de que el pack se apague en la calle.'**
+  String verdictCellDriftingBody(String days, String dev, String rate);
 
   /// No description provided for @verdictNoCellDriftingTitle.
   ///
@@ -5098,8 +5122,8 @@ abstract class AppL10n {
   /// No description provided for @verdictNoCellDriftingBody.
   ///
   /// In es, this message translates to:
-  /// **'En {weeks} semanas de lecturas en reposo ninguna celda se separa del resto. La peor va {dev} V bajo la media y no empeora. Nada que hacer.'**
-  String verdictNoCellDriftingBody(String weeks, String dev);
+  /// **'En {days} días con lecturas en reposo, todas entre el 40 y el 80 % de carga, ninguna celda se separa del resto. La más baja, la {cell}, va {dev} V bajo la media y no empeora. Nada que hacer.'**
+  String verdictNoCellDriftingBody(String days, String cell, String dev);
 
   /// No description provided for @verdictRangeNowTitle.
   ///
@@ -5122,19 +5146,19 @@ abstract class AppL10n {
   /// No description provided for @verdictDeltaNormalBody.
   ///
   /// In es, this message translates to:
-  /// **'Con corriente el delta llega a {loaded} V, contra {rest} V en reposo. No hay nada resistivo que perseguir. Nada que hacer.'**
+  /// **'Con carga fuerte el delta llega a {loaded} V, contra {rest} V en reposo. No hay nada resistivo que perseguir. Nada que hacer.'**
   String verdictDeltaNormalBody(String loaded, String rest);
 
   /// No description provided for @evidenceRestingDelta.
   ///
   /// In es, this message translates to:
-  /// **'Delta en reposo (máximo en la sesión)'**
+  /// **'Delta en reposo (el más alto desde que se conectó)'**
   String get evidenceRestingDelta;
 
   /// No description provided for @evidenceLoadedDelta.
   ///
   /// In es, this message translates to:
-  /// **'Delta bajo carga (máximo en la sesión)'**
+  /// **'Delta bajo carga (el que alcanzaron varias lecturas desde que se conectó)'**
   String get evidenceLoadedDelta;
 
   /// No description provided for @evidenceWeakCellShare.
@@ -5146,7 +5170,7 @@ abstract class AppL10n {
   /// No description provided for @evidenceReadingsInSession.
   ///
   /// In es, this message translates to:
-  /// **'Lecturas en esta sesión'**
+  /// **'Lecturas que cuentan desde que se conectó'**
   String get evidenceReadingsInSession;
 
   /// No description provided for @evidenceReportedCycles.
@@ -5158,7 +5182,7 @@ abstract class AppL10n {
   /// No description provided for @evidenceEquivalentCycles.
   ///
   /// In es, this message translates to:
-  /// **'Ciclos equivalentes por los amperios que pasaron'**
+  /// **'Ciclos equivalentes (Ah que contó el BMS entre la capacidad configurada)'**
   String get evidenceEquivalentCycles;
 
   /// No description provided for @evidenceReportedSoh.
@@ -5299,11 +5323,11 @@ abstract class AppL10n {
   /// **'Lecturas en reposo analizadas'**
   String get evidenceDriftSamples;
 
-  /// No description provided for @evidenceDriftSpanWeeks.
+  /// No description provided for @evidenceDriftDays.
   ///
   /// In es, this message translates to:
-  /// **'Semanas observadas'**
-  String get evidenceDriftSpanWeeks;
+  /// **'Días con lecturas en reposo'**
+  String get evidenceDriftDays;
 
   /// No description provided for @verdictTitle.
   ///
@@ -5512,8 +5536,8 @@ abstract class AppL10n {
   /// No description provided for @inspectionFidelityNote.
   ///
   /// In es, this message translates to:
-  /// **'Un test rápido detecta la estafa obvia y la celda mala; no mide capacidad real. Para capacidad real hace falta una descarga completa.'**
-  String get inspectionFidelityNote;
+  /// **'Un test rápido detecta la celda que se aparta de las demás bajo carga (a la carga de esta prueba, desde unos {floor} mΩ de resistencia de más) y la estafa obvia; no mide capacidad real. Para capacidad real hace falta una descarga completa.'**
+  String inspectionFidelityNote(String floor);
 
   /// No description provided for @inspectionCaveatsTitle.
   ///
@@ -5733,8 +5757,8 @@ abstract class AppL10n {
   /// No description provided for @verdictInspCellSaggingBody.
   ///
   /// In es, this message translates to:
-  /// **'Bajo la carga fuerte cayó {excess} V más que la mediana del pack. Coherente con una celda gastada o con una conexión mala en esa celda. Es la razón principal para no pagar el precio pedido sin más pruebas.'**
-  String verdictInspCellSaggingBody(String excess);
+  /// **'Bajo la carga fuerte cayó {excess} V más que la mediana del pack: unos {ohms} mΩ de resistencia de más. Coherente con una celda gastada o con una conexión mala en esa celda. Es la razón principal para no pagar el precio pedido sin más pruebas.'**
+  String verdictInspCellSaggingBody(String excess, String ohms);
 
   /// No description provided for @verdictInspSagUniformTitle.
   ///
@@ -5745,8 +5769,8 @@ abstract class AppL10n {
   /// No description provided for @verdictInspSagUniformBody.
   ///
   /// In es, this message translates to:
-  /// **'Bajo la carga fuerte la peor celda cayó solo {excess} V más que la mediana. Ninguna se rinde antes que las demás.'**
-  String verdictInspSagUniformBody(String excess);
+  /// **'Con la carga fuerte ({amps} A) la peor celda cayó solo {excess} V más que la mediana. A esta corriente ya se distinguiría una celda con unos {floor} mΩ de resistencia de más, y ninguna se rinde antes que las demás.'**
+  String verdictInspSagUniformBody(String amps, String excess, String floor);
 
   /// No description provided for @verdictInspRestDeltaWideTitle.
   ///
@@ -5781,7 +5805,7 @@ abstract class AppL10n {
   /// No description provided for @verdictInspWeakLightBody.
   ///
   /// In es, this message translates to:
-  /// **'Con solo las luces ({amps} A) cayó {extra} V más que las demás. Una celda que se rinde con uno o dos amperios es una celda muy cansada.'**
+  /// **'Con solo las luces ({amps} A) cayó {extra} V más que las demás. Una celda que se rinde con la carga de las luces (menos de un amperio) es una celda muy cansada.'**
   String verdictInspWeakLightBody(String amps, String extra);
 
   /// No description provided for @verdictInspSlowRecoveryTitle.
@@ -5793,7 +5817,7 @@ abstract class AppL10n {
   /// No description provided for @verdictInspSlowRecoveryBody.
   ///
   /// In es, this message translates to:
-  /// **'Tardó {extra} s más que la mediana en volver a su voltaje de reposo tras soltar la carga, o no volvió. Las celdas cansadas rebotan lento; es un indicador poco mirado y muy bueno.'**
+  /// **'Tardó {extra} s más que la mediana en volver a su voltaje de reposo tras soltar la carga, o no volvió. Las celdas cansadas rebotan lento.'**
   String verdictInspSlowRecoveryBody(String extra);
 
   /// No description provided for @verdictInspRecoveryOkTitle.
@@ -5805,7 +5829,7 @@ abstract class AppL10n {
   /// No description provided for @verdictInspRecoveryOkBody.
   ///
   /// In es, this message translates to:
-  /// **'Tras soltar la carga las celdas volvieron a su reposo en unos {seconds} s, todas al mismo paso.'**
+  /// **'Tras soltar la carga las celdas volvieron a su reposo en unos {seconds} s, todas al mismo paso. Después de un tirón así de fuerte, la recuperación es un indicador poco mirado y muy bueno.'**
   String verdictInspRecoveryOkBody(String seconds);
 
   /// No description provided for @verdictInspHotTitle.
@@ -5817,7 +5841,7 @@ abstract class AppL10n {
   /// No description provided for @verdictInspHotBody.
   ///
   /// In es, this message translates to:
-  /// **'Llegó a {temp} °C durante el test. Un pack caliente en reposo o con poca carga no es normal.'**
+  /// **'Llegó a {temp} °C durante el test. Para una prueba de unos minutos es mucho: pregunta de dónde viene ese calor.'**
   String verdictInspHotBody(String temp);
 
   /// No description provided for @verdictInspAlarmsTitle.
@@ -5853,7 +5877,7 @@ abstract class AppL10n {
   /// No description provided for @verdictInspNoHeavyLoadBody.
   ///
   /// In es, this message translates to:
-  /// **'La corriente máxima vista fue {amps} A. Sin un tirón fuerte no se puede medir cuánto cae cada celda, que es donde sale la verdad. Repite con la rueda al aire o 50 metros en la moto.'**
+  /// **'La corriente máxima vista fue {amps} A. Sin un tirón fuerte sostenido unos segundos no se puede medir cuánto cae cada celda, que es donde sale la verdad. Repite rodando con carga real (una cuesta o acelerar fuerte), o con el cargador.'**
   String verdictInspNoHeavyLoadBody(String amps);
 
   /// No description provided for @evidenceCellSag.
@@ -6267,7 +6291,7 @@ abstract class AppL10n {
   /// No description provided for @reportCycles.
   ///
   /// In es, this message translates to:
-  /// **'Ciclos contados'**
+  /// **'Ciclos según el BMS'**
   String get reportCycles;
 
   /// No description provided for @reportReportedSoh.
@@ -6309,7 +6333,7 @@ abstract class AppL10n {
   /// No description provided for @reportCertificateIssuer.
   ///
   /// In es, this message translates to:
-  /// **'Emisor (instalación)'**
+  /// **'Código de emisor'**
   String get reportCertificateIssuer;
 
   /// No description provided for @reportCertificateIssuedAt.
@@ -6321,13 +6345,13 @@ abstract class AppL10n {
   /// No description provided for @reportCertificateExplain.
   ///
   /// In es, this message translates to:
-  /// **'La firma demuestra que estas cifras salieron de la app ese día y no se han cambiado desde entonces. No demuestra que la batería sea buena ni que el vendedor sea honesto. Escanea el QR o pega el código en la app para comprobarlo.'**
+  /// **'La firma demuestra que estas cifras salieron de la app en el teléfono cuyo código de emisor aparece aquí, y que no se han cambiado desde entonces. No demuestra de quién es ese teléfono: compara el código con el que publica quien te dio el certificado. Tampoco demuestra qué batería se probó (el nombre y el número de serie los da el BMS y se pueden cambiar), ni la fecha, que es la del reloj de ese teléfono, ni que la batería esté bien. Escanea el QR o pega el código en la app para comprobarlo.'**
   String get reportCertificateExplain;
 
   /// No description provided for @reportHonestyInspection.
   ///
   /// In es, this message translates to:
-  /// **'Verificado con test rápido el {date}. La capacidad es estimada, no medida: para medirla hace falta una descarga completa. Este test detecta la celda mala y la estafa obvia, y no sustituye a una revisión en taller.'**
+  /// **'Test rápido del {date}. Un test así detecta la celda que se aparta de las demás bajo carga, a la carga de esta prueba, y la estafa obvia; no sustituye a una revisión en taller. No mide capacidad: la capacidad que aparece es la configurada en el BMS, no una medida.'**
   String reportHonestyInspection(String date);
 
   /// No description provided for @reportPackButton.
@@ -6375,7 +6399,7 @@ abstract class AppL10n {
   /// No description provided for @certificateVerifyIntro.
   ///
   /// In es, this message translates to:
-  /// **'Pega aquí el código que acompaña a un certificado, o el texto del QR. La app comprueba la firma y te muestra exactamente las cifras que se firmaron.'**
+  /// **'Pega aquí el código que acompaña a un certificado, o el texto del QR. La app comprueba la firma y te muestra las cifras que se firmaron, todas, con el veredicto que la app saca de ellas.'**
   String get certificateVerifyIntro;
 
   /// No description provided for @certificateVerifyHint.
@@ -6399,8 +6423,8 @@ abstract class AppL10n {
   /// No description provided for @certificateValid.
   ///
   /// In es, this message translates to:
-  /// **'Firma correcta. Estas son las cifras firmadas.'**
-  String get certificateValid;
+  /// **'Firma válida para el emisor {issuer}. Comprueba que ese código es el de quien te dio el certificado.'**
+  String certificateValid(String issuer);
 
   /// No description provided for @certificateBadSignature.
   ///
@@ -6435,7 +6459,7 @@ abstract class AppL10n {
   /// No description provided for @verdictInspRepeatSameCellBody.
   ///
   /// In es, this message translates to:
-  /// **'No fue mala suerte ni un cable suelto: repetida la prueba, la misma celda vuelve a hundirse antes que las demás. Esto ya no es una sospecha, es la celda.'**
+  /// **'Repetida la prueba con una carga parecida, la misma celda vuelve a hundirse antes que las demás, y las dos veces por encima del umbral. Ya no parece una lectura rara: es esa celda o su conexión, y un taller puede decir cuál.'**
   String get verdictInspRepeatSameCellBody;
 
   /// No description provided for @verdictInspRepeatCellMovedTitle.
@@ -6453,13 +6477,13 @@ abstract class AppL10n {
   /// No description provided for @verdictInspRepeatWorseTitle.
   ///
   /// In es, this message translates to:
-  /// **'Va a peor desde la prueba anterior'**
+  /// **'Mide peor que en la prueba anterior'**
   String get verdictInspRepeatWorseTitle;
 
   /// No description provided for @verdictInspRepeatWorseBody.
   ///
   /// In es, this message translates to:
-  /// **'Comparando con el mismo tipo de tirón, la batería mide peor que la última vez. Con dos pruebas separadas en el tiempo esto es una tendencia, no una foto.'**
+  /// **'Respecto a la prueba anterior el pack mide peor; las cifras de las dos están en el detalle. Las caídas solo se comparan cuando las dos cargas fueron parecidas, y el reposo solo cuando el pack estaba a una carga parecida. Dos pruebas apuntan a un cambio; una tercera lo confirmaría.'**
   String get verdictInspRepeatWorseBody;
 
   /// No description provided for @verdictInspRepeatSteadyTitle.
@@ -6477,13 +6501,13 @@ abstract class AppL10n {
   /// No description provided for @verdictInspRepeatCountersResetTitle.
   ///
   /// In es, this message translates to:
-  /// **'Alguien tocó los contadores entre una visita y otra'**
+  /// **'Los contadores del BMS bajaron entre visitas'**
   String get verdictInspRepeatCountersResetTitle;
 
   /// No description provided for @verdictInspRepeatCountersResetBody.
   ///
   /// In es, this message translates to:
-  /// **'Los ciclos solo suben y la salud solo baja. Si entre las dos pruebas los ciclos bajaron, la salud subió o cambió la capacidad configurada, es que se reseteó el BMS. Lo físico de arriba no se resetea con un botón; eso es lo que hay que mirar.'**
+  /// **'Los ciclos y la energía total que cuenta el BMS solo suben. Si entre las dos pruebas bajaron, el BMS se reseteó o se cambió. Pregunta por qué. Lo físico de arriba no se resetea con un botón; eso es lo que hay que mirar.'**
   String get verdictInspRepeatCountersResetBody;
 
   /// No description provided for @verdictInspRepeatLoadDiffersTitle.
@@ -6591,7 +6615,7 @@ abstract class AppL10n {
   /// No description provided for @inspectionRepeatHint.
   ///
   /// In es, this message translates to:
-  /// **'Puedes repetirla las veces que quieras: cada prueba se guarda y la siguiente se compara con todas las anteriores.'**
+  /// **'Guárdala antes de repetir para poder compararlas: solo se comparan las pruebas guardadas.'**
   String get inspectionRepeatHint;
 
   /// No description provided for @inspectionAlreadySeen.
@@ -6609,7 +6633,7 @@ abstract class AppL10n {
   /// No description provided for @reportSeriesNote.
   ///
   /// In es, this message translates to:
-  /// **'Cada fila es una inspección anterior guardada en el teléfono que firmó esta hoja. Repetir el test es lo que distingue una celda mala de una lectura mala.'**
+  /// **'Cada fila es una inspección guardada en el teléfono que firmó esta hoja, incluida esta, que es la última. Repetir el test es lo que distingue una celda mala de una lectura mala.'**
   String get reportSeriesNote;
 
   /// No description provided for @reportSeriesWorstCell.
@@ -6957,7 +6981,7 @@ abstract class AppL10n {
   /// No description provided for @verdictConfigOvpDangerousBody.
   ///
   /// In es, this message translates to:
-  /// **'El BMS corta la carga a {value} V por celda y el máximo seguro para esta química es {limit} V. Cada carga completa está haciendo daño. Se cambia desde la app oficial del BMS, bajo tu responsabilidad; esta app nunca escribe nada en la batería.'**
+  /// **'El BMS corta la carga a {value} V por celda y el máximo seguro para esta química es {limit} V. Cada carga completa está haciendo daño. Se cambia desde la app oficial del BMS, bajo tu responsabilidad; esta app no escribe valores de configuración en la batería.'**
   String verdictConfigOvpDangerousBody(String value, String limit);
 
   /// No description provided for @verdictConfigOvpHighTitle.
@@ -7203,7 +7227,7 @@ abstract class AppL10n {
   /// No description provided for @configAuditReadOnly.
   ///
   /// In es, this message translates to:
-  /// **'Solo lectura. Esta app nunca escribe en el BMS: un valor mal escrito en una batería es un incendio, y el camino de escritura del protocolo está sacado a base de ingeniería inversa. Lo que haya que cambiar se cambia desde la app oficial del BMS, y esa decisión es tuya.'**
+  /// **'Solo lectura. Esta app no escribe valores de configuración en el BMS: un valor mal escrito en una batería es un incendio, y el camino de escritura del protocolo está sacado a base de ingeniería inversa. Lo que haya que cambiar se cambia desde la app oficial del BMS, y esa decisión es tuya. Lo único que la app puede tocar son los interruptores de carga, descarga y balanceador, y solo con el permiso de escritura encendido en Ajustes.'**
   String get configAuditReadOnly;
 
   /// No description provided for @configAuditSettings.
@@ -7245,13 +7269,13 @@ abstract class AppL10n {
   /// No description provided for @alertsNotifyTitle.
   ///
   /// In es, this message translates to:
-  /// **'Avisos que llegan con la app cerrada'**
+  /// **'Avisos en la barra de notificaciones'**
   String get alertsNotifyTitle;
 
   /// No description provided for @alertsNotifyIntro.
   ///
   /// In es, this message translates to:
-  /// **'Los avisos suenan en la barra de notificaciones aunque la app esté en segundo plano o cerrada. Sin esto, un aviso a las tres de la mañana con el móvil en otra habitación no lo ve nadie.'**
+  /// **'Los avisos suenan en la barra de notificaciones con la app en segundo plano o la pantalla apagada (no si cierras la app deslizándola: entonces deja de leer la batería). Sin esto, un aviso a las tres de la mañana con el móvil en otra habitación no lo ve nadie.'**
   String get alertsNotifyIntro;
 
   /// No description provided for @alertsNotifyEnable.
@@ -7263,13 +7287,13 @@ abstract class AppL10n {
   /// No description provided for @alertsNotifyDenied.
   ///
   /// In es, this message translates to:
-  /// **'Android no ha dado permiso para notificar. Los avisos seguirán saliendo en pantalla y con vibración, pero no llegarán con la app cerrada.'**
+  /// **'Android no ha dado permiso para notificar. Los avisos seguirán saliendo en pantalla y con vibración mientras mires la app, pero no llegarán con la app en segundo plano ni con la pantalla apagada.'**
   String get alertsNotifyDenied;
 
   /// No description provided for @alertsNotifyOneConnection.
   ///
   /// In es, this message translates to:
-  /// **'Recuerda: el BMS acepta una sola conexión Bluetooth. Mientras el móvil esté conectado en segundo plano, la app oficial de JK no podrá conectarse, y al revés.'**
+  /// **'Recuerda: el BMS acepta una sola conexión Bluetooth. Mientras el móvil esté conectado en segundo plano, la app oficial de tu BMS no podrá conectarse, y al revés.'**
   String get alertsNotifyOneConnection;
 
   /// No description provided for @alertsThresholdsTitle.
@@ -7281,7 +7305,7 @@ abstract class AppL10n {
   /// No description provided for @alertsThresholdsIntro.
   ///
   /// In es, this message translates to:
-  /// **'Los valores por defecto son conservadores. Súbelos si tu batería vive en un rango distinto al típico y te avisa de más.'**
+  /// **'Los valores por defecto son conservadores. Si un aviso salta de más, muévelo hacia el lado que avisa menos: la diferencia entre celdas y la temperatura, hacia arriba; la carga baja, hacia abajo.'**
   String get alertsThresholdsIntro;
 
   /// No description provided for @alertsDeltaWarn.
@@ -7359,13 +7383,13 @@ abstract class AppL10n {
   /// No description provided for @alertNotificationBodyChargeTarget.
   ///
   /// In es, this message translates to:
-  /// **'La batería ha llegado al {value} % que pediste.'**
+  /// **'El BMS marca {value} %, lo que pediste. Es su contador, no una medición de las celdas.'**
   String alertNotificationBodyChargeTarget(String value);
 
   /// No description provided for @alertNotificationBodyChargeComplete.
   ///
   /// In es, this message translates to:
-  /// **'La carga ha terminado.'**
+  /// **'La celda más alta está arriba y el cargador ya casi no mete corriente: la carga ha terminado.'**
   String get alertNotificationBodyChargeComplete;
 
   /// No description provided for @alertNotificationBodyChargeHot.
@@ -7463,7 +7487,7 @@ abstract class AppL10n {
   /// No description provided for @representativeDone.
   ///
   /// In es, this message translates to:
-  /// **'Listo. Tu autonomía sigue en {km} km.'**
+  /// **'Listo. Tu autonomía queda en {km} km.'**
   String representativeDone(String km);
 
   /// No description provided for @representativeDoneNoKm.
@@ -7571,19 +7595,19 @@ abstract class AppL10n {
   /// No description provided for @healthWeakCellResistance.
   ///
   /// In es, this message translates to:
-  /// **'Resistencia desde el día uno'**
+  /// **'Cable de balanceo desde el día uno'**
   String get healthWeakCellResistance;
 
   /// No description provided for @healthWeakCellResistanceUp.
   ///
   /// In es, this message translates to:
-  /// **'+{pct} % en la celda {cell}'**
+  /// **'+{pct} % en el cable de la celda {cell}'**
   String healthWeakCellResistanceUp(String pct, String cell);
 
   /// No description provided for @healthWeakCellResistanceFlat.
   ///
   /// In es, this message translates to:
-  /// **'Ninguna se ha movido'**
+  /// **'Ningún cable se ha movido'**
   String get healthWeakCellResistanceFlat;
 
   /// No description provided for @healthWeakCellResistanceNoBaseline.
@@ -7655,7 +7679,7 @@ abstract class AppL10n {
   /// No description provided for @chargeWatchRedundant.
   ///
   /// In es, this message translates to:
-  /// **'Con el ajuste de arriba encendido esto ya está cubierto: la conexión se mantiene igual. Solo hace falta si apagas el de arriba y aun así quieres que los avisos de carga lleguen de noche.'**
+  /// **'Con el ajuste de arriba encendido la conexión ya se mantiene con la pantalla apagada, también mientras se recupera de un corte. Esto añade una cosa: mientras carga, la app no deja nunca de intentar reconectar. Sin esto se rinde tras unos seis minutos sin respuesta de la batería.'**
   String get chargeWatchRedundant;
 
   /// No description provided for @alertGroupSpread.
@@ -7711,6 +7735,2068 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'Llegó al objetivo que pusiste'**
   String get alertTargetReachedShort;
+
+  /// No description provided for @alertBmsHot.
+  ///
+  /// In es, this message translates to:
+  /// **'El BMS está caliente'**
+  String get alertBmsHot;
+
+  /// No description provided for @alertWhenBmsMosfet.
+  ///
+  /// In es, this message translates to:
+  /// **'El BMS (MOSFET)'**
+  String get alertWhenBmsMosfet;
+
+  /// No description provided for @alertNotificationBodyBmsHot.
+  ///
+  /// In es, this message translates to:
+  /// **'El MOSFET del BMS está a {value} °C. No es la batería: es la pieza que corta la corriente si sigue subiendo. Afloja y dale aire.'**
+  String alertNotificationBodyBmsHot(String value);
+
+  /// No description provided for @statusBmsHotWatch.
+  ///
+  /// In es, this message translates to:
+  /// **'BMS caliente: {temp} °C'**
+  String statusBmsHotWatch(String temp);
+
+  /// No description provided for @statusBmsHotBad.
+  ///
+  /// In es, this message translates to:
+  /// **'BMS demasiado caliente: {temp} °C'**
+  String statusBmsHotBad(String temp);
+
+  /// No description provided for @adviceBmsHotTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'El BMS está caliente'**
+  String get adviceBmsHotTitle;
+
+  /// No description provided for @adviceBmsHotBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Su MOSFET llegó a {temp} °C. No es la batería, pero es la pieza que corta la corriente si sigue subiendo. Fíjate que el BMS tenga aire y no esté pegado a algo que dé calor.'**
+  String adviceBmsHotBody(String temp);
+
+  /// No description provided for @evidenceMosfetTemp.
+  ///
+  /// In es, this message translates to:
+  /// **'MOSFET del BMS'**
+  String get evidenceMosfetTemp;
+
+  /// No description provided for @thermalMirrorNote.
+  ///
+  /// In es, this message translates to:
+  /// **'La sonda 5 de este BMS repite la temperatura del MOSFET, así que no se cuenta como sonda de la batería.'**
+  String get thermalMirrorNote;
+
+  /// No description provided for @thermalLegendMosfet.
+  ///
+  /// In es, this message translates to:
+  /// **'MOSFET (sin sondas en la batería)'**
+  String get thermalLegendMosfet;
+
+  /// No description provided for @balanceWhichCellsReported.
+  ///
+  /// In es, this message translates to:
+  /// **'{cells} (lo informa el BMS)'**
+  String balanceWhichCellsReported(String cells);
+
+  /// No description provided for @balanceWhichCellsNoneReported.
+  ///
+  /// In es, this message translates to:
+  /// **'ninguna ahora (lo informa el BMS)'**
+  String get balanceWhichCellsNoneReported;
+
+  /// No description provided for @balancerStoppedByHeat.
+  ///
+  /// In es, this message translates to:
+  /// **'detenido por calor'**
+  String get balancerStoppedByHeat;
+
+  /// No description provided for @alertNotificationBodyCellTypical.
+  ///
+  /// In es, this message translates to:
+  /// **'Una celda está a {value} V, cerca de {cutoff} V, el corte habitual para esta química (el BMS no informó el suyo). Se puede quedar sin batería aunque el porcentaje aún parezca razonable.'**
+  String alertNotificationBodyCellTypical(String value, String cutoff);
+
+  /// No description provided for @alertNotificationBodyCellAssumed.
+  ///
+  /// In es, this message translates to:
+  /// **'Una celda está a {value} V, cerca de {cutoff} V, un corte supuesto: el BMS no informó el suyo y no se sabe la química del pack. Se puede quedar sin batería aunque el porcentaje aún parezca razonable.'**
+  String alertNotificationBodyCellAssumed(String value, String cutoff);
+
+  /// No description provided for @alertNearLimitUnavailable.
+  ///
+  /// In es, this message translates to:
+  /// **'No disponible en este BMS: no informa su límite de corriente.'**
+  String get alertNearLimitUnavailable;
+
+  /// No description provided for @sessionEnergyIn.
+  ///
+  /// In es, this message translates to:
+  /// **'Energía que entró al pack'**
+  String get sessionEnergyIn;
+
+  /// No description provided for @sessionEnergyHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Desde que se conectó el pack. Solo cuenta los momentos en que llegaban lecturas.'**
+  String get sessionEnergyHint;
+
+  /// No description provided for @healthWeakCellStrandsNeedsRest.
+  ///
+  /// In es, this message translates to:
+  /// **'Hace falta una lectura en reposo, sin corriente. En LFP, además, fuera de la zona plana de la curva.'**
+  String get healthWeakCellStrandsNeedsRest;
+
+  /// No description provided for @healthWeakCellStrandsAge.
+  ///
+  /// In es, this message translates to:
+  /// **'De la última lectura en reposo, hace {minutes} min.'**
+  String healthWeakCellStrandsAge(String minutes);
+
+  /// No description provided for @degSoldUnmeasured.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía sin medir contra lo anunciado: hace falta una descarga completa.'**
+  String get degSoldUnmeasured;
+
+  /// No description provided for @degConfiguredTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Capacidad configurada'**
+  String get degConfiguredTitle;
+
+  /// No description provided for @healthVerdictReported.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin medir todavía'**
+  String get healthVerdictReported;
+
+  /// No description provided for @healthWeakCellResistanceHint.
+  ///
+  /// In es, this message translates to:
+  /// **'El BMS mide la resistencia del cable de balanceo y su conexión, no la de la celda. Si sube, lo primero a revisar es ese cable.'**
+  String get healthWeakCellResistanceHint;
+
+  /// No description provided for @cellsResistanceNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Los mΩ bajo cada celda son la resistencia de su cable de balanceo y la conexión, que es lo que mide el BMS. No son la resistencia interna de la celda.'**
+  String get cellsResistanceNote;
+
+  /// No description provided for @rangeFullFromBms.
+  ///
+  /// In es, this message translates to:
+  /// **'Sale de la capacidad configurada en el BMS, no de una medida.'**
+  String get rangeFullFromBms;
+
+  /// No description provided for @reportRangeFromBmsConfig.
+  ///
+  /// In es, this message translates to:
+  /// **'capacidad configurada en el BMS'**
+  String get reportRangeFromBmsConfig;
+
+  /// No description provided for @capacityOfConfigured.
+  ///
+  /// In es, this message translates to:
+  /// **'{pct} % de la configurada'**
+  String capacityOfConfigured(String pct);
+
+  /// No description provided for @historyItemDrift.
+  ///
+  /// In es, this message translates to:
+  /// **'Qué celda se va separando de las demás con las semanas'**
+  String get historyItemDrift;
+
+  /// No description provided for @trendsCapacityNotEnough.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada punto es una descarga completa medida con la app conectada, así que no se llena sola: hacen falta al menos tres.'**
+  String get trendsCapacityNotEnough;
+
+  /// No description provided for @profileCaptureBaselineHintNoSettings.
+  ///
+  /// In es, this message translates to:
+  /// **'Las celdas tal como están ahora. Este BMS no informa resistencias ni su configuración, así que la foto guarda lo que sí da. Todo lo que la app diga después sobre derivas se compara contra esto. Mejor con la batería en reposo.'**
+  String get profileCaptureBaselineHintNoSettings;
+
+  /// No description provided for @profileConfigNotCompared.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin comparar'**
+  String get profileConfigNotCompared;
+
+  /// No description provided for @profileDriftOtherCharge.
+  ///
+  /// In es, this message translates to:
+  /// **'a otro nivel de carga, no comparable'**
+  String get profileDriftOtherCharge;
+
+  /// No description provided for @adviceCycleMismatchTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'El contador de ciclos no cuadra'**
+  String get adviceCycleMismatchTitle;
+
+  /// No description provided for @adviceCycleMismatchBody.
+  ///
+  /// In es, this message translates to:
+  /// **'El BMS dice {bms} ciclos, y la carga que él mismo contó pasar por el pack da {equivalent} ciclos equivalentes. Cada firmware cuenta los ciclos a su manera y ese contador se puede editar, así que la diferencia puede ir para cualquier lado. Si vas a comprar o vender un pack, cita los dos.'**
+  String adviceCycleMismatchBody(String bms, String equivalent);
+
+  /// No description provided for @verdictDeltaLightTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Bajo carga ligera no se ve nada raro'**
+  String get verdictDeltaLightTitle;
+
+  /// No description provided for @verdictDeltaLightBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Con corriente el delta llega a {loaded} V, contra {rest} V en reposo. Pero no ha habido carga fuerte suficiente para que una mala conexión se note, así que esto todavía no descarta nada.'**
+  String verdictDeltaLightBody(String loaded, String rest);
+
+  /// No description provided for @adviceBmsClaimsOkTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que el BMS dice cuadra'**
+  String get adviceBmsClaimsOkTitle;
+
+  /// No description provided for @adviceBmsClaimsOkBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que se pudo comprobar de lo que el BMS dice de sí mismo coincide con lo que se mide: el contador de ciclos con la carga que pasó, o el porcentaje con las celdas en un extremo de la carga.'**
+  String get adviceBmsClaimsOkBody;
+
+  /// No description provided for @adviceTemperatureOkTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Temperatura normal'**
+  String get adviceTemperatureOkTitle;
+
+  /// No description provided for @adviceTemperatureOkBody.
+  ///
+  /// In es, this message translates to:
+  /// **'La sonda más caliente de la batería marca {temp} °C, y el BMS tampoco está caliente.'**
+  String adviceTemperatureOkBody(String temp);
+
+  /// No description provided for @adviceConfigNothingFlaggedTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Nada que objetar aquí'**
+  String get adviceConfigNothingFlaggedTitle;
+
+  /// No description provided for @adviceConfigNothingFlaggedBody.
+  ///
+  /// In es, this message translates to:
+  /// **'El límite de carga por celda está en {voltage} V, que no pasa de lo razonable. Esta pantalla solo mira eso; la revisión completa está en Auditar la configuración, en Sistema.'**
+  String adviceConfigNothingFlaggedBody(String voltage);
+
+  /// No description provided for @verdictConfigColdCutoffMarginalTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'El corte por frío tiene poco margen'**
+  String get verdictConfigColdCutoffMarginalTitle;
+
+  /// No description provided for @verdictConfigColdCutoffMarginalBody.
+  ///
+  /// In es, this message translates to:
+  /// **'El corte por frío está en {value} °C: por encima de cero, pero justo. La sonda mide el exterior del pack y las celdas por dentro tardan en calentarse. Súbelo a {limit} °C o más desde la app oficial del BMS.'**
+  String verdictConfigColdCutoffMarginalBody(String value, String limit);
+
+  /// No description provided for @balanceRankingEntry.
+  ///
+  /// In es, this message translates to:
+  /// **'celda {cell}: {pct} %'**
+  String balanceRankingEntry(String cell, String pct);
+
+  /// No description provided for @capacityNoFullMark.
+  ///
+  /// In es, this message translates to:
+  /// **'No se sabe dónde está lleno este pack: el BMS no ha dicho a cuánto carga y la química no se conoce. Indícala en los datos del pack para poder empezar el test.'**
+  String get capacityNoFullMark;
+
+  /// No description provided for @capacityStopEarly.
+  ///
+  /// In es, this message translates to:
+  /// **'Terminar aquí'**
+  String get capacityStopEarly;
+
+  /// No description provided for @capacityStopEarlyHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Si terminas antes del corte se guarda como parcial: lo contado es real, pero es un pedazo del pack y no se convierte en capacidad.'**
+  String get capacityStopEarlyHint;
+
+  /// No description provided for @capacityPartialTag.
+  ///
+  /// In es, this message translates to:
+  /// **'parcial'**
+  String get capacityPartialTag;
+
+  /// No description provided for @capacityLegacyTag.
+  ///
+  /// In es, this message translates to:
+  /// **'antigua'**
+  String get capacityLegacyTag;
+
+  /// No description provided for @capacityChargedTag.
+  ///
+  /// In es, this message translates to:
+  /// **'cargada a mitad'**
+  String get capacityChargedTag;
+
+  /// No description provided for @capacityUntrustedNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Las marcadas no cuentan como capacidad. «parcial»: terminó antes del corte. «antigua»: se cerró con el porcentaje del BMS, que se calcula contra la capacidad configurada, así que devolvía esa configuración y no lo que tiene la batería. «cargada a mitad»: entró corriente por el camino.'**
+  String get capacityUntrustedNote;
+
+  /// No description provided for @chargeGapNote.
+  ///
+  /// In es, this message translates to:
+  /// **'{minutes} min sin conexión por el camino: esa parte la contó el BMS, no la app.'**
+  String chargeGapNote(String minutes);
+
+  /// No description provided for @etaNearlyFull.
+  ///
+  /// In es, this message translates to:
+  /// **'Casi lleno'**
+  String get etaNearlyFull;
+
+  /// No description provided for @chargeTargetAtTop.
+  ///
+  /// In es, this message translates to:
+  /// **'Desde el {soc} % este aviso es el de carga terminada: el contador del BMS llega ahí antes que las celdas, así que avisa cuando la celda más alta está arriba y la corriente ya bajó.'**
+  String chargeTargetAtTop(String soc);
+
+  /// No description provided for @alertsTempWarnHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Rodando avisa desde aquí. Cargando, desde aquí o desde {limit} °C, lo que sea menor: cargar más caliente daña las celdas, así que ese límite no se sube.'**
+  String alertsTempWarnHint(String limit);
+
+  /// No description provided for @alertsDeltaWarnHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Rodando avisa desde aquí. Al final de la carga, desde aquí o desde {limit} mV, lo que sea menor: arriba la curva es empinada y esa diferencia ya es un desbalance.'**
+  String alertsDeltaWarnHint(String limit);
+
+  /// No description provided for @alertNotificationBodyCriticalIdle.
+  ///
+  /// In es, this message translates to:
+  /// **'Queda {value} % de carga. Cárgala antes de salir.'**
+  String alertNotificationBodyCriticalIdle(String value);
+
+  /// No description provided for @alertsNotifyQuietChannel.
+  ///
+  /// In es, this message translates to:
+  /// **'Avisos sin vibración'**
+  String get alertsNotifyQuietChannel;
+
+  /// No description provided for @alertLinkLostNeedsWatch.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo avisa con «Seguir leyendo con la pantalla apagada» o «Vigilar la carga» encendidos: sin ellos no hay nada vigilando la conexión.'**
+  String get alertLinkLostNeedsWatch;
+
+  /// No description provided for @alertLinkLostRidingHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Mientras grabas un viaje no avisa: rodando la conexión va y viene, y el viaje ya muestra en pantalla cuándo se corta.'**
+  String get alertLinkLostRidingHint;
+
+  /// No description provided for @alertsLowChargeWarnHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Avisa al bajar de aquí. Bájalo si te avisa demasiado pronto; súbelo si quieres enterarte antes.'**
+  String get alertsLowChargeWarnHint;
+
+  /// No description provided for @stuckTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'El Bluetooth del teléfono parece atascado'**
+  String get stuckTitle;
+
+  /// No description provided for @stuckBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Varios intentos seguidos han fallado con la batería al alcance. Prueba esto en orden y para en cuanto vuelva a conectar:'**
+  String get stuckBody;
+
+  /// No description provided for @stuckResetButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Reiniciar la conexión Bluetooth de la app'**
+  String get stuckResetButton;
+
+  /// No description provided for @stuckStepForceStop.
+  ///
+  /// In es, this message translates to:
+  /// **'Si no basta, fuerza la detención de la app (Ajustes > Aplicaciones > JK BMS + > Forzar detención) y vuelve a abrirla.'**
+  String get stuckStepForceStop;
+
+  /// No description provided for @stuckStepScanning.
+  ///
+  /// In es, this message translates to:
+  /// **'Después, desactiva «Búsqueda de Bluetooth» (Ajustes > Ubicación > Servicios de ubicación) y apaga y enciende el Bluetooth. Con esa búsqueda activada, apagar el Bluetooth no lo reinicia de verdad.'**
+  String get stuckStepScanning;
+
+  /// No description provided for @stuckStepRestart.
+  ///
+  /// In es, this message translates to:
+  /// **'Como último recurso, reinicia el teléfono.'**
+  String get stuckStepRestart;
+
+  /// No description provided for @stuckAskWhichStep.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuando vuelva a conectar, avisa de qué paso lo arregló: eso dice si el fallo está en la app o en Android.'**
+  String get stuckAskWhichStep;
+
+  /// No description provided for @stuckResetDone.
+  ///
+  /// In es, this message translates to:
+  /// **'Conexión Bluetooth de la app reiniciada. Vuelve a tocar la batería.'**
+  String get stuckResetDone;
+
+  /// No description provided for @stuckResetRunning.
+  ///
+  /// In es, this message translates to:
+  /// **'Reiniciando la conexión Bluetooth de la app…'**
+  String get stuckResetRunning;
+
+  /// No description provided for @consoleReportAttempts.
+  ///
+  /// In es, this message translates to:
+  /// **'Intentos de conexión, del más reciente al más antiguo'**
+  String get consoleReportAttempts;
+
+  /// No description provided for @tripNoGpsFixes.
+  ///
+  /// In es, this message translates to:
+  /// **'No está llegando el GPS, así que este viaje no está midiendo distancia ni velocidad. La app lo está reintentando. Si sigue así, abre la app un momento con la pantalla encendida y comprueba que la ubicación esté activada.'**
+  String get tripNoGpsFixes;
+
+  /// No description provided for @locationApproximateOnly.
+  ///
+  /// In es, this message translates to:
+  /// **'La app solo tiene permiso de ubicación aproximada, y con eso no se puede medir un viaje: cada posición viene con cientos de metros de error. Activa \"Usar ubicación precisa\" en Ajustes > Aplicaciones > JK BMS + > Permisos > Ubicación, y vuelve a empezar el viaje.'**
+  String get locationApproximateOnly;
+
+  /// No description provided for @inspectionCaveatRecoveryNoLoad.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin carga fuerte tampoco hay recuperación que medir.'**
+  String get inspectionCaveatRecoveryNoLoad;
+
+  /// No description provided for @inspectionCaveatEndedBeforeLoad.
+  ///
+  /// In es, this message translates to:
+  /// **'La prueba se terminó antes de la carga: ni la caída por celda ni la recuperación se midieron.'**
+  String get inspectionCaveatEndedBeforeLoad;
+
+  /// No description provided for @inspectionCaveatEndedBeforeRecovery.
+  ///
+  /// In es, this message translates to:
+  /// **'La prueba se terminó mientras las celdas volvían: la recuperación no se midió.'**
+  String get inspectionCaveatEndedBeforeRecovery;
+
+  /// No description provided for @inspectionCaveatRecoveryLinkGap.
+  ///
+  /// In es, this message translates to:
+  /// **'Se cortó la conexión con el BMS mientras las celdas volvían: la recuperación no se midió, porque el tiempo habría sido el del corte.'**
+  String get inspectionCaveatRecoveryLinkGap;
+
+  /// No description provided for @inspectionCaveatLinkGaps.
+  ///
+  /// In es, this message translates to:
+  /// **'La conexión con el BMS se cortó durante la prueba. Los pasos en los que cayó el corte volvieron a contar desde cero.'**
+  String get inspectionCaveatLinkGaps;
+
+  /// No description provided for @verdictInspCellRisingTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'La celda {cell} sube mucho más que las demás'**
+  String verdictInspCellRisingTitle(String cell);
+
+  /// No description provided for @verdictInspCellRisingBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Con el cargador subió {excess} V más que la mediana del pack: unos {ohms} mΩ de resistencia de más. Coherente con una celda gastada o con una conexión mala en esa celda. Es la razón principal para no pagar el precio pedido sin más pruebas.'**
+  String verdictInspCellRisingBody(String excess, String ohms);
+
+  /// No description provided for @verdictInspSagUniformChargeTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Todas las celdas suben parejo'**
+  String get verdictInspSagUniformChargeTitle;
+
+  /// No description provided for @verdictInspSagUniformChargeBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Con el cargador ({amps} A) la celda que más subió lo hizo solo {excess} V más que la mediana. A esta corriente ya se distinguiría una celda con unos {floor} mΩ de resistencia de más, y ninguna se aparta de las demás.'**
+  String verdictInspSagUniformChargeBody(
+    String amps,
+    String excess,
+    String floor,
+  );
+
+  /// No description provided for @verdictInspSagUnresolvedTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Carga insuficiente para descartar una celda mala'**
+  String get verdictInspSagUnresolvedTitle;
+
+  /// No description provided for @verdictInspSagUnresolvedBody.
+  ///
+  /// In es, this message translates to:
+  /// **'A esta carga ({amps} A) no se distingue una celda con menos de {floor} mΩ extra, y una celda mala puede tener menos que eso. Las celdas se movieron parejas, pero con tan poca corriente eso no descarta nada. Repite rodando con carga real (una cuesta o acelerar fuerte), o con el cargador.'**
+  String verdictInspSagUnresolvedBody(String amps, String floor);
+
+  /// No description provided for @verdictInspRecoveryNotDiscriminatingTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Con esta carga la recuperación no dice nada'**
+  String get verdictInspRecoveryNotDiscriminatingTitle;
+
+  /// No description provided for @verdictInspRecoveryNotDiscriminatingBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Las celdas volvieron a su reposo en unos {seconds} s. Con esta carga ({amps} A) la recuperación no discrimina: una celda cansada vuelve casi tan rápido como una buena. Para que cuente hace falta un tirón de al menos un tercio de la capacidad del pack.'**
+  String verdictInspRecoveryNotDiscriminatingBody(String seconds, String amps);
+
+  /// No description provided for @verdictInspHotRestBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegó a {temp} °C en reposo o con solo las luces. Un pack caliente sin carga no es normal: o venía de un uso fuerte justo antes, o algo dentro se calienta solo.'**
+  String verdictInspHotRestBody(String temp);
+
+  /// No description provided for @verdictInspHotLoadBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegó a {temp} °C durante la carga fuerte o justo después. Un tirón de unos segundos no calienta tanto un pack sano: o ya venía caliente, o algo se calienta de más bajo carga.'**
+  String verdictInspHotLoadBody(String temp);
+
+  /// No description provided for @evidenceInspectionRestDelta.
+  ///
+  /// In es, this message translates to:
+  /// **'Delta en reposo (mediana de cada celda en reposo)'**
+  String get evidenceInspectionRestDelta;
+
+  /// No description provided for @evidenceExcessResistance.
+  ///
+  /// In es, this message translates to:
+  /// **'Resistencia de más, celda {cell}'**
+  String evidenceExcessResistance(String cell);
+
+  /// No description provided for @evidenceDetectionFloor.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo mínimo que se distingue a esta carga'**
+  String get evidenceDetectionFloor;
+
+  /// No description provided for @evidenceLoadWasCharge.
+  ///
+  /// In es, this message translates to:
+  /// **'Carga usada'**
+  String get evidenceLoadWasCharge;
+
+  /// No description provided for @evidenceLoadCharger.
+  ///
+  /// In es, this message translates to:
+  /// **'el cargador'**
+  String get evidenceLoadCharger;
+
+  /// No description provided for @evidenceSeenDuringStep.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuándo se vio'**
+  String get evidenceSeenDuringStep;
+
+  /// No description provided for @evidenceStepRest.
+  ///
+  /// In es, this message translates to:
+  /// **'en reposo'**
+  String get evidenceStepRest;
+
+  /// No description provided for @evidenceStepLight.
+  ///
+  /// In es, this message translates to:
+  /// **'con las luces'**
+  String get evidenceStepLight;
+
+  /// No description provided for @evidenceStepHeavy.
+  ///
+  /// In es, this message translates to:
+  /// **'con la carga fuerte'**
+  String get evidenceStepHeavy;
+
+  /// No description provided for @evidenceStepRecovery.
+  ///
+  /// In es, this message translates to:
+  /// **'al soltar la carga'**
+  String get evidenceStepRecovery;
+
+  /// No description provided for @inspectionFidelityNoteUnmeasured.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin una carga suficiente este test no ha podido buscar la celda mala: lo de arriba es solo lo que se ve en reposo. Tampoco mide capacidad real; para eso hace falta una descarga completa.'**
+  String get inspectionFidelityNoteUnmeasured;
+
+  /// No description provided for @inspectionLightUnresolved.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin veredicto: la carga no bastó para descartar una celda mala'**
+  String get inspectionLightUnresolved;
+
+  /// No description provided for @inspectionUnresolvedBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Hubo carga, pero poca: a esa corriente una celda mala puede moverse igual que las buenas, así que aquí no hay nada sobre esta batería ni a favor ni en contra. Repítelo con más corriente: rodando con carga real (una cuesta o acelerar fuerte), o con el cargador.'**
+  String get inspectionUnresolvedBody;
+
+  /// No description provided for @inspectionLightUnmeasuredShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin veredicto'**
+  String get inspectionLightUnmeasuredShort;
+
+  /// No description provided for @verdictInspRepeatConfigChangedTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambió la configuración o los contadores entre visitas'**
+  String get verdictInspRepeatConfigChangedTitle;
+
+  /// No description provided for @verdictInspRepeatConfigChangedBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Entre las dos pruebas cambió la capacidad configurada, o subió la salud que reporta el BMS. Puede ser el dueño corrigiendo un ajuste o el firmware recalculando, y no tiene por qué ser un engaño, pero pregunta qué se tocó. Lo físico de arriba no depende de estos números.'**
+  String get verdictInspRepeatConfigChangedBody;
+
+  /// No description provided for @evidencePreviousCycleCapacity.
+  ///
+  /// In es, this message translates to:
+  /// **'Energía total contada el {date}'**
+  String evidencePreviousCycleCapacity(String date);
+
+  /// No description provided for @evidenceCycleCapacity.
+  ///
+  /// In es, this message translates to:
+  /// **'Energía total contada por el BMS'**
+  String get evidenceCycleCapacity;
+
+  /// No description provided for @certificateIssuedHere.
+  ///
+  /// In es, this message translates to:
+  /// **'Emitido por este teléfono.'**
+  String get certificateIssuedHere;
+
+  /// No description provided for @certificateDoesNotProve.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que la firma no demuestra: qué batería se probó (el nombre y el número de serie los da el BMS y se pueden cambiar), ni la fecha, que es la del reloj del teléfono que firmó, ni que la batería esté bien.'**
+  String get certificateDoesNotProve;
+
+  /// No description provided for @certificateSimulated.
+  ///
+  /// In es, this message translates to:
+  /// **'PRUEBA CON PACK SIMULADO. Estas cifras salieron del simulador de la app, no de una batería.'**
+  String get certificateSimulated;
+
+  /// No description provided for @certificateSimulatedUnknown.
+  ///
+  /// In es, this message translates to:
+  /// **'Certificado de una versión anterior de la app: no dice si la prueba se hizo con una batería o con el pack simulado.'**
+  String get certificateSimulatedUnknown;
+
+  /// No description provided for @certificateNoSimulated.
+  ///
+  /// In es, this message translates to:
+  /// **'Un ensayo con el pack simulado no se puede firmar: un certificado dice que las cifras salieron de una batería.'**
+  String get certificateNoSimulated;
+
+  /// No description provided for @certificateLocalIssuer.
+  ///
+  /// In es, this message translates to:
+  /// **'Código de emisor de este teléfono'**
+  String get certificateLocalIssuer;
+
+  /// No description provided for @certificateLocalIssuerHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Es el código que verá quien compruebe un certificado firmado en este teléfono. Publícalo donde te conozcan (tu anuncio, tu taller) para que puedan compararlo.'**
+  String get certificateLocalIssuerHint;
+
+  /// No description provided for @inspectionSimulatedBanner.
+  ///
+  /// In es, this message translates to:
+  /// **'PRUEBA CON PACK SIMULADO. Nada de esto es de una batería real.'**
+  String get inspectionSimulatedBanner;
+
+  /// No description provided for @reportCertificateIssuerCheck.
+  ///
+  /// In es, this message translates to:
+  /// **'Comprueba que este código de emisor es el que publica quien te dio el certificado.'**
+  String get reportCertificateIssuerCheck;
+
+  /// No description provided for @reportPackLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Batería'**
+  String get reportPackLabel;
+
+  /// No description provided for @reportCurrentStep.
+  ///
+  /// In es, this message translates to:
+  /// **'Escalón de corriente (carga menos reposo)'**
+  String get reportCurrentStep;
+
+  /// No description provided for @reportMedianRise.
+  ///
+  /// In es, this message translates to:
+  /// **'Subida mediana con el cargador'**
+  String get reportMedianRise;
+
+  /// No description provided for @inspectionCellHeaderChange.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambio'**
+  String get inspectionCellHeaderChange;
+
+  /// No description provided for @inspectionSaveTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar esta prueba'**
+  String get inspectionSaveTitle;
+
+  /// No description provided for @reportHonestyInspectionUnmeasured.
+  ///
+  /// In es, this message translates to:
+  /// **'Test rápido del {date} sin una carga suficiente: no se ha podido buscar la celda mala, y esta hoja no dice nada a favor ni en contra de la batería. No mide capacidad: la capacidad que aparece es la configurada en el BMS, no una medida.'**
+  String reportHonestyInspectionUnmeasured(String date);
+
+  /// No description provided for @reportSeriesNoteUnsigned.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada fila es una inspección guardada en el teléfono que hizo esta hoja, incluida esta, que es la última. Esta hoja no está firmada. Repetir el test es lo que distingue una celda mala de una lectura mala.'**
+  String get reportSeriesNoteUnsigned;
+
+  /// No description provided for @reportChange.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambio (V)'**
+  String get reportChange;
+
+  /// No description provided for @reportCellTableNoteCharge.
+  ///
+  /// In es, this message translates to:
+  /// **'El cambio es cuánto subió cada celda con el cargador. La resistencia se estima del salto de corriente, no se mide con instrumento.'**
+  String get reportCellTableNoteCharge;
+
+  /// No description provided for @inspectionDeleteConfirm.
+  ///
+  /// In es, this message translates to:
+  /// **'Borrar'**
+  String get inspectionDeleteConfirm;
+
+  /// No description provided for @inspectionSaveNoStore.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo guardar: el almacenamiento de la app no está disponible.'**
+  String get inspectionSaveNoStore;
+
+  /// No description provided for @autoTripPocketNeedsLinkWatch.
+  ///
+  /// In es, this message translates to:
+  /// **'Con «Seguir leyendo con la pantalla apagada» desactivado, la app deja de leer el pack al apagarse la pantalla, así que con el móvil en el bolsillo no puede empezar ningún viaje.'**
+  String get autoTripPocketNeedsLinkWatch;
+
+  /// No description provided for @autoTripPocketWhileInUse.
+  ///
+  /// In es, this message translates to:
+  /// **'Con el móvil en el bolsillo funciona mientras siga puesta la notificación que la app abrió al conectar con la pantalla encendida. Si Android la cierra, o la app se reconecta sola con la pantalla apagada, el GPS solo responde con la ubicación permitida todo el tiempo, y sin GPS el viaje no empieza.'**
+  String get autoTripPocketWhileInUse;
+
+  /// No description provided for @autoTripPocketAllowAlways.
+  ///
+  /// In es, this message translates to:
+  /// **'Permitir la ubicación todo el tiempo'**
+  String get autoTripPocketAllowAlways;
+
+  /// No description provided for @autoTripPocketSettingsHint.
+  ///
+  /// In es, this message translates to:
+  /// **'En los ajustes de la app, entra en Permisos, Ubicación, y elige «Permitir todo el tiempo».'**
+  String get autoTripPocketSettingsHint;
+
+  /// No description provided for @autoTripPocketAlways.
+  ///
+  /// In es, this message translates to:
+  /// **'Ubicación permitida todo el tiempo: el viaje puede empezar con el móvil en el bolsillo aunque la app se haya reconectado sola.'**
+  String get autoTripPocketAlways;
+
+  /// No description provided for @offlineWeakestRestValue.
+  ///
+  /// In es, this message translates to:
+  /// **'celda {index}, la más baja en el {pct} % de {count} lecturas en reposo del último mes'**
+  String offlineWeakestRestValue(String index, String pct, String count);
+
+  /// No description provided for @offlineLowestLastReading.
+  ///
+  /// In es, this message translates to:
+  /// **'Celda más baja en la última lectura'**
+  String get offlineLowestLastReading;
+
+  /// No description provided for @historyAverageOf.
+  ///
+  /// In es, this message translates to:
+  /// **'de {used} de {total} viajes: los medidos que cuentan para la autonomía'**
+  String historyAverageOf(String used, String total);
+
+  /// No description provided for @learnWhyUnmeasured.
+  ///
+  /// In es, this message translates to:
+  /// **'{n} no se pudieron medir: la conexión con la batería se cortó durante buena parte del viaje y no quedaron lecturas para saber cuánta energía salió. No es algo del manejo. Si el viaje conserva lecturas, «Volver a medir» en su detalle lo intenta otra vez.'**
+  String learnWhyUnmeasured(String n);
+
+  /// No description provided for @learnWhyExcluded.
+  ///
+  /// In es, this message translates to:
+  /// **'{n} los marcaste como una excepción, así que no cuentan.'**
+  String learnWhyExcluded(String n);
+
+  /// No description provided for @tripNotMeasured.
+  ///
+  /// In es, this message translates to:
+  /// **'sin medir'**
+  String get tripNotMeasured;
+
+  /// No description provided for @tripEnergyUnmeasuredWhy.
+  ///
+  /// In es, this message translates to:
+  /// **'La conexión con la batería se cortó durante buena parte del viaje y no quedaron lecturas para saber cuánta energía salió. No cuenta para la autonomía.'**
+  String get tripEnergyUnmeasuredWhy;
+
+  /// No description provided for @tripEnergySourceLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Cómo se midió'**
+  String get tripEnergySourceLabel;
+
+  /// No description provided for @tripEnergySourceBms.
+  ///
+  /// In es, this message translates to:
+  /// **'contador del BMS, todo el viaje'**
+  String get tripEnergySourceBms;
+
+  /// No description provided for @tripEnergySourceIntegrated.
+  ///
+  /// In es, this message translates to:
+  /// **'sumado de las lecturas recibidas'**
+  String get tripEnergySourceIntegrated;
+
+  /// No description provided for @tripEnergySourceBracketed.
+  ///
+  /// In es, this message translates to:
+  /// **'contador del BMS, de las lecturas de antes y después'**
+  String get tripEnergySourceBracketed;
+
+  /// No description provided for @tripEnergySourcePartial.
+  ///
+  /// In es, this message translates to:
+  /// **'parcial: la conexión se cortó'**
+  String get tripEnergySourcePartial;
+
+  /// No description provided for @tripEnergySourceUnmeasurable.
+  ///
+  /// In es, this message translates to:
+  /// **'no se pudo medir'**
+  String get tripEnergySourceUnmeasurable;
+
+  /// No description provided for @tripResistanceHint.
+  ///
+  /// In es, this message translates to:
+  /// **'La mediana de la pendiente del voltaje contra la corriente en los tramos en que la corriente cambió mucho. Aproximada: sirve para seguir el mismo pack con los meses, no para compararlo con una hoja de datos.'**
+  String get tripResistanceHint;
+
+  /// No description provided for @trendsCapacityHollow.
+  ///
+  /// In es, this message translates to:
+  /// **'Los círculos huecos son descargas que la app no da por buenas (faltaron minutos, hubo carga en medio o se cerraron por el porcentaje) o que detectó sola al rodar. Se ven, pero no entran en la tendencia.'**
+  String get trendsCapacityHollow;
+
+  /// No description provided for @maintDeleteConfirmTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Borrar esta anotación?'**
+  String get maintDeleteConfirmTitle;
+
+  /// No description provided for @maintDeleteConfirmBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Se quita del registro de mantenimiento y de las gráficas.'**
+  String get maintDeleteConfirmBody;
+
+  /// No description provided for @maintDeleteConfirmCellBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Se quita del registro, y el historial de la batería vuelve a contar desde antes del cambio de celda: la deriva, la capacidad y las gráficas incluirán otra vez las celdas viejas.'**
+  String get maintDeleteConfirmCellBody;
+
+  /// No description provided for @orphansDiscardConfirmTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Descartar este historial?'**
+  String get orphansDiscardConfirmTitle;
+
+  /// No description provided for @orphansDiscardConfirmBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Se borran para siempre {count} filas guardadas sin batería asignada. No se puede deshacer.'**
+  String orphansDiscardConfirmBody(String count);
+
+  /// No description provided for @tripEnergySoFarOffline.
+  ///
+  /// In es, this message translates to:
+  /// **'{wh} Wh hasta que se cortó la conexión'**
+  String tripEnergySoFarOffline(String wh);
+
+  /// No description provided for @tripReadingAgeSeconds.
+  ///
+  /// In es, this message translates to:
+  /// **'hace {s} s'**
+  String tripReadingAgeSeconds(String s);
+
+  /// No description provided for @tripReadingAgeMinutes.
+  ///
+  /// In es, this message translates to:
+  /// **'hace {m} min'**
+  String tripReadingAgeMinutes(String m);
+
+  /// No description provided for @backupExportFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo hacer la copia: {reason}'**
+  String backupExportFailed(String reason);
+
+  /// No description provided for @exportShared.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviado.'**
+  String get exportShared;
+
+  /// No description provided for @exportRange.
+  ///
+  /// In es, this message translates to:
+  /// **'Lecturas y frames de:'**
+  String get exportRange;
+
+  /// No description provided for @exportRangeDay.
+  ///
+  /// In es, this message translates to:
+  /// **'1 día'**
+  String get exportRangeDay;
+
+  /// No description provided for @exportRangeWeek.
+  ///
+  /// In es, this message translates to:
+  /// **'7 días'**
+  String get exportRangeWeek;
+
+  /// No description provided for @exportRangeMonth.
+  ///
+  /// In es, this message translates to:
+  /// **'30 días'**
+  String get exportRangeMonth;
+
+  /// No description provided for @exportRangeAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Todo'**
+  String get exportRangeAll;
+
+  /// No description provided for @exportRangeNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Los frames crudos se guardan 30 días, así que «Todo» trae como mucho esos. Las lecturas de más de un mes están guardadas una por minuto.'**
+  String get exportRangeNote;
+
+  /// No description provided for @tripExportGpx.
+  ///
+  /// In es, this message translates to:
+  /// **'Exportar recorrido (GPX)'**
+  String get tripExportGpx;
+
+  /// No description provided for @settingsGroupCell.
+  ///
+  /// In es, this message translates to:
+  /// **'Protecciones de celda'**
+  String get settingsGroupCell;
+
+  /// No description provided for @settingsGroupCurrent.
+  ///
+  /// In es, this message translates to:
+  /// **'Corriente'**
+  String get settingsGroupCurrent;
+
+  /// No description provided for @settingsGroupTemperature.
+  ///
+  /// In es, this message translates to:
+  /// **'Temperatura'**
+  String get settingsGroupTemperature;
+
+  /// No description provided for @settingsGroupBalance.
+  ///
+  /// In es, this message translates to:
+  /// **'Balanceo'**
+  String get settingsGroupBalance;
+
+  /// No description provided for @settingsGroupOther.
+  ///
+  /// In es, this message translates to:
+  /// **'Otros'**
+  String get settingsGroupOther;
+
+  /// No description provided for @settingSmartSleep.
+  ///
+  /// In es, this message translates to:
+  /// **'Voltaje de reposo inteligente'**
+  String get settingSmartSleep;
+
+  /// No description provided for @settingRequestCharge.
+  ///
+  /// In es, this message translates to:
+  /// **'Voltaje de carga pedido por celda'**
+  String get settingRequestCharge;
+
+  /// No description provided for @settingRequestFloat.
+  ///
+  /// In es, this message translates to:
+  /// **'Voltaje de flotación pedido por celda'**
+  String get settingRequestFloat;
+
+  /// No description provided for @settingChargeOcpDelay.
+  ///
+  /// In es, this message translates to:
+  /// **'Retardo de sobrecorriente en carga'**
+  String get settingChargeOcpDelay;
+
+  /// No description provided for @settingChargeOcpRecovery.
+  ///
+  /// In es, this message translates to:
+  /// **'Recuperación de sobrecorriente en carga'**
+  String get settingChargeOcpRecovery;
+
+  /// No description provided for @settingDischargeOcpDelay.
+  ///
+  /// In es, this message translates to:
+  /// **'Retardo de sobrecorriente en descarga'**
+  String get settingDischargeOcpDelay;
+
+  /// No description provided for @settingDischargeOcpRecovery.
+  ///
+  /// In es, this message translates to:
+  /// **'Recuperación de sobrecorriente en descarga'**
+  String get settingDischargeOcpRecovery;
+
+  /// No description provided for @settingScpDelay.
+  ///
+  /// In es, this message translates to:
+  /// **'Retardo de cortocircuito'**
+  String get settingScpDelay;
+
+  /// No description provided for @settingScpRecovery.
+  ///
+  /// In es, this message translates to:
+  /// **'Recuperación de cortocircuito'**
+  String get settingScpRecovery;
+
+  /// No description provided for @settingChargeOtpRecovery.
+  ///
+  /// In es, this message translates to:
+  /// **'Recuperación de sobretemperatura en carga'**
+  String get settingChargeOtpRecovery;
+
+  /// No description provided for @settingDischargeOtpRecovery.
+  ///
+  /// In es, this message translates to:
+  /// **'Recuperación de sobretemperatura en descarga'**
+  String get settingDischargeOtpRecovery;
+
+  /// No description provided for @settingChargeUtpRecovery.
+  ///
+  /// In es, this message translates to:
+  /// **'Recuperación de subtemperatura en carga'**
+  String get settingChargeUtpRecovery;
+
+  /// No description provided for @settingMosfetOtpRecovery.
+  ///
+  /// In es, this message translates to:
+  /// **'Recuperación de sobretemperatura de MOSFET'**
+  String get settingMosfetOtpRecovery;
+
+  /// No description provided for @settingWireResistances.
+  ///
+  /// In es, this message translates to:
+  /// **'Resistencia de los cables de balanceo'**
+  String get settingWireResistances;
+
+  /// No description provided for @settingWireResistancesCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} celdas'**
+  String settingWireResistancesCount(int count);
+
+  /// No description provided for @settingWireResistancesHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que el BMS tiene configurado para compensar el cable de cada celda, en miliohmios. Es un ajuste, no una medición de la celda.'**
+  String get settingWireResistancesHint;
+
+  /// No description provided for @systemSetupPasscode.
+  ///
+  /// In es, this message translates to:
+  /// **'Contraseña de ajustes que entrega el BMS'**
+  String get systemSetupPasscode;
+
+  /// No description provided for @bmsStateTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Estado del BMS'**
+  String get bmsStateTitle;
+
+  /// No description provided for @bmsStateIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Tal como lo informa el BMS en cada lectura.'**
+  String get bmsStateIntro;
+
+  /// No description provided for @bmsStatePrecharge.
+  ///
+  /// In es, this message translates to:
+  /// **'Precarga'**
+  String get bmsStatePrecharge;
+
+  /// No description provided for @bmsStateChargerPlugged.
+  ///
+  /// In es, this message translates to:
+  /// **'Ve un cargador conectado'**
+  String get bmsStateChargerPlugged;
+
+  /// No description provided for @bmsStateChargeStatus.
+  ///
+  /// In es, this message translates to:
+  /// **'Fase de carga'**
+  String get bmsStateChargeStatus;
+
+  /// No description provided for @bmsStateBatteryType.
+  ///
+  /// In es, this message translates to:
+  /// **'Tipo de batería configurado'**
+  String get bmsStateBatteryType;
+
+  /// No description provided for @bmsStateBatteryTypeHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Es lo que alguien eligió al configurar el BMS, no algo que el BMS mida en las celdas.'**
+  String get bmsStateBatteryTypeHint;
+
+  /// No description provided for @bmsStateRuntime.
+  ///
+  /// In es, this message translates to:
+  /// **'Tiempo de funcionamiento total'**
+  String get bmsStateRuntime;
+
+  /// No description provided for @bmsStateEnabledCells.
+  ///
+  /// In es, this message translates to:
+  /// **'Celdas habilitadas'**
+  String get bmsStateEnabledCells;
+
+  /// No description provided for @bmsStateCycleCapacity.
+  ///
+  /// In es, this message translates to:
+  /// **'Carga total que pasó por el pack'**
+  String get bmsStateCycleCapacity;
+
+  /// No description provided for @bmsStateCycleCapacityHint.
+  ///
+  /// In es, this message translates to:
+  /// **'El contador acumulado del propio BMS. Dividido por la capacidad da los ciclos completos reales.'**
+  String get bmsStateCycleCapacityHint;
+
+  /// No description provided for @chargeStatusBulk.
+  ///
+  /// In es, this message translates to:
+  /// **'corriente constante'**
+  String get chargeStatusBulk;
+
+  /// No description provided for @chargeStatusAbsorption.
+  ///
+  /// In es, this message translates to:
+  /// **'absorción'**
+  String get chargeStatusAbsorption;
+
+  /// No description provided for @chargeStatusFloat.
+  ///
+  /// In es, this message translates to:
+  /// **'flotación'**
+  String get chargeStatusFloat;
+
+  /// No description provided for @batteryTypeLfp.
+  ///
+  /// In es, this message translates to:
+  /// **'LFP (LiFePO4)'**
+  String get batteryTypeLfp;
+
+  /// No description provided for @batteryTypeLiIon.
+  ///
+  /// In es, this message translates to:
+  /// **'Litio-ion'**
+  String get batteryTypeLiIon;
+
+  /// No description provided for @batteryTypeLto.
+  ///
+  /// In es, this message translates to:
+  /// **'LTO'**
+  String get batteryTypeLto;
+
+  /// No description provided for @bmsUnknownCode.
+  ///
+  /// In es, this message translates to:
+  /// **'código {code}'**
+  String bmsUnknownCode(String code);
+
+  /// No description provided for @nowChargerByBms.
+  ///
+  /// In es, this message translates to:
+  /// **'Según el BMS'**
+  String get nowChargerByBms;
+
+  /// No description provided for @nowChargerSeen.
+  ///
+  /// In es, this message translates to:
+  /// **'ve el cargador conectado'**
+  String get nowChargerSeen;
+
+  /// No description provided for @nowChargerNotSeen.
+  ///
+  /// In es, this message translates to:
+  /// **'no ve ningún cargador'**
+  String get nowChargerNotSeen;
+
+  /// No description provided for @nowChargePhase.
+  ///
+  /// In es, this message translates to:
+  /// **'fase: {phase}'**
+  String nowChargePhase(String phase);
+
+  /// No description provided for @profileBaselineNoteAdd.
+  ///
+  /// In es, this message translates to:
+  /// **'Añadir una nota'**
+  String get profileBaselineNoteAdd;
+
+  /// No description provided for @profileBaselineNoteEdit.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar la nota'**
+  String get profileBaselineNoteEdit;
+
+  /// No description provided for @profileBaselineNoteTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Nota del día uno'**
+  String get profileBaselineNoteTitle;
+
+  /// No description provided for @profileBaselineNoteHint.
+  ///
+  /// In es, this message translates to:
+  /// **'De dónde vino, qué dijo el vendedor, lo que costó.'**
+  String get profileBaselineNoteHint;
+
+  /// No description provided for @profileBaselineRedo.
+  ///
+  /// In es, this message translates to:
+  /// **'Rehacer el día uno'**
+  String get profileBaselineRedo;
+
+  /// No description provided for @profileBaselineRedoTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Rehacer el día uno?'**
+  String get profileBaselineRedoTitle;
+
+  /// No description provided for @profileBaselineRedoBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Se borra el día uno guardado el {date} y se guarda uno nuevo con la lectura y la configuración del BMS de ahora. Todo lo que la app compara «desde el día uno» vuelve a empezar hoy. La nota se conserva. No se puede deshacer, y conviene hacerlo con la batería en reposo.'**
+  String profileBaselineRedoBody(String date);
+
+  /// No description provided for @profileBaselineRedoConfirm.
+  ///
+  /// In es, this message translates to:
+  /// **'Borrar y guardar el nuevo'**
+  String get profileBaselineRedoConfirm;
+
+  /// No description provided for @profileBaselineRedone.
+  ///
+  /// In es, this message translates to:
+  /// **'Día uno guardado de nuevo, con la lectura de ahora.'**
+  String get profileBaselineRedone;
+
+  /// No description provided for @balanceRankingNeedsHistory.
+  ///
+  /// In es, this message translates to:
+  /// **'necesita más histórico'**
+  String get balanceRankingNeedsHistory;
+
+  /// No description provided for @balanceRankingProgress.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} de {needed} lecturas en reposo con las celdas separadas al menos 10 mV, en los últimos 30 días.'**
+  String balanceRankingProgress(String count, String needed);
+
+  /// No description provided for @balanceRankingBasis.
+  ///
+  /// In es, this message translates to:
+  /// **'De {count} lecturas en reposo de los últimos 30 días con las celdas separadas al menos 10 mV. La más baja en reposo es la que tiene menos carga: dice dónde mirar, no que esa celda esté mal.'**
+  String balanceRankingBasis(String count);
+
+  /// No description provided for @faultHistoryTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Historial de fallos del BMS'**
+  String get faultHistoryTitle;
+
+  /// No description provided for @faultHistoryIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada vez que el BMS levantó una protección o un aviso en esta batería, la más reciente primero. Sale del registro de avisos que se guarda con cada lectura, así que es solo lo que la app vio: sin conexión no hay lecturas.'**
+  String get faultHistoryIntro;
+
+  /// No description provided for @faultHistoryEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Ninguna protección ni aviso del BMS en las lecturas guardadas de esta batería.'**
+  String get faultHistoryEmpty;
+
+  /// No description provided for @faultHistoryThinned.
+  ///
+  /// In es, this message translates to:
+  /// **'Las lecturas de más de un mes se guardan una por minuto. Ahí un fallo más corto que eso puede no aparecer, y las duraciones son aproximadas.'**
+  String get faultHistoryThinned;
+
+  /// No description provided for @faultUnknownBit.
+  ///
+  /// In es, this message translates to:
+  /// **'Aviso sin nombre (bit {bit})'**
+  String faultUnknownBit(int bit);
+
+  /// No description provided for @faultOngoing.
+  ///
+  /// In es, this message translates to:
+  /// **'seguía en la última lectura'**
+  String get faultOngoing;
+
+  /// No description provided for @faultInstant.
+  ///
+  /// In es, this message translates to:
+  /// **'una lectura'**
+  String get faultInstant;
+
+  /// No description provided for @faultStarted.
+  ///
+  /// In es, this message translates to:
+  /// **'Visto por primera vez'**
+  String get faultStarted;
+
+  /// No description provided for @faultLastSeen.
+  ///
+  /// In es, this message translates to:
+  /// **'Visto por última vez'**
+  String get faultLastSeen;
+
+  /// No description provided for @faultNoData.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin datos: la conexión estuvo caída más de 5 minutos durante el fallo o justo antes o después, así que pudo empezar antes, acabar después o ir y venir sin que nadie lo viera.'**
+  String get faultNoData;
+
+  /// No description provided for @faultReadings.
+  ///
+  /// In es, this message translates to:
+  /// **'Lecturas con el aviso'**
+  String get faultReadings;
+
+  /// No description provided for @faultAtStart.
+  ///
+  /// In es, this message translates to:
+  /// **'Al empezar'**
+  String get faultAtStart;
+
+  /// No description provided for @faultAtStartCells.
+  ///
+  /// In es, this message translates to:
+  /// **'Celda más alta {max} V, más baja {min} V.'**
+  String faultAtStartCells(String max, String min);
+
+  /// No description provided for @offlineMoreHistory.
+  ///
+  /// In es, this message translates to:
+  /// **'Más historial'**
+  String get offlineMoreHistory;
+
+  /// No description provided for @cellHistoryTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Celdas en el tiempo'**
+  String get cellHistoryTitle;
+
+  /// No description provided for @cellHistoryOpen.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver historial'**
+  String get cellHistoryOpen;
+
+  /// No description provided for @cellHistoryTripButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Celdas durante el viaje'**
+  String get cellHistoryTripButton;
+
+  /// No description provided for @cellHistoryRangeHour.
+  ///
+  /// In es, this message translates to:
+  /// **'Última hora'**
+  String get cellHistoryRangeHour;
+
+  /// No description provided for @cellHistoryRangeDay.
+  ///
+  /// In es, this message translates to:
+  /// **'Últimas 24 h'**
+  String get cellHistoryRangeDay;
+
+  /// No description provided for @cellHistoryRangeWeek.
+  ///
+  /// In es, this message translates to:
+  /// **'Últimos 7 días'**
+  String get cellHistoryRangeWeek;
+
+  /// No description provided for @cellHistoryRangeTrip.
+  ///
+  /// In es, this message translates to:
+  /// **'Este viaje'**
+  String get cellHistoryRangeTrip;
+
+  /// No description provided for @cellHistoryRangeCharge.
+  ///
+  /// In es, this message translates to:
+  /// **'Última carga'**
+  String get cellHistoryRangeCharge;
+
+  /// No description provided for @cellHistoryAnchor.
+  ///
+  /// In es, this message translates to:
+  /// **'Hasta la última lectura guardada, {date}.'**
+  String cellHistoryAnchor(String date);
+
+  /// No description provided for @cellHistoryModeVolts.
+  ///
+  /// In es, this message translates to:
+  /// **'Voltaje'**
+  String get cellHistoryModeVolts;
+
+  /// No description provided for @cellHistoryModeDeviation.
+  ///
+  /// In es, this message translates to:
+  /// **'Frente al promedio'**
+  String get cellHistoryModeDeviation;
+
+  /// No description provided for @cellHistoryAxisVolts.
+  ///
+  /// In es, this message translates to:
+  /// **'V por celda'**
+  String get cellHistoryAxisVolts;
+
+  /// No description provided for @cellHistoryAxisDeviation.
+  ///
+  /// In es, this message translates to:
+  /// **'mV por encima o por debajo del promedio del pack en esa lectura'**
+  String get cellHistoryAxisDeviation;
+
+  /// No description provided for @cellHistoryLowest.
+  ///
+  /// In es, this message translates to:
+  /// **'Celda {cell}: la más baja de media en este intervalo'**
+  String cellHistoryLowest(int cell);
+
+  /// No description provided for @cellHistoryHighest.
+  ///
+  /// In es, this message translates to:
+  /// **'Celda {cell}: la más alta de media en este intervalo'**
+  String cellHistoryHighest(int cell);
+
+  /// No description provided for @cellHistoryPicked.
+  ///
+  /// In es, this message translates to:
+  /// **'Celda {cell}: la que elegiste'**
+  String cellHistoryPicked(int cell);
+
+  /// No description provided for @cellHistoryOthers.
+  ///
+  /// In es, this message translates to:
+  /// **'Las demás'**
+  String get cellHistoryOthers;
+
+  /// No description provided for @cellHistoryPickCell.
+  ///
+  /// In es, this message translates to:
+  /// **'Resaltar una celda'**
+  String get cellHistoryPickCell;
+
+  /// No description provided for @cellHistoryPoints.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} lecturas'**
+  String cellHistoryPoints(int count);
+
+  /// No description provided for @cellHistoryNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada punto es una lectura real, una por cada {bucket}: un pico entre dos de ellas no se dibuja. Donde las líneas se cortan no hubo lecturas durante más de 30 segundos, y no se rellena.'**
+  String cellHistoryNote(String bucket);
+
+  /// No description provided for @cellHistoryEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay lecturas guardadas en este intervalo.'**
+  String get cellHistoryEmpty;
+
+  /// No description provided for @linkEventRidingCurrentSeen.
+  ///
+  /// In es, this message translates to:
+  /// **'Corriente de marcha vista'**
+  String get linkEventRidingCurrentSeen;
+
+  /// No description provided for @linkEventIdleSpeedSeen.
+  ///
+  /// In es, this message translates to:
+  /// **'Velocidad vista sin viaje abierto'**
+  String get linkEventIdleSpeedSeen;
+
+  /// No description provided for @linkEventLocationArmed.
+  ///
+  /// In es, this message translates to:
+  /// **'GPS encendido'**
+  String get linkEventLocationArmed;
+
+  /// No description provided for @linkEventLocationStoodDown.
+  ///
+  /// In es, this message translates to:
+  /// **'GPS apagado'**
+  String get linkEventLocationStoodDown;
+
+  /// No description provided for @linkEventLocationRefused.
+  ///
+  /// In es, this message translates to:
+  /// **'El GPS no arrancó'**
+  String get linkEventLocationRefused;
+
+  /// No description provided for @linkEventTripWithoutFixes.
+  ///
+  /// In es, this message translates to:
+  /// **'Viaje sin posición GPS'**
+  String get linkEventTripWithoutFixes;
+
+  /// No description provided for @linkEventLocationStreamError.
+  ///
+  /// In es, this message translates to:
+  /// **'Error del GPS'**
+  String get linkEventLocationStreamError;
+
+  /// No description provided for @linkEventForegroundServiceRefused.
+  ///
+  /// In es, this message translates to:
+  /// **'Android no dejó arrancar el servicio'**
+  String get linkEventForegroundServiceRefused;
+
+  /// No description provided for @linkEventForegroundServiceLost.
+  ///
+  /// In es, this message translates to:
+  /// **'Android paró el servicio'**
+  String get linkEventForegroundServiceLost;
+
+  /// No description provided for @linkEventAutoTripStarted.
+  ///
+  /// In es, this message translates to:
+  /// **'Viaje abierto solo'**
+  String get linkEventAutoTripStarted;
+
+  /// No description provided for @linkEventAutoTripStopped.
+  ///
+  /// In es, this message translates to:
+  /// **'Viaje cerrado solo'**
+  String get linkEventAutoTripStopped;
+
+  /// No description provided for @linkEventAutoTripBlocked.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo abrir el viaje'**
+  String get linkEventAutoTripBlocked;
+
+  /// No description provided for @linkEventReadingsResumed.
+  ///
+  /// In es, this message translates to:
+  /// **'Vuelven las lecturas'**
+  String get linkEventReadingsResumed;
+
+  /// No description provided for @linkEventLinkDropped.
+  ///
+  /// In es, this message translates to:
+  /// **'Conexión perdida'**
+  String get linkEventLinkDropped;
+
+  /// No description provided for @linkEventMuteLinkReleased.
+  ///
+  /// In es, this message translates to:
+  /// **'Conexión muda soltada'**
+  String get linkEventMuteLinkReleased;
+
+  /// No description provided for @linkEventReconnectAttempted.
+  ///
+  /// In es, this message translates to:
+  /// **'Intento de reconexión'**
+  String get linkEventReconnectAttempted;
+
+  /// No description provided for @linkEventReconnectFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'Reconexión fallida'**
+  String get linkEventReconnectFailed;
+
+  /// No description provided for @linkEventReconnectGaveUp.
+  ///
+  /// In es, this message translates to:
+  /// **'Dejó de intentar reconectar'**
+  String get linkEventReconnectGaveUp;
+
+  /// No description provided for @linkEventReconnectPersisting.
+  ///
+  /// In es, this message translates to:
+  /// **'Reconexión sin rendirse (viaje en curso)'**
+  String get linkEventReconnectPersisting;
+
+  /// No description provided for @linkEventReconnectRelaxed.
+  ///
+  /// In es, this message translates to:
+  /// **'Reconexión normal otra vez'**
+  String get linkEventReconnectRelaxed;
+
+  /// No description provided for @linkEventConnectAttempt.
+  ///
+  /// In es, this message translates to:
+  /// **'Intento de conexión'**
+  String get linkEventConnectAttempt;
+
+  /// No description provided for @linkEventBluetoothLooksStuck.
+  ///
+  /// In es, this message translates to:
+  /// **'El Bluetooth del teléfono parece atascado'**
+  String get linkEventBluetoothLooksStuck;
+
+  /// No description provided for @linkEventBluetoothRemedy.
+  ///
+  /// In es, this message translates to:
+  /// **'Remedio de Bluetooth'**
+  String get linkEventBluetoothRemedy;
+
+  /// No description provided for @linkEventBluetoothRecovered.
+  ///
+  /// In es, this message translates to:
+  /// **'Conectó tras el atasco'**
+  String get linkEventBluetoothRecovered;
+
+  /// No description provided for @linkEventProtocolSwitched.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambio de protocolo'**
+  String get linkEventProtocolSwitched;
+
+  /// No description provided for @linkEventAntFrameRejected.
+  ///
+  /// In es, this message translates to:
+  /// **'Frame ANT descartado'**
+  String get linkEventAntFrameRejected;
+
+  /// No description provided for @linkEventAntDecodeFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'Frame ANT sin descifrar'**
+  String get linkEventAntDecodeFailed;
+
+  /// No description provided for @linkEventOldAntProtocolSeen.
+  ///
+  /// In es, this message translates to:
+  /// **'Protocolo ANT antiguo'**
+  String get linkEventOldAntProtocolSeen;
+
+  /// No description provided for @linkEventJkFrameRejected.
+  ///
+  /// In es, this message translates to:
+  /// **'Bytes JK descartados'**
+  String get linkEventJkFrameRejected;
+
+  /// No description provided for @linkEventJkFrameUndecoded.
+  ///
+  /// In es, this message translates to:
+  /// **'Frame JK sin descifrar'**
+  String get linkEventJkFrameUndecoded;
+
+  /// No description provided for @linkEventAntCurrentSignInverted.
+  ///
+  /// In es, this message translates to:
+  /// **'Signo de corriente ANT invertido'**
+  String get linkEventAntCurrentSignInverted;
+
+  /// No description provided for @linkEventsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Historial de conexión'**
+  String get linkEventsTitle;
+
+  /// No description provided for @linkEventsIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que la app decidió y cuándo: cada intento de conexión, cada caída, cada viaje que se abrió o no. Se guarda 14 días.'**
+  String get linkEventsIntro;
+
+  /// No description provided for @linkEventsThisPack.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta batería'**
+  String get linkEventsThisPack;
+
+  /// No description provided for @linkEventsAllPacks.
+  ///
+  /// In es, this message translates to:
+  /// **'Todas'**
+  String get linkEventsAllPacks;
+
+  /// No description provided for @linkEventsThisPackHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que pasa mientras se conecta casi nunca tiene batería asignada todavía: está en «Todas».'**
+  String get linkEventsThisPackHint;
+
+  /// No description provided for @linkEventsAnyKind.
+  ///
+  /// In es, this message translates to:
+  /// **'Todos los tipos'**
+  String get linkEventsAnyKind;
+
+  /// No description provided for @linkEventsEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Nada registrado con estos filtros.'**
+  String get linkEventsEmpty;
+
+  /// No description provided for @linkEventsNoPack.
+  ///
+  /// In es, this message translates to:
+  /// **'sin batería'**
+  String get linkEventsNoPack;
+
+  /// No description provided for @linkEventsBytes.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} bytes'**
+  String linkEventsBytes(int count);
+
+  /// No description provided for @linkEventsCopyBytes.
+  ///
+  /// In es, this message translates to:
+  /// **'Copiar los bytes'**
+  String get linkEventsCopyBytes;
+
+  /// No description provided for @linkEventsBytesCopied.
+  ///
+  /// In es, this message translates to:
+  /// **'Bytes copiados'**
+  String get linkEventsBytesCopied;
+
+  /// No description provided for @linkEventsCopyAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Copiar todo lo mostrado'**
+  String get linkEventsCopyAll;
+
+  /// No description provided for @linkEventsCopiedAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Copiado: {count} filas'**
+  String linkEventsCopiedAll(int count);
+
+  /// No description provided for @linkEventsCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} filas'**
+  String linkEventsCount(int count);
+
+  /// No description provided for @linkEventsUnknownKind.
+  ///
+  /// In es, this message translates to:
+  /// **'Tipo desconocido: {name}'**
+  String linkEventsUnknownKind(String name);
+
+  /// No description provided for @workshopTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Datos del taller en los informes'**
+  String get workshopTitle;
+
+  /// No description provided for @workshopIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Se imprimen arriba en los PDF: el de la batería y el de inspección. Las cifras siguen siendo las que mide la app, y el informe lo sigue diciendo.'**
+  String get workshopIntro;
+
+  /// No description provided for @workshopName.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre del taller'**
+  String get workshopName;
+
+  /// No description provided for @workshopLine.
+  ///
+  /// In es, this message translates to:
+  /// **'Línea de contacto'**
+  String get workshopLine;
+
+  /// No description provided for @workshopLineHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Teléfono, dirección o web'**
+  String get workshopLineHint;
+
+  /// No description provided for @workshopLogo.
+  ///
+  /// In es, this message translates to:
+  /// **'Logo'**
+  String get workshopLogo;
+
+  /// No description provided for @workshopLogoPick.
+  ///
+  /// In es, this message translates to:
+  /// **'Elegir logo'**
+  String get workshopLogoPick;
+
+  /// No description provided for @workshopLogoChange.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar'**
+  String get workshopLogoChange;
+
+  /// No description provided for @workshopLogoRemove.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar'**
+  String get workshopLogoRemove;
+
+  /// No description provided for @workshopLogoRefused.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese archivo no sirve: tiene que ser PNG o JPEG, de menos de 1 MB.'**
+  String get workshopLogoRefused;
+
+  /// No description provided for @workshopSaved.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardado. Sale en el próximo informe.'**
+  String get workshopSaved;
+
+  /// No description provided for @workshopSaveFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo guardar.'**
+  String get workshopSaveFailed;
+
+  /// No description provided for @linkEventBmsWriteRefused.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambio en el BMS rechazado por la app'**
+  String get linkEventBmsWriteRefused;
+
+  /// No description provided for @linkEventBmsWriteNotSent.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambio en el BMS sin enviar'**
+  String get linkEventBmsWriteNotSent;
+
+  /// No description provided for @linkEventBmsWriteSent.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambio enviado al BMS'**
+  String get linkEventBmsWriteSent;
+
+  /// No description provided for @linkEventBmsWriteConfirmed.
+  ///
+  /// In es, this message translates to:
+  /// **'El BMS confirmó el cambio'**
+  String get linkEventBmsWriteConfirmed;
+
+  /// No description provided for @linkEventBmsWriteUnconfirmed.
+  ///
+  /// In es, this message translates to:
+  /// **'El BMS no confirmó el cambio'**
+  String get linkEventBmsWriteUnconfirmed;
+
+  /// No description provided for @settingsSectionBmsWrites.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambios en el BMS'**
+  String get settingsSectionBmsWrites;
+
+  /// No description provided for @bmsWritesTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Permitir que la app cambie el BMS'**
+  String get bmsWritesTitle;
+
+  /// No description provided for @bmsWritesHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Apagado, la app no cambia nada en el BMS. Encendido, puede encender y apagar la carga, la descarga y el balanceador desde Sistema, en Configuración del BMS, y cada vez te pide confirmación. Solo en un JK. Ningún valor de configuración (voltajes, corrientes, temperaturas) se escribe nunca.'**
+  String get bmsWritesHint;
+
+  /// No description provided for @bmsWritesConfirmTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Permitir cambios en el BMS?'**
+  String get bmsWritesConfirmTitle;
+
+  /// No description provided for @bmsWritesConfirmBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Con esto encendido, la app puede apagar la carga, la descarga y el balanceador del BMS. Apagar la descarga corta la corriente: la moto se queda sin potencia y sin luces. Cada cambio te pide confirmación, la app no apaga la descarga con la moto en marcha, y solo da un cambio por hecho cuando el BMS lo confirma. El protocolo está sacado a base de ingeniería inversa: úsalo bajo tu responsabilidad.'**
+  String get bmsWritesConfirmBody;
+
+  /// No description provided for @bmsWritesConfirmAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Permitir'**
+  String get bmsWritesConfirmAction;
+
+  /// No description provided for @bmsSwitchesLocked.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo lectura. Para cambiarlos, activa «Permitir que la app cambie el BMS» en Ajustes.'**
+  String get bmsSwitchesLocked;
+
+  /// No description provided for @bmsSwitchesHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que se ve es lo último que dijo el BMS. Cada cambio pide confirmación y se da por hecho solo cuando el BMS lo confirma.'**
+  String get bmsSwitchesHint;
+
+  /// No description provided for @bmsSwitchSending.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviado. Esperando a que el BMS lo confirme.'**
+  String get bmsSwitchSending;
+
+  /// No description provided for @bmsSwitchConfirmTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'{action, select, chargeOff{¿Apagar la carga?} chargeOn{¿Encender la carga?} dischargeOff{¿Apagar la descarga?} dischargeOn{¿Encender la descarga?} balancerOff{¿Apagar el balanceador?} balancerOn{¿Encender el balanceador?} other{¿Cambiar el interruptor?}}'**
+  String bmsSwitchConfirmTitle(String action);
+
+  /// No description provided for @bmsSwitchConfirmBody.
+  ///
+  /// In es, this message translates to:
+  /// **'{action, select, chargeOff{El BMS deja de aceptar carga: con el cargador enchufado, la batería no carga hasta que lo vuelvas a encender. Con la batería baja, no lo dejes así.} chargeOn{El BMS vuelve a aceptar carga. Sus propias protecciones siguen cortando como siempre.} dischargeOff{La batería deja de dar corriente: la moto se queda sin potencia, sin luces y sin controlador hasta que lo vuelvas a encender, desde aquí o desde la app oficial. Hazlo solo con la moto parada y en un sitio seguro.} dischargeOn{La batería vuelve a dar corriente. Comprueba antes que el acelerador está en reposo.} balancerOff{El balanceador deja de igualar las celdas. Con el tiempo se separan, el pack pierde capacidad útil y una celda llega antes al corte. Vuelve a encenderlo cuando termines.} balancerOn{El balanceador vuelve a igualar las celdas según su voltaje de arranque.} other{El BMS cambia este interruptor.}}'**
+  String bmsSwitchConfirmBody(String action);
+
+  /// No description provided for @bmsSwitchConfirmAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar al BMS'**
+  String get bmsSwitchConfirmAction;
+
+  /// No description provided for @bmsSwitchApplied.
+  ///
+  /// In es, this message translates to:
+  /// **'Aplicado: el BMS lo confirma.'**
+  String get bmsSwitchApplied;
+
+  /// No description provided for @bmsSwitchUnconfirmed.
+  ///
+  /// In es, this message translates to:
+  /// **'El BMS no confirmó el cambio. Lo que ves es lo último que dijo; queda anotado en el historial de conexión.'**
+  String get bmsSwitchUnconfirmed;
+
+  /// No description provided for @bmsSwitchNotSent.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo enviar: el Bluetooth no aceptó la escritura. No cambió nada.'**
+  String get bmsSwitchNotSent;
+
+  /// No description provided for @bmsSwitchRefused.
+  ///
+  /// In es, this message translates to:
+  /// **'{reason, select, notPermitted{La app no tiene permiso para cambiar el BMS. Se activa en Ajustes.} notJk{Solo se puede en un JK. En un ANT la app no escribe nada.} notConnected{No hay conexión con el BMS.} variantUnsupported{Este BMS habla un formato (JK04 o desconocido) en el que la app no escribe. No se envió nada.} noSettings{El BMS todavía no mandó su configuración, así que no se sabe cómo está ahora.} noRecentReading{No hay lecturas recientes: sin ellas la app no puede saber si la moto anda ni esperar la respuesta del BMS.} readingImplausible{Las lecturas no cuadran con el formato en uso. Mientras no cuadren, la app no escribe nada.} alreadySet{El BMS ya lo tiene así.} riding{Para la moto primero: con la moto en marcha o un viaje grabándose, la app no apaga la descarga.} busy{Hay otro cambio esperando la respuesta del BMS.} other{No se envió nada.}}'**
+  String bmsSwitchRefused(String reason);
+
+  /// No description provided for @systemWritesOnNote.
+  ///
+  /// In es, this message translates to:
+  /// **'El permiso de escritura está encendido: la app solo puede encender y apagar los tres interruptores de arriba, cada vez con tu confirmación. Ningún otro valor se escribe nunca.'**
+  String get systemWritesOnNote;
+
+  /// No description provided for @tripMapTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Recorrido'**
+  String get tripMapTitle;
+
+  /// No description provided for @tripMapStart.
+  ///
+  /// In es, this message translates to:
+  /// **'Salida'**
+  String get tripMapStart;
+
+  /// No description provided for @tripMapEnd.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegada'**
+  String get tripMapEnd;
+
+  /// No description provided for @tripMapBySpeed.
+  ///
+  /// In es, this message translates to:
+  /// **'Velocidad'**
+  String get tripMapBySpeed;
+
+  /// No description provided for @tripMapByPower.
+  ///
+  /// In es, this message translates to:
+  /// **'Potencia'**
+  String get tripMapByPower;
+
+  /// No description provided for @tripMapPowerHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que daba la batería en cada punto: su voltaje por su corriente, tal como los mandó el BMS junto a cada posición. No es consumo por kilómetro, que en cada parada se dispara aunque no se gaste nada.'**
+  String get tripMapPowerHint;
+
+  /// No description provided for @tripMapOffline.
+  ///
+  /// In es, this message translates to:
+  /// **'El mapa de fondo se pide a OpenStreetMap por internet al abrir esta pantalla, así que sus servidores ven por qué zona fue el viaje (no el viaje en sí). Sin conexión, el recorrido se dibuja igual sobre fondo liso.'**
+  String get tripMapOffline;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../metrics/range_estimator.dart';
+import '../../metrics/trip_learning.dart';
 import '../../metrics/trip_recorder.dart';
 import '../theme.dart';
 import 'common.dart';
@@ -35,7 +36,7 @@ class TripLearnedSection extends StatelessWidget {
 
   final double socUsed;
   final double distanceKm;
-  final double maxTemperature;
+  final double? maxTemperature;
   final double maxDeltaVolts;
   final AppL10n t;
 
@@ -109,7 +110,11 @@ class TripLearnedSection extends StatelessWidget {
 
   String _headline(TripConclusions c) {
     final after = c.whPerKmAfter.toStringAsFixed(1);
-    if (whPerKm == null) return t.tripLearnedTooShort;
+    if (whPerKm == null) {
+      return t.tripLearnedTooShort(
+        (TripLearning.minimumKm * 1000).toStringAsFixed(0),
+      );
+    }
     if (!c.hadLearnedBefore) return t.tripLearnedFirst(after);
     if (!c.moved) return t.tripLearnedUnchanged(after);
     // hadLearnedBefore is exactly the case where this is non-null.
@@ -134,8 +139,9 @@ class TripLearnedSection extends StatelessWidget {
       tips.add(t.tripThirstyTip(thirst.toStringAsFixed(0)));
     }
 
-    if (tips.length < 2 && maxTemperature > 45) {
-      tips.add(t.tripHotTip(maxTemperature.toStringAsFixed(1)));
+    final hottest = maxTemperature;
+    if (tips.length < 2 && hottest != null && hottest > 45) {
+      tips.add(t.tripHotTip(hottest.toStringAsFixed(1)));
     }
     if (tips.length < 2 && maxDeltaVolts > 0.06) {
       tips.add(t.tripDeltaTip(maxDeltaVolts.toStringAsFixed(3)));

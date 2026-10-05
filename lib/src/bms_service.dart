@@ -1,10 +1,14 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'ble/ble_transport.dart';
 import 'ble/bms_link.dart';
+import 'ble/bms_write_gate.dart';
+import 'ble/connect_recovery.dart';
 import 'ble/link_script.dart';
 import 'ble/link_lost_alarm.dart';
 import 'ble/link_trouble.dart';
+import 'ble/link_traffic.dart';
 import 'ble/simulator/simulated_pack.dart';
 import 'ble/switchable_link.dart';
 import 'data/database.dart';
@@ -20,6 +24,9 @@ import 'model/bms_device_info.dart';
 import 'model/bms_snapshot.dart';
 import 'model/jk_device_info.dart';
 import 'model/jk_settings.dart';
+import 'pack/chemistry.dart';
+import 'protocol/ant_constants.dart';
+import 'protocol/ant_current_sign.dart';
 import 'protocol/ant_frame.dart';
 import 'protocol/ant_frame_assembler.dart';
 import 'protocol/ant_parser.dart';
@@ -33,9 +40,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'metrics/capacity_cycle_detector.dart';
+import 'metrics/capacity_endpoints.dart';
 import 'metrics/capacity_test_runner.dart';
 import 'metrics/charge_alerts.dart';
 import 'metrics/charge_session.dart';
+import 'metrics/pack_energy.dart';
 import 'metrics/range_estimator.dart';
 import 'metrics/range_outlook.dart';
 import 'metrics/sampling.dart';
@@ -87,12 +96,17 @@ class BmsService {
     BmsLink? transport,
     JkParser parser = const JkParser(),
     LocationSource Function()? locationFactory,
+    @visibleForTesting DateTime Function()? clock,
   }) : _transport = transport ?? SwitchableLink(),
        _parser = parser,
-       _locationFactory = locationFactory {
-    _assembler.onRejected = (_) => _statsController.add(stats);
+       _locationFactory = locationFactory,
+       _now = clock ?? (() => DateTime.now().toUtc()) {
+    _assembler.onRejected = _onJkRejected;
     _antAssembler.onRejected = _onAntRejected;
     _bytesSub = _transport.bytes.listen(_onBytes);
+    _writesSub = _transport.writes.listen(
+      (frame) => traffic.add(TrafficDirection.tx, frame),
+    );
     _stateSub = _transport.state.listen((s) {
       final was = lastLinkState;
       lastLinkState = s;
@@ -112,7 +126,104 @@ class BmsService {
       unawaited(_updateForegroundService());
     });
     _errorSub = _transport.errors.listen(_onLinkError);
+    _recoverySub = _switchable?.real.recovery.events.listen(_onRecovery);
   }
+
+  StreamSubscription<RecoveryEvent>? _recoverySub;
+  final _recoveryController = StreamController<RecoveryEvent>.broadcast();
+
+  /// Everything the connect recovery reports, for a screen that shows the
+  /// stuck card to redraw on.
+  Stream<RecoveryEvent> get recoveryEvents => _recoveryController.stream;
+
+  /// The last few connect attempts, newest first, for the console's
+  /// diagnostic copy. All of them, including any the hourly budget kept out
+  /// of the database.
+  final List<ConnectAttemptRecord> recentAttempts = [];
+
+  /// Thirty attempt rows an hour at most. A retry loop on a stuck stack makes
+  /// one every few seconds, and the log exists to explain that morning, not to
+  /// be buried by it.
+  final AttemptBudget _attemptBudget = AttemptBudget();
+
+  void _onRecovery(RecoveryEvent e) {
+    final repo = repository;
+    switch (e) {
+      case AttemptRecorded(:final record):
+        recentAttempts.insert(0, record);
+        if (recentAttempts.length > 8) recentAttempts.removeLast();
+        final skipped = _attemptBudget.admit(record.endedAt);
+        if (skipped != null) {
+          unawaited(
+            repo?.note(
+                  LinkEventKind.connectAttempt,
+                  detail: skipped == 0
+                      ? record.detail
+                      : '${record.detail} · $skipped attempt(s) before this '
+                            'one not written (hourly budget)',
+                  deviceId: record.deviceId,
+                ) ??
+                Future.value(),
+          );
+        }
+      case StuckDeclared(:final deviceId, :final failures):
+        unawaited(
+          repo?.note(
+                LinkEventKind.bluetoothLooksStuck,
+                detail: '$failures failed attempts in a row',
+                deviceId: deviceId,
+              ) ??
+              Future.value(),
+        );
+      case RemedyTaken(:final remedy, :final detail):
+        unawaited(
+          repo?.note(
+                LinkEventKind.bluetoothRemedy,
+                detail: detail.isEmpty ? remedy.name : '${remedy.name}: $detail',
+              ) ??
+              Future.value(),
+        );
+      case RecoveredAfterStuck(:final detail):
+        unawaited(
+          repo?.note(LinkEventKind.bluetoothRecovered, detail: detail) ??
+              Future.value(),
+        );
+    }
+    if (!_recoveryController.isClosed) _recoveryController.add(e);
+  }
+
+  /// Whether enough attempts have failed in a row, with the pack within
+  /// reach, that the phone's Bluetooth is the suspect. False for the
+  /// simulator and for a test link.
+  bool get bluetoothLooksStuck {
+    if (isDemo) return false;
+    return _switchable?.real.recovery.looksStuck ?? false;
+  }
+
+  /// Reads what the previous process left about a stuck stack. Called once
+  /// at startup, after the repository is set, so a restart taken as a remedy
+  /// is written down.
+  Future<void> loadLinkRecovery() async =>
+      _switchable?.real.recovery.load() ?? Future.value();
+
+  /// Whether the radio is busy with a link, so a background scan keeps out of
+  /// its way.
+  bool get radioBusy => !isDemo && (_switchable?.real.busy ?? false);
+
+  /// The stuck card's button. See [BleTransport.resetRadio].
+  Future<String> resetBluetooth() async {
+    final real = _switchable?.real;
+    if (real == null || isDemo) return '';
+    // The service lets go first, so nothing decoded from the pack outlives
+    // the link and the drop that follows is not reported as an outage.
+    await disconnect();
+    return real.resetRadio();
+  }
+
+  /// The phone holds this pack with nothing here owning the link. The next
+  /// attempt closes it first.
+  void suspectStranded(String deviceId) =>
+      _switchable?.real.suspectStranded(deviceId);
 
   /// What the radio said, kept and written down.
   ///
@@ -200,7 +311,13 @@ class BmsService {
   /// Exists so the pause-and-resume path can be tested. It was a real ride
   /// that found the bug there, which is an expensive way to run a test.
   final LocationSource Function()? _locationFactory;
-  final FrameAssembler _assembler = FrameAssembler();
+
+  /// The time readings are stamped with and a ride is timed by.
+  ///
+  /// Injectable so the auto-start can be tested against a real ride's
+  /// readings, which span minutes, without waiting minutes for them.
+  final DateTime Function() _now;
+  late final FrameAssembler _assembler = FrameAssembler(clock: _now);
 
   // --- Brand ---
   //
@@ -218,13 +335,17 @@ class BmsService {
   /// silence notice to say "you said", and to suggest the other brand.
   bool _brandChosenByRider = false;
 
-  final AntFrameAssembler _antAssembler = AntFrameAssembler();
+  late final AntFrameAssembler _antAssembler = AntFrameAssembler(clock: _now);
   final AntParser _antParser = const AntParser();
 
   /// The last ANT status that reached the snapshot stream, with the fields
   /// only ANT reports (MOSFET codes, balancer), for the System tab.
   AntStatus? get lastAntStatus => _lastAntStatus;
   AntStatus? _lastAntStatus;
+
+  /// What each ANT pack has shown about the sign of its current, by pack.
+  /// Never cleared on reconnect: the answer is a fact about the pack.
+  final Map<String, AntCurrentSign> _antCurrentSign = {};
 
   final _antStatusController = StreamController<AntStatus>.broadcast();
 
@@ -316,12 +437,66 @@ class BmsService {
   /// Volts per cell at which the pack cuts off. Taken from the BMS's own
   /// undervoltage setting once the settings frame arrives, so the usable-energy
   /// figure follows how this pack is actually configured.
-  double get cutoffVoltagePerCell {
+  ///
+  /// Until then, and always on an ANT, which reports no settings, it is the
+  /// usual cutoff for the pack's chemistry
+  /// ([ChemistryLimits.typicalCutoffVolts]), and [cutoffIsAssumed] says so. It used to be a flat 3.0 V whatever the
+  /// cells, which on an LFP pack put the "near cutoff" warning at 3.1 V, where
+  /// an LFP cell spends a good part of an ordinary ride.
+  double get cutoffVoltagePerCell =>
+      _configuredCutoff ??
+      ChemistryLimits.of(cutoffChemistry)?.typicalCutoffVolts ??
+      ChemistryLimits.unknownCutoffVolts;
+
+  /// True when [cutoffVoltagePerCell] is not the BMS's own setting, so
+  /// anything quoting it has to say it is assumed.
+  bool get cutoffIsAssumed => _configuredCutoff == null;
+
+  double? get _configuredCutoff {
     final configured = _lastSettings?.cellUvp;
     if (configured != null && configured > 1.5 && configured < 3.6) {
       return configured;
     }
-    return 3.0;
+    return null;
+  }
+
+  /// The chemistry an assumed cutoff is chosen for, and the one energy is
+  /// priced by: what the rider declared for this pack, else what the pack
+  /// itself shows (a cell seen above 3.8 V since it connected is not LFP),
+  /// else unknown.
+  CellChemistry get cutoffChemistry => PackEnergy.chemistryFor(
+    declared: activeDevice?.chemistry,
+    cellOvp: _lastSettings?.cellOvp,
+    highestCellVolts:
+        history.maxCellVoltageSeen ?? _lastSnapshot?.maxCellVoltage,
+  );
+
+  /// Energy left in the pack at [s], and how much of it the weakest cell
+  /// lets out.
+  ///
+  /// The one place every remaining-watt-hours and range figure comes from:
+  /// the health and live tabs, the widget, the range stored with a ride. The
+  /// imbalance is judged from the newest resting reading of this connection,
+  /// never from [s] itself when [s] is under load or on a charger. See
+  /// [PackEnergy].
+  PackEnergy energyOf(BmsSnapshot s) {
+    final rest = history.latestResting;
+    return PackEnergy.remaining(
+      remainingAh: s.remainingCapacityAh,
+      soc: s.soc,
+      cellCount: s.cellCount,
+      chemistry: cutoffChemistry,
+      cutoffVoltagePerCell: cutoffVoltagePerCell,
+      resting: rest == null || rest.cellVoltages.isEmpty
+          ? null
+          : RestingCells(
+              minCellVoltage: rest.minCellVoltage,
+              averageCellVoltage: rest.averageCellVoltage,
+              at: rest.timestamp,
+            ),
+      liveAverageCellVoltage:
+          s.cellVoltages.isEmpty ? null : s.averageCellVoltage,
+    );
   }
 
   /// Fires when the link is up but nothing decodable has arrived for a while.
@@ -340,6 +515,7 @@ class BmsService {
   final _problemController = StreamController<String>.broadcast();
 
   late final StreamSubscription<List<int>> _bytesSub;
+  late final StreamSubscription<List<int>> _writesSub;
   late final StreamSubscription<BleLinkState> _stateSub;
   late final StreamSubscription<BleLinkError> _errorSub;
 
@@ -370,6 +546,15 @@ class BmsService {
   /// *after* a failed attempt, from a console that could not be opened while
   /// the attempt was running. Forty is a couple of failed connects' worth.
   final List<LinkNotice> recentNotices = [];
+
+  /// The bytes themselves, both ways, across connects, for the console.
+  ///
+  /// Like [recentNotices], never cleared on connect or disconnect: a failed
+  /// attempt ends in a disconnect, and what the pack sent during it is the
+  /// thing the console is opened to read. Recorded as the chunks arrive,
+  /// before anything decides what they are, so bytes no assembler could use
+  /// are there too.
+  final LinkTrafficLog traffic = LinkTrafficLog();
 
   void _remember(String text) {
     recentNotices.insert(0, LinkNotice(DateTime.now(), text));
@@ -414,6 +599,13 @@ class BmsService {
     antRejectedFrames = 0;
     lastDecodeError = null;
     recentProblems.clear();
+    // The frame tally too. It used to run for the life of the service while
+    // everything above restarted here, so the connect screen's evidence line
+    // could say "3000 frames ok · 0 cell info" about a pack that had sent
+    // nothing on this connection: the 3000 were the last pack's.
+    _assembler.stats.reset();
+    _antAssembler.stats.reset();
+    _bytesReceived = 0;
   }
 
   /// Last link state seen, so a screen built after the transition still shows
@@ -440,14 +632,15 @@ class BmsService {
   /// speak JK and have not been converted to the brand-neutral type yet.
   JkDeviceInfo? get jkDeviceInfo => _lastDeviceInfo?.jk;
   JkSettings? get lastSettings => _lastSettings;
-  /// Link quality counters: frame outcomes from the assembler the current
-  /// brand is read with, and bytes from the service's own total.
+  /// Link quality counters for this connection: frame outcomes from the
+  /// assembler the current brand is read with, and bytes from the service's
+  /// own count. All four restart on every connect, like [cellInfoFrames] and
+  /// the rest, so a line that prints them side by side describes one
+  /// connection.
   ///
   /// The byte count cannot come from an assembler. Each one counts only what
-  /// reached it, for the life of the service, so after a JK session an ANT
-  /// connection started below the JK figure; the connect screen, which
-  /// measures bytes against the total it saw before connecting, then reported
-  /// "0 bytes received" while an ANT was sending frames that failed their CRC.
+  /// reached it, so the chunk that switched the brand, eaten by the other
+  /// brand's probe, was missing from the new one's figure.
   /// One object, updated in place, so a screen holding it stays current.
   FrameStats get stats {
     final from =
@@ -462,9 +655,21 @@ class BmsService {
 
   final FrameStats _linkStats = FrameStats();
 
-  /// Every byte the link delivered, whichever brand it was read as, counted
-  /// before detection so the chunk that triggers a switch is counted too.
+  /// Every byte the link delivered on this connection, whichever brand it was
+  /// read as, counted before detection so the chunk that triggers a switch is
+  /// counted too.
   int _bytesReceived = 0;
+
+  /// Every byte the link has delivered since the service started, never
+  /// reset.
+  ///
+  /// For a caller that measures growth from a figure it took before calling
+  /// [connect]: the connect screen does, and a count that restarts inside
+  /// [connect] would put its baseline above everything the new pack sends.
+  /// After a JK session that is how an ANT sending frames that failed their
+  /// CRC was once reported as "0 bytes received".
+  int get bytesReceivedTotal => _bytesReceivedTotal;
+  int _bytesReceivedTotal = 0;
   int? get negotiatedMtu => _transport.negotiatedMtu;
 
   BmsSnapshot? _lastSnapshot;
@@ -524,6 +729,8 @@ class BmsService {
     // session would feed its JK frames to the ANT assembler and show nothing.
     _brandChosenByRider = false;
     _resetBrandEvidence();
+    // A connection like any other, so its counters start from nothing too.
+    _resetCounters();
     _useBrand(BmsBrand.jk);
     await link.useSimulator(scenario: scenario);
     // The simulated pack is a pack like any other as far as storage goes. It
@@ -665,6 +872,8 @@ class BmsService {
     _lastDeviceInfo = null;
     _lastSettings = null;
     chargeAlerts.reset();
+    ridingGate.reset();
+    _riding = false;
     tripAutoStart.reset();
     // Without this, a ride's saved-summary text outlives the pack it was
     // measured on: it survived a switch to another pack, and it survived
@@ -723,6 +932,9 @@ class BmsService {
     // history folder and a place in the saved list.
     _pendingDeviceId = deviceId;
     _pendingDeviceName = name;
+    // A pack under inspection is never adopted, so its sign check is filed
+    // under no id. That one must not carry over to the next pack looked at.
+    _antCurrentSign.remove('');
     _resetCounters();
     // Strongest evidence first: what the rider just said, then what this pack
     // was last read as, then the advertised name. JK when nothing says
@@ -906,6 +1118,8 @@ class BmsService {
     // Counted before anything decides what the bytes are, so the evidence
     // that a pack is talking never depends on which brand it was taken for.
     _bytesReceived += chunk.length;
+    _bytesReceivedTotal += chunk.length;
+    traffic.add(TrafficDirection.rx, chunk);
     // The chunk that completed the other brand's frame was that frame's last
     // piece, already consumed by the probe. Handing it on as well would give
     // the newly chosen assembler a fragment with no head, which it can only
@@ -979,6 +1193,11 @@ class BmsService {
     _antAssembler.reset();
     _jkProbe.reset();
     _antProbe.reset();
+    // The brand read first threw away the new brand's bytes until the probe
+    // caught on, and wrote them down as its own rejections. They are worth
+    // having, but they must not leave the right brand less budget than a
+    // connection that started with it.
+    _rejectedNoted = 0;
     if (to == BmsBrand.ant) {
       // The JK timer asks with JK bytes. An ANT reads them as nothing, and a
       // pack that is being polled by its own script has no need of them.
@@ -1027,7 +1246,7 @@ class BmsService {
           // device-info request. The raw frame above is dropped until a pack
           // is active, so before then this row is the only trace of what the
           // pack said instead of the frames it was asked for.
-          _noteAntDiagnosis(
+          _noteDiagnosis(
             LinkEventKind.antDecodeFailed,
             'unrecognised fn=0x'
             '${frame.function.toRadixString(16).padLeft(2, '0')} '
@@ -1043,7 +1262,7 @@ class BmsService {
         if (decodeFailures == 1 || decodeFailures % 100 == 0) {
           _problem('Could not decode an ANT frame: ${e.message}');
         }
-        _noteAntDiagnosis(
+        _noteDiagnosis(
           LinkEventKind.antDecodeFailed,
           '${e.message} ${_hex(frame.bytes)}',
         );
@@ -1052,10 +1271,11 @@ class BmsService {
     _statsController.add(stats);
   }
 
-  /// Writes one ANT diagnosis row to LinkEvents, within this connection's
-  /// budget. The detail always ends in the frame's hex, as its last
-  /// space-separated token, so a backup can be replayed through the decoder.
-  void _noteAntDiagnosis(LinkEventKind kind, String detail) {
+  /// Writes one diagnosis row to LinkEvents, JK or ANT, within this
+  /// connection's budget. The detail always ends in the bytes' hex, as its
+  /// last space-separated token, so a backup can be replayed through the
+  /// decoder.
+  void _noteDiagnosis(LinkEventKind kind, String detail) {
     if (_rejectedNoted >= _rejectedNoteCap) return;
     _rejectedNoted++;
     unawaited(
@@ -1087,8 +1307,34 @@ class BmsService {
         RawBmsFrame.antRejected(r.bytes, DateTime.now().toUtc()),
       );
     }
-    _noteAntDiagnosis(
+    _noteDiagnosis(
       LinkEventKind.antFrameRejected,
+      '${r.reason.name} ${_hex(r.bytes)}',
+    );
+  }
+
+  /// Bytes the JK assembler threw away, written down the way ANT's are.
+  ///
+  /// JK had nothing like it: the assembler kept a count and dropped the
+  /// bytes, and a valid frame only reaches the raw-frame table once a pack is
+  /// active, which a pack that never decodes never becomes. A backup taken
+  /// after a failed JK connect held no byte the pack had sent.
+  ///
+  /// A failed checksum is written down whenever it happens, within the
+  /// budget: it is a frame arriving damaged. Bytes that never became a frame
+  /// are written down only until something on this connection has framed.
+  /// After that they are padding and the ends of frames a drop cut short,
+  /// which say nothing new, and noting them would spend the budget on every
+  /// healthy connection. Before it, they are the only trace of what a pack
+  /// that never decodes actually sent.
+  void _onJkRejected(JkRejected r) {
+    if (r.reason == FrameRejection.badChecksum) {
+      _statsController.add(stats);
+    } else if (_brandProved) {
+      return;
+    }
+    _noteDiagnosis(
+      LinkEventKind.jkFrameRejected,
       '${r.reason.name} ${_hex(r.bytes)}',
     );
   }
@@ -1111,11 +1357,37 @@ class BmsService {
           'exist (${reasons.join('; ')}). Not used; its bytes are kept.',
         );
       }
-      _noteAntDiagnosis(
+      _noteDiagnosis(
         LinkEventKind.antDecodeFailed,
         'implausible ${reasons.join('; ')} ${_hex(frame.bytes)}',
       );
       return;
+    }
+    // The sign of an ANT's current is an assumption the frame can check: its
+    // own battery state says which way the charge is going. Per pack, and
+    // kept across reconnects, so a pack found to run backwards is corrected
+    // from its first frame the next time rather than after three wrong ones.
+    final packKey = activeDeviceId ?? _pendingDeviceId ?? '';
+    final sign = _antCurrentSign.putIfAbsent(packKey, AntCurrentSign.new);
+    final raw = status.snapshot.current;
+    if (sign.observe(batteryState: status.batteryState, current: raw)) {
+      final state = antText(antBatteryStateText, status.batteryState);
+      _problem(
+        'This ANT reports its current with the opposite sign to its own '
+        'battery state ($state at ${raw.toStringAsFixed(1)} A, several '
+        'frames running). Reversed from now on for this pack.',
+      );
+      unawaited(
+        repository?.note(
+              LinkEventKind.antCurrentSignInverted,
+              detail: 'state $state current ${raw.toStringAsFixed(1)} A',
+              deviceId: activeDeviceId ?? _pendingDeviceId,
+            ) ??
+            Future.value(),
+      );
+    }
+    if (sign.inverted) {
+      status = status.withSnapshot(status.snapshot.withCurrent(-raw));
     }
     _lastAntStatus = status;
     _antStatusController.add(status);
@@ -1130,9 +1402,14 @@ class BmsService {
 
     final type = frame.type;
     if (type == null) {
-      _problem(
-        'Ignored a frame with unsupported record type '
-        '0x${frame.rawType.toRadixString(16).padLeft(2, '0')}.',
+      final code = frame.rawType.toRadixString(16).padLeft(2, '0');
+      _problem('Ignored a frame with unsupported record type 0x$code.');
+      // The raw frame above is dropped until a pack is active, and a pack
+      // that only ever sends this is never activated, so this row is the one
+      // trace of the frame it sent instead of the ones it was asked for.
+      _noteDiagnosis(
+        LinkEventKind.jkFrameUndecoded,
+        'unsupported type=0x$code ${_hex(frame.bytes)}',
       );
       return;
     }
@@ -1156,6 +1433,10 @@ class BmsService {
       }
     } on JkParseException catch (e) {
       _problem(e.message);
+      _noteDiagnosis(
+        LinkEventKind.jkFrameUndecoded,
+        '${e.message} ${_hex(frame.bytes)}',
+      );
     }
   }
 
@@ -1373,6 +1654,7 @@ class BmsService {
       _checkChargeAlerts(snapshot);
       unawaited(_updateForegroundService());
       unawaited(_updateAutoTrip(snapshot));
+      unawaited(_watchTripFixes(snapshot));
       _updateCapacityTest(snapshot);
       _watchCharging(snapshot);
       _learnFromSnapshot(snapshot);
@@ -1398,13 +1680,139 @@ class BmsService {
     _settingsController.add(settings);
   }
 
+  // --- Switch writes ---
+  //
+  // The one thing the app can change on a BMS: the charge, discharge and
+  // balancer switches of a JK02, and only with the rider's permission on.
+  // Every attempt goes through [decideSwitchWrite], the only code that can
+  // make a write frame, and every attempt leaves a row in the link events.
+
+  /// The rider's "let the app change the BMS" setting. Off until the
+  /// settings say otherwise; with it off [decideSwitchWrite] refuses every
+  /// write before a frame is built.
+  bool bmsWritesAllowed = false;
+
+  bool _switchWriteInFlight = false;
+
+  /// How long a write waits for a settings frame showing the new state.
+  @visibleForTesting
+  Duration switchConfirmWindow = const Duration(seconds: 5);
+
+  /// What the gate would answer for setting [target] to [on] right now.
+  /// Pure: nothing is written and nothing is recorded, so a screen can ask
+  /// before showing a confirmation.
+  WriteDecision checkSwitchWrite(BmsSwitch target, bool on) {
+    final snapshot = _lastSnapshot;
+    return decideSwitchWrite(
+      target,
+      on,
+      WriteContext(
+        permitted: bmsWritesAllowed,
+        brand: _brand,
+        link: lastLinkState,
+        variant: _variant,
+        settings: _lastSettings,
+        snapshot: snapshot,
+        snapshotPlausible:
+            snapshot != null && plausibility.reject(snapshot).isEmpty,
+        now: _now(),
+        riding: _riding || ridingGate.isRiding,
+        tripRecording: trip.isRecording,
+        busy: _switchWriteInFlight,
+      ),
+    );
+  }
+
+  /// Sets [target] to [on] on the pack, if the gate allows it, and waits for
+  /// the pack to say it did.
+  ///
+  /// Confirmed only by a settings frame showing the new state, asked for
+  /// straight after the write and once more halfway through the window. The
+  /// switch rows show what the settings frame says, so the screen never
+  /// claims a state the pack has not reported.
+  Future<SwitchWriteOutcome> setBmsSwitch(BmsSwitch target, bool on) async {
+    final what = '${target.name} ${on ? 'on' : 'off'}';
+    final device = activeDeviceId;
+    final decision = checkSwitchWrite(target, on);
+    final RegisterWrite write;
+    switch (decision) {
+      case WriteRefused(:final reason):
+        await (repository?.note(
+              LinkEventKind.bmsWriteRefused,
+              detail: '$what: ${reason.name}',
+              deviceId: device,
+            ) ??
+            Future<void>.value());
+        return SwitchWriteOutcome(SwitchWriteStatus.refused, refusal: reason);
+      case WriteGranted(write: final w):
+        write = w;
+    }
+
+    _switchWriteInFlight = true;
+    final answered = Completer<bool>();
+    // Listening before the write, so an answer that arrives quickly is not
+    // missed. A frame with the old state is not an answer: it may have been
+    // on its way before the pack read the write.
+    final sub = _settingsController.stream.listen((s) {
+      if (target.stateIn(s) == on && !answered.isCompleted) {
+        answered.complete(true);
+      }
+    });
+    Timer? again;
+    final detail =
+        '$what: register 0x${write.address.toRadixString(16).toUpperCase()} '
+        'value ${on ? 1 : 0} ${write.hex}';
+    try {
+      final sent = await _transport.writeRegister(write);
+      if (!sent) {
+        await (repository?.note(
+              LinkEventKind.bmsWriteNotSent,
+              detail: detail,
+              deviceId: device,
+            ) ??
+            Future<void>.value());
+        return const SwitchWriteOutcome(SwitchWriteStatus.notSent);
+      }
+      await (repository?.note(
+            LinkEventKind.bmsWriteSent,
+            detail: detail,
+            deviceId: device,
+          ) ??
+          Future<void>.value());
+      await _transport.askSettings();
+      again = Timer(
+        switchConfirmWindow ~/ 2,
+        () => unawaited(_transport.askSettings()),
+      );
+      final confirmed = await answered.future.timeout(
+        switchConfirmWindow,
+        onTimeout: () => false,
+      );
+      await (repository?.note(
+            confirmed
+                ? LinkEventKind.bmsWriteConfirmed
+                : LinkEventKind.bmsWriteUnconfirmed,
+            detail: what,
+            deviceId: device,
+          ) ??
+          Future<void>.value());
+      return SwitchWriteOutcome(
+        confirmed ? SwitchWriteStatus.confirmed : SwitchWriteStatus.unconfirmed,
+      );
+    } finally {
+      again?.cancel();
+      await sub.cancel();
+      _switchWriteInFlight = false;
+    }
+  }
+
   // --- Trip recording ---
   //
   // Distance and speed come from the phone, everything else from the pack. The
   // BMS cannot do this half: the JK protocol carries GPS lock bits but no
   // position data at all.
 
-  final TripRecorder trip = TripRecorder();
+  late final TripRecorder trip = TripRecorder(clock: _now);
 
   LocationSource? _location;
   StreamSubscription<GeoFix>? _fixSub;
@@ -1414,7 +1822,12 @@ class BmsService {
   /// in which case nothing is recorded rather than a trip of zero kilometres
   /// being logged as if it were real.
   Future<LocationProblem?> startTrip() async {
-    final problem = await _ensureLocation();
+    // A stream the auto-start already has delivering fixes is kept, not
+    // rebuilt. Rebuilding it meant the ride's first seconds waited for a
+    // fresh fix, and with the phone in a pocket it was one more stream
+    // opened from the background, which is the one Android may refuse.
+    final live = _location != null && _lastAutoSpeedKmh != null;
+    final problem = live ? null : await _ensureLocation();
     lastLocationProblem = problem;
     if (problem != null) return problem;
     _segments.reset();
@@ -1424,7 +1837,7 @@ class BmsService {
     // With the phone in a pocket it meant the rest of the ride recorded
     // nothing and its watt-hours ended at the drop, because the only thing
     // that revives the loop is a tap nobody is there to make.
-    _transport.persistRetries = true;
+    _syncRetryPersistence();
     unawaited(repository?.note(LinkEventKind.reconnectPersisting) ?? Future.value());
     // The row is opened now rather than at the end, so readings taken during
     // the ride can be attributed to it and so a ride that ends badly still
@@ -1486,10 +1899,28 @@ class BmsService {
     final hadLearnedBefore = priorTrips.isNotEmpty;
 
     final points = trip.points;
+    // A ride that took in no fix at all is written down with what the GPS
+    // did deliver, before the stream is closed and that is lost.
+    final startedAt = trip.startedAt;
+    if (!isDemo &&
+        trip.fixesSeen == 0 &&
+        startedAt != null &&
+        _now().difference(startedAt.toUtc()) >
+            const Duration(minutes: 2)) {
+      unawaited(
+        repository?.note(
+              LinkEventKind.tripWithoutFixes,
+              detail: 'ride ended with no fix: ${_gpsDiagnostics()}',
+              deviceId: activeDeviceId,
+            ) ??
+            Future.value(),
+      );
+    }
     final summary = trip.stop();
     _segments.reset();
-    // Off the bike the old answer is the right one again.
-    _transport.persistRetries = false;
+    // Off the bike the old answer is the right one again, unless a charge
+    // is being watched.
+    _syncRetryPersistence();
     unawaited(repository?.note(LinkEventKind.reconnectRelaxed) ?? Future.value());
     await _stopLocation();
 
@@ -1536,16 +1967,7 @@ class BmsService {
     }
 
     final snapshot = _lastSnapshot;
-    final usableWh = snapshot == null
-        ? 0.0
-        : RangeEstimator.usableWh(
-            remainingAh: snapshot.remainingCapacityAh,
-            packVoltage: snapshot.packVoltage,
-            cellCount: snapshot.cellCount,
-            minCellVoltage: snapshot.minCellVoltage,
-            averageCellVoltage: snapshot.averageCellVoltage,
-            cutoffVoltagePerCell: cutoffVoltagePerCell,
-          );
+    final usableWh = snapshot == null ? 0.0 : energyOf(snapshot).usableWh;
 
     final conclusions = TripConclusions(
       whPerKmBefore: hadLearnedBefore ? whPerKmBefore : null,
@@ -1621,8 +2043,113 @@ class BmsService {
           _noticedSpeed = false;
         }
       }
+    }, onError: (Object e) {
+      // Kept, not thrown into the zone: an error here used to vanish, and the
+      // stream behind it delivered nothing for the rest of the ride.
+      unawaited(
+        repository?.note(
+              LinkEventKind.locationStreamError,
+              detail: '$e',
+              deviceId: activeDeviceId,
+            ) ??
+            Future.value(),
+      );
     });
     return null;
+  }
+
+  /// How long a ride may record with no fix before the GPS is suspected.
+  static const Duration tripFixSilence = Duration(seconds: 90);
+
+  /// When the GPS was last rebuilt by [_watchTripFixes], so it is retried
+  /// every couple of minutes rather than on every reading.
+  DateTime? _fixRebuiltAt;
+  bool _fixSilenceNoted = false;
+
+  /// Notices a ride that is recording and getting no GPS, and does something.
+  ///
+  /// A ride came back as 45 minutes, 0 km and 0 km/h: the readings arrived the
+  /// whole time and not one fix did, and nothing said so until the end. The
+  /// stream can die without telling the app (the OS revoking the permission,
+  /// standing the provider down, a service it needed being refused), so this
+  /// judges by what arrives: after [tripFixSilence] with the pack drawing
+  /// current and no fix, it writes down why it thinks so, says it on screen,
+  /// and rebuilds the stream, again every two minutes until a fix lands.
+  Future<void> _watchTripFixes(BmsSnapshot snapshot) async {
+    if (!trip.isRecording || isDemo) {
+      _fixSilenceNoted = false;
+      return;
+    }
+    final now = _now();
+    final since = trip.lastFixAt ?? trip.startedAt;
+    if (since == null) return;
+    final silent = now.difference(since.toUtc());
+    if (silent < tripFixSilence) {
+      _fixSilenceNoted = false;
+      return;
+    }
+    // Parked at a light with the motor off is not a dead GPS: the distance
+    // filter holds fixes back while nothing moves.
+    if (snapshot.current > -1) return;
+
+    if (!_fixSilenceNoted) {
+      _fixSilenceNoted = true;
+      _problem(
+        'This ride has had no GPS fix for ${silent.inSeconds} s while the pack '
+        'is working, so no distance is being recorded. Trying to restart the '
+        'GPS.',
+      );
+      unawaited(
+        repository?.note(
+              LinkEventKind.tripWithoutFixes,
+              detail: '${silent.inSeconds} s, ${trip.fixesSeen} fixes so far, '
+                  '${_gpsDiagnostics()}, '
+                  'service ${_serviceOwner?.name ?? 'none'} '
+                  'location-typed $_serviceLocationTyped',
+              deviceId: activeDeviceId,
+            ) ??
+            Future.value(),
+      );
+    }
+
+    final rebuilt = _fixRebuiltAt;
+    if (rebuilt != null && now.difference(rebuilt) < const Duration(minutes: 2)) {
+      return;
+    }
+    _fixRebuiltAt = now;
+    final problem = await _ensureLocation();
+    lastLocationProblem = problem;
+    if (problem != null) {
+      unawaited(
+        repository?.note(
+              LinkEventKind.locationRefused,
+              detail: 'mid-ride: ${problem.name}',
+              deviceId: activeDeviceId,
+            ) ??
+            Future.value(),
+      );
+    }
+  }
+
+  /// What the GPS has delivered to this stream, in one line. Positions
+  /// arriving and all being too inaccurate is a different fault from none
+  /// arriving at all, and only this tells them apart.
+  String _gpsDiagnostics() {
+    final source = _location;
+    if (source is! LocationDiagnostics) return 'no gps diagnostics';
+    final d = source as LocationDiagnostics;
+    final best = d.bestAccuracyM;
+    return 'gps delivered ${d.received}, too inaccurate ${d.tooInaccurate}, '
+        'best ${best == null ? '?' : '${best.toStringAsFixed(0)} m'}';
+  }
+
+  /// Whether the ride in progress has gone [tripFixSilence] without a fix,
+  /// for the trip screen to say so while it can still be acted on.
+  bool get tripLacksGps {
+    if (!trip.isRecording || isDemo) return false;
+    final since = trip.lastFixAt ?? trip.startedAt;
+    if (since == null) return false;
+    return _now().difference(since.toUtc()) >= tripFixSilence;
   }
 
   Future<void> _stopLocation() async {
@@ -1641,14 +2168,7 @@ class BmsService {
     final s = _lastSnapshot;
     if (s == null) return RangeOutlook.unknown;
 
-    final usableNow = RangeEstimator.usableWh(
-      remainingAh: s.remainingCapacityAh,
-      packVoltage: s.packVoltage,
-      cellCount: s.cellCount,
-      minCellVoltage: s.minCellVoltage,
-      averageCellVoltage: s.averageCellVoltage,
-      cutoffVoltagePerCell: cutoffVoltagePerCell,
-    );
+    final energy = energyOf(s);
 
     // A measured capacity outranks the catalogue figure, which is a claim
     // about a purchase rather than a measurement of this battery.
@@ -1657,31 +2177,23 @@ class BmsService {
 
     return RangeOutlook.from(
       estimator: rangeEstimator,
-      usableWhNow: usableNow,
+      usableWhNow: energy.usableWh,
       fullCapacityAh: capacity,
-      // The voltage a full pack sits at, from the BMS's own per-cell limit
-      // where it has stated one. Not the voltage right now, which is whatever
-      // today's charge happens to be.
-      fullPackVoltage: capacity == null ? null : _fullPackVoltage(s),
+      // The mean voltage over a whole discharge for this chemistry, not the
+      // voltage right now, which is whatever today's charge happens to be.
+      // It used to be 3.7 V a cell whatever the cells, 14% high on LFP.
+      fullPackVoltage: capacity == null
+          ? null
+          : PackEnergy.fullPackVoltage(
+              cellCount: s.cellCount,
+              chemistry: cutoffChemistry,
+            ),
       // The same derating the remaining figure gets. A weak cell shortens a
       // full pack exactly as much as it shortens a half-empty one.
-      usableFraction: RangeEstimator.usableFractionOf(
-        minCellVoltage: s.minCellVoltage,
-        averageCellVoltage: s.averageCellVoltage,
-        cutoffVoltagePerCell: cutoffVoltagePerCell,
-      ),
+      usableFraction: energy.usableFraction ?? 1,
       capacityWasMeasured: measured != null,
+      capacityFromBmsConfig: catalogueFromBms,
     );
-  }
-
-  /// Pack voltage at full, for turning a capacity into watt-hours.
-  double? _fullPackVoltage(BmsSnapshot s) {
-    if (s.cellCount <= 0) return null;
-    // Mid-charge nominal rather than the peak: energy is capacity times the
-    // *average* voltage over a discharge, and quoting the fully-charged
-    // voltage would overstate a full pack by several percent.
-    const nominalPerCell = 3.7;
-    return s.cellCount * nominalPerCell;
   }
 
   /// The best capacity this pack has ever actually measured, if any.
@@ -1700,13 +2212,15 @@ class BmsService {
       bestMeasuredCapacityAh = null;
       return;
     }
-    final tests = await repo.capacityTests(device);
+    // Since the last cell replacement: a test on the old cells measured a
+    // different pack.
+    final tests = await repo.currentPackCapacityTests(device);
     double? best;
-    for (final t in tests) {
-      if (!t.completed || t.measuredAh <= 0) continue;
-      // A measurement with minutes missing from the middle counts low, and
-      // counting low here would understate the pack for good.
-      if (t.gapSeconds > 120) continue;
+    // The one trust rule every capacity figure uses: a measurement with
+    // minutes missing counts low, one charged in the middle counts two
+    // discharges, and one closed on the BMS's percentage counts the
+    // configured capacity back. See [CapacityTestTrust].
+    for (final t in tests.where((t) => t.isTrustworthy)) {
       if (best == null || t.measuredAh > best) best = t.measuredAh;
     }
     bestMeasuredCapacityAh = best;
@@ -1868,13 +2382,41 @@ class BmsService {
     }
     // Never in demo mode: there is no radio to keep alive, and a permanent
     // notification about a simulated pack would be a claim about nothing.
+    //
+    // Held through a drop too, while the transport is still trying to get
+    // the link back. It used to go the moment the link did, and a real ride
+    // drops 26 times: each drop stood the service down, the backgrounded app
+    // lost its grip on the radio, and the reconnect it was attempting was
+    // the thing that needed the service. Let go once the transport gives up,
+    // or when a disconnect was asked for.
     if (linkWatchEnabled &&
         !isDemo &&
         activeDevice != null &&
-        lastLinkState == BleLinkState.connected) {
+        (lastLinkState == BleLinkState.connected || _reconnectingAfterDrop)) {
       return ServiceClaim.link;
     }
     return null;
+  }
+
+  /// The link went down by itself and the transport has not given up on it.
+  bool get _reconnectingAfterDrop =>
+      _linkDownSince != null &&
+      !_disconnectRequested &&
+      !_transport.retry.gaveUp &&
+      lastLinkState != BleLinkState.idle;
+
+  /// Whether the reconnect loop may give up. Not during a ride, whose
+  /// kilometres after a drop are lost for good, and not while a charge is
+  /// being watched: that is the Pro half of the watch, the part the link
+  /// watch alone cannot do. The link watch holds the service through a drop
+  /// but the loop still stops after about six minutes of failures; watching
+  /// a charge, it keeps knocking once a minute until the pack answers, which
+  /// is what a charge left overnight in another room needs.
+  bool get _retriesMustPersist =>
+      trip.isActive || (chargeWatchEnabled && chargeAlerts.isCharging);
+
+  void _syncRetryPersistence() {
+    _transport.persistRetries = _retriesMustPersist;
   }
 
   /// The current claim, for tests.
@@ -1912,6 +2454,11 @@ class BmsService {
     final claim = _claim;
     return claim != null && _serviceNeedsLocation(claim);
   }
+
+  /// Times the service was (re)started, so a test can tell a hand-over that
+  /// kept the running service from one that restarted it.
+  @visibleForTesting
+  int serviceStartsForTest = 0;
 
   @visibleForTesting
   String get serviceTextForTest {
@@ -1959,6 +2506,7 @@ class BmsService {
   /// Safe to call as often as readings arrive. Starting is the only expensive
   /// part and it only happens when the owner actually changes.
   Future<void> _updateForegroundService() async {
+    _syncRetryPersistence();
     final wanted = _claim;
 
     if (wanted == null) {
@@ -1971,6 +2519,24 @@ class BmsService {
       return;
     }
 
+    // Held is not the same as running: Android stops services on its own, and
+    // nothing told this object. Found out here, it is started again and the
+    // loss is written down, instead of a ride carrying on with no service.
+    final held = _serviceOwner;
+    if (held != null && !await notifications.stillRunning()) {
+      unawaited(
+        repository?.note(
+              LinkEventKind.foregroundServiceLost,
+              detail: '${held.name} location=$_serviceLocationTyped',
+              deviceId: activeDeviceId,
+            ) ??
+            Future.value(),
+      );
+      _serviceOwner = null;
+      _notificationTimer?.cancel();
+      _notificationTimer = null;
+    }
+
     if (_serviceOwner == wanted) {
       await notifications.update(
         title: _serviceTitle(wanted),
@@ -1979,8 +2545,26 @@ class BmsService {
       return;
     }
 
-    // A change of owner can also be a change of service *type*, and Android
-    // will not reclassify a running service, so it has to be restarted.
+    // A change of owner with no change of type keeps the service it has.
+    // Restarting it is not free: Android refuses to start a foreground
+    // service from the background, and the one moment this matters most is
+    // a ride opening itself with the phone in a pocket. The link claim was
+    // born location-typed for exactly that ride, and stopping it to start an
+    // identical one is what threw it away: the new start was refused, the
+    // ride had no service, and Android stopped delivering fixes to a
+    // backgrounded app. A 45-minute ride came back with 0 km.
+    final needsLocation = _serviceNeedsLocation(wanted);
+    if (_serviceOwner != null && _serviceLocationTyped == needsLocation) {
+      _adoptService(wanted);
+      await notifications.update(
+        title: _serviceTitle(wanted),
+        text: _serviceText(wanted),
+      );
+      return;
+    }
+
+    // A change of type does need a restart: Android will not reclassify a
+    // running service.
     if (_serviceOwner != null) await notifications.stop();
 
     if (!await notifications.requestPermission()) {
@@ -1994,6 +2578,7 @@ class BmsService {
       return;
     }
 
+    serviceStartsForTest++;
     final started = await notifications.start(
       title: _serviceTitle(wanted),
       text: _serviceText(wanted),
@@ -2001,26 +2586,48 @@ class BmsService {
       // location-typed service from an app with no location permission, and
       // neither a charge nor a bare connection has anything to do with where
       // the bike is.
-      usesRealLocation: _serviceNeedsLocation(wanted),
+      usesRealLocation: needsLocation,
     );
     if (!started) {
       _serviceOwner = null;
+      _notificationTimer?.cancel();
+      _notificationTimer = null;
       if (wanted == ServiceClaim.trip) {
         _problem(
           'Could not start the background service, so the trip will stop '
           'recording when the app leaves the screen.',
         );
       }
+      unawaited(
+        repository?.note(
+              LinkEventKind.foregroundServiceRefused,
+              detail: '${wanted.name} location=$needsLocation '
+                  '${notifications.lastFailure ?? ''}',
+              deviceId: activeDeviceId,
+            ) ??
+            Future.value(),
+      );
       return;
     }
 
-    _serviceOwner = wanted;
+    _serviceLocationTyped = needsLocation;
+    _serviceStartedVisible = appVisible;
+    _adoptService(wanted);
+  }
+
+  /// Whether the running service was started location-typed.
+  bool _serviceLocationTyped = false;
+
+  /// Makes [owner] the service's owner and paces its notification.
+  void _adoptService(ServiceClaim owner) {
+    if (_serviceOwner == owner) return;
+    _serviceOwner = owner;
     _notificationTimer?.cancel();
     // A ride and a download are being watched second by second; a charge or a
     // bare connection is not, and rewriting that notification once a second
     // for hours would spend battery on a number nobody is reading. The point
     // of holding the service is the radio, not the text.
-    final cadence = switch (wanted) {
+    final cadence = switch (owner) {
       ServiceClaim.trip || ServiceClaim.update => const Duration(seconds: 1),
       ServiceClaim.charge || ServiceClaim.link => const Duration(seconds: 10),
     };
@@ -2067,8 +2674,18 @@ class BmsService {
   /// scenario would set something off within seconds.
   bool hapticAlerts = true;
 
+  /// Whether the bike counts as ridden: a trip recording, or sustained
+  /// discharge. See [RidingGate].
+  final RidingGate ridingGate = RidingGate();
+
+  /// Read by the alert wording, so "find somewhere to stop" is only said to
+  /// somebody riding.
+  bool get isRiding => _riding;
+  bool _riding = false;
+
   void _checkAlerts(BmsSnapshot snapshot) {
     final settings = _lastSettings;
+    _riding = ridingGate.update(snapshot, tripRecording: trip.isRecording);
     final firing = alerts.evaluate(
       snapshot,
       cutoffVoltagePerCell: cutoffVoltagePerCell,
@@ -2076,18 +2693,29 @@ class BmsService {
       // battery's limit rather than a number picked here.
       dischargeLimitAmps: settings?.maxDischargeCurrent,
       chargeLimitAmps: settings?.maxChargeCurrent,
+      // Its own MOSFET protection, so the switch is warned about below the
+      // point where this board cuts the power.
+      mosfetOtpCelsius: settings?.mosfetOtp,
+      riding: _riding,
+      // The charge alerts run after this on the same reading, so their state
+      // is one reading old; the current covers the reading that starts it.
+      charging:
+          chargeAlerts.isCharging ||
+          snapshot.current > chargeAlerts.chargingCurrent,
     );
     for (final alert in firing) {
       if (mutedAlerts.contains(alert.name)) continue;
       _alertController.add(alert);
-      _notify(
+      final buzzed = _notify(
         key: alert.name,
         words: rideAlertText?.call(alert, snapshot),
         critical: alert.isCritical,
       );
-      if (hapticAlerts) {
-        // Riding is exactly when nobody is looking at the screen, so the phone
-        // has to be felt rather than read.
+      // Riding is exactly when nobody is looking at the screen, so the phone
+      // has to be felt rather than read. Once, though: a vibrating
+      // notification already buzzes, and the in-app haptic on top of it made
+      // every alert with the app open a double buzz.
+      if (hapticAlerts && !buzzed) {
         if (alert.isCritical) {
           HapticFeedback.heavyImpact();
         } else {
@@ -2099,31 +2727,40 @@ class BmsService {
 
   /// Posts one alert to the shade, if the UI gave it words and the rider has
   /// not switched the whole thing off.
-  void _notify({
+  ///
+  /// Returns whether what it posted vibrates, so the caller does not buzz a
+  /// second time for the same alert.
+  bool _notify({
     required String key,
     required (String, String)? words,
     required bool critical,
   }) {
-    if (!notifyAlerts || words == null) return;
+    if (!notifyAlerts || words == null) return false;
     unawaited(
       alertNotifications.show(
         key: key,
         title: words.$1,
         body: words.$2,
         critical: critical,
+        // The notification is what vibrates a pocketed phone: the in-app
+        // haptic needs a visible view and does nothing with the screen off.
+        vibrate: hapticAlerts,
       ),
     );
+    return hapticAlerts && alertNotifications.isReady;
   }
 
-  /// Creates the alert channel and asks for permission. Called by the UI,
+  /// Creates the alert channels and asks for permission. Called by the UI,
   /// which owns the wording; until it is, nothing is posted.
   Future<bool> prepareAlertNotifications({
     required String channelName,
     required String channelDescription,
+    String? quietChannelName,
   }) async {
     final ready = await alertNotifications.ensureReady(
       channelName: channelName,
       channelDescription: channelDescription,
+      quietChannelName: quietChannelName,
     );
     notifyAlerts = ready;
     return ready;
@@ -2241,8 +2878,15 @@ class BmsService {
       return;
     }
     _linkLostWarned = true;
+    _linkLostController.add(null);
     _notify(key: linkLostAlertKey, words: linkLostText?.call(), critical: true);
   }
+
+  final _linkLostController = StreamController<void>.broadcast();
+
+  /// Fires when the link-lost alert is raised, for the on-screen banner. The
+  /// same moment, and the same gating, as the notification.
+  Stream<void> get linkLostAlerts => _linkLostController.stream;
 
   /// The name this alert is muted under. Not a [RideAlert]: it is not about a
   /// reading, it is about there being no readings.
@@ -2284,11 +2928,7 @@ class BmsService {
     // be teaching the demo world things nobody asked for.
     if (!autoTripEnabled || isDemo || activeDevice == null) return;
 
-    // The radio is not on until the pack is drawing, which is what keeps this
-    // from being a GPS listener running all day. Current is cheap to watch and
-    // already arriving; satellites are not.
-    await _armLocationForAutoTrip(snapshot);
-
+    // Judged first, so the GPS decision below sees this reading's current.
     final action = tripAutoStart.evaluate(
       at: snapshot.timestamp,
       current: snapshot.current,
@@ -2299,6 +2939,11 @@ class BmsService {
       speedKmh: trip.isRecording ? trip.freshSpeedKmh : _lastAutoSpeedKmh,
       recording: trip.isRecording,
     );
+
+    // The radio is not on until the pack is drawing, which is what keeps this
+    // from being a GPS listener running all day. Current is cheap to watch and
+    // already arriving; satellites are not.
+    await _armLocationForAutoTrip(snapshot);
 
     await _runAutoTripAction(action);
   }
@@ -2363,6 +3008,11 @@ class BmsService {
     // distance at all, and the stale zero speed then looked like a parked bike
     // to the auto-stop.
     if (trip.isActive) return;
+    // One switch-on at a time. Readings arrive every few hundred
+    // milliseconds and asking the platform for a stream takes longer than
+    // that, so without this two streams could be opened, one of them never
+    // closed, or the one being opened stood down halfway.
+    if (_armingLocation) return;
 
     final drawing = snapshot.current <= -tripAutoStart.minCurrentAmps;
     if (drawing && !_noticedCurrent) {
@@ -2381,33 +3031,72 @@ class BmsService {
     } else if (!drawing) {
       _noticedCurrent = false;
     }
-    if (drawing && _location == null) {
-      unawaited(
-        repository?.note(
-              LinkEventKind.locationArmed,
-              deviceId: activeDeviceId,
-            ) ??
-            Future.value(),
-      );
-      final refused = await _ensureLocation();
-      if (refused != null) {
+
+    final wanted = tripAutoStart.wantsGps(snapshot.timestamp);
+    final refusedAt = _locationRefusedAt;
+    final retrySoon = refusedAt != null &&
+        snapshot.timestamp.difference(refusedAt) < const Duration(seconds: 30);
+    if (wanted && _location == null && !retrySoon) {
+      _armingLocation = true;
+      try {
+        final refused = await _ensureLocation();
+        _locationRefusedAt = refused == null ? null : snapshot.timestamp;
         unawaited(
           repository?.note(
-                LinkEventKind.locationRefused,
-                detail: refused.name,
+                refused == null
+                    ? LinkEventKind.locationArmed
+                    : LinkEventKind.locationRefused,
+                // What a pocket start depends on, written down where the
+                // next backup can show it: whether Android was asked for
+                // location from a service it will let read it.
+                detail: '${refused == null ? '' : '${refused.name}, '}'
+                    '${_locationContext()}',
                 deviceId: activeDeviceId,
               ) ??
               Future.value(),
         );
+      } finally {
+        _armingLocation = false;
       }
-    } else if (!drawing &&
-        _location != null &&
-        !tripAutoStart.looksLikeRiding) {
-      // Stood down. The speed goes with it: a stale one would let a later
-      // burst of current start a ride on a fix from an hour ago.
+    } else if (!wanted && _location != null) {
+      // Stood down, a couple of minutes after the pack last drew. The speed
+      // goes with it: a stale one would let a later burst of current start a
+      // ride on a fix from an hour ago.
       _lastAutoSpeedKmh = null;
       await _stopLocation();
     }
+  }
+
+  bool _armingLocation = false;
+
+  /// When the last switch-on was refused. Asked again every half minute
+  /// rather than on every reading, which with a permission prompt behind it
+  /// would be a prompt every reading.
+  DateTime? _locationRefusedAt;
+
+  /// Whether the app is on screen, told by the UI. Android lets a service
+  /// started while the app is visible read location from the background,
+  /// and one started from the background read it only with "allow all the
+  /// time", so it is the first thing to know when a pocket start fails.
+  bool appVisible = true;
+
+  /// Whether the running service was started while [appVisible].
+  bool? _serviceStartedVisible;
+
+  /// The circumstances of a GPS switch-on, in one line for the log.
+  String _locationContext() {
+    final source = _location;
+    final permission =
+        source is LocationDiagnostics ? (source as LocationDiagnostics).permission : null;
+    return 'permission ${permission ?? '?'}, '
+        'app ${appVisible ? 'visible' : 'in background'}, '
+        'service ${_serviceOwner?.name ?? 'none'} '
+        'location-typed $_serviceLocationTyped '
+        'started ${switch (_serviceStartedVisible) {
+          true => 'visible',
+          false => 'in background',
+          null => '?',
+        }}';
   }
 
   /// Speed while no trip is open, so the detector has something to judge.
@@ -2428,14 +3117,14 @@ class BmsService {
   double? get _lastAutoSpeedKmh {
     final at = _autoSpeedAt;
     if (at == null) return null;
-    return DateTime.now().toUtc().difference(at) > const Duration(seconds: 20)
+    return _now().difference(at) > const Duration(seconds: 20)
         ? null
         : _rawAutoSpeedKmh;
   }
 
   set _lastAutoSpeedKmh(double? kmh) {
     _rawAutoSpeedKmh = kmh;
-    _autoSpeedAt = kmh == null ? null : DateTime.now().toUtc();
+    _autoSpeedAt = kmh == null ? null : _now();
   }
 
   /// Fed by the UI from the location stream when nothing is recording.
@@ -2487,16 +3176,7 @@ class BmsService {
         // range quoted from the default consumption would look identical to
         // one it had earned.
         rangeKm: rangeEstimator.hasLearned
-            ? rangeEstimator.rangeKm(
-                RangeEstimator.usableWh(
-                  remainingAh: snapshot.remainingCapacityAh,
-                  packVoltage: snapshot.packVoltage,
-                  cellCount: snapshot.cellCount,
-                  minCellVoltage: snapshot.minCellVoltage,
-                  averageCellVoltage: snapshot.averageCellVoltage,
-                  cutoffVoltagePerCell: cutoffVoltagePerCell,
-                ),
-              )
+            ? rangeEstimator.rangeKm(energyOf(snapshot).usableWh)
             : null,
         strings: words,
       ),
@@ -2518,22 +3198,36 @@ class BmsService {
 
   Stream<ChargeAlert> get chargeAlertStream => _chargeAlertController.stream;
 
+  /// Where the top cell sits when this pack is full: the chemistry's mark, or
+  /// 30 mV under what the BMS requests charge to. Null when neither is known.
+  double? get fullCellVolts => ChemistryLimits.fullCellVoltsFor(
+    cutoffChemistry,
+    requestChargeVolts: _lastSettings?.cellRequestChargeVoltage,
+  );
+
   void _checkChargeAlerts(BmsSnapshot snapshot) {
-    for (final alert in chargeAlerts.evaluate(snapshot)) {
+    final raised = chargeAlerts.evaluate(
+      snapshot,
+      fullCellVolts: fullCellVolts,
+      capacityAh: _taperCapacityAh,
+    );
+    for (final alert in raised) {
       if (mutedAlerts.contains(alert.name)) continue;
+      // The stream is what the Now tab's banner listens to. It used to have
+      // no listener at all, so a charge alert with the app open in hand was
+      // a buzz with nothing on screen to say what it was about.
       _chargeAlertController.add(alert);
       // This is the case the whole notification channel exists for: a charge
       // finishing at three in the morning with the phone in another room.
-      _notify(
+      // The alert channel is its own high-importance channel, separate from
+      // the foreground service, and posts whether or not a service is up;
+      // what keeps readings arriving with the screen off is the service.
+      final buzzed = _notify(
         key: alert.name,
         words: chargeAlertText?.call(alert, snapshot),
         critical: alert.isProblem,
       );
-      // The notification the trip service already owns is the only way any of
-      // this reaches a phone in another room. It is only running during a
-      // ride, so on the bench this is a buzz and a banner; plugged in with the
-      // service up, it is a notification.
-      if (hapticAlerts) {
+      if (hapticAlerts && !buzzed) {
         if (alert.isProblem) {
           HapticFeedback.heavyImpact();
         } else {
@@ -2556,13 +3250,40 @@ class BmsService {
   Stream<CapacityTestState> get capacityTestState => _capacityController.stream;
 
   /// Why a run cannot start right now, or null when it can.
-  CapacityTestBlock? get capacityTestBlockedBy =>
-      capacityTest.blockedBy(_lastSnapshot);
+  CapacityTestBlock? get capacityTestBlockedBy {
+    capacityTest.endpoints = capacityEndpoints;
+    return capacityTest.blockedBy(_lastSnapshot);
+  }
+
+  /// Where a capacity run starts and stops on this pack: the cells at the
+  /// chemistry's full mark (or 30 mV under what the BMS requests charge to)
+  /// with the charge tapered, and the lowest cell at the cutoff.
+  CapacityEndpoints get capacityEndpoints =>
+      _endpointsFor(cutoffChemistry, cutoffVoltagePerCell);
+
+  CapacityEndpoints _endpointsFor(CellChemistry chemistry, double cutoff) =>
+      CapacityEndpoints.forPack(
+        chemistry: chemistry,
+        cutoffVoltagePerCell: cutoff,
+        requestChargeVolts: _lastSettings?.cellRequestChargeVoltage,
+        capacityAh: _taperCapacityAh,
+      );
+
+  /// The capacity a tapered charge is judged against: C/20 of what the BMS
+  /// counts in. Its own configuration first, since that is what the charger
+  /// is filling, then the catalogue, then whatever the status frame carries.
+  double? get _taperCapacityAh {
+    final nominal = _lastSnapshot?.nominalCapacityAh;
+    return configuredCapacityAh ??
+        catalogueCapacityAh ??
+        (nominal != null && nominal >= 1 && nominal <= 2000 ? nominal : null);
+  }
 
   Future<bool> startCapacityTest() async {
     final snapshot = _lastSnapshot;
     final repo = repository;
     if (snapshot == null || repo == null) return false;
+    capacityTest.endpoints = capacityEndpoints;
     if (capacityTest.blockedBy(snapshot) != null) return false;
 
     final id = await repo.beginCapacityTest(
@@ -2587,8 +3308,16 @@ class BmsService {
     _capacityController.add(capacityTest.state);
   }
 
-  Future<void> _finishCapacityTest() async {
+  /// Ends a run by hand before the cutoff. Kept, as a partial: what it
+  /// counted is real, but it is a slice of the pack, and nothing turns it
+  /// into a capacity. Cancelling is still there for a run not worth keeping.
+  Future<void> stopCapacityTestEarly() =>
+      _finishCapacityTest(reason: CapacityEndReason.stoppedEarly);
+
+  Future<void> _finishCapacityTest({CapacityEndReason? reason}) async {
     final id = capacityTest.rowId;
+    final closedBy =
+        reason ?? capacityTest.endReason ?? CapacityEndReason.stoppedEarly;
     if (id != null) {
       await repository?.finishCapacityTest(
         id,
@@ -2597,18 +3326,25 @@ class BmsService {
         endPackVoltage: capacityTest.endPackVoltage,
         measuredAh: capacityTest.measuredAh,
         measuredWh: capacityTest.measuredWh,
+        endReason: closedBy,
+        gapSeconds: capacityTest.gapSeconds,
+        chargedDuringRun: capacityTest.chargedDuringRun,
       );
       final device = activeDeviceId;
       capacityTestCount = device == null
           ? 0
           : await repository?.countCompletedCapacityTests(device) ?? 0;
+      await refreshMeasuredCapacity();
     }
-    capacityTest.finish();
+    capacityTest.finish(reason: closedBy);
     _capacityController.add(capacityTest.state);
   }
 
   void _updateCapacityTest(BmsSnapshot snapshot) {
     if (!capacityTest.isRunning) return;
+    // The endpoints can sharpen mid-run: the settings frame arrives with the
+    // cutoff the BMS actually uses.
+    capacityTest.endpoints = capacityEndpoints;
     final done = capacityTest.addSnapshot(snapshot);
 
     // Written on the way past rather than only at the end, so an app that is
@@ -2621,6 +3357,8 @@ class BmsService {
         measuredWh: capacityTest.measuredWh,
         endSoc: capacityTest.endSoc,
         endPackVoltage: capacityTest.endPackVoltage,
+        gapSeconds: capacityTest.gapSeconds,
+        chargedDuringRun: capacityTest.chargedDuringRun,
       );
     }
 
@@ -2639,13 +3377,37 @@ class BmsService {
   /// Fires when a charge finishes with enough behind it to be worth reading.
   Stream<ChargeReport> get chargeReports => _chargeController.stream;
 
-  /// The most recent finished charge, for the screen to show on arrival.
-  ChargeReport? lastChargeReport;
+  /// The most recent finished charge of the pack connected now, for the
+  /// screen to show on arrival.
+  ///
+  /// Read back from the pack's stored row, so it survives a restart. It used
+  /// to live only in memory, and after one the card said no charge had ever
+  /// been recorded on a pack that had recorded many.
+  ChargeReport? get lastChargeReport {
+    final live = _liveChargeReport;
+    if (live != null && _liveChargeDevice == activeDeviceId) return live;
+    final json = activeDevice?.lastChargeJson;
+    if (json != _parsedChargeJson) {
+      _parsedChargeJson = json;
+      _parsedChargeReport = ChargeReport.tryParse(json);
+    }
+    return _parsedChargeReport;
+  }
+
+  ChargeReport? _liveChargeReport;
+  String? _liveChargeDevice;
+  String? _parsedChargeJson;
+  ChargeReport? _parsedChargeReport;
 
   void _watchCharging(BmsSnapshot snapshot) {
     final report = chargeRecorder.addSnapshot(snapshot);
     if (report == null) return;
-    lastChargeReport = report;
+    _liveChargeReport = report;
+    _liveChargeDevice = activeDeviceId;
+    final id = activeDeviceId;
+    if (id != null) {
+      unawaited(repository?.saveLastChargeReport(id, report.toJson()));
+    }
     _chargeController.add(report);
   }
 
@@ -2674,17 +3436,34 @@ class BmsService {
     // Where the alerts start speaking. The clearing thresholds move with
     // them, keeping the same gap, so an alert never becomes one that cannot
     // clear itself and chatters on every reading.
+    //
+    // The charge alerts follow them too, but only downwards. They used to
+    // ignore both sliders and sit at 45 degC and 60 mV whatever the rider
+    // chose. 45 is where charging starts doing damage, so a slider can bring
+    // the charging alert earlier and never later; 60 mV at the top of a
+    // charge is already a mismatch, so the same.
     if (alertDeltaWarn != null) {
       alerts.deltaWarn = alertDeltaWarn;
       alerts.deltaClear = alertDeltaWarn * 0.8;
+      chargeAlerts.spreadWarn = math.min(
+        alertDeltaWarn,
+        ChargeAlerts.maxSpreadWarn,
+      );
     }
     if (alertTempWarn != null) {
       alerts.tempWarn = alertTempWarn;
       alerts.tempClear = alertTempWarn - 5;
+      chargeAlerts.hotWarn = math.min(
+        alertTempWarn,
+        ChemistryLimits.hotChargeLimitCelsius,
+      );
     }
     if (alertLowChargeWarn != null) {
-      alerts.lowChargeWarn = alertLowChargeWarn;
-      alerts.lowChargeClear = alertLowChargeWarn + 5;
+      // A value saved when the slider still went down to 5 would sit under
+      // the critical level, where low charge can never trip.
+      final low = math.max(alertLowChargeWarn, RideAlerts.minLowChargeWarn);
+      alerts.lowChargeWarn = low;
+      alerts.lowChargeClear = low + 5;
     }
   }
 
@@ -2699,17 +3478,46 @@ class BmsService {
     final unfinished = await repo.unfinishedCapacityTest(device);
     if (unfinished == null) return;
 
-    capacityTest.resume(
-      rowId: unfinished.id,
-      startedAt: unfinished.startedAt,
-      ah: unfinished.measuredAh,
-      wh: unfinished.measuredWh,
-      startSoc: unfinished.startSoc,
-      startPackVoltage: unfinished.startPackVoltage,
-      catalogueAh: unfinished.catalogueAh,
-    );
+    // This runs once readings are already flowing, so the run has missed
+    // everything from the last reading before the app closed up to now. The
+    // last reading stored before this connection is where it left off, and
+    // this connection's readings so far are replayed through it, so the
+    // counting picks up exactly where it stopped. The stretch between is
+    // bridged on the BMS's counter and counted as a gap.
+    final session = history.all;
+    final firstNew = session.isEmpty ? null : session.first;
+    final lastSeen = firstNew == null
+        ? await repo.db.lastSnapshotFor(device)
+        : await repo.db.lastSnapshotBefore(device, firstNew.timestamp);
+
+    capacityTest
+      ..endpoints = capacityEndpoints
+      ..resume(
+        rowId: unfinished.id,
+        startedAt: unfinished.startedAt,
+        ah: unfinished.measuredAh,
+        wh: unfinished.measuredWh,
+        startSoc: unfinished.startSoc,
+        startPackVoltage: unfinished.startPackVoltage,
+        catalogueAh: unfinished.catalogueAh,
+        gapSeconds: unfinished.gapSeconds,
+        chargedDuringRun: unfinished.chargedDuringRun,
+        lastSeen:
+            lastSeen == null || lastSeen.timestamp.isBefore(unfinished.startedAt)
+            ? null
+            : CapacityBridgePoint(
+                at: lastSeen.timestamp,
+                remainingAh: lastSeen.remainingAh,
+                packVoltage: lastSeen.packVoltage,
+                soc: lastSeen.soc,
+              ),
+      );
     capacityTestCount = await repo.countCompletedCapacityTests(device);
     _capacityController.add(capacityTest.state);
+    for (final s in session) {
+      if (!capacityTest.isRunning) break;
+      _updateCapacityTest(s);
+    }
   }
 
   /// Scans the stored readings for full discharges nobody asked it to record.
@@ -2723,10 +3531,29 @@ class BmsService {
     final device = activeDeviceId;
     if (repo == null || device == null) return 0;
 
-    final readings = await repo.allSnapshots(device);
+    final readings = await repo.currentPackSnapshots(device);
     if (readings.length < 20) return 0;
 
-    const detector = CapacityCycleDetector();
+    // The chemistry is judged on the stored history as well as this
+    // connection: at startup nothing may have been read yet, and a pack whose
+    // cells have ever been above 3.8 V is not LFP.
+    var highest = history.maxCellVoltageSeen ?? 0;
+    for (final r in readings) {
+      if (r.maxCellVoltage > highest) highest = r.maxCellVoltage;
+    }
+    final chemistry = PackEnergy.chemistryFor(
+      declared: activeDevice?.chemistry,
+      cellOvp: _lastSettings?.cellOvp,
+      highestCellVolts: highest > 0 ? highest : null,
+    );
+    final detector = CapacityCycleDetector(
+      endpoints: _endpointsFor(
+        chemistry,
+        _configuredCutoff ??
+            ChemistryLimits.of(chemistry)?.typicalCutoffVolts ??
+            ChemistryLimits.unknownCutoffVolts,
+      ),
+    );
     final found = detector.scan(readings);
 
     var added = 0;
@@ -2745,14 +3572,27 @@ class BmsService {
 
   /// Whether the catalogue figure came from the rider.
   ///
-  /// The app deliberately does *not* adopt the capacity the BMS is configured
-  /// with. That number is not a measurement — it is what whoever assembled the
-  /// pack typed in, and it is what the coulomb counter scales the charge
-  /// percentage against. If it disagrees with what the pack was sold as, that
-  /// disagreement is a finding, and adopting the BMS figure would erase it:
-  /// a pack sold as 45 Ah with a BMS set to 40 would measure 40 and be called
-  /// perfectly healthy. See [configuredCapacityAh].
+  /// A blank catalogue figure *is* filled from the capacity the BMS is
+  /// configured with (see [_adoptNominal]), and the stored row says so
+  /// ([Device.catalogueFromBms]). That number is not a measurement: it is
+  /// what whoever assembled the pack typed in, and it is what the coulomb
+  /// counter scales the charge percentage against. So while it is borrowed,
+  /// nothing may compare against it as though it were what the pack was sold
+  /// as: a pack sold as 45 Ah with a BMS set to 40 would measure 40 against
+  /// 40 and be called exactly as advertised. See [advertisedCapacityAh].
   bool catalogueSetByUser = false;
+
+  /// Whether the active pack's catalogue figure was adopted from the BMS
+  /// rather than stated by the rider.
+  bool get catalogueFromBms => activeDevice?.catalogueFromBms ?? false;
+
+  /// What the pack was sold as, when the rider said: the catalogue figure,
+  /// or null while it is only the BMS's configuration borrowed. Every
+  /// comparison against "sold as" reads this rather than
+  /// [catalogueCapacityAh], which also serves as a stand-in capacity for the
+  /// full-pack range.
+  double? get advertisedCapacityAh =>
+      catalogueFromBms ? null : catalogueCapacityAh;
 
   /// What the BMS is configured for, when it has said. Shown next to the
   /// catalogue figure rather than replacing it.
@@ -2809,9 +3649,13 @@ class BmsService {
     await notifications.stop();
     await _stopLocation();
     await _bytesSub.cancel();
+    await _writesSub.cancel();
     await _stateSub.cancel();
     await _errorSub.cancel();
+    await _recoverySub?.cancel();
+    await _recoveryController.close();
     await _transport.dispose();
+    await traffic.dispose();
     await _snapshotController.close();
     await _deviceInfoController.close();
     await _settingsController.close();
@@ -2821,6 +3665,8 @@ class BmsService {
     await _alertController.close();
     await _capacityController.close();
     await _chargeController.close();
+    await _chargeAlertController.close();
+    await _linkLostController.close();
   }
 }
 

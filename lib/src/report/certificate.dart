@@ -11,17 +11,26 @@ import '../inspection/inspection_series.dart';
 
 /// A seller's certificate: an inspection, signed by the phone that ran it.
 ///
-/// What it proves, exactly: these figures came out of this app on that day
-/// and have not been altered since. Anybody can paste the token back into the
-/// app, or scan the QR on the printed sheet, and see the same numbers with the
-/// same date. Change one digit and the signature stops matching.
+/// What it proves, exactly: these figures came out of the app on the phone
+/// whose public key is in the token, and have not been altered since.
+/// Anybody can paste the token back into the app, or scan the QR on the
+/// printed sheet, and see the same numbers. Change one digit and the
+/// signature stops matching.
 ///
-/// What it does not prove, and the document says so in as many words: that the
-/// pack is good, that the seller is honest, or that the phone that signed it
-/// belongs to anybody in particular. A quick test is a quick test. The
-/// certificate exists so a buyer can tell a real measurement from a screenshot
-/// somebody typed over, which is the fraud that actually happens in the
-/// second-hand market.
+/// What it does not prove, and the document says so in as many words. Whose
+/// phone that was: the key travels inside the token and nothing pins it, so
+/// anybody with the app can mint a certificate of their own. The issuer code
+/// is what makes that checkable, and only if the buyer compares it with the
+/// one the seller or the workshop publishes. Which battery was tested: the
+/// name is whatever the BMS called itself and the serial is the one it
+/// echoes, both editable. When: the date is that phone's own clock. Nor that
+/// the pack is good. The certificate exists so a buyer can tell a real
+/// measurement from a screenshot somebody typed over, and an issuer they know
+/// from one they do not.
+///
+/// Since the demo flag was added the signed result also says whether the
+/// pack was the app's simulator, and the app refuses to sign one that was.
+/// Certificates from before it carry no flag, which reads as unknown.
 ///
 /// The signing key is made on the phone at first use and never leaves it. The
 /// author's licence key is deliberately not used: the app would then be
@@ -397,9 +406,27 @@ class CertificateIdentity {
   }
 
   /// The short form of this installation's public key, for showing next to
-  /// the certificates it issued.
+  /// the certificates it issued. Makes the key if there is none yet, so a
+  /// seller can publish their code before signing anything.
   Future<String> issuerCode() async {
     final pair = await keyPair();
     return Certificate.shortCode((await pair.extractPublicKey()).bytes);
+  }
+
+  /// This installation's code if it already has a key, or null. For the
+  /// checker, which must not make a signing key just because somebody pasted
+  /// a certificate.
+  Future<String?> existingIssuerCode() async {
+    if (_seed == null && _pair == null) {
+      final prefs = await SharedPreferences.getInstance();
+      final stored = prefs.getString(seedKey);
+      if (stored == null) return null;
+      try {
+        if (base64Url.decode(stored).length != 32) return null;
+      } on FormatException {
+        return null;
+      }
+    }
+    return issuerCode();
   }
 }

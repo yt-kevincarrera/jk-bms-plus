@@ -16,7 +16,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get connectOneConnectionWarning =>
-      'The JK BMS accepts one Bluetooth connection at a time. Close the official JK app before connecting here.';
+      'The BMS accepts one Bluetooth connection at a time. Close your BMS\'s official app before connecting here.';
 
   @override
   String get connectScan => 'Scan for a BMS';
@@ -41,7 +41,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get connectNothingFoundHelp =>
-      'Nothing turned up. It is almost always one of these:\n\n• The official JK app is connected to the BMS. While it is, the BMS stops advertising and no other phone can see it. Close it fully.\n• The pack is asleep. Switch the bike on or move it to wake it.\n• You are too far away. Get closer to the pack.';
+      'Nothing turned up. It is almost always one of these:\n\n• Your BMS\'s official app is connected to it. While it is, the BMS stops advertising and no other phone can see it. Close it fully.\n• The pack is asleep. Switch the bike on or move it to wake it.\n• You are too far away. Get closer to the pack.';
 
   @override
   String get connectCancelScan => 'Cancel scan';
@@ -90,12 +90,8 @@ class AppL10nEn extends AppL10n {
 
   @override
   String tapStackSaturated(String count) {
-    return 'That is $count failed attempts in a row. By now the problem is the phone\'s Bluetooth, not the pack, and another attempt only makes it worse. Switch Bluetooth off and on; if it persists, restart the phone. Then tap Disconnect or search again to retry.';
+    return 'That is $count failed attempts in a row. By now the problem is the phone\'s Bluetooth, not the pack, and another attempt only makes it worse. Follow the steps in the card above, then search again to retry.';
   }
-
-  @override
-  String get tapHeldByPhone =>
-      'The phone already has a connection to this pack open that this app does not own. Either another app holds it, or it was stranded by an earlier attempt. No attempt from here will win it: close the other app, or restart the phone\'s Bluetooth.';
 
   @override
   String get tileConnected => 'Connected. Tap to go back to its screens.';
@@ -276,7 +272,7 @@ class AppL10nEn extends AppL10n {
   String get sessionTitle => 'This session';
 
   @override
-  String get sessionEnergy => 'Energy through pack';
+  String get sessionEnergy => 'Energy taken out of the pack';
 
   @override
   String get sessionDistance => 'Distance';
@@ -289,12 +285,6 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get needsGps => 'needs an active trip';
-
-  @override
-  String get needsDatabase => 'needs more history';
-
-  @override
-  String get needsSteps => 'needs current steps';
 
   @override
   String get packTitle => 'Pack';
@@ -317,7 +307,7 @@ class AppL10nEn extends AppL10n {
   String get packSag => 'Sag under load';
 
   @override
-  String get packSagNoBaseline => 'no resting reading yet';
+  String get packSagNoBaseline => 'no recent resting reading to compare with';
 
   @override
   String get packMosfets => 'MOSFETs';
@@ -392,19 +382,17 @@ class AppL10nEn extends AppL10n {
   String get balanceWhichCellsValue => 'inferred, the BMS does not report it';
 
   @override
-  String get balanceRanking => 'Weak-cell ranking';
+  String get balanceRanking => 'Most often the lowest';
 
   @override
-  String get resistanceTitle => 'Resistance';
+  String get resistanceTitle => 'Balance leads';
 
   @override
   String get resistanceSource => 'Source';
 
   @override
-  String get resistanceSourceValue => 'the BMS\'s own wire measurement';
-
-  @override
-  String get resistanceEstimated => 'Estimated internal resistance';
+  String get resistanceSourceValue =>
+      'the BMS\'s own measurement of each balance lead, not of the cell';
 
   @override
   String get resistanceWireWarnings => 'Wire resistance warnings';
@@ -474,32 +462,19 @@ class AppL10nEn extends AppL10n {
       'The bitmask is shown raw and no reading is hidden because of it. The reference implementation calls it an \"absent\" sensor mask, but real captures set bits for probes that are plainly working. See docs/PROTOCOL.md.';
 
   @override
-  String get historyEmptyTitle => 'Nothing recorded yet';
-
-  @override
-  String get historyEmptyBody =>
-      'Trips you record are stored with their track, and the degradation curves draw themselves over the weeks.';
-
-  @override
-  String get historyWhatGoesHere => 'WHAT WILL LIVE HERE';
-
-  @override
   String get historyItemCapacity =>
-      'Measured capacity per cycle, and the degradation curve it draws over months';
+      'Capacity measured on each full discharge, and how it changes over months';
 
   @override
   String get historyItemTrips => 'Trip list with distance, Wh and Wh/km';
 
   @override
   String get historyItemDelta =>
-      'Delta plotted against pack voltage, which is where a short cell gives itself away';
+      'Delta against charge level, which is where a short cell gives itself away';
 
   @override
   String get historyItemSag =>
-      'Sag at a given current, and how it worsens over time';
-
-  @override
-  String get historyItemBalance => 'Which cells the balancer works hardest on';
+      'Apparent resistance of each ride, from how far the voltage dropped for the current drawn';
 
   @override
   String get systemDeviceTitle => 'Device';
@@ -693,7 +668,7 @@ class AppL10nEn extends AppL10n {
   String get systemBytesReceived => 'Bytes received';
 
   @override
-  String get systemSettingsTitle => 'BMS settings (read-only)';
+  String get systemSettingsTitle => 'BMS settings';
 
   @override
   String get settingsNotExposed =>
@@ -707,7 +682,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get systemReadOnlyNote =>
-      'This app never writes settings to the BMS. Everything above is read-only.';
+      'With the write permission off, the app changes nothing on the BMS: everything above is read-only.';
 
   @override
   String get systemLanguageTitle => 'Language';
@@ -788,6 +763,53 @@ class AppL10nEn extends AppL10n {
   String get consoleCopied => 'Log copied';
 
   @override
+  String get consoleViewDecoded => 'Decoded';
+
+  @override
+  String get consoleViewBytes => 'Bytes';
+
+  @override
+  String get consoleCopyAll => 'Copy everything for diagnosis';
+
+  @override
+  String get consoleCopiedAll => 'Copied: counters, notices, log and bytes';
+
+  @override
+  String get consoleLiveFromHere => '--- live from here ---';
+
+  @override
+  String get consoleNoBytes =>
+      'No bytes have crossed the link since the app was opened.';
+
+  @override
+  String get consoleBytesLegend =>
+      '← received from the BMS · → written by the app. Kept across connections.';
+
+  @override
+  String get consoleThisConnection => 'This connection';
+
+  @override
+  String consoleLastReading(int seconds) {
+    return 'last reading $seconds s ago';
+  }
+
+  @override
+  String get consoleReportTitle => 'Raw frame console';
+
+  @override
+  String get consoleReportNotices => 'Notices, oldest first';
+
+  @override
+  String get consoleReportDecoded => 'Decoded log';
+
+  @override
+  String get consoleReportBytes => 'Bytes, oldest first';
+
+  @override
+  String get systemCountersThisConnection =>
+      'Frames and bytes count from the last connect. Drops, time disconnected and prods count from when the app was opened.';
+
+  @override
   String get tabHealth => 'Health';
 
   @override
@@ -802,7 +824,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get healthRealCapacityHint =>
-      'Remaining divided by reported charge. If it sits well under the configured nominal, the pack has lost capacity or the coulomb counter has drifted.';
+      'With no capacity tests, the figure above is the capacity configured in the BMS: the BMS works out remaining Ah as charge times that capacity, so dividing one by the other hands it back unchanged. It says nothing about wear; that needs a full discharge measured.';
 
   @override
   String get healthClaimedCapacity => 'Nominal configured in the BMS';
@@ -818,7 +840,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get healthEquivalentCyclesHint =>
-      'Total Ah put through the pack divided by its nominal capacity. The BMS cycle counter adds up partial charges, so it almost always flatters the pack.';
+      'Total Ah the BMS counted through the pack, divided by its configured capacity. The BMS\'s own cycle counter can sit above or below this: it counts in whole numbers and each firmware decides what a cycle is.';
 
   @override
   String get healthReportedCycles => 'Cycles the BMS reports';
@@ -831,7 +853,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get healthImbalanceHint =>
-      'The pack cuts off when the lowest cell hits its limit, not when the average does. Today\'s delta translates into the Ah left stranded in every other cell.';
+      'The pack cuts off when the lowest cell hits its limit, not when the average does. It is measured with the cells at rest: the lowest cell\'s voltage and the average\'s go through the chemistry\'s typical curve to a charge level, and the difference becomes the energy left stranded in the others. Under load or on the charger it is not worked out, because sag or the charger\'s push would read as imbalance. On LFP, on the flat part of the curve, the voltage does not say how much charge there is, so not there either.';
 
   @override
   String get healthWeakestCell => 'The cell in charge';
@@ -865,7 +887,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get healthNeedsHistoryBody =>
-      'Measured degradation, estimated remaining life and how sag evolves all need months of stored readings. They fill in on their own as you ride.';
+      'Measured degradation needs at least two full discharges. A cell drifting and how sag evolves need weeks of stored readings. What comes from rides and readings fills in on its own; capacity does not: every point is a full discharge.';
 
   @override
   String get healthNotEnoughData => 'not enough data';
@@ -915,7 +937,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get rangeUsableHint =>
-      'Discounts what the lowest cell strands: the pack cuts off when that cell hits its limit, not when the average does.';
+      'The energy left is the remaining Ah the BMS reports times the mean voltage they will come out at down to cutoff, read off the typical curve for the pack\'s chemistry. Not times the voltage of this moment, which rises on the charger and drops when you accelerate. Then what the lowest cell strands is taken off. With the chemistry unknown, a figure on the low side is used. The curves are typical for each chemistry, not measured on this pack.';
 
   @override
   String get rangeNeedsGps =>
@@ -993,13 +1015,13 @@ class AppL10nEn extends AppL10n {
   String get healthHowCalculated => 'How these are worked out';
 
   @override
-  String get healthCardCapacity => 'Real capacity';
+  String get healthCardCapacity => 'Remaining per the BMS';
 
   @override
   String get healthCardLoss => 'Loss';
 
   @override
-  String get healthCardCycles => 'Real cycles';
+  String get healthCardCycles => 'Equivalent cycles (per the BMS)';
 
   @override
   String get healthCardUsable => 'Usable energy';
@@ -1071,7 +1093,7 @@ class AppL10nEn extends AppL10n {
   String get tripSocPerKm => 'Charge per km';
 
   @override
-  String get tripSag => 'Worst sag';
+  String get tripResistance => 'Pack resistance (approx.)';
 
   @override
   String get tripMaxCurrent => 'Peak current';
@@ -1201,7 +1223,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String adviceImbalanceAtRestBody(String delta, int cell) {
-    return 'With the bike still, the delta reaches $delta V. With no current involved that is not resistance: the cells simply hold different amounts of charge. Charge to full and leave it sitting for a few hours so the balancer can work; if several charges do not close it, cell $cell has less capacity than the rest.';
+    return 'With the bike standing still the delta reaches $delta V, and the lowest then was cell $cell. With no current flowing that is not resistance: the cells hold different amounts of charge. Let it charge to the top and rest for a few hours so the balancer can work; if several charges do not close it, that cell has less capacity than the rest.';
   }
 
   @override
@@ -1210,7 +1232,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String adviceImbalanceUnderLoadBody(String delta, int cell) {
-    return 'At rest the cells are even, but under load they spread $delta V further apart. That is resistance, and nine times out of ten it is a loose or corroded connection rather than a bad cell. Check the bolt and busbar on cell $cell before replacing anything.';
+    return 'At rest the cells sit together, but under load they spread $delta V further, over several readings. That is resistance: it can be a connection or a cell with more of it than the others. Check the connection of cell $cell first, the lowest at that load: it is the cheapest thing to rule out.';
   }
 
   @override
@@ -1218,15 +1240,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String adviceWeakCellBody(int cell, String percent) {
-    return 'Cell $cell has been the lowest in $percent% of readings. That is not noise: this is the cell that sets your real range and reaches cutoff first.';
-  }
-
-  @override
-  String get adviceCycleInflatedTitle => 'The cycle counter flatters the pack';
-
-  @override
-  String adviceCycleInflatedBody(String factor) {
-    return 'The BMS claims $factor times more cycles than the charge actually put through the pack justifies. It counts partial charges as whole ones. If you are buying or selling a pack, the honest number is the equivalent-cycle figure.';
+    return 'Cell $cell was clearly the lowest in $percent% of the readings that count: with the cells at least 10 mV apart, no tie, and a repeated reading counted once. That cell sets your real range and reaches cutoff first.';
   }
 
   @override
@@ -1282,7 +1296,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String adviceBalancerNeverSeenBody(String voltage) {
-    return 'The cells are uneven but the balancer has not worked all session. Either it is switched off, or its start voltage ($voltage V) sits above where your cells ever reach. Check it in the BMS settings with the official app: this app writes nothing.';
+    return 'The cells sit apart at rest but the balancer has not worked since the pack connected. Either it is switched off, or its start voltage ($voltage V) is above where your cells get to. The start voltage is changed with the BMS\'s official app. The balancer switch can be turned on from System, under BMS settings, if you turn on the write permission in Settings; with the permission off, this app changes nothing on the BMS.';
   }
 
   @override
@@ -1307,7 +1321,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String adviceImbalanceCostingBody(String percent) {
-    return '$percent% of the energy the pack still holds is stranded above cutoff, because the lowest cell gets there before the others. Closing the delta gives those kilometres back without replacing a single cell.';
+    return '$percent% of the energy the pack still holds is stranded above cutoff, because the lowest cell gets there before the others. If the delta is imbalance rather than capacity, balancing gets it back; if the cell holds less, it does not.';
   }
 
   @override
@@ -1380,11 +1394,12 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String get tripLearnedTooShort =>
-      'Too short to learn anything. It needs at least 500 metres with real consumption.';
+  String tripLearnedTooShort(String m) {
+    return 'Nothing was learned from this ride: it takes at least $m metres with the energy measured.';
+  }
 
   @override
-  String get tripLearnedRange => 'Range now';
+  String get tripLearnedRange => 'Range at the end';
 
   @override
   String get tripLearnedTotalKm => 'Learned from';
@@ -1407,7 +1422,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String tripDeltaTip(String delta) {
-    return 'The delta reached $delta V under load. If the cells are even at rest, that points at a connection rather than a bad cell.';
+    return 'The ride\'s largest delta was $delta V. If the cells are even at rest, that points at a connection rather than a bad cell.';
   }
 
   @override
@@ -1437,7 +1452,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get proximityBody =>
-      'While this is on, the app looks for your BMS every half minute and connects on its own the moment it appears. Meant to be left on for a stretch while a new battery is being calibrated, not forever: while it is connected the official JK app cannot get in, and scanning costs some phone battery.';
+      'While this is on, the app looks for your BMS every half minute and connects on its own the moment it appears. Meant to be left on for a stretch while a new battery is being calibrated, not forever: while it is connected your BMS\'s official app cannot get in, and scanning costs some phone battery.';
 
   @override
   String get proximityLimit =>
@@ -1461,7 +1476,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get capacityIntro =>
-      'The one real measurement in this app. Everything else is arithmetic on what the BMS says about itself; this counts the amp-hours that actually come out between full and cutoff, and compares them with what you were sold.';
+      'The one real measurement in this app. It counts the amp-hours that come out from the highest cell at the top, with the charger already letting go, to the lowest cell at the cutoff or the BMS cutting. The cells mark both ends, not the BMS percentage: that percentage is worked out against the configured capacity, and measuring with it would only hand that setting back.';
 
   @override
   String get capacityStart => 'Start test';
@@ -1474,7 +1489,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get capacityNotFull =>
-      'Charge the pack to the top first. Starting half full would only measure part of it, and the result would come out short.';
+      'Charge the pack to the top first. The test starts when the highest cell is at the top and the charger is down to a trickle, not when the BMS says 100 %. Starting half full would only measure part of it.';
 
   @override
   String get capacityNoReadings => 'Connect the BMS first.';
@@ -1510,14 +1525,14 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get capacityAutoNote =>
-      'You do not have to remember anything: the app reads back the stored readings and takes any complete discharge that already happened as a measurement. The button is for doing one deliberately, with live progress.';
+      'You do not have to remember anything: the app reads back the stored readings and takes any complete discharge that already happened as a measurement: cells at the top to a cell at the cutoff, with no charge and no long hole in the middle. The button is for doing one deliberately, with live progress.';
 
   @override
   String get capacityAutoTag => 'found';
 
   @override
   String capacityGapWarning(String minutes) {
-    return '$minutes min of it went unwatched, so the figure reads low.';
+    return '$minutes min of it went unwatched, so it does not count as a capacity measurement.';
   }
 
   @override
@@ -1555,12 +1570,13 @@ class AppL10nEn extends AppL10n {
       'This charge never got above 4.0 V per cell, so it says nothing about imbalance. It has to reach the top to be useful.';
 
   @override
-  String chargeOpensAtTop(int cell) {
-    return 'The cells were even and came apart at the end. That pattern is capacity mismatch rather than a loose connection: cell $cell fills before the others.';
+  String chargeOpensAtTop(int cell, int weak) {
+    return 'The cells were even and came apart at the end. That pattern is capacity mismatch rather than a loose connection: cell $cell fills before the others, and cell $weak is the one furthest behind.';
   }
 
   @override
-  String get chargeNone => 'No charge has been recorded yet';
+  String get chargeNone =>
+      'No charge of this pack has been recorded yet. One is recorded when the app is connected while it charges.';
 
   @override
   String get trendsTitle => 'Over time';
@@ -1572,7 +1588,7 @@ class AppL10nEn extends AppL10n {
   String get trendsCapacity => 'Measured capacity';
 
   @override
-  String get trendsSag => 'Sag under load';
+  String get trendsSag => 'Apparent pack resistance';
 
   @override
   String get trendsDeltaVsCharge => 'Delta against charge';
@@ -1599,11 +1615,11 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get trendsDeltaHint =>
-      'The odd one out: sideways is the charge level, not time. Each dot is one reading, placed by how full the pack was and how far apart its highest and lowest cell were at that moment. What matters is the shape. Flat across the middle with a spike near full is one cell with less capacity than the rest. A curve that follows the current instead, higher under load, is resistance somewhere, and almost always a connection rather than a cell.';
+      'Across is the charge level, not time. Each point is the median delta (highest cell minus lowest) of the last 90 days\' readings at that charge: one line at rest and one discharging at more than 5 A. Readings taken while charging are left out. The delta opening near empty and near full is normal on almost any pack, because the voltage curve is steep there. What says something is the resting line opening across the middle, where the curve is flat, or the loaded line sitting well above the resting one: that is resistance, and nearly always a connection rather than a cell.';
 
   @override
   String get trendsSagHint =>
-      'How many milliohms of internal resistance each ride implies, worked out from how far the voltage fell for the current drawn. Oldest on the left. Rising resistance is the first thing to go on an ageing pack and shows up long before capacity does, so a climb here is an early warning rather than a verdict. A sudden jump is usually a connection, not the cells.';
+      'One dot per ride: the pack\'s apparent resistance, worked out from how the voltage moved over the stretches where the current swung quickly, the median of those stretches. It includes the wiring and the BMS, and it is approximate, because a reading\'s current and voltage are not always the same instant. What counts is the trend: a slow climb over months is wear; a sudden jump is nearly always a connection. Rides with few such stretches have no dot.';
 
   @override
   String get alertTitle => 'Alert';
@@ -1634,14 +1650,14 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get settingsCatalogueHint =>
-      'What the label on the pack claims. Health is measured against this number, so it is worth getting right.';
+      'What the label on the pack claims. It is used for two things: comparing it with what the pack really measures in a capacity test, and working out the full-pack range while nothing has been measured. Wear is not measured against this number but against the pack\'s own best full discharge.';
 
   @override
   String get catalogueUnset => 'Not set';
 
   @override
   String get catalogueUnsetHint =>
-      'Nobody has said how many amp-hours this battery was sold as, and the app does not invent one. Until you set it, health and degradation cannot be worked out: there is nothing to measure them against.';
+      'Nobody has said how many amp-hours this battery was sold as, and the app does not invent one. Without it there is no comparison with the advert, and the full-pack range waits for a capacity test. Wear does not need it: it comes from measured full discharges.';
 
   @override
   String get catalogueSetIt => 'Set capacity';
@@ -1675,14 +1691,14 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get settingsHapticsHint =>
-      'Nobody looks at the screen while riding. This makes the phone speak up from a pocket.';
+      'Nobody looks at the screen while riding. With the app in view the phone itself buzzes; with the screen off or the phone in a pocket it is the alert notification that vibrates, so the notification-shade alerts need to be on for that.';
 
   @override
   String get settingsRawFrames => 'Keep raw frames';
 
   @override
   String get settingsRawFramesHint =>
-      'Leave this on. It is what allows the history to be re-read if a protocol offset turns out to have been wrong.';
+      'Leave this on. It keeps 30 days of raw frames, to diagnose and re-read recent readings if a protocol offset turns out to have been wrong. Older ones are deleted on their own.';
 
   @override
   String get settingsSave => 'Save';
@@ -1697,17 +1713,17 @@ class AppL10nEn extends AppL10n {
   String get exportTrips => 'Trips (CSV)';
 
   @override
-  String get exportReadings => 'Last week of readings (CSV)';
+  String get exportReadings => 'Readings (CSV)';
 
   @override
-  String get exportFrames => 'Last day of raw frames';
+  String get exportFrames => 'Raw frames (hex)';
 
   @override
   String get exportTrack => 'Track (GPX)';
 
   @override
   String exportDone(String path) {
-    return 'Saved to $path';
+    return 'Ready to share: $path';
   }
 
   @override
@@ -1802,7 +1818,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get updateIntro =>
-      'This app is not on a store, so it updates from GitHub releases. It never checks or downloads on its own: you ask.';
+      'This app is not on a store, so it updates from GitHub releases. It checks once a day for a new version and asks you; it never downloads anything unless you ask.';
 
   @override
   String get updateInstalled => 'Installed version';
@@ -2026,7 +2042,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get catalogueFromBmsHint =>
-      'Taken from the BMS configuration. That is a number about this pack, but whoever assembled it typed it in. If you were sold a different capacity, set it: the gap between the two is exactly what health measures.';
+      'Taken from the BMS configuration. That is a number about this pack, but whoever assembled it typed it in. While it comes from there, the app does not treat it as the advert: it does not compare its measurements against it, and the full-pack range says where it comes from. If you were sold a different capacity, set it.';
 
   @override
   String get connectRetry => 'Search again';
@@ -2048,8 +2064,9 @@ class AppL10nEn extends AppL10n {
       'A setting inside the BMS, not a measurement of the cells. It is what every percentage the pack reports is scaled against, so it is worth seeing, and it stays the same however tired the battery gets.';
 
   @override
-  String get offlineImpliedUnusable =>
-      'Only readable between about 25 % and 90 % charge.';
+  String offlineImpliedUnusable(String min, String max) {
+    return 'Only readable between $min % and $max % charge.';
+  }
 
   @override
   String get offlineSoh => 'Health the BMS claims';
@@ -2058,7 +2075,7 @@ class AppL10nEn extends AppL10n {
   String get offlineCycles => 'Cycles the BMS counts';
 
   @override
-  String get offlineWeakest => 'Weakest cell';
+  String get offlineWeakest => 'Lowest cell at rest';
 
   @override
   String offlineWeakestValue(String index, String volts) {
@@ -2089,7 +2106,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get connectLinkNeverCameUp =>
-      'The Bluetooth link to the pack did not come up in 25 seconds, and the app tried more than once. Check that the pack is on and nearby, and that the official JK app is fully closed, not just in the background.';
+      'The Bluetooth link to the pack did not come up in 25 seconds, and the app tried more than once. Check that the pack is on and nearby, and that your BMS\'s official app is fully closed, not just in the background.';
 
   @override
   String get connectSilent =>
@@ -2132,7 +2149,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get backupIntro =>
-      'The whole database in one file, and back again. The CSV and GPX exports are for reading the data elsewhere; this is for not losing it. If you change phones or lose one, this is the only thing that brings back months of readings, the rides with their tracks, and the raw frames.';
+      'The whole database in one file, and back again. The CSV and GPX exports are for reading the data elsewhere; this is for not losing it. It brings back the packs, the rides with their tracks, the capacity tests, the maintenance log, the inspections, the link log and the readings as the phone stores them: in full for the last month and one a minute before that. Raw frames are only kept for 30 days, so the copy carries at most those. It also carries your alert, charging, ride and screen settings. It does not carry the licence or the update token, which belong to this phone.';
 
   @override
   String get backupExport => 'Save a copy of everything';
@@ -2185,7 +2202,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String chargeAlertTargetReached(String soc) {
-    return 'The battery reached $soc %';
+    return 'The battery reached $soc %, by the BMS';
   }
 
   @override
@@ -2325,7 +2342,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get chargeWatchHint =>
-      'While the app is in the background Android cuts the Bluetooth link within minutes. With this on, it raises a foreground service as soon as charging starts and holds the link, which is what the alerts need to reach you overnight. It costs phone battery while it runs.';
+      'While the app is in the background Android cuts the Bluetooth link within minutes. With this on, it raises a foreground service as soon as charging starts and holds the link, and if the link drops it keeps trying to reconnect until the charge ends, which is what the alerts need to reach you overnight. It does not work if you swipe the app away. It costs phone battery while it runs.';
 
   @override
   String get chargeWatchNotifTitle => 'Charging';
@@ -2354,7 +2371,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get autoTripHint =>
-      'Records the ride without you having to remember, and closes it after about three minutes standing still. Turn it off and the app only learns your range from rides you start by hand, and the ones people forget are not a random sample: they are the short ones and the rushed ones. Starting needs pack current and GPS movement together, so switching the bike on does not open a ride.';
+      'Opens the ride when the pack is drawing and the GPS says you are moving, both for about 20 seconds (setting off at walking pace, it waits until you pass 6 km/h), and closes it after about three minutes standing still. Whatever you cover before it opens is not recorded. Turn it off and the app only learns your range from rides you start by hand, and the ones people forget are not a random sample: they are the short ones and the rushed ones.';
 
   @override
   String get autoTripStarted => 'Ride started automatically';
@@ -2392,11 +2409,12 @@ class AppL10nEn extends AppL10n {
 
   @override
   String degSoldShort(String sold, String real, String pct) {
-    return 'Sold as $sold Ah, and the best it has held is $real Ah: about $pct % less range than advertised. That is not wear, it was never $sold.';
+    return 'Sold as $sold Ah, and the best it has measured is $real Ah: about $pct % less than advertised. If that measurement was made with the pack new, it is not wear: it was never $sold.';
   }
 
   @override
-  String get degSoldOk => 'It has delivered what was advertised.';
+  String get degSoldOk =>
+      'The best it has measured lives up to what was advertised.';
 
   @override
   String get demoSetCharge => 'Set the charge to';
@@ -2418,10 +2436,11 @@ class AppL10nEn extends AppL10n {
   String get demoSpeedNormal => 'normal';
 
   @override
-  String get etaFull => 'Full in';
+  String get etaFull => 'Full in about';
 
   @override
-  String get etaTapering => 'approx., the current is already tailing off';
+  String get etaTapering =>
+      'the current is already tailing off, and the end takes longer';
 
   @override
   String get etaDone => 'It is full';
@@ -2491,11 +2510,11 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get troubleBusy =>
-      'Something else is already connected to the pack. The JK BMS accepts only one Bluetooth connection at a time, so close the official JK app or any other logger.';
+      'Something else is already connected to the pack. The BMS accepts only one Bluetooth connection at a time, so close your BMS\'s official app or any other logger.';
 
   @override
   String get troubleOutOfRange =>
-      'The pack did not answer. Either it is out of range or switched off, or something else is holding its one Bluetooth connection: the official JK app, or another logger.';
+      'The pack did not answer. Either it is out of range or switched off, or something else is holding its one Bluetooth connection: your BMS\'s official app, or another logger.';
 
   @override
   String get troubleBluetoothOff => 'Bluetooth is off on the phone.';
@@ -2555,7 +2574,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get linkWatchHint =>
-      'Android stops handing an app Bluetooth readings shortly after the screen goes dark, unless the app holds a foreground service. This holds one while the pack is connected, so the app behaves the same with the screen on or off. That is what the notification is for; it is not the app announcing itself.';
+      'Android stops handing an app Bluetooth readings shortly after the screen goes dark, unless the app holds a foreground service. This holds one while the pack is connected, and while it tries to get the link back after a drop, so the app behaves the same with the screen on or off. That is what the notification is for; it is not the app announcing itself. If you swipe the app away, it stops reading.';
 
   @override
   String get screenAwakeReason =>
@@ -2593,7 +2612,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String learnWhyNoEnergy(String n) {
-    return '$n recorded distance but no energy leaving the pack. Either they were spent on a trailer, or the pack reports its current with the opposite sign to the one this app assumes.';
+    return '$n were measured, but no net energy left the pack. Either they were spent on a trailer or nearly all downhill, or the pack reports its current with the opposite sign to the one this app assumes.';
   }
 
   @override
@@ -2610,21 +2629,22 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get trendsConsumptionHint =>
-      'One dot per recorded ride, oldest on the left. Height is what that ride cost per kilometre. Riding style and weather move it around a lot, so ignore single dots and look at whether the cloud is drifting upwards over months: the same route costing more means the pack is having to work harder for it.';
+      'One dot per measured ride that counts towards the range: what it cost per kilometre. The route, how you ride, the wind, the temperature and the tyres move it far more than the battery does, so this is not a measure of wear: it shows how your riding costs. Unmeasured rides, rides marked as an exception and impossible figures are left out.';
 
   @override
   String get trendsCapacityHint =>
-      'One dot per full discharge measured, oldest on the left. Height is the amp-hours the pack actually held that time. This is the only real measure of wear here, and it is the slowest to fill in: expect it to go down a little each year and be suspicious of a sudden drop.';
+      'One dot per full discharge measured, oldest on the left: cells at the top to a cell at the cutoff, watched the whole way, with no charge in the middle. Height is the amp-hours that came out that time. This is the only real measure of wear here, and it is the slowest to fill in: expect it to go down a little each year and be suspicious of a sudden drop.';
 
   @override
-  String get trendsAxisTime => 'left to right: oldest to newest';
+  String get trendsAxisTime =>
+      'across is time: oldest to newest, with gaps where there was no data';
 
   @override
   String get trendsAxisCharge => 'left to right: empty to full';
 
   @override
   String learnWhyImplausible(String n) {
-    return '$n came out at a consumption no motorcycle could produce, so they were refused. That is a fault in this app rather than anything about the riding, and it was fixed in this version: rides recorded from here should read correctly. The old ones cannot be repaired, because the readings they needed were never stored.';
+    return '$n came out at a consumption no motorcycle could produce, so they were refused. That was a fault in this app rather than anything about the riding, and it is fixed: rides recorded since should read correctly. Old ones that still have their readings can be measured again with “Measure again” in their detail.';
   }
 
   @override
@@ -2632,7 +2652,8 @@ class AppL10nEn extends AppL10n {
       'The radio never confirmed the search started, so nothing was actually looked for. Usually Bluetooth still waking up just after launch. Try again.';
 
   @override
-  String get backupShare => 'Send it somewhere instead';
+  String get backupShare =>
+      'Send the small copy, without raw frames, to another app';
 
   @override
   String get backupSaveDialog => 'Where to put the copy';
@@ -2660,7 +2681,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get rangeFullFromMeasured =>
-      'From a capacity this pack actually measured.';
+      'From a full discharge measured on this pack, cells at the top to a cell at the cutoff.';
 
   @override
   String get rangeNoneLearned =>
@@ -2731,7 +2752,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get licenseFreeBody =>
-      'The complete live viewer and the last 24 hours of history, free. The rest (unlimited history, degradation, verdicts, alerts with the app closed, backup) is Pro: one payment, for life, for this phone.';
+      'The complete live viewer and the last 24 hours of history, free. The rest (unlimited history, degradation, verdicts, watching a charge all night, backup) is Pro: one payment, for life, for this phone.';
 
   @override
   String get licenseProBody =>
@@ -2859,7 +2880,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get licenseWhyBody =>
-      'The free tier matches the official JK app and is never cut down. Pro is what that app cannot do by design: remember, compare and conclude. One payment; no subscriptions. No account, no server, no internet: the key is checked on the phone against the author\'s signature.';
+      'The free tier matches your BMS\'s official app and is never cut down. Pro is what that app cannot do by design: remember, compare and conclude. One payment; no subscriptions. No account, no server, no internet: the key is checked on the phone against the author\'s signature.';
 
   @override
   String get licenseOpen => 'See licence';
@@ -2888,7 +2909,8 @@ class AppL10nEn extends AppL10n {
   String get proFeatureVerdicts => 'The verdicts on the pack\'s condition';
 
   @override
-  String get proFeatureBackgroundAlerts => 'Alerts with the app closed';
+  String get proFeatureBackgroundAlerts =>
+      'Watching a charge all night, reconnecting whenever the link drops';
 
   @override
   String get proFeatureBackup => 'Backup and restore';
@@ -2915,7 +2937,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get chargeWatchProHint =>
-      'Pro: needs a licence to hold the link with the app closed.';
+      'Pro: needs a licence to watch a charge all night, reconnecting if the link drops. Keeping reading with the screen off is free.';
 
   @override
   String get licenseStatusAdmin => 'Admin';
@@ -2932,7 +2954,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get adviceHonestyNote =>
-      'Every sentence rests on a measured figure: tap it to see which. The BMS\'s cycle count and configured capacity can be edited from the official app, so they are always checked here against what the physics says.';
+      'Every sentence rests on a figure: tap it to see which. The BMS\'s cycle count and configured capacity can be edited from its official app, so here they are checked against what the app measures on its own wherever it can.';
 
   @override
   String get verdictHealthMeasuredTitle =>
@@ -2940,7 +2962,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String verdictHealthMeasuredBody(String pct, String now, String best) {
-    return 'Your battery is at $pct % of the capacity it arrived with: $now Ah measured now against $best Ah, the best it has given. Measured over full discharges, not estimated.';
+    return 'Your battery is at $pct % of the best measurement it has made: $now Ah in the latest against $best Ah, the best. Measured over full discharges, not estimated.';
   }
 
   @override
@@ -2957,16 +2979,16 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String verdictCellDriftingBody(String weeks, String dev, String rate) {
-    return 'For $weeks weeks it has been drifting: $dev V under the pack average and falling about $rate V a month. Consistent with a cell on its way out. Look at it before the pack shuts down in the street.';
+  String verdictCellDriftingBody(String days, String dev, String rate) {
+    return 'Over $days days of resting readings it has been pulling away: $dev V under the pack average, and the trend is about $rate V more a month. Consistent with a cell on its way out. Look at it before the pack shuts down in the street.';
   }
 
   @override
   String get verdictNoCellDriftingTitle => 'No cell is going';
 
   @override
-  String verdictNoCellDriftingBody(String weeks, String dev) {
-    return 'Over $weeks weeks of resting readings no cell is pulling away from the rest. The worst sits $dev V under the average and is not getting worse. Nothing to do.';
+  String verdictNoCellDriftingBody(String days, String cell, String dev) {
+    return 'Over $days days of resting readings, all between 40 and 80 % charge, no cell is pulling away from the rest. The lowest, cell $cell, sits $dev V under the average and is not getting worse. Nothing to do.';
   }
 
   @override
@@ -2984,14 +3006,16 @@ class AppL10nEn extends AppL10n {
 
   @override
   String verdictDeltaNormalBody(String loaded, String rest) {
-    return 'Under current the delta reaches $loaded V, against $rest V at rest. Nothing resistive to chase. Nothing to do.';
+    return 'Under a heavy load the delta reaches $loaded V, against $rest V at rest. Nothing resistive to chase. Nothing to do.';
   }
 
   @override
-  String get evidenceRestingDelta => 'Delta at rest (session maximum)';
+  String get evidenceRestingDelta =>
+      'Delta at rest (the highest since it connected)';
 
   @override
-  String get evidenceLoadedDelta => 'Delta under load (session maximum)';
+  String get evidenceLoadedDelta =>
+      'Delta under load (reached by several readings since it connected)';
 
   @override
   String evidenceWeakCellShare(String cell) {
@@ -2999,14 +3023,15 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String get evidenceReadingsInSession => 'Readings this session';
+  String get evidenceReadingsInSession =>
+      'Readings that count since it connected';
 
   @override
   String get evidenceReportedCycles => 'Cycles per the BMS (editable figure)';
 
   @override
   String get evidenceEquivalentCycles =>
-      'Equivalent cycles from amp-hours that flowed';
+      'Equivalent cycles (Ah the BMS counted over the configured capacity)';
 
   @override
   String get evidenceReportedSoh => 'SOH per the BMS';
@@ -3089,7 +3114,7 @@ class AppL10nEn extends AppL10n {
   String get evidenceDriftSamples => 'Resting readings analysed';
 
   @override
-  String get evidenceDriftSpanWeeks => 'Weeks observed';
+  String get evidenceDriftDays => 'Days with resting readings';
 
   @override
   String get verdictTitle => 'Verdict';
@@ -3212,8 +3237,9 @@ class AppL10nEn extends AppL10n {
       'Per-cell sag under load is where this test gets its answer, and no load big enough ever arrived, so there is nothing here about this battery either way. Run it again and give it one of these: ride fifty metres accelerating properly, or hold the rear brake on the stand and open the throttle, or plug the charger in for half a minute. A wheel spinning free in the air is not a load: there is nothing for the motor to push against, so the current stays near zero however hard you twist it.';
 
   @override
-  String get inspectionFidelityNote =>
-      'A quick test catches the obvious scam and the bad cell; it does not measure real capacity. Real capacity takes a full discharge.';
+  String inspectionFidelityNote(String floor) {
+    return 'A quick test catches the cell that breaks away from the others under load (at this test\'s load, from about $floor mΩ of extra resistance) and the obvious scam; it does not measure real capacity. Real capacity takes a full discharge.';
+  }
 
   @override
   String get inspectionCaveatsTitle => 'What this test could not see';
@@ -3342,16 +3368,16 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String verdictInspCellSaggingBody(String excess) {
-    return 'Under the hard pull it dropped $excess V more than the pack median. Consistent with a worn cell or a bad connection at that cell. This is the main reason not to pay the asking price without more tests.';
+  String verdictInspCellSaggingBody(String excess, String ohms) {
+    return 'Under the hard pull it dropped $excess V more than the pack median: about $ohms mΩ of extra resistance. Consistent with a worn cell or a bad connection at that cell. This is the main reason not to pay the asking price without more tests.';
   }
 
   @override
   String get verdictInspSagUniformTitle => 'Every cell sags evenly';
 
   @override
-  String verdictInspSagUniformBody(String excess) {
-    return 'Under the hard pull the worst cell dropped only $excess V more than the median. None gives up before the others.';
+  String verdictInspSagUniformBody(String amps, String excess, String floor) {
+    return 'Under the hard pull ($amps A) the worst cell dropped only $excess V more than the median. At this current a cell with about $floor mΩ of extra resistance would already stand out, and none gives up before the others.';
   }
 
   @override
@@ -3377,7 +3403,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String verdictInspWeakLightBody(String amps, String extra) {
-    return 'With only the lights on ($amps A) it dropped $extra V more than the rest. A cell that gives up at one or two amps is a very tired cell.';
+    return 'With only the lights on ($amps A) it dropped $extra V more than the rest. A cell that gives up under the lights\' load (less than an amp) is a very tired cell.';
   }
 
   @override
@@ -3387,7 +3413,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String verdictInspSlowRecoveryBody(String extra) {
-    return 'It took $extra s longer than the median to return to its resting voltage after the load, or never did. Tired cells rebound slowly; it is a rarely watched and very good sign.';
+    return 'It took $extra s longer than the median to return to its resting voltage after the load, or never did. Tired cells rebound slowly.';
   }
 
   @override
@@ -3395,7 +3421,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String verdictInspRecoveryOkBody(String seconds) {
-    return 'After the load the cells were back at rest in about $seconds s, all at the same pace.';
+    return 'After the load the cells were back at rest in about $seconds s, all at the same pace. After a pull this hard, recovery is a rarely watched and very good sign.';
   }
 
   @override
@@ -3403,7 +3429,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String verdictInspHotBody(String temp) {
-    return 'It reached $temp °C during the test. A pack that is hot at rest or under light load is not normal.';
+    return 'It reached $temp °C during the test. For a test of a few minutes that is a lot: ask where the heat comes from.';
   }
 
   @override
@@ -3428,7 +3454,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String verdictInspNoHeavyLoadBody(String amps) {
-    return 'The highest current seen was $amps A. Without a hard pull there is no way to measure how far each cell drops, which is where the truth comes out. Repeat with the wheel in the air or 50 metres on the bike.';
+    return 'The highest current seen was $amps A. Without a hard pull held for a few seconds there is no way to measure how far each cell drops, which is where the truth comes out. Repeat riding under real load (a hill or hard acceleration), or with the charger.';
   }
 
   @override
@@ -3658,7 +3684,7 @@ class AppL10nEn extends AppL10n {
   String get reportSoftware => 'Firmware version';
 
   @override
-  String get reportCycles => 'Counted cycles';
+  String get reportCycles => 'Cycles per the BMS';
 
   @override
   String get reportReportedSoh => 'Reported health';
@@ -3680,18 +3706,18 @@ class AppL10nEn extends AppL10n {
   String get reportCertificateCode => 'Certificate code';
 
   @override
-  String get reportCertificateIssuer => 'Issuer (installation)';
+  String get reportCertificateIssuer => 'Issuer code';
 
   @override
   String get reportCertificateIssuedAt => 'Signed on';
 
   @override
   String get reportCertificateExplain =>
-      'The signature proves these figures came out of the app that day and have not been changed since. It does not prove the battery is good or the seller honest. Scan the QR or paste the code into the app to check it.';
+      'The signature proves these figures came out of the app on the phone whose issuer code is shown here, and have not been changed since. It does not prove whose phone that is: compare the code with the one published by whoever gave you the certificate. Nor does it prove which battery was tested (the name and serial come from the BMS and can be changed), nor the date, which is that phone\'s clock, nor that the battery is good. Scan the QR or paste the code into the app to check it.';
 
   @override
   String reportHonestyInspection(String date) {
-    return 'Checked with a quick test on $date. Capacity is estimated, not measured: measuring it needs a full discharge. This test catches the bad cell and the obvious scam, and does not replace a workshop inspection.';
+    return 'Quick test on $date. A test like this catches the cell that breaks away from the others under load, at this test\'s load, and the obvious scam; it does not replace a workshop inspection. It does not measure capacity: the capacity shown is the one configured in the BMS, not a measurement.';
   }
 
   @override
@@ -3717,7 +3743,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get certificateVerifyIntro =>
-      'Paste the code that came with a certificate, or the text from its QR. The app checks the signature and shows exactly the figures that were signed.';
+      'Paste the code that came with a certificate, or the text from its QR. The app checks the signature and shows you the figures that were signed, all of them, with the verdict the app draws from them.';
 
   @override
   String get certificateVerifyHint => 'JKC1....';
@@ -3729,8 +3755,9 @@ class AppL10nEn extends AppL10n {
   String get certificateVerifyOpen => 'Verify a certificate';
 
   @override
-  String get certificateValid =>
-      'Signature is good. These are the signed figures.';
+  String certificateValid(String issuer) {
+    return 'Signature valid for issuer $issuer. Check that this code belongs to whoever gave you the certificate.';
+  }
 
   @override
   String get certificateBadSignature =>
@@ -3759,7 +3786,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get verdictInspRepeatSameCellBody =>
-      'Not bad luck and not a loose lead: run the test again and the same cell drops before the others. This is no longer a suspicion, it is the cell.';
+      'Run again at a similar pull, the same cell drops before the others, and both times past the line. It no longer looks like a bad reading: it is that cell or its connection, and a workshop can tell which.';
 
   @override
   String verdictInspRepeatCellMovedTitle(String cell) {
@@ -3772,11 +3799,12 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String get verdictInspRepeatWorseTitle => 'Worse than the previous run';
+  String get verdictInspRepeatWorseTitle =>
+      'Measures worse than the previous run';
 
   @override
   String get verdictInspRepeatWorseBody =>
-      'Compared at the same kind of pull, the pack measures worse than last time. With two runs separated in time that is a trend, not a snapshot.';
+      'Against the previous run the pack measures worse; both runs\' figures are in the detail. Sag is only compared when the two pulls were alike, and the resting spread only when the pack was at a similar charge. Two runs point at a change; a third would confirm it.';
 
   @override
   String get verdictInspRepeatSteadyTitle => 'Same as last time';
@@ -3787,11 +3815,11 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get verdictInspRepeatCountersResetTitle =>
-      'Somebody touched the counters between visits';
+      'The BMS counters went down between visits';
 
   @override
   String get verdictInspRepeatCountersResetBody =>
-      'Cycles only go up and health only goes down. If between the two runs the cycles fell, the health rose or the configured capacity changed, the BMS was reset. The physical findings above cannot be reset with a button, which is why they are the ones to read.';
+      'Cycles and the total the BMS counts only ever go up. If they went down between the two runs, the BMS was reset or replaced. Ask why. The physical findings above cannot be reset with a button, which is why they are the ones to read.';
 
   @override
   String get verdictInspRepeatLoadDiffersTitle =>
@@ -3870,7 +3898,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get inspectionRepeatHint =>
-      'Repeat it as often as you like: every run is saved and the next one is compared against all of them.';
+      'Save it before repeating so the runs can be compared: only saved runs are compared.';
 
   @override
   String inspectionAlreadySeen(String count) {
@@ -3882,7 +3910,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get reportSeriesNote =>
-      'Each row is an earlier inspection stored on the phone that signed this sheet. Repeating the test is what tells a bad cell from a bad reading.';
+      'Each row is an inspection stored on the phone that signed this sheet, this one included, as the last. Repeating the test is what tells a bad cell from a bad reading.';
 
   @override
   String get reportSeriesWorstCell => 'Worst cell';
@@ -4076,7 +4104,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String verdictConfigOvpDangerousBody(String value, String limit) {
-    return 'The BMS stops charging at $value V a cell and the safe maximum for this chemistry is $limit V. Every full charge is doing damage. Change it in the official BMS app, on your own responsibility; this app never writes anything to a battery.';
+    return 'The BMS stops charging at $value V a cell and the safe maximum for this chemistry is $limit V. Every full charge is doing damage. Change it in the official BMS app, on your own responsibility; this app does not write setting values to a battery.';
   }
 
   @override
@@ -4243,7 +4271,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get configAuditReadOnly =>
-      'Read only. This app never writes to a BMS: a wrong value written to a battery is a fire, and the protocol\'s write path is reverse-engineered. Anything that needs changing is changed in the official BMS app, and that decision is yours.';
+      'Read only. This app does not write setting values to a BMS: a wrong value written to a battery is a fire, and the protocol\'s write path is reverse-engineered. Anything that needs changing is changed in the official BMS app, and that decision is yours. The only things the app can touch are the charge, discharge and balancer switches, and only with the write permission on in Settings.';
 
   @override
   String get configAuditSettings => 'Everything that was looked at';
@@ -4265,29 +4293,29 @@ class AppL10nEn extends AppL10n {
   String get alertLinkLost => 'Lost the connection to the battery';
 
   @override
-  String get alertsNotifyTitle => 'Alerts that arrive with the app closed';
+  String get alertsNotifyTitle => 'Alerts in the notification shade';
 
   @override
   String get alertsNotifyIntro =>
-      'Alerts land in the notification shade even when the app is in the background or closed. Without this, an alert at three in the morning with the phone in another room reaches nobody.';
+      'Alerts land in the notification shade with the app in the background or the screen off (not if you swipe the app away: then it stops reading the pack). Without this, an alert at three in the morning with the phone in another room reaches nobody.';
 
   @override
   String get alertsNotifyEnable => 'Post alerts to the notification shade';
 
   @override
   String get alertsNotifyDenied =>
-      'Android has not granted permission to notify. Alerts will still appear on screen and buzz, but they will not arrive with the app closed.';
+      'Android has not granted permission to notify. Alerts will still appear on screen and buzz while you are looking at the app, but they will not arrive with the app in the background or the screen off.';
 
   @override
   String get alertsNotifyOneConnection =>
-      'Remember: the BMS accepts a single Bluetooth connection. While the phone is connected in the background the official JK app cannot connect, and the other way round.';
+      'Remember: the BMS accepts a single Bluetooth connection. While the phone is connected in the background your BMS\'s official app cannot connect, and the other way round.';
 
   @override
   String get alertsThresholdsTitle => 'When to speak up';
 
   @override
   String get alertsThresholdsIntro =>
-      'The defaults are conservative. Raise them if your pack lives outside the usual range and it is warning you too often.';
+      'The defaults are conservative. If an alert fires too often, move it the way that warns less: cell spread and temperature up, low charge down.';
 
   @override
   String get alertsDeltaWarn => 'Spread between cells';
@@ -4341,11 +4369,12 @@ class AppL10nEn extends AppL10n {
 
   @override
   String alertNotificationBodyChargeTarget(String value) {
-    return 'The pack has reached the $value % you asked for.';
+    return 'The BMS reads $value %, what you asked for. That is its counter, not a measurement of the cells.';
   }
 
   @override
-  String get alertNotificationBodyChargeComplete => 'Charging has finished.';
+  String get alertNotificationBodyChargeComplete =>
+      'The highest cell is at the top and the charger is barely putting anything in: charging has finished.';
 
   @override
   String alertNotificationBodyChargeHot(String value) {
@@ -4422,7 +4451,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String representativeDone(String km) {
-    return 'Done. Your range stays at $km km.';
+    return 'Done. Your range is now $km km.';
   }
 
   @override
@@ -4491,15 +4520,15 @@ class AppL10nEn extends AppL10n {
   String get healthWeakCellStrands => 'What it strands';
 
   @override
-  String get healthWeakCellResistance => 'Resistance since day one';
+  String get healthWeakCellResistance => 'Balance lead since day one';
 
   @override
   String healthWeakCellResistanceUp(String pct, String cell) {
-    return '+$pct % on cell $cell';
+    return '+$pct % on the lead of cell $cell';
   }
 
   @override
-  String get healthWeakCellResistanceFlat => 'Nobody has moved';
+  String get healthWeakCellResistanceFlat => 'No lead has moved';
 
   @override
   String get healthWeakCellResistanceNoBaseline =>
@@ -4543,7 +4572,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get chargeWatchRedundant =>
-      'With the setting above on this is already covered: the link stays open anyway. You only need it if you turn that one off and still want charge alerts overnight.';
+      'With the setting above on, the link already stays open with the screen off, including while it recovers from a drop. This adds one thing: while charging, the app never stops trying to reconnect. Without it, it gives up after about six minutes with no answer from the pack.';
 
   @override
   String get alertGroupSpread => 'Cells apart';
@@ -4571,4 +4600,1290 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get alertTargetReachedShort => 'Reached the level you set';
+
+  @override
+  String get alertBmsHot => 'The BMS is running hot';
+
+  @override
+  String get alertWhenBmsMosfet => 'The BMS (MOSFET)';
+
+  @override
+  String alertNotificationBodyBmsHot(String value) {
+    return 'The BMS MOSFET is at $value °C. Not the battery: it is the part that cuts the power if it keeps climbing. Ease off and give it air.';
+  }
+
+  @override
+  String statusBmsHotWatch(String temp) {
+    return 'BMS running warm: $temp °C';
+  }
+
+  @override
+  String statusBmsHotBad(String temp) {
+    return 'BMS too hot: $temp °C';
+  }
+
+  @override
+  String get adviceBmsHotTitle => 'The BMS is running hot';
+
+  @override
+  String adviceBmsHotBody(String temp) {
+    return 'Its MOSFET reached $temp °C. That is not the battery, but it is the part that cuts the power if it keeps climbing. Check the BMS has airflow and is not pressed against something warm.';
+  }
+
+  @override
+  String get evidenceMosfetTemp => 'BMS MOSFET';
+
+  @override
+  String get thermalMirrorNote =>
+      'Probe 5 on this BMS repeats the MOSFET temperature, so it is not counted as a battery probe.';
+
+  @override
+  String get thermalLegendMosfet => 'MOSFET (no battery probes)';
+
+  @override
+  String balanceWhichCellsReported(String cells) {
+    return '$cells (reported by the BMS)';
+  }
+
+  @override
+  String get balanceWhichCellsNoneReported =>
+      'none right now (reported by the BMS)';
+
+  @override
+  String get balancerStoppedByHeat => 'stopped by heat';
+
+  @override
+  String alertNotificationBodyCellTypical(String value, String cutoff) {
+    return 'A cell is at $value V, close to $cutoff V, the usual cutoff for this chemistry (the BMS did not report its own). It can run out even while the percentage still looks reasonable.';
+  }
+
+  @override
+  String alertNotificationBodyCellAssumed(String value, String cutoff) {
+    return 'A cell is at $value V, close to $cutoff V, an assumed cutoff: the BMS did not report its own and the pack\'s chemistry is not known. It can run out even while the percentage still looks reasonable.';
+  }
+
+  @override
+  String get alertNearLimitUnavailable =>
+      'Not available on this BMS: it does not report its current limit.';
+
+  @override
+  String get sessionEnergyIn => 'Energy put into the pack';
+
+  @override
+  String get sessionEnergyHint =>
+      'Since the pack connected. Only counts the moments readings were arriving.';
+
+  @override
+  String get healthWeakCellStrandsNeedsRest =>
+      'Needs a reading at rest, with no current. On LFP, also off the flat part of the curve.';
+
+  @override
+  String healthWeakCellStrandsAge(String minutes) {
+    return 'From the last reading at rest, $minutes min ago.';
+  }
+
+  @override
+  String get degSoldUnmeasured =>
+      'Not yet measured against the advert: that needs a full discharge.';
+
+  @override
+  String get degConfiguredTitle => 'Configured capacity';
+
+  @override
+  String get healthVerdictReported => 'Not measured yet';
+
+  @override
+  String get healthWeakCellResistanceHint =>
+      'The BMS measures the resistance of the balance lead and its connection, not of the cell. If it climbs, that lead is the first thing to check.';
+
+  @override
+  String get cellsResistanceNote =>
+      'The mΩ under each cell is the resistance of its balance lead and connection, which is what the BMS measures. It is not the cell\'s internal resistance.';
+
+  @override
+  String get rangeFullFromBms =>
+      'From the capacity configured in the BMS, not a measured one.';
+
+  @override
+  String get reportRangeFromBmsConfig => 'capacity configured in the BMS';
+
+  @override
+  String capacityOfConfigured(String pct) {
+    return '$pct % of configured';
+  }
+
+  @override
+  String get historyItemDrift =>
+      'Which cell is pulling away from the others over the weeks';
+
+  @override
+  String get trendsCapacityNotEnough =>
+      'Each point is a full discharge measured with the app connected, so this does not fill in on its own: it needs at least three.';
+
+  @override
+  String get profileCaptureBaselineHintNoSettings =>
+      'The cells exactly as they are now. This BMS reports neither resistances nor its configuration, so the snapshot keeps what it does give. Everything the app later says about drift is measured against this. Best done with the pack at rest.';
+
+  @override
+  String get profileConfigNotCompared => 'Not compared';
+
+  @override
+  String get profileDriftOtherCharge =>
+      'at another charge level, not comparable';
+
+  @override
+  String get adviceCycleMismatchTitle => 'The cycle counter does not add up';
+
+  @override
+  String adviceCycleMismatchBody(String bms, String equivalent) {
+    return 'The BMS says $bms cycles, and the charge it counted through the pack itself comes to $equivalent equivalent cycles. Each firmware counts cycles its own way and the counter can be edited, so the gap can go either way. If you are buying or selling a pack, quote both.';
+  }
+
+  @override
+  String get verdictDeltaLightTitle => 'Nothing odd under a light load';
+
+  @override
+  String verdictDeltaLightBody(String loaded, String rest) {
+    return 'Under current the delta reaches $loaded V, against $rest V at rest. But there has not been a load heavy enough for a bad connection to show, so this rules nothing out yet.';
+  }
+
+  @override
+  String get adviceBmsClaimsOkTitle => 'What the BMS says adds up';
+
+  @override
+  String get adviceBmsClaimsOkBody =>
+      'What could be checked of what the BMS says about itself matches what is measured: the cycle counter against the charge that went through, or the percentage against the cells at an end of the range.';
+
+  @override
+  String get adviceTemperatureOkTitle => 'Temperature normal';
+
+  @override
+  String adviceTemperatureOkBody(String temp) {
+    return 'The battery\'s hottest probe reads $temp °C, and the BMS is not hot either.';
+  }
+
+  @override
+  String get adviceConfigNothingFlaggedTitle => 'Nothing to object to here';
+
+  @override
+  String adviceConfigNothingFlaggedBody(String voltage) {
+    return 'The charge limit per cell is $voltage V, which is not too high. This screen only looks at that; the full review is under Audit the configuration, in System.';
+  }
+
+  @override
+  String get verdictConfigColdCutoffMarginalTitle =>
+      'The cold cutoff has little margin';
+
+  @override
+  String verdictConfigColdCutoffMarginalBody(String value, String limit) {
+    return 'The cold cutoff is at $value °C: above freezing, but only just. The probe reads the outside of the pack and the cells inside lag behind. Raise it to $limit °C or more from the BMS\'s official app.';
+  }
+
+  @override
+  String balanceRankingEntry(String cell, String pct) {
+    return 'cell $cell: $pct %';
+  }
+
+  @override
+  String get capacityNoFullMark =>
+      'Where this pack is full is unknown: the BMS has not said what it charges to and the chemistry is not known. Set it in the pack details to be able to start the test.';
+
+  @override
+  String get capacityStopEarly => 'Finish here';
+
+  @override
+  String get capacityStopEarlyHint =>
+      'Finishing before the cutoff keeps it as a partial: what it counted is real, but it is a slice of the pack and it is never turned into a capacity.';
+
+  @override
+  String get capacityPartialTag => 'partial';
+
+  @override
+  String get capacityLegacyTag => 'old';
+
+  @override
+  String get capacityChargedTag => 'charged part way';
+
+  @override
+  String get capacityUntrustedNote =>
+      'The tagged ones do not count as a capacity. \"partial\": it ended before the cutoff. \"old\": it was closed on the BMS percentage, which is worked out against the configured capacity, so it handed that setting back rather than what the battery holds. \"charged part way\": current went in along the way.';
+
+  @override
+  String chargeGapNote(String minutes) {
+    return '$minutes min without a connection along the way: the BMS counted that part, not the app.';
+  }
+
+  @override
+  String get etaNearlyFull => 'Nearly full';
+
+  @override
+  String chargeTargetAtTop(String soc) {
+    return 'From $soc % this alert is the charge-finished one: the BMS counter gets there before the cells do, so it speaks when the highest cell is at the top and the current has dropped.';
+  }
+
+  @override
+  String alertsTempWarnHint(String limit) {
+    return 'Riding, it warns from here. Charging, from here or from $limit °C, whichever is lower: charging hotter damages the cells, so that limit is never raised.';
+  }
+
+  @override
+  String alertsDeltaWarnHint(String limit) {
+    return 'Riding, it warns from here. At the end of a charge, from here or from $limit mV, whichever is lower: up there the curve is steep and that gap is already a mismatch.';
+  }
+
+  @override
+  String alertNotificationBodyCriticalIdle(String value) {
+    return '$value % charge left. Charge it before you set off.';
+  }
+
+  @override
+  String get alertsNotifyQuietChannel => 'Alerts without vibration';
+
+  @override
+  String get alertLinkLostNeedsWatch =>
+      'Only speaks with \"Keep reading with the screen off\" or \"Watch the charge\" on: without them nothing is watching the link.';
+
+  @override
+  String get alertLinkLostRidingHint =>
+      'Silent while a ride is recording: riding, the link comes and goes, and the ride already shows on screen when it drops.';
+
+  @override
+  String get alertsLowChargeWarnHint =>
+      'Warns when the charge falls below this. Lower it if it warns too early; raise it to hear sooner.';
+
+  @override
+  String get stuckTitle => 'The phone\'s Bluetooth looks stuck';
+
+  @override
+  String get stuckBody =>
+      'Several attempts in a row have failed with the pack within reach. Try these in order, and stop as soon as it connects again:';
+
+  @override
+  String get stuckResetButton => 'Restart the app\'s Bluetooth connection';
+
+  @override
+  String get stuckStepForceStop =>
+      'If that is not enough, force-stop the app (Settings > Apps > JK BMS + > Force stop) and open it again.';
+
+  @override
+  String get stuckStepScanning =>
+      'Next, turn off \"Bluetooth scanning\" (Settings > Location > Location services), then switch Bluetooth off and on. With that scanning on, switching Bluetooth off does not really restart it.';
+
+  @override
+  String get stuckStepRestart => 'As a last resort, restart the phone.';
+
+  @override
+  String get stuckAskWhichStep =>
+      'Once it connects again, say which step fixed it: that tells whether the fault is in the app or in Android.';
+
+  @override
+  String get stuckResetDone =>
+      'The app\'s Bluetooth connection was restarted. Tap the pack again.';
+
+  @override
+  String get stuckResetRunning => 'Restarting the app\'s Bluetooth connection…';
+
+  @override
+  String get consoleReportAttempts => 'Connect attempts, newest first';
+
+  @override
+  String get tripNoGpsFixes =>
+      'No GPS is coming in, so this ride is not measuring distance or speed. The app is retrying. If it stays like this, open the app for a moment with the screen on and check that location is on.';
+
+  @override
+  String get locationApproximateOnly =>
+      'The app only has approximate location, which cannot measure a ride: every position is hundreds of metres off. Turn on \"Use precise location\" in Settings > Apps > JK BMS + > Permissions > Location, then start the ride again.';
+
+  @override
+  String get inspectionCaveatRecoveryNoLoad =>
+      'With no hard pull there was no recovery to measure either.';
+
+  @override
+  String get inspectionCaveatEndedBeforeLoad =>
+      'The test was ended before the load: neither per-cell sag nor recovery was measured.';
+
+  @override
+  String get inspectionCaveatEndedBeforeRecovery =>
+      'The test was ended while the cells were climbing back: recovery was not measured.';
+
+  @override
+  String get inspectionCaveatRecoveryLinkGap =>
+      'The link to the BMS dropped while the cells were climbing back: recovery was not measured, because the time would have been the outage\'s.';
+
+  @override
+  String get inspectionCaveatLinkGaps =>
+      'The link to the BMS dropped during the test. The steps it dropped in started counting again from zero.';
+
+  @override
+  String verdictInspCellRisingTitle(String cell) {
+    return 'Cell $cell rises far more than the rest';
+  }
+
+  @override
+  String verdictInspCellRisingBody(String excess, String ohms) {
+    return 'On the charger it rose $excess V more than the pack median: about $ohms mΩ of extra resistance. Consistent with a worn cell or a bad connection at that cell. This is the main reason not to pay the asking price without more tests.';
+  }
+
+  @override
+  String get verdictInspSagUniformChargeTitle => 'Every cell rises evenly';
+
+  @override
+  String verdictInspSagUniformChargeBody(
+    String amps,
+    String excess,
+    String floor,
+  ) {
+    return 'On the charger ($amps A) the cell that rose most went only $excess V above the median. At this current a cell with about $floor mΩ of extra resistance would already stand out, and none breaks away from the others.';
+  }
+
+  @override
+  String get verdictInspSagUnresolvedTitle =>
+      'Too little load to rule out a bad cell';
+
+  @override
+  String verdictInspSagUnresolvedBody(String amps, String floor) {
+    return 'At this load ($amps A) a cell with less than $floor mΩ extra cannot be told apart, and a bad cell can have less than that. The cells moved together, but with so little current that rules nothing out. Repeat riding under real load (a hill or hard acceleration), or with the charger.';
+  }
+
+  @override
+  String get verdictInspRecoveryNotDiscriminatingTitle =>
+      'At this load recovery says nothing';
+
+  @override
+  String verdictInspRecoveryNotDiscriminatingBody(String seconds, String amps) {
+    return 'The cells were back at rest in about $seconds s. At this load ($amps A) recovery does not discriminate: a tired cell comes back almost as fast as a good one. For it to count the pull has to be at least a third of the pack\'s capacity.';
+  }
+
+  @override
+  String verdictInspHotRestBody(String temp) {
+    return 'It reached $temp °C at rest or with only the lights on. A pack that is hot with no load is not normal: either it came straight off hard use, or something inside heats up by itself.';
+  }
+
+  @override
+  String verdictInspHotLoadBody(String temp) {
+    return 'It reached $temp °C during the hard pull or just after. A pull of a few seconds does not heat a healthy pack that much: either it was already hot, or something heats up too much under load.';
+  }
+
+  @override
+  String get evidenceInspectionRestDelta =>
+      'Delta at rest (each cell\'s median at rest)';
+
+  @override
+  String evidenceExcessResistance(String cell) {
+    return 'Extra resistance, cell $cell';
+  }
+
+  @override
+  String get evidenceDetectionFloor => 'Least that stands out at this load';
+
+  @override
+  String get evidenceLoadWasCharge => 'Load used';
+
+  @override
+  String get evidenceLoadCharger => 'the charger';
+
+  @override
+  String get evidenceSeenDuringStep => 'When it was seen';
+
+  @override
+  String get evidenceStepRest => 'at rest';
+
+  @override
+  String get evidenceStepLight => 'with the lights on';
+
+  @override
+  String get evidenceStepHeavy => 'under the hard pull';
+
+  @override
+  String get evidenceStepRecovery => 'after the load let go';
+
+  @override
+  String get inspectionFidelityNoteUnmeasured =>
+      'Without enough load this test could not look for the bad cell: what is above is only what shows at rest. It does not measure real capacity either; that takes a full discharge.';
+
+  @override
+  String get inspectionLightUnresolved =>
+      'No verdict: the load was too small to rule out a bad cell';
+
+  @override
+  String get inspectionUnresolvedBody =>
+      'There was a load, but a small one: at that current a bad cell can move just like the good ones, so there is nothing here about this battery either way. Run it again with more current: riding under real load (a hill or hard acceleration), or with the charger.';
+
+  @override
+  String get inspectionLightUnmeasuredShort => 'No verdict';
+
+  @override
+  String get verdictInspRepeatConfigChangedTitle =>
+      'The settings or counters changed between visits';
+
+  @override
+  String get verdictInspRepeatConfigChangedBody =>
+      'Between the two runs the configured capacity changed, or the health the BMS reports went up. It can be the owner correcting a setting or the firmware recalculating, and it need not be a trick, but ask what was changed. The physical findings above do not depend on these numbers.';
+
+  @override
+  String evidencePreviousCycleCapacity(String date) {
+    return 'Total counted on $date';
+  }
+
+  @override
+  String get evidenceCycleCapacity => 'Total counted by the BMS';
+
+  @override
+  String get certificateIssuedHere => 'Issued by this phone.';
+
+  @override
+  String get certificateDoesNotProve =>
+      'What the signature does not prove: which battery was tested (the name and serial come from the BMS and can be changed), nor the date, which is the signing phone\'s clock, nor that the battery is good.';
+
+  @override
+  String get certificateSimulated =>
+      'TEST WITH THE SIMULATED PACK. These figures came from the app\'s simulator, not from a battery.';
+
+  @override
+  String get certificateSimulatedUnknown =>
+      'Certificate from an earlier version of the app: it does not say whether the test was on a battery or on the simulated pack.';
+
+  @override
+  String get certificateNoSimulated =>
+      'A rehearsal with the simulated pack cannot be signed: a certificate says the figures came off a battery.';
+
+  @override
+  String get certificateLocalIssuer => 'This phone\'s issuer code';
+
+  @override
+  String get certificateLocalIssuerHint =>
+      'It is the code anyone checking a certificate signed on this phone will see. Publish it where people know you (your advert, your workshop) so they can compare.';
+
+  @override
+  String get inspectionSimulatedBanner =>
+      'TEST WITH THE SIMULATED PACK. None of this is from a real battery.';
+
+  @override
+  String get reportCertificateIssuerCheck =>
+      'Check that this issuer code is the one published by whoever gave you the certificate.';
+
+  @override
+  String get reportPackLabel => 'Battery';
+
+  @override
+  String get reportCurrentStep => 'Current step (load minus rest)';
+
+  @override
+  String get reportMedianRise => 'Median rise on the charger';
+
+  @override
+  String get inspectionCellHeaderChange => 'Change';
+
+  @override
+  String get inspectionSaveTitle => 'Save this run';
+
+  @override
+  String reportHonestyInspectionUnmeasured(String date) {
+    return 'Quick test on $date without enough load: the bad cell could not be looked for, and this sheet says nothing for or against the battery. It does not measure capacity: the capacity shown is the one configured in the BMS, not a measurement.';
+  }
+
+  @override
+  String get reportSeriesNoteUnsigned =>
+      'Each row is an inspection stored on the phone that made this sheet, this one included, as the last. This sheet is not signed. Repeating the test is what tells a bad cell from a bad reading.';
+
+  @override
+  String get reportChange => 'Change (V)';
+
+  @override
+  String get reportCellTableNoteCharge =>
+      'Change is how far each cell rose on the charger. Resistance is estimated from the current step, not measured with an instrument.';
+
+  @override
+  String get inspectionDeleteConfirm => 'Delete';
+
+  @override
+  String get inspectionSaveNoStore =>
+      'Could not save: the app\'s storage is not available.';
+
+  @override
+  String get autoTripPocketNeedsLinkWatch =>
+      'With “Keep reading with the screen off” switched off, the app stops reading the pack when the screen goes dark, so with the phone in a pocket no ride can start.';
+
+  @override
+  String get autoTripPocketWhileInUse =>
+      'With the phone in a pocket this works while the notification the app put up when you connected with the screen on is still there. If Android closes it, or the app reconnects by itself with the screen off, the GPS only answers with location allowed all the time, and without the GPS no ride starts.';
+
+  @override
+  String get autoTripPocketAllowAlways => 'Allow location all the time';
+
+  @override
+  String get autoTripPocketSettingsHint =>
+      'In the app\'s settings, open Permissions, Location, and choose “Allow all the time”.';
+
+  @override
+  String get autoTripPocketAlways =>
+      'Location allowed all the time: a ride can start with the phone in a pocket even after the app reconnected by itself.';
+
+  @override
+  String offlineWeakestRestValue(String index, String pct, String count) {
+    return 'cell $index, lowest in $pct % of $count resting readings over the last month';
+  }
+
+  @override
+  String get offlineLowestLastReading => 'Lowest cell in the last reading';
+
+  @override
+  String historyAverageOf(String used, String total) {
+    return 'from $used of $total rides: the measured ones that count towards the range';
+  }
+
+  @override
+  String learnWhyUnmeasured(String n) {
+    return '$n could not be measured: the link to the pack dropped for much of the ride and there were no readings left to tell how much energy came out. That is not about the riding. If the ride kept readings, “Measure again” in its detail tries once more.';
+  }
+
+  @override
+  String learnWhyExcluded(String n) {
+    return '$n you marked as an exception, so they do not count.';
+  }
+
+  @override
+  String get tripNotMeasured => 'not measured';
+
+  @override
+  String get tripEnergyUnmeasuredWhy =>
+      'The link to the pack dropped for much of the ride and there were no readings left to tell how much energy came out. It does not count towards the range.';
+
+  @override
+  String get tripEnergySourceLabel => 'How it was measured';
+
+  @override
+  String get tripEnergySourceBms => 'BMS counter, the whole ride';
+
+  @override
+  String get tripEnergySourceIntegrated =>
+      'added up from the readings received';
+
+  @override
+  String get tripEnergySourceBracketed =>
+      'BMS counter, from the readings before and after';
+
+  @override
+  String get tripEnergySourcePartial => 'partial: the link dropped';
+
+  @override
+  String get tripEnergySourceUnmeasurable => 'could not be measured';
+
+  @override
+  String get tripResistanceHint =>
+      'The median slope of voltage against current over the stretches where the current changed a lot. Approximate: good for following the same pack over months, not for comparing with a datasheet.';
+
+  @override
+  String get trendsCapacityHollow =>
+      'Hollow circles are discharges the app does not believe (minutes were missing, there was a charge in the middle, or they closed on the percentage) or that it found on its own while riding. They are shown, but kept out of the trend.';
+
+  @override
+  String get maintDeleteConfirmTitle => 'Delete this entry?';
+
+  @override
+  String get maintDeleteConfirmBody =>
+      'It is removed from the maintenance log and from the charts.';
+
+  @override
+  String get maintDeleteConfirmCellBody =>
+      'It is removed from the log, and the pack\'s history counts from before the cell replacement again: drift, capacity and the charts will include the old cells once more.';
+
+  @override
+  String get orphansDiscardConfirmTitle => 'Discard this history?';
+
+  @override
+  String orphansDiscardConfirmBody(String count) {
+    return '$count rows stored with no pack assigned are deleted for good. This cannot be undone.';
+  }
+
+  @override
+  String tripEnergySoFarOffline(String wh) {
+    return '$wh Wh until the link dropped';
+  }
+
+  @override
+  String tripReadingAgeSeconds(String s) {
+    return '$s s ago';
+  }
+
+  @override
+  String tripReadingAgeMinutes(String m) {
+    return '$m min ago';
+  }
+
+  @override
+  String backupExportFailed(String reason) {
+    return 'Could not make the copy: $reason';
+  }
+
+  @override
+  String get exportShared => 'Sent.';
+
+  @override
+  String get exportRange => 'Readings and frames from:';
+
+  @override
+  String get exportRangeDay => '1 day';
+
+  @override
+  String get exportRangeWeek => '7 days';
+
+  @override
+  String get exportRangeMonth => '30 days';
+
+  @override
+  String get exportRangeAll => 'All';
+
+  @override
+  String get exportRangeNote =>
+      'Raw frames are kept for 30 days, so “All” brings at most those. Readings older than a month are stored one a minute.';
+
+  @override
+  String get tripExportGpx => 'Export track (GPX)';
+
+  @override
+  String get settingsGroupCell => 'Cell protection';
+
+  @override
+  String get settingsGroupCurrent => 'Current';
+
+  @override
+  String get settingsGroupTemperature => 'Temperature';
+
+  @override
+  String get settingsGroupBalance => 'Balancing';
+
+  @override
+  String get settingsGroupOther => 'Other';
+
+  @override
+  String get settingSmartSleep => 'Smart sleep voltage';
+
+  @override
+  String get settingRequestCharge => 'Requested charge voltage per cell';
+
+  @override
+  String get settingRequestFloat => 'Requested float voltage per cell';
+
+  @override
+  String get settingChargeOcpDelay => 'Charge overcurrent delay';
+
+  @override
+  String get settingChargeOcpRecovery => 'Charge overcurrent recovery';
+
+  @override
+  String get settingDischargeOcpDelay => 'Discharge overcurrent delay';
+
+  @override
+  String get settingDischargeOcpRecovery => 'Discharge overcurrent recovery';
+
+  @override
+  String get settingScpDelay => 'Short-circuit delay';
+
+  @override
+  String get settingScpRecovery => 'Short-circuit recovery';
+
+  @override
+  String get settingChargeOtpRecovery => 'Charge overtemperature recovery';
+
+  @override
+  String get settingDischargeOtpRecovery =>
+      'Discharge overtemperature recovery';
+
+  @override
+  String get settingChargeUtpRecovery => 'Charge undertemperature recovery';
+
+  @override
+  String get settingMosfetOtpRecovery => 'MOSFET overtemperature recovery';
+
+  @override
+  String get settingWireResistances => 'Balance lead resistance';
+
+  @override
+  String settingWireResistancesCount(int count) {
+    return '$count cells';
+  }
+
+  @override
+  String get settingWireResistancesHint =>
+      'What the BMS is configured to compensate for each cell\'s lead, in milliohms. A setting, not a measurement of the cell.';
+
+  @override
+  String get systemSetupPasscode => 'Settings passcode the BMS hands out';
+
+  @override
+  String get bmsStateTitle => 'BMS state';
+
+  @override
+  String get bmsStateIntro => 'As the BMS reports it in every reading.';
+
+  @override
+  String get bmsStatePrecharge => 'Precharge';
+
+  @override
+  String get bmsStateChargerPlugged => 'Sees a charger plugged in';
+
+  @override
+  String get bmsStateChargeStatus => 'Charge phase';
+
+  @override
+  String get bmsStateBatteryType => 'Battery type configured';
+
+  @override
+  String get bmsStateBatteryTypeHint =>
+      'What somebody chose when setting the BMS up, not something it measures in the cells.';
+
+  @override
+  String get bmsStateRuntime => 'Total running time';
+
+  @override
+  String get bmsStateEnabledCells => 'Cells enabled';
+
+  @override
+  String get bmsStateCycleCapacity => 'Total charge through the pack';
+
+  @override
+  String get bmsStateCycleCapacityHint =>
+      'The BMS\'s own running total. Divided by the capacity it gives the real number of full cycles.';
+
+  @override
+  String get chargeStatusBulk => 'bulk';
+
+  @override
+  String get chargeStatusAbsorption => 'absorption';
+
+  @override
+  String get chargeStatusFloat => 'float';
+
+  @override
+  String get batteryTypeLfp => 'LFP (LiFePO4)';
+
+  @override
+  String get batteryTypeLiIon => 'Li-ion';
+
+  @override
+  String get batteryTypeLto => 'LTO';
+
+  @override
+  String bmsUnknownCode(String code) {
+    return 'code $code';
+  }
+
+  @override
+  String get nowChargerByBms => 'According to the BMS';
+
+  @override
+  String get nowChargerSeen => 'it sees the charger';
+
+  @override
+  String get nowChargerNotSeen => 'it sees no charger';
+
+  @override
+  String nowChargePhase(String phase) {
+    return 'phase: $phase';
+  }
+
+  @override
+  String get profileBaselineNoteAdd => 'Add a note';
+
+  @override
+  String get profileBaselineNoteEdit => 'Edit the note';
+
+  @override
+  String get profileBaselineNoteTitle => 'Day-one note';
+
+  @override
+  String get profileBaselineNoteHint =>
+      'Where it came from, what the seller said, what it cost.';
+
+  @override
+  String get profileBaselineRedo => 'Redo day one';
+
+  @override
+  String get profileBaselineRedoTitle => 'Redo day one?';
+
+  @override
+  String profileBaselineRedoBody(String date) {
+    return 'The day one saved on $date is deleted and a new one is saved from the reading and the BMS settings as they are now. Everything the app compares \"since day one\" starts again today. The note is kept. This cannot be undone, and it is best done with the battery at rest.';
+  }
+
+  @override
+  String get profileBaselineRedoConfirm => 'Delete and save the new one';
+
+  @override
+  String get profileBaselineRedone =>
+      'Day one saved again, from the reading now.';
+
+  @override
+  String get balanceRankingNeedsHistory => 'needs more history';
+
+  @override
+  String balanceRankingProgress(String count, String needed) {
+    return '$count of $needed resting readings with the cells at least 10 mV apart, over the last 30 days.';
+  }
+
+  @override
+  String balanceRankingBasis(String count) {
+    return 'From $count resting readings over the last 30 days with the cells at least 10 mV apart. The lowest at rest is the one holding the least charge: it says where to look, not that the cell is bad.';
+  }
+
+  @override
+  String get faultHistoryTitle => 'BMS fault history';
+
+  @override
+  String get faultHistoryIntro =>
+      'Every time the BMS raised a protection or a warning on this battery, newest first. It comes from the warning bits stored with every reading, so it is only what the app saw: with no connection there are no readings.';
+
+  @override
+  String get faultHistoryEmpty =>
+      'No protection or warning from the BMS in this battery\'s stored readings.';
+
+  @override
+  String get faultHistoryThinned =>
+      'Readings older than a month are stored one a minute. Back there a fault shorter than that may not show, and the lengths are approximate.';
+
+  @override
+  String faultUnknownBit(int bit) {
+    return 'Unnamed warning (bit $bit)';
+  }
+
+  @override
+  String get faultOngoing => 'still on in the last reading';
+
+  @override
+  String get faultInstant => 'one reading';
+
+  @override
+  String get faultStarted => 'First seen';
+
+  @override
+  String get faultLastSeen => 'Last seen';
+
+  @override
+  String get faultNoData =>
+      'No data: the link was down for more than 5 minutes during the fault or just before or after it, so it may have started earlier, ended later, or come and gone unseen.';
+
+  @override
+  String get faultReadings => 'Readings with it on';
+
+  @override
+  String get faultAtStart => 'When it started';
+
+  @override
+  String faultAtStartCells(String max, String min) {
+    return 'Highest cell $max V, lowest $min V.';
+  }
+
+  @override
+  String get offlineMoreHistory => 'More history';
+
+  @override
+  String get cellHistoryTitle => 'Cells over time';
+
+  @override
+  String get cellHistoryOpen => 'See the history';
+
+  @override
+  String get cellHistoryTripButton => 'Cells during the ride';
+
+  @override
+  String get cellHistoryRangeHour => 'Last hour';
+
+  @override
+  String get cellHistoryRangeDay => 'Last 24 h';
+
+  @override
+  String get cellHistoryRangeWeek => 'Last 7 days';
+
+  @override
+  String get cellHistoryRangeTrip => 'This ride';
+
+  @override
+  String get cellHistoryRangeCharge => 'Last charge';
+
+  @override
+  String cellHistoryAnchor(String date) {
+    return 'Up to the last stored reading, $date.';
+  }
+
+  @override
+  String get cellHistoryModeVolts => 'Voltage';
+
+  @override
+  String get cellHistoryModeDeviation => 'Against the average';
+
+  @override
+  String get cellHistoryAxisVolts => 'V per cell';
+
+  @override
+  String get cellHistoryAxisDeviation =>
+      'mV above or below the pack average in that reading';
+
+  @override
+  String cellHistoryLowest(int cell) {
+    return 'Cell $cell: the lowest on average over this stretch';
+  }
+
+  @override
+  String cellHistoryHighest(int cell) {
+    return 'Cell $cell: the highest on average over this stretch';
+  }
+
+  @override
+  String cellHistoryPicked(int cell) {
+    return 'Cell $cell: the one you picked';
+  }
+
+  @override
+  String get cellHistoryOthers => 'The rest';
+
+  @override
+  String get cellHistoryPickCell => 'Pick out a cell';
+
+  @override
+  String cellHistoryPoints(int count) {
+    return '$count readings';
+  }
+
+  @override
+  String cellHistoryNote(String bucket) {
+    return 'Every point is a real reading, one per $bucket: a spike between two of them is not drawn. Where the lines break there were no readings for more than 30 seconds, and nothing is filled in.';
+  }
+
+  @override
+  String get cellHistoryEmpty => 'No readings stored in this stretch.';
+
+  @override
+  String get linkEventRidingCurrentSeen => 'Riding current seen';
+
+  @override
+  String get linkEventIdleSpeedSeen => 'Speed seen with no ride open';
+
+  @override
+  String get linkEventLocationArmed => 'GPS switched on';
+
+  @override
+  String get linkEventLocationStoodDown => 'GPS switched off';
+
+  @override
+  String get linkEventLocationRefused => 'GPS refused to start';
+
+  @override
+  String get linkEventTripWithoutFixes => 'Ride with no GPS fix';
+
+  @override
+  String get linkEventLocationStreamError => 'GPS error';
+
+  @override
+  String get linkEventForegroundServiceRefused => 'Android refused the service';
+
+  @override
+  String get linkEventForegroundServiceLost => 'Android stopped the service';
+
+  @override
+  String get linkEventAutoTripStarted => 'Ride opened itself';
+
+  @override
+  String get linkEventAutoTripStopped => 'Ride closed itself';
+
+  @override
+  String get linkEventAutoTripBlocked => 'Ride could not open';
+
+  @override
+  String get linkEventReadingsResumed => 'Readings resumed';
+
+  @override
+  String get linkEventLinkDropped => 'Link dropped';
+
+  @override
+  String get linkEventMuteLinkReleased => 'Silent link let go';
+
+  @override
+  String get linkEventReconnectAttempted => 'Reconnect attempt';
+
+  @override
+  String get linkEventReconnectFailed => 'Reconnect failed';
+
+  @override
+  String get linkEventReconnectGaveUp => 'Stopped trying to reconnect';
+
+  @override
+  String get linkEventReconnectPersisting =>
+      'Reconnecting without giving up (ride on)';
+
+  @override
+  String get linkEventReconnectRelaxed => 'Reconnecting as usual again';
+
+  @override
+  String get linkEventConnectAttempt => 'Connect attempt';
+
+  @override
+  String get linkEventBluetoothLooksStuck =>
+      'The phone\'s Bluetooth looks stuck';
+
+  @override
+  String get linkEventBluetoothRemedy => 'Bluetooth remedy';
+
+  @override
+  String get linkEventBluetoothRecovered => 'Connected after being stuck';
+
+  @override
+  String get linkEventProtocolSwitched => 'Protocol switched';
+
+  @override
+  String get linkEventAntFrameRejected => 'ANT frame rejected';
+
+  @override
+  String get linkEventAntDecodeFailed => 'ANT frame not decoded';
+
+  @override
+  String get linkEventOldAntProtocolSeen => 'Old ANT protocol';
+
+  @override
+  String get linkEventJkFrameRejected => 'JK bytes rejected';
+
+  @override
+  String get linkEventJkFrameUndecoded => 'JK frame not decoded';
+
+  @override
+  String get linkEventAntCurrentSignInverted => 'ANT current sign reversed';
+
+  @override
+  String get linkEventsTitle => 'Connection history';
+
+  @override
+  String get linkEventsIntro =>
+      'What the app decided and when: every connect attempt, every drop, every ride that opened or did not. Kept for 14 days.';
+
+  @override
+  String get linkEventsThisPack => 'This battery';
+
+  @override
+  String get linkEventsAllPacks => 'All';
+
+  @override
+  String get linkEventsThisPackHint =>
+      'What happens while connecting has almost never been filed under a battery yet: it is under \"All\".';
+
+  @override
+  String get linkEventsAnyKind => 'Every kind';
+
+  @override
+  String get linkEventsEmpty => 'Nothing recorded with these filters.';
+
+  @override
+  String get linkEventsNoPack => 'no battery';
+
+  @override
+  String linkEventsBytes(int count) {
+    return '$count bytes';
+  }
+
+  @override
+  String get linkEventsCopyBytes => 'Copy the bytes';
+
+  @override
+  String get linkEventsBytesCopied => 'Bytes copied';
+
+  @override
+  String get linkEventsCopyAll => 'Copy everything shown';
+
+  @override
+  String linkEventsCopiedAll(int count) {
+    return 'Copied: $count rows';
+  }
+
+  @override
+  String linkEventsCount(int count) {
+    return '$count rows';
+  }
+
+  @override
+  String linkEventsUnknownKind(String name) {
+    return 'Unknown kind: $name';
+  }
+
+  @override
+  String get workshopTitle => 'Workshop details on the reports';
+
+  @override
+  String get workshopIntro =>
+      'Printed at the top of the PDFs: the battery sheet and the inspection one. The figures are still the ones the app measures, and the sheet still says so.';
+
+  @override
+  String get workshopName => 'Workshop name';
+
+  @override
+  String get workshopLine => 'Contact line';
+
+  @override
+  String get workshopLineHint => 'Phone, address or website';
+
+  @override
+  String get workshopLogo => 'Logo';
+
+  @override
+  String get workshopLogoPick => 'Pick a logo';
+
+  @override
+  String get workshopLogoChange => 'Change';
+
+  @override
+  String get workshopLogoRemove => 'Remove';
+
+  @override
+  String get workshopLogoRefused =>
+      'That file will not do: it has to be a PNG or a JPEG under 1 MB.';
+
+  @override
+  String get workshopSaved => 'Saved. It goes on the next report.';
+
+  @override
+  String get workshopSaveFailed => 'Could not save it.';
+
+  @override
+  String get linkEventBmsWriteRefused => 'BMS change refused by the app';
+
+  @override
+  String get linkEventBmsWriteNotSent => 'BMS change not sent';
+
+  @override
+  String get linkEventBmsWriteSent => 'Change sent to the BMS';
+
+  @override
+  String get linkEventBmsWriteConfirmed => 'The BMS confirmed the change';
+
+  @override
+  String get linkEventBmsWriteUnconfirmed =>
+      'The BMS did not confirm the change';
+
+  @override
+  String get settingsSectionBmsWrites => 'Changes to the BMS';
+
+  @override
+  String get bmsWritesTitle => 'Let the app change the BMS';
+
+  @override
+  String get bmsWritesHint =>
+      'Off, the app changes nothing on the BMS. On, it can turn charging, discharging and the balancer on and off from System, under BMS settings, asking you to confirm every time. JK only. No setting value (voltages, currents, temperatures) is ever written.';
+
+  @override
+  String get bmsWritesConfirmTitle => 'Allow changes to the BMS?';
+
+  @override
+  String get bmsWritesConfirmBody =>
+      'With this on, the app can switch off the BMS\'s charging, discharging and balancer. Switching discharging off cuts the power: the bike loses drive and lights. Every change asks you to confirm, the app will not switch discharging off while the bike is moving, and a change only counts as done once the BMS confirms it. The protocol is reverse-engineered: use it on your own responsibility.';
+
+  @override
+  String get bmsWritesConfirmAction => 'Allow';
+
+  @override
+  String get bmsSwitchesLocked =>
+      'Read-only. To change them, turn on \"Let the app change the BMS\" in Settings.';
+
+  @override
+  String get bmsSwitchesHint =>
+      'What you see is what the BMS last said. Every change asks you to confirm and only counts as done once the BMS confirms it.';
+
+  @override
+  String get bmsSwitchSending => 'Sent. Waiting for the BMS to confirm.';
+
+  @override
+  String bmsSwitchConfirmTitle(String action) {
+    String _temp0 = intl.Intl.selectLogic(action, {
+      'chargeOff': 'Switch charging off?',
+      'chargeOn': 'Switch charging on?',
+      'dischargeOff': 'Switch discharging off?',
+      'dischargeOn': 'Switch discharging on?',
+      'balancerOff': 'Switch the balancer off?',
+      'balancerOn': 'Switch the balancer on?',
+      'other': 'Change the switch?',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String bmsSwitchConfirmBody(String action) {
+    String _temp0 = intl.Intl.selectLogic(action, {
+      'chargeOff':
+          'The BMS stops accepting charge: with the charger plugged in, the battery will not charge until you switch it back on. With the battery low, do not leave it like that.',
+      'chargeOn':
+          'The BMS accepts charge again. Its own protections still cut as they always do.',
+      'dischargeOff':
+          'The battery stops giving current: the bike loses drive, lights and controller until you switch it back on, here or in the official app. Only do it with the bike stopped somewhere safe.',
+      'dischargeOn':
+          'The battery gives current again. Check the throttle is at rest first.',
+      'balancerOff':
+          'The balancer stops evening out the cells. Over time they drift apart, the pack loses usable capacity and one cell reaches the cutoff first. Switch it back on when you are done.',
+      'balancerOn':
+          'The balancer evens out the cells again, from its start voltage.',
+      'other': 'The BMS changes this switch.',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get bmsSwitchConfirmAction => 'Send to the BMS';
+
+  @override
+  String get bmsSwitchApplied => 'Applied: the BMS confirms it.';
+
+  @override
+  String get bmsSwitchUnconfirmed =>
+      'The BMS did not confirm the change. What you see is what it last said; the attempt is in the connection log.';
+
+  @override
+  String get bmsSwitchNotSent =>
+      'Could not send it: Bluetooth did not take the write. Nothing changed.';
+
+  @override
+  String bmsSwitchRefused(String reason) {
+    String _temp0 = intl.Intl.selectLogic(reason, {
+      'notPermitted':
+          'The app has no permission to change the BMS. It is turned on in Settings.',
+      'notJk': 'Only on a JK. On an ANT the app writes nothing.',
+      'notConnected': 'There is no connection to the BMS.',
+      'variantUnsupported':
+          'This BMS speaks a framing (JK04 or unknown) the app does not write to. Nothing was sent.',
+      'noSettings':
+          'The BMS has not sent its settings yet, so its current state is not known.',
+      'noRecentReading':
+          'No recent readings: without them the app cannot tell whether the bike is moving, nor wait for the BMS\'s answer.',
+      'readingImplausible':
+          'The readings do not add up with the framing in use. Until they do, the app writes nothing.',
+      'alreadySet': 'The BMS already has it that way.',
+      'riding':
+          'Stop the bike first: while it is moving or a ride is recording, the app will not switch discharging off.',
+      'busy': 'Another change is waiting for the BMS to answer.',
+      'other': 'Nothing was sent.',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get systemWritesOnNote =>
+      'The write permission is on: the app can only switch the three switches above on and off, asking you every time. No other value is ever written.';
+
+  @override
+  String get tripMapTitle => 'Route';
+
+  @override
+  String get tripMapStart => 'Start';
+
+  @override
+  String get tripMapEnd => 'Finish';
+
+  @override
+  String get tripMapBySpeed => 'Speed';
+
+  @override
+  String get tripMapByPower => 'Power';
+
+  @override
+  String get tripMapPowerHint =>
+      'What the battery was giving at each point: its voltage times its current, as the BMS sent them beside each position. Not consumption per kilometre, which shoots up at every stop even when nothing is spent.';
+
+  @override
+  String get tripMapOffline =>
+      'The background map is fetched from OpenStreetMap over the internet when this screen opens, so their servers see which area the ride was in (not the ride itself). Offline, the route still draws on a plain background.';
 }

@@ -7,6 +7,9 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
 
+import '../metrics/cell_history.dart';
+import '../metrics/fault_history.dart';
+
 part 'database.g.dart';
 
 /// One BMS this phone has connected to.
@@ -76,6 +79,11 @@ class Devices extends Table {
   /// every row written before the app knew a second brand, all of them JK.
   TextColumn get brand => text().nullable()();
 
+  /// The last finished charge's report, as JSON, or null when none has been
+  /// recorded. It used to live only in memory, so after a restart the screen
+  /// said no charge had ever been recorded on a pack that had recorded many.
+  TextColumn get lastChargeJson => text().nullable()();
+
   @override
   Set<Column<Object>> get primaryKey => {id};
 }
@@ -120,7 +128,11 @@ class Trips extends Table {
   RealColumn get minPackVoltage => real()();
   RealColumn get maxPackVoltage => real()();
   RealColumn get maxDischargeCurrent => real()();
-  RealColumn get maxTemperature => real()();
+
+  /// Hottest battery probe over the ride, Celsius. Null when the pack has no
+  /// probe fitted: it used to be written as 0, which reads as a ride at
+  /// freezing point. The MOSFET is not a battery probe and is not in here.
+  RealColumn get maxTemperature => real().nullable()();
   RealColumn get maxDeltaVolts => real()();
   RealColumn get climbM => real()();
   RealColumn get descentM => real()();
@@ -200,6 +212,12 @@ class Trips extends Table {
   /// its conclusions and never shown to anybody.
   BoolColumn get summarySeen =>
       boolean().withDefault(const Constant(false))();
+
+  /// The pack's apparent resistance over the ride, in milliohms: the median
+  /// slope of voltage against current over the stretches where the current
+  /// swung. Null when the ride had too few such stretches to say, and on
+  /// every ride from before it was measured. See [PackResistance].
+  RealColumn get packResistanceMilliohms => real().nullable()();
 }
 
 /// The track of a ride, one row per fix, with what the pack was doing at that
@@ -230,7 +248,10 @@ class Snapshots extends Table {
   RealColumn get soc => real()();
   RealColumn get soh => real()();
   RealColumn get remainingAh => real()();
-  RealColumn get cycleCount => real()();
+
+  /// The BMS's own cycle counter. Null when the BMS does not report one: an
+  /// ANT has no such field, and a 0 here read as a brand-new pack.
+  RealColumn get cycleCount => real().nullable()();
 
   /// Total charge that has ever passed through the pack, in amp-hours.
   ///
@@ -243,7 +264,11 @@ class Snapshots extends Table {
   RealColumn get deltaVolts => real()();
   RealColumn get minCellVoltage => real()();
   RealColumn get maxCellVoltage => real()();
-  RealColumn get maxTemperature => real()();
+
+  /// Hottest battery probe in this reading, Celsius, or null when no probe is
+  /// fitted. The MOSFET has its own column and is deliberately not folded in:
+  /// a hot switch is not a hot pack.
+  RealColumn get maxTemperature => real().nullable()();
   RealColumn get mosfetTemp => real().nullable()();
   IntColumn get warningsMask => integer()();
   BoolColumn get balancerActive => boolean()();
@@ -261,9 +286,10 @@ class Snapshots extends Table {
 /// ANT).
 ///
 /// This is not optional. Several byte offsets in this protocol are still
-/// uncertain (see docs/PROTOCOL.md). When one of them turns out to be wrong —
-/// and one will — these rows are the difference between reparsing months of
-/// history and losing it.
+/// uncertain (see docs/PROTOCOL.md). When one of them turns out to be wrong,
+/// and one will, these rows are the difference between re-reading the recent
+/// history and losing it. Recent: they are kept for 30 days
+/// ([BmsRepository.rawFrameRetention]), not for ever.
 class RawFrames extends Table {
   IntColumn get id => integer().autoIncrement()();
   DateTimeColumn get timestamp => dateTime()();
@@ -307,6 +333,17 @@ class CapacityTests extends Table {
 
   /// Seconds of the discharge that were not observed. Zero on a clean run.
   IntColumn get gapSeconds => integer().withDefault(const Constant(0))();
+
+  /// What closed the run, by [CapacityEndReason] name. Null while a run is
+  /// open. Every run finished before this was stored reads `legacy`: those
+  /// opened and closed on the BMS's own percentage, so what they counted was
+  /// the configured capacity handed back, not a measurement.
+  TextColumn get endReason => text().nullable()();
+
+  /// True when current went in part way through. The total then describes
+  /// nothing, and it is kept so it can be shown as that rather than lost.
+  BoolColumn get chargedDuringRun =>
+      boolean().withDefault(const Constant(false))();
   TextColumn get note => text().withDefault(const Constant(''))();
 
   /// Which pack this was recorded on. Null for rows written before the app
@@ -427,7 +464,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 18;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -474,10 +511,19 @@ class AppDatabase extends _$AppDatabase {
               devices.chemistry,
               devices.acquiredAt,
               devices.brand,
+              devices.lastChargeJson,
             ],
           ),
         );
-        await m.alterTable(TableMigration(capacityTests));
+        await m.alterTable(
+          TableMigration(
+            capacityTests,
+            newColumns: [
+              capacityTests.endReason,
+              capacityTests.chargedDuringRun,
+            ],
+          ),
+        );
         await customStatement(
           'UPDATE devices SET catalogue_capacity_ah = NULL',
         );
@@ -553,6 +599,61 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(rawFrames, rawFrames.brand);
         if (from >= 5) await m.addColumn(devices, devices.brand);
       }
+      if (from < 16) {
+        // Three columns become nullable: the hottest probe of a reading and
+        // of a ride, and the reading's cycle count. SQLite cannot drop a NOT
+        // NULL in place, so both tables are rebuilt from the current schema.
+        // Every earlier step has already added whatever columns these tables
+        // gained, so by this point the old table carries all of them and the
+        // copy needs no newColumns.
+        // Except the one a later step adds: the rebuilt table is built from
+        // today's classes, so it has to be told that column is new.
+        await m.alterTable(
+          TableMigration(
+            trips,
+            newColumns: [trips.packResistanceMilliohms],
+          ),
+        );
+        await m.alterTable(TableMigration(snapshots));
+        // An ANT has no cycle counter, and every one of its readings stored
+        // a 0 that read as a pack that had never been cycled. Those zeros are
+        // known to be fillers, so they go. Temperatures are left alone: until
+        // now the maximum included the MOSFET, which every BMS reports, so a
+        // stored 0 was a real reading of 0 degC and not a filler.
+        await customStatement(
+          'UPDATE snapshots SET cycle_count = NULL WHERE device_id IN '
+          "(SELECT id FROM devices WHERE brand = 'ant')",
+        );
+      }
+      if (from < 17) {
+        // Anything older than 5 had capacity_tests and devices rebuilt from
+        // the current schema by the from < 5 step, which already carries
+        // these. Adding them again would fail with a duplicate column and
+        // stop the app opening.
+        if (from >= 5) {
+          await m.addColumn(capacityTests, capacityTests.endReason);
+          await m.addColumn(capacityTests, capacityTests.chargedDuringRun);
+          await m.addColumn(devices, devices.lastChargeJson);
+        }
+        // Every finished run so far opened at 97 % and closed at 3 % on the
+        // BMS's own percentage, which is remaining over the configured
+        // capacity: what it counted was that configured figure handed back.
+        // Kept, and marked, rather than deleted: the rows are the rider's
+        // history, and a detected one is replaced by a proper re-detection
+        // when its readings are still on file.
+        await customStatement(
+          "UPDATE capacity_tests SET end_reason = 'legacy' WHERE completed = 1",
+        );
+      }
+      if (from < 18) {
+        // Older than 16 had trips rebuilt from the current classes by the
+        // from < 16 step, which already carries this column. Nothing to
+        // backfill: a ride's resistance comes from readings a month old or
+        // newer, and the trends screen works it out from those on its own.
+        if (from >= 16) {
+          await m.addColumn(trips, trips.packResistanceMilliohms);
+        }
+      }
     },
   );
 
@@ -621,6 +722,19 @@ class AppDatabase extends _$AppDatabase {
   Future<Snapshot?> lastSnapshotFor(String deviceId) =>
       (select(snapshots)
             ..where((s) => s.deviceId.equals(deviceId))
+            ..orderBy([(s) => OrderingTerm.desc(s.timestamp)])
+            ..limit(1))
+          .getSingleOrNull();
+
+  /// The newest reading for a pack taken before [before]: the last thing the
+  /// app saw before the current connection began.
+  Future<Snapshot?> lastSnapshotBefore(String deviceId, DateTime before) =>
+      (select(snapshots)
+            ..where(
+              (s) =>
+                  s.deviceId.equals(deviceId) &
+                  s.timestamp.isSmallerThanValue(before),
+            )
             ..orderBy([(s) => OrderingTerm.desc(s.timestamp)])
             ..limit(1))
           .getSingleOrNull();
@@ -942,6 +1056,143 @@ class AppDatabase extends _$AppDatabase {
             ..where((s) => s.timestamp.isSmallerOrEqualValue(to))
             ..orderBy([(s) => OrderingTerm.asc(s.timestamp)]))
           .get();
+
+  /// Resting, not-charging readings with the cells at least [minDeltaVolts]
+  /// apart, thinned to one per [thinSeconds], for the weak-cell ranking.
+  ///
+  /// Filtered and thinned in SQL rather than in Dart: a month of a pack that
+  /// spends its nights on the charger watch is millions of rows, and the
+  /// ranking only needs the few that can answer it. Only the two columns it
+  /// reads come back. The kept row of each bucket is a real reading (the
+  /// newest), never an average.
+  Future<List<({double current, String cellVoltagesJson})>> restingCellReadings(
+    String deviceId,
+    DateTime from, {
+    double restingAmps = 1.0,
+    double chargingAmps = 0.05,
+    double minDeltaVolts = 0.010,
+    int thinSeconds = 10,
+  }) async {
+    final rows = await customSelect(
+      'SELECT MAX(id) AS id, current, cell_voltages_json FROM snapshots '
+      'WHERE device_id = ?1 AND timestamp >= ?2 '
+      'AND current > -?3 AND current < ?3 AND current <= ?4 '
+      // A hair under the threshold, so a stored 0.0099999 is not lost to
+      // rounding before the Dart side rounds it to the millivolt.
+      'AND delta_volts >= ?5 - 0.0005 '
+      'GROUP BY timestamp / ?6',
+      variables: [
+        Variable<String>(deviceId),
+        Variable<int>(from.millisecondsSinceEpoch ~/ 1000),
+        Variable<double>(restingAmps),
+        Variable<double>(chargingAmps),
+        Variable<double>(minDeltaVolts),
+        Variable<int>(thinSeconds <= 0 ? 1 : thinSeconds),
+      ],
+      readsFrom: {snapshots},
+    ).get();
+    return [
+      for (final r in rows)
+        (
+          current: r.read<double>('current'),
+          cellVoltagesJson: r.read<String>('cell_voltages_json'),
+        ),
+    ];
+  }
+
+  /// The readings at which a pack's warning mask changed, and those that came
+  /// after a silence of more than [gapSeconds] while a warning was held,
+  /// oldest first. See [FaultHistory].
+  ///
+  /// Only the transitions, not every reading: a protection held for a week
+  /// at three readings a second is millions of identical rows, and how many
+  /// there were is the difference of two row numbers. Readings where nothing
+  /// was raised either side are never returned at all.
+  Future<List<WarningTransition>> warningTransitions(
+    String deviceId, {
+    int gapSeconds = 300,
+  }) async {
+    final rows = await customSelect(
+      'SELECT n, timestamp, mask, prev_mask, prev_ts, current, soc, '
+      'max_cell_voltage, min_cell_voltage FROM ('
+      '  SELECT timestamp, warnings_mask AS mask, current, soc, '
+      '    max_cell_voltage, min_cell_voltage, '
+      '    ROW_NUMBER() OVER w AS n, '
+      '    LAG(warnings_mask) OVER w AS prev_mask, '
+      '    LAG(timestamp) OVER w AS prev_ts '
+      '  FROM snapshots WHERE device_id = ?1 '
+      '  WINDOW w AS (ORDER BY timestamp, id)'
+      ') WHERE (mask != 0 OR COALESCE(prev_mask, 0) != 0) '
+      'AND (prev_mask IS NULL OR mask != prev_mask OR timestamp - prev_ts > ?2) '
+      'ORDER BY n',
+      variables: [Variable<String>(deviceId), Variable<int>(gapSeconds)],
+      readsFrom: {snapshots},
+    ).get();
+    DateTime at(int seconds) =>
+        DateTime.fromMillisecondsSinceEpoch(seconds * 1000, isUtc: true);
+    return [
+      for (final r in rows)
+        WarningTransition(
+          index: r.read<int>('n'),
+          at: at(r.read<int>('timestamp')),
+          mask: r.read<int>('mask'),
+          previousMask: r.readNullable<int>('prev_mask'),
+          previousAt: r.readNullable<int>('prev_ts') == null
+              ? null
+              : at(r.read<int>('prev_ts')),
+          current: r.read<double>('current'),
+          soc: r.read<double>('soc'),
+          maxCellVoltage: r.read<double>('max_cell_voltage'),
+          minCellVoltage: r.read<double>('min_cell_voltage'),
+        ),
+    ];
+  }
+
+  /// One real reading per [bucket] of a pack's window, with the first and
+  /// last instants of each bucket that had any, oldest first. See
+  /// [CellHistory].
+  ///
+  /// Bucketed in SQL: a week at three readings a second is nearly two
+  /// million rows of cell voltages, and the chart draws five hundred. The
+  /// reading kept is the newest of its bucket, found by id and joined back,
+  /// because sqlite only promises which row a bare column comes from when
+  /// the query has a single min or max, and this one needs three.
+  Future<List<CellHistoryRow>> cellHistoryBuckets(
+    String deviceId,
+    DateTime from,
+    DateTime to,
+    Duration bucket,
+  ) async {
+    final fromS = from.millisecondsSinceEpoch ~/ 1000;
+    final rows = await customSelect(
+      'WITH b AS ('
+      '  SELECT (timestamp - ?2) / ?4 AS k, MAX(id) AS id, '
+      '    MIN(timestamp) AS first_ts, MAX(timestamp) AS last_ts '
+      '  FROM snapshots WHERE device_id = ?1 '
+      '  AND timestamp >= ?2 AND timestamp <= ?3 GROUP BY k'
+      ') SELECT s.timestamp AS at, b.first_ts, b.last_ts, '
+      's.cell_voltages_json FROM b JOIN snapshots s ON s.id = b.id '
+      'ORDER BY b.k',
+      variables: [
+        Variable<String>(deviceId),
+        Variable<int>(fromS),
+        Variable<int>(to.millisecondsSinceEpoch ~/ 1000),
+        Variable<int>(bucket.inSeconds < 1 ? 1 : bucket.inSeconds),
+      ],
+      readsFrom: {snapshots},
+    ).get();
+    DateTime at(int seconds) =>
+        DateTime.fromMillisecondsSinceEpoch(seconds * 1000, isUtc: true);
+    return [
+      for (final r in rows)
+        CellHistoryRow(
+          at: at(r.read<int>('at')),
+          firstAt: at(r.read<int>('first_ts')),
+          lastAt: at(r.read<int>('last_ts')),
+          cellVoltagesJson: r.read<String>('cell_voltages_json'),
+        ),
+    ];
+  }
 
   // --- Raw frames ---
 

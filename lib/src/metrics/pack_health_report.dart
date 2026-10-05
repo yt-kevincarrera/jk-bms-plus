@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import '../model/bms_snapshot.dart';
 import '../model/jk_settings.dart';
+import 'pack_energy.dart';
 
 /// The numbers a battery vendor would rather you did not work out.
 ///
@@ -17,8 +18,9 @@ class PackHealthReport {
     required this.equivalentFullCycles,
     required this.reportedCycles,
     required this.cycleInflation,
-    required this.imbalanceLossAh,
+    required this.imbalanceLossWh,
     required this.imbalanceLossFraction,
+    required this.imbalanceMeasuredAt,
     required this.weakestCellIndex,
     required this.reportedSoh,
     required this.capacityMeaningful,
@@ -32,7 +34,7 @@ class PackHealthReport {
     required BmsSnapshot snapshot,
     JkSettings? settings,
     required double? catalogueCapacityAh,
-    double cutoffVoltagePerCell = 3.0,
+    PackEnergy? energy,
   }) {
     final configured = settings?.nominalCapacityAh ?? snapshot.nominalCapacityAh;
 
@@ -73,16 +75,15 @@ class PackHealthReport {
         ? snapshot.cycleCount! / equivalent
         : null;
 
-    // Imbalance cost: how much of the pack the lowest cell strands.
-    final headroomAverage = snapshot.averageCellVoltage - cutoffVoltagePerCell;
-    final headroomWeakest = snapshot.minCellVoltage - cutoffVoltagePerCell;
-    double? imbalanceFraction;
-    double? imbalanceAh;
-    if (headroomAverage > 0 && headroomWeakest > 0) {
-      imbalanceFraction =
-          (1 - headroomWeakest / headroomAverage).clamp(0.0, 1.0);
-      imbalanceAh = snapshot.remainingCapacityAh * imbalanceFraction;
-    }
+    // Imbalance cost: how much of the pack the lowest cell strands. Taken
+    // from [energy], which judges it from a resting reading through the
+    // chemistry's curve. It used to be the voltage headroom ratio of this
+    // snapshot, which under load counted sag as imbalance, and with an
+    // assumed 3.0 V cutoff on an LFP pack inflated it several times over.
+    final imbalanceFraction = energy?.strandedFraction;
+    final imbalanceWh = energy == null || imbalanceFraction == null
+        ? null
+        : energy.grossWh - energy.usableWh;
 
     return PackHealthReport._(
       impliedCapacityAh: implied,
@@ -92,8 +93,9 @@ class PackHealthReport {
       equivalentFullCycles: equivalent,
       reportedCycles: snapshot.cycleCount,
       cycleInflation: inflation,
-      imbalanceLossAh: imbalanceAh,
+      imbalanceLossWh: imbalanceWh,
       imbalanceLossFraction: imbalanceFraction,
+      imbalanceMeasuredAt: imbalanceFraction == null ? null : energy?.restingAt,
       weakestCellIndex: snapshot.minCellIndex,
       reportedSoh: snapshot.soh,
       capacityMeaningful: meaningful,
@@ -156,9 +158,15 @@ class PackHealthReport {
   int? get bmsCycleCountWorthQuoting =>
       equivalentFullCycles >= cycleComparisonFloor ? reportedCycles : null;
 
-  /// Amp-hours stranded above cutoff in the healthier cells.
-  final double? imbalanceLossAh;
+  /// Watt-hours stranded above cutoff in the healthier cells, and their share
+  /// of what is left. Null without a resting reading that can say.
+  final double? imbalanceLossWh;
   final double? imbalanceLossFraction;
+
+  /// When the resting reading those two come from was taken. Not necessarily
+  /// now: the newest one of the connection, which on a ride with no stops is
+  /// from before it.
+  final DateTime? imbalanceMeasuredAt;
 
   /// 1-based index of the cell that will hit cutoff first.
   final int weakestCellIndex;

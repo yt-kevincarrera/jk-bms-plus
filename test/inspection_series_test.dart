@@ -15,6 +15,8 @@ InspectionResult run({
   int? cycles = 12,
   double? soh = 100,
   double? configuredAh = 40,
+  double? cycleAh,
+  double soc = 78,
   String serial = 'SN-1',
   DateTime? at,
 }) {
@@ -52,7 +54,8 @@ InspectionResult run({
       softwareVersion: '11.26',
       cycleCount: cycles,
       configuredCapacityAh: configuredAh,
-      soc: 78,
+      cycleCapacityAh: cycleAh,
+      soc: soc,
       soh: soh,
     ),
     durationSeconds: 96,
@@ -71,11 +74,15 @@ PastInspection past(
   int? cycles = 12,
   double? soh = 100,
   double? configuredAh = 40,
+  double? cycleAh,
+  double soc = 78,
   String serial = 'SN-1',
+  String bmsName = '',
   int? id,
 }) => PastInspection(
   at: at,
   bmsId: bmsId,
+  bmsName: bmsName,
   id: id,
   result: run(
     at: at,
@@ -87,6 +94,8 @@ PastInspection past(
     cycles: cycles,
     soh: soh,
     configuredAh: configuredAh,
+    cycleAh: cycleAh,
+    soc: soc,
     serial: serial,
   ),
 );
@@ -115,15 +124,44 @@ void main() {
     });
 
     test('matches the same pack met on another address, by serial', () {
-      final all = [past(may, bmsId: 'OLD:ADDRESS', serial: 'SN-9')];
+      final all = [
+        past(may, bmsId: 'OLD:ADDRESS', serial: 'SN-9', bmsName: 'JK-B2A'),
+      ];
       expect(
         InspectionSeries.forPack(
           all,
           bmsId: 'NEW:ADDRESS',
           serialNumber: 'SN-9',
+          bmsName: 'JK-B2A',
         ),
         hasLength(1),
       );
+    });
+
+    test('a serial only matches when the name matches too', () {
+      // Clone boards share serials; two packs with one serial and two names
+      // are two packs.
+      final all = [past(may, bmsId: 'OLD', serial: 'SN-9', bmsName: 'Pack A')];
+      expect(
+        InspectionSeries.forPack(
+          all,
+          bmsId: 'NEW',
+          serialNumber: 'SN-9',
+          bmsName: 'Pack B',
+        ),
+        isEmpty,
+      );
+    });
+
+    test('a default serial matches nothing', () {
+      final all = [past(may, bmsId: 'OLD', serial: '00000000')];
+      expect(
+        InspectionSeries.forPack(all, bmsId: 'NEW', serialNumber: '00000000'),
+        isEmpty,
+      );
+      expect(InspectionSeries.looksLikeRealSerial('FFFF'), isFalse);
+      expect(InspectionSeries.looksLikeRealSerial('ABC'), isFalse);
+      expect(InspectionSeries.looksLikeRealSerial('2403151234'), isTrue);
     });
 
     test('an empty serial matches nothing, so anonymous packs stay apart', () {
@@ -209,6 +247,32 @@ void main() {
     );
   });
 
+  group('the same cell, only when it is a finding both times', () {
+    test('two even runs whose noisiest cell happens to agree say nothing', () {
+      // 2 mV over the median at 37 A is 0.05 mOhm: the weakest of twenty
+      // even cells is whichever one the noise picked. Two such runs used to
+      // read "this is no longer a suspicion, it is the cell".
+      final c = series.compare(run(weakSag: 0.082), [
+        past(DateTime.utc(2026, 4, 1), weakSag: 0.082),
+      ]);
+      expect(c.timesSameWorstCell, 0);
+      final advice = series.evaluate(c);
+      expect(has(advice, AdviceCode.inspectionRepeatSameCell), isFalse);
+      expect(has(advice, AdviceCode.inspectionRepeatCellMoved), isFalse);
+    });
+
+    test('nor does a bad cell seen once at a pull nothing like this one', () {
+      final c = series.compare(run(currentStep: 37), [
+        past(DateTime.utc(2026, 4, 1), currentStep: 9, weakSag: 0.30),
+      ]);
+      expect(c.timesSameWorstCell, 1);
+      expect(
+        has(series.evaluate(c), AdviceCode.inspectionRepeatSameCell),
+        isFalse,
+      );
+    });
+  });
+
   group('what moved between two runs', () {
     test('a pack that sags further than last time is going backwards', () {
       final c = series.compare(run(weakSag: 0.40), [
@@ -226,7 +290,35 @@ void main() {
       final c = series.compare(run(restDelta: 0.040), [
         past(DateTime.utc(2026, 4, 1), restDelta: 0.015),
       ]);
-      expect(has(series.evaluate(c), AdviceCode.inspectionRepeatWorse), isTrue);
+      final advice = series.evaluate(c);
+      expect(has(advice, AdviceCode.inspectionRepeatWorse), isTrue);
+      // Two runs point at a change; they do not make a trend.
+      expect(
+        of(advice, AdviceCode.inspectionRepeatWorse).level,
+        AdviceLevel.watch,
+      );
+    });
+
+    test('but not between two very different states of charge', () {
+      // The spread at rest opens near the top by itself.
+      final c = series.compare(run(restDelta: 0.040, soc: 96), [
+        past(DateTime.utc(2026, 4, 1), restDelta: 0.015, soc: 45),
+      ]);
+      expect(c.restDeltaChange, isNull);
+      expect(
+        has(series.evaluate(c), AdviceCode.inspectionRepeatWorse),
+        isFalse,
+      );
+    });
+
+    test('and 10 mV is no longer enough to call it worse', () {
+      final c = series.compare(run(restDelta: 0.027), [
+        past(DateTime.utc(2026, 4, 1), restDelta: 0.015),
+      ]);
+      expect(
+        has(series.evaluate(c), AdviceCode.inspectionRepeatWorse),
+        isFalse,
+      );
     });
 
     test('two runs inside the noise are steady, which is worth saying', () {
@@ -270,14 +362,37 @@ void main() {
     });
 
     test('two runs with no real load at all are not compared either', () {
-      final c = series.compare(run(currentStep: 2), [
-        past(DateTime.utc(2026, 4, 1), currentStep: 2),
+      // Under 2 A: the hard pull's 3 A floor less the most a pack may draw
+      // at rest. (This was 2 A against a 5 A floor, which also caught two
+      // honest 4 A pulls on a 40 Ah pack; see the next test.)
+      final c = series.compare(run(currentStep: 1.5), [
+        past(DateTime.utc(2026, 4, 1), currentStep: 1.5),
       ]);
       expect(c.loadComparable, isFalse);
       expect(
         has(series.evaluate(c), AdviceCode.inspectionRepeatLoadDiffers),
         isTrue,
       );
+    });
+
+    test('two identical 4.2 A pulls are the same pull', () {
+      // A 40 Ah pack is asked for 4 A. The old 5 A floor made every pair of
+      // such runs "not pulled alike", however alike they were.
+      final c = series.compare(run(currentStep: 4.2, weakSag: 0.10), [
+        past(DateTime.utc(2026, 4, 1), currentStep: 4.2, weakSag: 0.10),
+      ]);
+      expect(c.loadComparable, isTrue);
+      expect(
+        has(series.evaluate(c), AdviceCode.inspectionRepeatLoadDiffers),
+        isFalse,
+      );
+    });
+
+    test('and two pulls more than 30 % apart are not', () {
+      final c = series.compare(run(currentStep: 10), [
+        past(DateTime.utc(2026, 4, 1), currentStep: 14.5),
+      ]);
+      expect(c.loadComparable, isFalse);
     });
   });
 
@@ -290,9 +405,11 @@ void main() {
       expect(c.counters.cyclesFell, isTrue);
       final advice = series.evaluate(c);
       expect(has(advice, AdviceCode.inspectionRepeatCountersReset), isTrue);
+      // Watch: a reset, or a BMS swapped, is worth a question, and the
+      // physics on the sheet does not depend on it.
       expect(
         of(advice, AdviceCode.inspectionRepeatCountersReset).level,
-        AdviceLevel.problem,
+        AdviceLevel.watch,
       );
       // Both figures are on the sentence, with the date of the old one.
       final before = of(
@@ -303,11 +420,28 @@ void main() {
       expect(before.at, DateTime.utc(2026, 4, 1));
     });
 
-    test('health cannot rise', () {
+    test('health that rose is a change to ask about, not a reset', () {
+      // A firmware recomputing its health raises it with nobody touching
+      // anything. It used to read "somebody touched the counters".
       final c = series.compare(run(soh: 100), [
         past(DateTime.utc(2026, 4, 1), soh: 86),
       ]);
       expect(c.counters.sohRose, isTrue);
+      final advice = series.evaluate(c);
+      expect(has(advice, AdviceCode.inspectionRepeatCountersReset), isFalse);
+      expect(
+        of(advice, AdviceCode.inspectionRepeatConfigChanged).level,
+        AdviceLevel.watch,
+      );
+    });
+
+    test('the total counted going down is a reset, even with no cycles', () {
+      // An ANT keeps no cycle count but does keep the amp-hours it has
+      // counted, which only go up.
+      final c = series.compare(run(cycles: null, cycleAh: 120), [
+        past(DateTime.utc(2026, 4, 1), cycles: null, cycleAh: 2900),
+      ]);
+      expect(c.counters.cycleCapacityFell, isTrue);
       expect(
         has(series.evaluate(c), AdviceCode.inspectionRepeatCountersReset),
         isTrue,
@@ -326,14 +460,14 @@ void main() {
     });
 
     test('a configured capacity that changed is a reconfigured pack', () {
+      // The owner correcting the setting does exactly this.
       final c = series.compare(run(configuredAh: 50), [
         past(DateTime.utc(2026, 4, 1), configuredAh: 40),
       ]);
       expect(c.counters.capacityChanged, isTrue);
-      expect(
-        has(series.evaluate(c), AdviceCode.inspectionRepeatCountersReset),
-        isTrue,
-      );
+      final advice = series.evaluate(c);
+      expect(has(advice, AdviceCode.inspectionRepeatConfigChanged), isTrue);
+      expect(has(advice, AdviceCode.inspectionRepeatCountersReset), isFalse);
     });
 
     test('counters that only went the way counters go say nothing', () {

@@ -62,7 +62,7 @@ void main() {
         minPackVoltage: 70.4,
         maxPackVoltage: 83.1,
         maxDischargeCurrent: 38,
-        maxTemperature: 33,
+        maxTemperature: const Value(33),
         maxDeltaVolts: 0.019,
         climbM: 60,
         descentM: 55,
@@ -92,12 +92,12 @@ void main() {
         soc: 88,
         soh: 97,
         remainingAh: 39.6,
-        cycleCount: 61,
+        cycleCount: const Value(61),
         cycleCapacityAh: const Value(2843.5),
         deltaVolts: 0.012,
         minCellVoltage: 3.905,
         maxCellVoltage: 3.917,
-        maxTemperature: 29,
+        maxTemperature: const Value(29),
         warningsMask: 0,
         balancerActive: false,
         cellVoltagesJson: '[3.91,3.90]',
@@ -362,6 +362,59 @@ void main() {
       final frame = (await target.allRawFramesForBackup()).single;
       expect(frame.brand, isNull);
     });
+
+    test("an older backup's filler cycle count on an ANT restores as none",
+        () async {
+      // Before the column could be empty, every ANT reading was written with
+      // a cycle count of 0, which reads as a pack that was never cycled. An
+      // ANT has no counter, so on restore that 0 is known to be a filler. A
+      // JK's 0 is a real reading of a new pack and is kept.
+      final now = DateTime.utc(2026, 9, 1);
+      Map<String, Object?> reading(String device) => {
+            'deviceId': device,
+            'timestamp': now.toIso8601String(),
+            'packVoltage': 52.0,
+            'current': 0.0,
+            'soc': 50.0,
+            'soh': 100.0,
+            'remainingAh': 10.0,
+            'cycleCount': 0.0,
+            'deltaVolts': 0.01,
+            'minCellVoltage': 3.7,
+            'maxCellVoltage': 3.71,
+            'maxTemperature': null,
+            'warningsMask': 0,
+            'balancerActive': false,
+            'cellVoltagesJson': '[3.7]',
+          };
+      final file = File('${tmp.path}/ant.json')
+        ..writeAsStringSync(
+          jsonEncode({
+            'format': 1,
+            'devices': [
+              for (final (id, brand) in [('ANT:01', 'ant'), ('JK:01', 'jk')])
+                {
+                  'id': id,
+                  'firstSeenAt': now.toIso8601String(),
+                  'lastSeenAt': now.toIso8601String(),
+                  'brand': brand,
+                },
+            ],
+            'snapshots': [reading('ANT:01'), reading('JK:01')],
+          }),
+        );
+
+      final target = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(target.close);
+      await BackupCodec(target).import(file);
+
+      final rows = await target.select(target.snapshots).get();
+      final cycles = {for (final r in rows) r.deviceId: r.cycleCount};
+      expect(cycles['ANT:01'], isNull);
+      expect(cycles['JK:01'], 0.0);
+      // No probe stays no probe, rather than turning into 0 degC.
+      expect(rows.every((r) => r.maxTemperature == null), isTrue);
+    });
   });
 
   group('the maintenance log', () {
@@ -408,7 +461,7 @@ void main() {
           minPackVoltage: 70,
           maxPackVoltage: 80,
           maxDischargeCurrent: 10,
-          maxTemperature: 25,
+          maxTemperature: const Value(25),
           maxDeltaVolts: 0.01,
           climbM: 5,
           descentM: 5,

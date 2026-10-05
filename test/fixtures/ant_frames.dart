@@ -23,6 +23,26 @@ final Uint8List antStatus14s4t = hex(
   '7E A1 11 00 00 8E 05 01 04 0E 02 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 11 10 11 10 11 10 11 10 11 10 11 10 11 10 11 10 11 10 11 10 11 10 11 10 11 10 11 10 1C 00 1C 00 D8 FF 1C 00 1C 00 1C 00 7E 16 00 00 60 00 64 00 01 02 00 00 80 C3 C9 01 4F 55 B3 01 08 53 00 00 00 00 00 00 6B 28 12 00 00 00 00 00 11 10 01 00 11 10 01 00 00 00 11 10 02 00 70 00 03 00 AC 02 F1 FA 7D 2E 00 00 94 77 00 00 DE 07 00 00 77 76 00 00 35 E2 AA 55',
 );
 
+/// 20S / 4T, 178 bytes, the rider's own capture of 2026-09-30 (device info
+/// "22PHA1TB080A" / "22AAUB00-240401A"), reassembled from the raw console.
+/// 14 bytes longer than 116 + 2 * (cells + probes): this firmware appends
+/// data after the fields the reference reads, and data_len (0xA8) covers it.
+/// State byte 0x02 (charge) with the current field at -51 (-5.1 A raw), the
+/// remaining capacity rising about 2.9 mAh every 2 s and the power field at
+/// -383 W: this pack reports charge as negative. 73.78 V, SOC 48, 45 Ah,
+/// probes 30 degC, MOSFET 32 degC, balancer 33 degC.
+final Uint8List antStatus20s4tCharging = hex(
+  '7E A1 11 00 00 A8 01 02 04 14 00 00 00 00 00 00 00 00 00 00 '
+  'C4 01 00 00 00 00 00 00 00 00 00 00 00 00 69 0E 67 0E 68 0E '
+  '69 0E 69 0E 67 0E 69 0E 68 0E 69 0E 68 0E 6B 0E 69 0E 6A 0E '
+  '6A 0E 69 0E 6A 0E 67 0E 67 0E 67 0E 69 0E 1E 00 1E 00 1E 00 '
+  '1E 00 20 00 21 00 D2 1C CD FF 30 00 64 00 01 01 00 00 40 A5 '
+  'AE 02 36 00 4A 01 79 51 49 00 88 FE FF FF FA 28 60 03 00 00 '
+  '00 00 6B 0E 0B 00 67 0E 02 00 04 00 68 0E 00 00 84 00 7D 00 '
+  'B1 02 F1 FA C6 79 45 00 2D 29 4D 00 B6 2A 21 00 A7 70 4A 00 '
+  '79 05 00 00 D4 08 01 00 14 01 C0 05 CD FF 03 98 AA 55',
+);
+
 /// Device info "16ZM" / "16ZMUB00-211026A". 48 bytes although data_len says 0x20.
 final Uint8List antInfo16zm = hex(
   '7E A1 12 6C 02 20 31 36 5A 4D 00 00 00 00 00 00 00 00 00 00 00 00 31 36 5A 4D 55 42 30 30 2D 32 31 31 30 32 36 41 72 08 FF 0B 00 00 41 F2 AA 55',

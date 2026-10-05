@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jk_bms/src/data/database.dart';
 import 'package:jk_bms/src/metrics/capacity_cycle_detector.dart';
+import 'package:jk_bms/src/metrics/capacity_endpoints.dart';
 
 /// Builds a stored reading. Cell voltages are derived from the pack voltage so
 /// the "full by top cell" path can be exercised too.
@@ -70,18 +71,107 @@ void main() {
     });
 
     test('finds a full discharge and measures it', () {
-      // 20 A for two hours would be 40 Ah end to end, but the run closes the
-      // moment charge reaches the floor at 3%, a little before this synthetic
-      // ride bottoms out at 2%. Stopping at the floor rather than running on is
-      // the correct behaviour, so the expected figure is a shade under 40.
+      // 20 A for two hours would be 40 Ah end to end. The run closes the
+      // moment the lowest cell comes within 50 mV of the 3.0 V cutoff, which
+      // on this synthetic curve is at 4.3 %, 7030 s in: 39.06 Ah. Whatever
+      // the percentage says at that point is beside the point.
       final readings = dischargeRun(t0, amps: 20, seconds: 7200);
       final cycles = detector.scan(readings);
 
       expect(cycles, hasLength(1));
-      expect(cycles.single.measuredAh, closeTo(39.6, 0.3));
+      expect(cycles.single.measuredAh, closeTo(39.06, 0.1));
       expect(cycles.single.startSoc, 100);
-      expect(cycles.single.endSoc, lessThanOrEqualTo(3));
+      expect(cycles.single.endSoc, greaterThan(3));
+      expect(cycles.single.endReason, CapacityEndReason.cellCutoff);
       expect(cycles.single.gapSeconds, 0);
+    });
+
+    test('3 % on the percentage with the cells well up is not the end', () {
+      // The old rule: the counter reaching the floor closed the run. On a
+      // pack whose BMS is configured smaller than it is, the counter hits 3 %
+      // with a good part of the pack still in it.
+      final readings = [
+        for (var i = 0; i <= 360; i++)
+          reading(
+            t0.add(Duration(seconds: i * 10)),
+            soc: 100 - 97 * i / 360,
+            current: -20,
+            cellVolts: 4.15 - 0.6 * i / 360,
+          ),
+      ];
+      expect(detector.scan(readings), isEmpty);
+    });
+
+    test('can measure more than the BMS is configured for', () {
+      // Configured for 45 Ah, holding 50. The counter runs out at 2 h 15 min
+      // and sits at 0 %, and the cells carry on for another quarter of an
+      // hour. The old test, bounded by the counter, could never report more
+      // than about 0.94 of the configured figure.
+      final readings = <Snapshot>[];
+      const steps = 900; // 2.5 h in 10 s slices, 20 A: 50 Ah.
+      for (var i = 0; i <= steps; i++) {
+        final ah = 20 * i * 10 / 3600;
+        readings.add(
+          reading(
+            t0.add(Duration(seconds: i * 10)),
+            soc: (100 - ah / 45 * 100).clamp(0, 100).toDouble(),
+            current: -20,
+            cellVolts: 4.15 - 1.12 * i / steps,
+          ),
+        );
+      }
+      final cycles = detector.scan(readings);
+      expect(cycles, hasLength(1));
+      expect(cycles.single.measuredAh, greaterThan(45));
+      expect(cycles.single.endSoc, 0);
+    });
+
+    test("the BMS's undervoltage warning closes the run", () {
+      final readings = [
+        ...dischargeRun(t0, amps: 20, seconds: 3600, endSoc: 30),
+      ];
+      final last = readings.last;
+      readings.add(
+        last.copyWith(
+          timestamp: last.timestamp.add(const Duration(seconds: 10)),
+          warningsMask: 1 << 11, // cell undervoltage
+        ),
+      );
+      final cycles = detector.scan(readings);
+      expect(cycles, hasLength(1));
+      expect(cycles.single.endReason, CapacityEndReason.bmsCutoff);
+    });
+
+    test('a pack with no full mark opens nothing', () {
+      const blind = CapacityCycleDetector(
+        endpoints: CapacityEndpoints(fullCellVolts: null, cutoffCellVolts: 3),
+      );
+      expect(blind.scan(dischargeRun(t0, amps: 20, seconds: 7200)), isEmpty);
+    });
+
+    test('a charge the app never saw voids the run', () {
+      // Evening ride to 50 %, the phone left in another room overnight on
+      // the charger, and the morning ride picks up from 90 %. No reading ever
+      // caught current going in, which is all the old detector looked for.
+      final evening = dischargeRun(t0, amps: 20, seconds: 1800, endSoc: 50);
+      final morning = dischargeRun(
+        t0.add(const Duration(seconds: 1800 + 20 * 60)),
+        amps: 20,
+        seconds: 3600,
+        startSoc: 90,
+      );
+      expect(detector.scan([...evening, ...morning]), isEmpty);
+    });
+
+    test('more than half an hour unwatched voids the run', () {
+      final before = dischargeRun(t0, amps: 20, seconds: 600, endSoc: 90);
+      final after = dischargeRun(
+        t0.add(const Duration(minutes: 50)),
+        amps: 20,
+        seconds: 600,
+        startSoc: 40,
+      );
+      expect(detector.scan([...before, ...after]), isEmpty);
     });
 
     test('ignores a discharge that did not start from full', () {
@@ -137,8 +227,10 @@ void main() {
       final cycles =
           detector.scan([...firstCycle, ...recharge, ...secondCycle]);
       expect(cycles, hasLength(2));
-      expect(cycles.first.measuredAh, closeTo(20, 0.3));
-      expect(cycles.last.measuredAh, closeTo(15, 0.3));
+      // Each closes 50 mV above the cutoff, 3520 s in, rather than at the
+      // end of the synthetic ride: 20 A and 15 A for 3520 s.
+      expect(cycles.first.measuredAh, closeTo(19.56, 0.05));
+      expect(cycles.last.measuredAh, closeTo(14.67, 0.05));
     });
 
     test('counts the time it was not watching rather than inventing it', () {

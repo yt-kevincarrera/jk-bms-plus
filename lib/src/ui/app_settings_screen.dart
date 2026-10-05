@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../app_settings.dart';
 import '../bms_service.dart';
+import '../protocol/bms_brand.dart';
 import '../metrics/charge_alerts.dart';
 import '../metrics/ride_alerts.dart';
+import '../pack/chemistry.dart';
 import '../update/update_service.dart';
 import 'locale_controller.dart';
 import 'theme.dart';
@@ -13,11 +15,13 @@ import 'license_scope.dart';
 import 'license_screen.dart';
 import 'inspection/certificate_verify_screen.dart';
 import 'inspection/inspections_list_screen.dart';
+import 'widgets/auto_trip_pocket_note.dart';
 import 'widgets/backup_card.dart';
 import 'widgets/pro_gate.dart';
 import 'widgets/packs_card.dart';
 import 'widgets/common.dart';
 import 'widgets/update_card.dart';
+import 'widgets/workshop_branding_card.dart';
 
 /// Every alert the app can raise, gathered by what it is about.
 ///
@@ -44,6 +48,7 @@ alertGroups(AppL10n t) => [
     heading: t.alertGroupHeat,
     items: [
       (name: RideAlert.temperature.name, label: t.alertWhenRiding),
+      (name: RideAlert.bmsHot.name, label: t.alertWhenBmsMosfet),
       (name: ChargeAlert.hotWhileCharging.name, label: t.alertWhenCharging),
     ],
   ),
@@ -108,6 +113,30 @@ class AppSettingsScreen extends StatefulWidget {
 }
 
 class _AppSettingsScreenState extends State<AppSettingsScreen> {
+  /// Whether the alert [name] cannot fire on the pack connected now. Only the
+  /// current-limit alert, and only on an ANT, which reports no limits.
+  bool _unavailableHere(String name) =>
+      name == RideAlert.nearCurrentLimit.name &&
+      widget.service.activeDevice != null &&
+      widget.service.brand == BmsBrand.ant;
+
+  /// Whether the link-lost alert can fire at all: only while one of the two
+  /// watches holds the connection. See [BmsService._noteLinkLost].
+  bool get _linkLostCanFire =>
+      widget.settings.linkWatchEnabled || widget.service.chargeWatchEnabled;
+
+  /// The line under an alert's switch, when there is something it needs
+  /// saying about when it can fire.
+  String? _alertHint(AppL10n t, String name) {
+    if (_unavailableHere(name)) return t.alertNearLimitUnavailable;
+    if (name == BmsService.linkLostAlertKey) {
+      return _linkLostCanFire
+          ? t.alertLinkLostRidingHint
+          : t.alertLinkLostNeedsWatch;
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
@@ -155,9 +184,23 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                 const SizedBox(height: 6),
               ],
             ),
+            // Next to the inspections because that is who prints them: a
+            // workshop handing a customer, or a buyer, a sheet with its own
+            // name at the top.
+            const ProGate(
+              feature: Feature.workshopExtras,
+              child: WorkshopBrandingCard(),
+            ),
             ProGate(
               feature: Feature.backupExportImport,
-              child: BackupCard(service: widget.service),
+              child: BackupCard(
+                service: widget.service,
+                settings: widget.settings,
+                onSettingsRestored: () {
+                  _pushThresholds();
+                  if (mounted) setState(() {});
+                },
+              ),
             ),
             // Rides had ended up inside the charging section, along with the
             // link and the screen. Four of that section's five controls had
@@ -189,6 +232,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                     ),
                   ),
                 ),
+                if (settings.autoTripEnabled)
+                  AutoTripPocketNote(linkWatchOn: settings.linkWatchEnabled),
                 const SizedBox(height: 4),
               ],
             ),
@@ -369,17 +414,38 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                   for (final a in group.items)
                     SwitchListTile(
                       value: !settings.isMuted(a.name),
-                      onChanged: (on) async {
-                        await settings.setAlertMuted(a.name, !on);
-                        widget.service.mutedAlerts = settings.mutedAlerts;
-                        if (mounted) setState(() {});
-                      },
+                      // The link-lost alert only ever speaks while a watch
+                      // holds the connection: with both off the switch did
+                      // nothing, and looked as though it did.
+                      onChanged:
+                          a.name == BmsService.linkLostAlertKey &&
+                              !_linkLostCanFire
+                          ? null
+                          : (on) async {
+                              await settings.setAlertMuted(a.name, !on);
+                              widget.service.mutedAlerts =
+                                  settings.mutedAlerts;
+                              if (mounted) setState(() {});
+                            },
                       dense: true,
                       contentPadding: EdgeInsets.zero,
                       title: Text(
                         a.label,
                         style: const TextStyle(fontSize: 13.5),
                       ),
+                      // An ANT reports no current limit, so this alert has
+                      // nothing to compare against and can never fire. Said,
+                      // rather than leaving a switch that looks like it works.
+                      subtitle: _alertHint(t, a.name) == null
+                          ? null
+                          : Text(
+                              _alertHint(t, a.name)!,
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                height: 1.4,
+                                color: AppTheme.textFaint,
+                              ),
+                            ),
                     ),
                 ],
                 const SizedBox(height: 4),
@@ -389,8 +455,13 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               title: t.alertsThresholdsTitle,
               intro: t.alertsThresholdsIntro,
               children: [
+                // Both of these also move the charging alerts, downwards
+                // only, and the hint says so: see [BmsService.applySettings].
                 _threshold(
                   label: t.alertsDeltaWarn,
+                  hint: t.alertsDeltaWarnHint(
+                    (ChargeAlerts.maxSpreadWarn * 1000).toStringAsFixed(0),
+                  ),
                   value: settings.alertDeltaWarn,
                   min: 0.030,
                   max: 0.300,
@@ -400,6 +471,9 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                 ),
                 _threshold(
                   label: t.alertsTempWarn,
+                  hint: t.alertsTempWarnHint(
+                    ChemistryLimits.hotChargeLimitCelsius.toStringAsFixed(0),
+                  ),
                   value: settings.alertTempWarn,
                   min: 35,
                   max: 75,
@@ -407,12 +481,16 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                   format: (v) => '${v.toStringAsFixed(0)} °C',
                   onChanged: (v) => settings.setAlertThresholds(temperature: v),
                 ),
+                // From one above "nearly gone", because low charge only trips
+                // above that level: the slider used to go down to 5, and
+                // anything from 5 to 7 switched the alert off in silence.
                 _threshold(
                   label: t.alertsLowChargeWarn,
+                  hint: t.alertsLowChargeWarnHint,
                   value: settings.alertLowChargeWarn,
-                  min: 5,
+                  min: RideAlerts.minLowChargeWarn,
                   max: 40,
-                  divisions: 35,
+                  divisions: (40 - RideAlerts.minLowChargeWarn).round(),
                   format: (v) => '${v.toStringAsFixed(0)} %',
                   onChanged: (v) => settings.setAlertThresholds(lowCharge: v),
                 ),
@@ -459,6 +537,24 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                     if (mounted) setState(() {});
                   },
                 ),
+                // A target up where the counter runs ahead of the cells is
+                // announced as the charge finishing. It used to be announced
+                // by nothing at all: the target alert refused anything at or
+                // above the completion level, and never said so.
+                if ((settings.chargeTargetSoc ?? 0) >=
+                    widget.service.chargeAlerts.completeSoc)
+                  Text(
+                    t.chargeTargetAtTop(
+                      widget.service.chargeAlerts.completeSoc.toStringAsFixed(
+                        0,
+                      ),
+                    ),
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      height: 1.4,
+                      color: AppTheme.textFaint,
+                    ),
+                  ),
                 const SizedBox(height: 4),
               ],
             ),
@@ -477,6 +573,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                       await widget.service.prepareAlertNotifications(
                         channelName: t.alertsNotifyTitle,
                         channelDescription: t.alertsNotifyIntro,
+                        quietChannelName: t.alertsNotifyQuietChannel,
                       );
                     } else {
                       widget.service.notifyAlerts = false;
@@ -516,6 +613,40 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                     ),
                   ),
                 ),
+              ],
+            ),
+            // Its own section, with its own warning, and never next to a
+            // switch somebody flicks without reading. Turning it on asks
+            // first; turning it off does not, because off is the safe way.
+            Section(
+              title: t.settingsSectionBmsWrites,
+              accent: settings.allowBmsWrites ? AppTheme.watch : null,
+              children: [
+                SwitchListTile(
+                  key: const ValueKey('allow-bms-writes'),
+                  value: settings.allowBmsWrites,
+                  onChanged: (v) async {
+                    if (v && !await _confirmBmsWrites(t)) return;
+                    await settings.setAllowBmsWrites(v);
+                    widget.service.bmsWritesAllowed = v;
+                    if (mounted) setState(() {});
+                  },
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    t.bmsWritesTitle,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                  subtitle: Text(
+                    t.bmsWritesHint,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      height: 1.4,
+                      color: AppTheme.textFaint,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
               ],
             ),
             Section(
@@ -589,10 +720,38 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
     );
   }
 
+  Future<bool> _confirmBmsWrites(AppL10n t) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surfaceRaised,
+        title: Text(t.bmsWritesConfirmTitle),
+        content: Text(
+          t.bmsWritesConfirmBody,
+          style: const TextStyle(fontSize: 13, height: 1.45),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(t.cancel),
+          ),
+          TextButton(
+            key: const ValueKey('allow-bms-writes-confirm'),
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.watch),
+            child: Text(t.bmsWritesConfirmAction),
+          ),
+        ],
+      ),
+    );
+    return ok ?? false;
+  }
+
   /// One movable threshold. The value shows next to the label, because a
   /// slider with no number on it is a guess.
   Widget _threshold({
     required String label,
+    String? hint,
     required double value,
     required double min,
     required double max,
@@ -615,6 +774,18 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           ),
         ],
       ),
+      if (hint != null)
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Text(
+            hint,
+            style: const TextStyle(
+              fontSize: 11.5,
+              height: 1.4,
+              color: AppTheme.textFaint,
+            ),
+          ),
+        ),
       Slider(
         value: value.clamp(min, max),
         min: min,

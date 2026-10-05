@@ -1,16 +1,23 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
+import 'package:share_plus/share_plus.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../bms_service.dart';
 import '../data/database.dart';
+import '../data/exporter.dart';
 import '../data/repository.dart';
+import '../metrics/trip_learning.dart';
 import '../metrics/trip_recorder.dart';
+import 'cell_history_screen.dart';
 import 'theme.dart';
 import 'widgets/common.dart';
+import 'widgets/energy_source_label.dart';
 import 'widgets/representative_question.dart';
 import 'widgets/trip_grade_rows.dart';
 import 'widgets/trip_learned_section.dart';
+import 'widgets/trip_map.dart';
 import 'widgets/trip_summary_view.dart';
 
 /// One stored ride, in full.
@@ -125,10 +132,13 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
-    final net = trip.energyOutWh - trip.energyInWh;
-    final whPerKm = trip.distanceKm < 0.2 ? null : net / trip.distanceKm;
-    final socUsed = trip.startSoc - trip.endSoc;
     final view = TripSummaryView.fromStored(trip);
+    // Null for a ride too short or never measured. Dividing the stored zero
+    // of an unmeasured ride by its distance read "0 Wh/km", a ride that cost
+    // nothing.
+    final whPerKm = view.whPerKm;
+    final measured = view.energyMeasured;
+    final socUsed = trip.startSoc - trip.endSoc;
 
     return Scaffold(
       appBar: AppBar(title: Text(t.historyDetail)),
@@ -171,10 +181,27 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                       label: t.tripConsumption,
                       value: whPerKm?.toStringAsFixed(0) ?? '--',
                       unit: 'Wh/km',
+                      footnote: measured ? null : t.tripNotMeasured,
                     ),
                   ),
                 ],
               ),
+            ),
+            // Where the ride went, from the same track the profile and the
+            // GPX export read. Draws nothing for a ride with no fixes.
+            FutureBuilder<List<TripPoint>>(
+              future: _points,
+              builder: (context, snap) {
+                final points = snap.data ?? const <TripPoint>[];
+                if (drawablePoints(points).length < 2) {
+                  return const SizedBox.shrink();
+                }
+                return Section(
+                  title: t.tripMapTitle,
+                  intro: t.tripMapOffline,
+                  children: [TripMap(points: points)],
+                );
+              },
             ),
             _ProfileSection(points: _points, t: t),
             // What the app concluded when this ride ended, as it was then. It
@@ -224,9 +251,20 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
               children: [
                 InfoRow(
                   t.tripEnergyOut,
-                  '${trip.energyOutWh.toStringAsFixed(1)} Wh',
+                  measured
+                      ? '${trip.energyOutWh.toStringAsFixed(1)} Wh'
+                      : t.tripNotMeasured,
+                  dim: !measured,
+                  hint: measured ? null : t.tripEnergyUnmeasuredWhy,
                 ),
-                InfoRow(t.tripSocUsed, '${socUsed.toStringAsFixed(0)} %'),
+                if (energySourceLabel(t, trip.energySource) case final how?)
+                  InfoRow(t.tripEnergySourceLabel, how),
+                InfoRow(
+                  t.tripSocUsed,
+                  TripLearning.socIsPartial(trip.energySource)
+                      ? '≈ ${socUsed.toStringAsFixed(0)} %'
+                      : '${socUsed.toStringAsFixed(0)} %',
+                ),
                 InfoRow(
                   t.tripSocPerKm,
                   trip.distanceKm < 0.2 || socUsed <= 0
@@ -234,17 +272,25 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                       : '${(socUsed / trip.distanceKm).toStringAsFixed(2)} %/km',
                   dim: trip.distanceKm < 0.2 || socUsed <= 0,
                 ),
-                InfoRow(
-                  t.tripSag,
-                  '${(trip.maxPackVoltage - trip.minPackVoltage).toStringAsFixed(2)} V',
-                ),
+                // Not "worst sag" any more: that was the ride's highest voltage
+                // minus its lowest, which took in the whole fall in charge.
+                if (trip.packResistanceMilliohms case final r?)
+                  InfoRow(
+                    t.tripResistance,
+                    '${r.toStringAsFixed(0)} mΩ',
+                    hint: t.tripResistanceHint,
+                  ),
                 InfoRow(
                   t.tripMaxCurrent,
                   '${trip.maxDischargeCurrent.toStringAsFixed(1)} A',
                 ),
+                // Empty when the pack has no battery probe, not 0 degC.
                 InfoRow(
                   t.tripMaxTemp,
-                  '${trip.maxTemperature.toStringAsFixed(1)} °C',
+                  trip.maxTemperature == null
+                      ? '--'
+                      : '${trip.maxTemperature!.toStringAsFixed(1)} °C',
+                  dim: trip.maxTemperature == null,
                 ),
                 InfoRow(
                   t.tripMaxDelta,
@@ -255,6 +301,30 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                 ),
               ],
             ),
+            // Every cell through the ride, from the readings stored during
+            // it. A ride from before rides knew their pack has nowhere to
+            // look them up.
+            if (trip.deviceId case final id?)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: OutlinedButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => CellHistoryScreen(
+                          repository: repository,
+                          deviceId: id,
+                          packName: _date(trip.startedAt),
+                          trip: trip,
+                        ),
+                      ),
+                    ),
+                    icon: const Icon(Icons.stacked_line_chart, size: 18),
+                    label: Text(t.cellHistoryTripButton),
+                  ),
+                ),
+              ),
             // Offered on every ride, not only the ones whose row admits to a
             // problem. That is the whole point: the rides this was written for
             // looked perfectly healthy in the database, and gating the button
@@ -280,10 +350,46 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                 const SizedBox(height: 6),
               ],
             ),
+            // The track, to open in any map tool. The exporter had no caller
+            // at all while the README advertised it.
+            FutureBuilder<List<TripPoint>>(
+              future: _points,
+              builder: (context, snap) {
+                if ((snap.data ?? const []).isEmpty) {
+                  return const SizedBox.shrink();
+                }
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _exportGpx(t),
+                      icon: const Icon(Icons.route_outlined, size: 18),
+                      label: Text(t.tripExportGpx),
+                    ),
+                  ),
+                );
+              },
+            ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _exportGpx(AppL10n t) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final file = await BmsExporter(repository).exportTrack(trip.id);
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          fileNameOverrides: [p.basename(file.path)],
+        ),
+      );
+    } on Exception catch (_) {
+      messenger.showSnackBar(SnackBar(content: Text(t.exportFailed)));
+    }
   }
 
   static String _date(DateTime utc) {

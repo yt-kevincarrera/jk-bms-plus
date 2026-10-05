@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../model/bms_snapshot.dart';
 import '../../model/bms_warning.dart';
+import '../../pack/chemistry.dart';
 import '../theme.dart';
 
 /// How healthy the pack looks at a glance.
@@ -476,8 +477,12 @@ enum PackStatusReason {
   /// The spread between the highest and lowest cell is wide.
   cellSpread,
 
-  /// Something is too hot.
+  /// A battery probe is too hot.
   temperature,
+
+  /// The BMS's MOSFET is too hot. Kept apart from [temperature] because it is
+  /// a different part with a different limit.
+  bmsHot,
 }
 
 /// The verdict every screen colours itself by, and the reason for it.
@@ -515,7 +520,16 @@ class PackStatus {
 /// Note what this does *not* consider: charge level. A pack at 8% is not
 /// unhealthy, it is empty, and colouring it red would teach you to ignore the
 /// colour on every long ride.
-PackStatus packStatusOf(BmsSnapshot s) {
+///
+/// Nor the spread at the top of an LFP pack. Above the knee of its curve
+/// ([lfpTopKneeVolts]) a few millivolts of charge are tens of millivolts of
+/// voltage, so cells 60 mV apart at the end of a charge are normal there, and
+/// the same 60 mV mid-curve is not. With [chemistry] LFP the spread is not
+/// judged while a cell is up there.
+PackStatus packStatusOf(
+  BmsSnapshot s, {
+  CellChemistry chemistry = CellChemistry.unknown,
+}) {
   if (s.warnings.hasFault) {
     return PackStatus(
       health: PackHealth.bad,
@@ -524,11 +538,17 @@ PackStatus packStatusOf(BmsSnapshot s) {
     );
   }
 
-  final temps = <double>[
-    ...s.temperatures,
-    if (s.mosfetTemp != null) s.mosfetTemp!,
-  ];
-  final hottest = temps.isEmpty ? 0.0 : temps.reduce(math.max);
+  // The battery and the BMS are judged apart. The MOSFET runs hotter than the
+  // cells by design, and folding it into one "hottest" told the rider a
+  // warm switch was a hot pack. The raw probe list is not used either: it
+  // carries the -200 C of an empty input and, on a JK02_32S, a copy of the
+  // MOSFET in slot 5.
+  final hottest = s.hottestBatteryTemp ?? double.negativeInfinity;
+  final mosfet = s.mosfetTemp ?? double.negativeInfinity;
+  final spread =
+      chemistry == CellChemistry.lfp && s.maxCellVoltage > lfpTopKneeVolts
+      ? 0.0
+      : s.deltaCellVoltage;
 
   if (hottest > 55) {
     return PackStatus(
@@ -537,7 +557,14 @@ PackStatus packStatusOf(BmsSnapshot s) {
       value: hottest,
     );
   }
-  if (s.deltaCellVoltage > 0.10) {
+  if (mosfet > BmsSnapshot.mosfetHotCelsius) {
+    return PackStatus(
+      health: PackHealth.bad,
+      reason: PackStatusReason.bmsHot,
+      value: mosfet,
+    );
+  }
+  if (spread > 0.10) {
     return PackStatus(
       health: PackHealth.bad,
       reason: PackStatusReason.cellSpread,
@@ -551,7 +578,14 @@ PackStatus packStatusOf(BmsSnapshot s) {
       value: hottest,
     );
   }
-  if (s.deltaCellVoltage > 0.04) {
+  if (mosfet > BmsSnapshot.mosfetWarmCelsius) {
+    return PackStatus(
+      health: PackHealth.watch,
+      reason: PackStatusReason.bmsHot,
+      value: mosfet,
+    );
+  }
+  if (spread > 0.04) {
     return PackStatus(
       health: PackHealth.watch,
       reason: PackStatusReason.cellSpread,
@@ -565,7 +599,13 @@ PackStatus packStatusOf(BmsSnapshot s) {
 }
 
 /// Convenience for the screens that only need the colour.
-PackHealth packHealthOf(BmsSnapshot s) => packStatusOf(s).health;
+PackHealth packHealthOf(
+  BmsSnapshot s, {
+  CellChemistry chemistry = CellChemistry.unknown,
+}) => packStatusOf(s, chemistry: chemistry).health;
+
+/// Where the LFP curve leaves its plateau at the top.
+const double lfpTopKneeVolts = 3.40;
 
 /// A small stat: number, unit, label, optionally colour-coded.
 ///

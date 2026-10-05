@@ -1,6 +1,8 @@
 import '../data/database.dart';
+import 'capacity_endpoints.dart';
 import 'degradation.dart';
-import 'range_estimator.dart';
+import 'pack_energy.dart';
+import 'trip_learning.dart';
 
 /// What can be said about one battery from what is on disk.
 ///
@@ -86,10 +88,12 @@ class PackSummary {
     // nothing else: it computes remaining amp-hours as charge times configured
     // capacity, so the division cancels. Only readable away from the extremes,
     // where the rounded percentage makes even that noisy.
-    final socFraction = last == null ? 0.0 : last.soc / 100.0;
-    final implied = last != null && socFraction >= 0.15 && socFraction <= 0.95
-        ? last.remainingAh / socFraction
-        : null;
+    final implied = last == null
+        ? null
+        : Degradation.configuredCapacityFrom(
+            soc: last.soc,
+            remainingAh: last.remainingAh,
+          );
 
     final catalogue = device.catalogueCapacityAh;
 
@@ -100,7 +104,7 @@ class PackSummary {
     final wear = Degradation.from(
       tests: tests,
       readings: const [],
-      advertisedAh: catalogue,
+      advertisedAh: device.catalogueFromBms ? null : catalogue,
     );
     final lost = wear.lostFraction;
     final health = lost == null ? null : ((1 - lost) * 100).clamp(0.0, 100.0);
@@ -112,18 +116,35 @@ class PackSummary {
         ? last.cycleCapacityAh / forCycles
         : null;
 
-    final usable = trips
-        .where((t) => t.distanceKm >= 0.2 && t.energyOutWh > t.energyInWh)
-        .toList();
-    final estimator = RangeEstimator();
-    for (final t in usable) {
-      estimator.addSegment(wh: t.energyOutWh - t.energyInWh, km: t.distanceKm);
-    }
+    // The live service's rule, oldest first: see [TripLearning].
+    final estimator = TripLearning.estimatorFrom(trips);
 
-    final completed = tests.where((x) => x.completed).toList();
-    final measured = completed.map((x) => x.measuredAh).toList();
+    // The same trust rule as the live screen, so a pack whose only "best"
+    // is a test with a hole in it does not win the comparison on it.
+    final measured = [
+      for (final x in tests)
+        if (x.isTrustworthy) x.measuredAh,
+    ];
 
     final deltas = readings.map((r) => r.deltaVolts).toList();
+
+    // A full pack's energy at the mean voltage of a whole discharge for this
+    // chemistry, as on the live screen. It used to be the catalogue capacity
+    // times whatever the pack voltage happened to be at the last reading, so
+    // the same pack's full range moved with the charge it was left at.
+    var highestCell = 0.0;
+    for (final r in readings) {
+      if (r.maxCellVoltage > highestCell) highestCell = r.maxCellVoltage;
+    }
+    final fullVolts = last == null
+        ? null
+        : PackEnergy.fullPackVoltage(
+            cellCount: decodeCellVoltages(last.cellVoltagesJson).length,
+            chemistry: PackEnergy.chemistryFor(
+              declared: device.chemistry,
+              highestCellVolts: highestCell > 0 ? highestCell : null,
+            ),
+          );
 
     return PackSummary(
       device: device,
@@ -139,8 +160,8 @@ class PackSummary {
       reportedCycles: last?.cycleCount,
       honestCycles: honest != null && honest > 0 ? honest : null,
       whPerKm: estimator.hasLearned ? estimator.whPerKm : null,
-      rangeKm: estimator.hasLearned && catalogue != null && last != null
-          ? estimator.rangeKm(catalogue * last.packVoltage)
+      rangeKm: estimator.hasLearned && catalogue != null && fullVolts != null
+          ? estimator.rangeKm(catalogue * fullVolts)
           : null,
       bestMeasuredAh:
           measured.isEmpty ? null : measured.reduce((a, b) => a > b ? a : b),

@@ -36,6 +36,7 @@ AdviceSubject? subjectOf(AdviceCode code) => switch (code) {
   AdviceCode.cellDrifting ||
   AdviceCode.noCellDrifting ||
   AdviceCode.deltaUnderLoadNormal ||
+  AdviceCode.deltaUnderLightLoadNormal ||
   AdviceCode.imbalanceAtRest ||
   AdviceCode.imbalanceUnderLoad ||
   AdviceCode.weakCellDominant ||
@@ -66,6 +67,9 @@ AdviceSubject? subjectOf(AdviceCode code) => switch (code) {
 
   // --- Temperature: heat and cold, wherever they were found ---
   AdviceCode.runningHot ||
+  AdviceCode.bmsRunningHot ||
+  AdviceCode.temperatureOk ||
+  AdviceCode.configColdCutoffMarginal ||
   AdviceCode.inspectionHot ||
   AdviceCode.configChargesWhenFrozen ||
   AdviceCode.configColdCutoffOk ||
@@ -74,6 +78,7 @@ AdviceSubject? subjectOf(AdviceCode code) => switch (code) {
 
   // --- Configuration: the limits and switches somebody set ---
   AdviceCode.overvoltageSetHigh ||
+  AdviceCode.configNothingFlagged ||
   AdviceCode.configOvpDangerous ||
   AdviceCode.configOvpHigh ||
   AdviceCode.configUvpDangerous ||
@@ -92,7 +97,8 @@ AdviceSubject? subjectOf(AdviceCode code) => switch (code) {
   // Scattered across three screens these repeat one idea in three voices:
   // the numbers the BMS reports are claims, and a claim can be typed into it
   // from the official app in under a minute. Together they argue it once.
-  AdviceCode.cycleCounterInflated ||
+  AdviceCode.cycleCounterDisagrees ||
+  AdviceCode.bmsClaimsConsistent ||
   AdviceCode.healthFigureDecorative ||
   AdviceCode.socCounterAhead ||
   AdviceCode.socCounterBehind ||
@@ -108,6 +114,9 @@ AdviceSubject? subjectOf(AdviceCode code) => switch (code) {
 
   // --- Not about the battery: how much this measurement is worth ---
   AdviceCode.inspectionNoHeavyLoad ||
+  AdviceCode.inspectionSagUnresolved ||
+  AdviceCode.inspectionRecoveryNotDiscriminating ||
+  AdviceCode.inspectionRepeatConfigChanged ||
   AdviceCode.inspectionRepeatLoadDiffers ||
   AdviceCode.inspectionRepeatCountersReset => null,
 };

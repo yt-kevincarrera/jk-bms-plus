@@ -38,6 +38,10 @@ class _TrendsScreenState extends State<TrendsScreen> {
 
   List<MaintenanceEvent> _maintenance = const [];
 
+  /// The last cell replacement, from which the pack's charts start. Null
+  /// when there was none.
+  DateTime? _since;
+
   List<Trip> _trips = const [];
   List<Snapshot> _snapshots = const [];
   List<CapacityTest> _tests = const [];
@@ -63,15 +67,13 @@ class _TrendsScreenState extends State<TrendsScreen> {
     }
 
     final trips = await repo.db.recentTrips(device, limit: 500);
-    final tests = await repo.capacityTests(device);
+    // The pack's own charts start at the last cell replacement; consumption
+    // does not, because what the bike costs did not change with the cell.
+    final tests = await repo.currentPackCapacityTests(device);
     final maintenance = await MaintenanceLog(repo.db).forPack(device);
     // Ninety days is enough to show a season's worth of drift without pulling
     // millions of rows into memory.
-    final snapshots = await repo.db.snapshotsBetween(
-      device,
-      DateTime.now().toUtc().subtract(const Duration(days: 90)),
-      DateTime.now().toUtc(),
-    );
+    final snapshots = await repo.currentPackSnapshots(device, days: 90);
 
     if (!mounted) return;
     setState(() {
@@ -79,6 +81,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
       _snapshots = snapshots;
       _tests = tests;
       _maintenance = maintenance;
+      _since = MaintenanceLog.historyStart(maintenance);
       _loading = false;
     });
   }
@@ -119,6 +122,18 @@ class _TrendsScreenState extends State<TrendsScreen> {
                         ),
                       ),
                     ),
+                    if (_since case final since?)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                        child: Text(
+                          t.maintSince(_day(since)),
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            height: 1.4,
+                            color: AppTheme.watch,
+                          ),
+                        ),
+                      ),
                     _consumption(t),
                     _capacity(t),
                     _sag(t),
@@ -136,6 +151,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
       for (final p in points) (at: p.at, value: p.whPerKm),
     ]);
 
+    final first = points.isEmpty ? null : points.first.at;
     return _TrendSection(
       title: t.trendsConsumption,
       spanDays: _analysis.spanDays([for (final p in points) p.at]),
@@ -145,10 +161,13 @@ class _TrendsScreenState extends State<TrendsScreen> {
           : t.trendsPerMonth(
               '${trend >= 0 ? "+" : ""}${trend.toStringAsFixed(1)} Wh/km',
             ),
-      trendIsBad: (trend ?? 0) > 0.5,
+      // Not a warning colour: costing more per kilometre is the route, the
+      // weather or the rider far more often than the pack.
+      trendIsBad: false,
+      firstDate: first,
       spots: [
-        for (var i = 0; i < points.length; i++)
-          FlSpot(i.toDouble(), points[i].whPerKm),
+        for (final p in points)
+          FlSpot(ChartMarkers.dayOf(first!, p.at), p.whPerKm),
       ],
       unit: 'Wh/km',
       hint: t.trendsConsumptionHint,
@@ -163,9 +182,25 @@ class _TrendsScreenState extends State<TrendsScreen> {
 
   Widget _capacity(AppL10n t) {
     final points = _analysis.capacityOverTime(_tests);
+    // The trend only through the runs the rest of the app believes; the line
+    // only through the deliberate ones among those. Everything else is drawn
+    // as a hollow circle beside it.
+    final believed = [
+      for (final p in points)
+        if (p.trusted) p,
+    ];
+    final solid = [
+      for (final p in believed)
+        if (!p.detected) p,
+    ];
+    final hollow = [
+      for (final p in points)
+        if (!p.trusted || p.detected) p,
+    ];
     final trend = _analysis.trendPerMonth([
-      for (final p in points) (at: p.at, value: p.measuredAh),
+      for (final p in believed) (at: p.at, value: p.measuredAh),
     ]);
+    final first = points.isEmpty ? null : points.first.at;
 
     return _TrendSection(
       title: t.trendsCapacity,
@@ -175,13 +210,20 @@ class _TrendsScreenState extends State<TrendsScreen> {
           ? null
           : t.trendsPerMonth('${trend.toStringAsFixed(2)} Ah'),
       trendIsBad: (trend ?? 0) < -0.1,
+      firstDate: first,
       spots: [
-        for (var i = 0; i < points.length; i++)
-          FlSpot(i.toDouble(), points[i].measuredAh),
+        for (final p in solid)
+          FlSpot(ChartMarkers.dayOf(first!, p.at), p.measuredAh),
       ],
+      hollowSpots: [
+        for (final p in hollow)
+          FlSpot(ChartMarkers.dayOf(first!, p.at), p.measuredAh),
+      ],
+      hollowNote: hollow.isEmpty ? null : t.trendsCapacityHollow,
       unit: 'Ah',
       hint: t.trendsCapacityHint,
       axisNote: t.trendsAxisTime,
+      notEnough: t.trendsCapacityNotEnough,
       markers: ChartMarkers.place(
         pointDates: [for (final p in points) p.at],
         events: _maintenance,
@@ -191,18 +233,25 @@ class _TrendsScreenState extends State<TrendsScreen> {
   }
 
   Widget _sag(AppL10n t) {
-    final points = _analysis.sagOverTime(_trips);
-    final resistances = <({DateTime at, double value})>[];
-    for (final p in points) {
-      final r = _analysis.apparentResistanceMilliohms(p);
-      if (r != null) resistances.add((at: p.at, value: r));
-    }
+    final since = _since;
+    final trips = since == null
+        ? _trips
+        : [
+            for (final tr in _trips)
+              if (!tr.startedAt.isBefore(since)) tr,
+          ];
+    final points = _analysis.resistanceOverTime(trips, _snapshots);
+    final resistances = [
+      for (final p in points) (at: p.at, value: p.milliohms),
+    ];
     final trend = _analysis.trendPerMonth(resistances);
+    final first = points.isEmpty ? null : points.first.at;
 
     return _TrendSection(
       title: t.trendsSag,
       spanDays: _analysis.spanDays([for (final p in points) p.at]),
       pointCount: resistances.length,
+      firstDate: first,
       trendLabel: trend == null
           ? null
           : t.trendsPerMonth(
@@ -212,8 +261,8 @@ class _TrendsScreenState extends State<TrendsScreen> {
       hint: t.trendsSagHint,
       axisNote: t.trendsAxisTime,
       spots: [
-        for (var i = 0; i < resistances.length; i++)
-          FlSpot(i.toDouble(), resistances[i].value),
+        for (final r in resistances)
+          FlSpot(ChartMarkers.dayOf(first!, r.at), r.value),
       ],
       unit: 'mΩ',
       t: t,
@@ -338,11 +387,15 @@ class _TrendSection extends StatelessWidget {
     required this.spots,
     required this.unit,
     required this.t,
+    this.firstDate,
+    this.hollowSpots = const [],
+    this.hollowNote,
     this.markers = const [],
     this.trendLabel,
     this.trendIsBad = false,
     this.hint,
     this.axisNote,
+    this.notEnough,
   });
 
   final String title;
@@ -351,6 +404,14 @@ class _TrendSection extends StatelessWidget {
   final List<FlSpot> spots;
   final String unit;
   final AppL10n t;
+
+  /// The date at x = 0. The x axis is days since then, so a season with no
+  /// rides shows as a gap instead of as two neighbouring points.
+  final DateTime? firstDate;
+
+  /// Points drawn as hollow circles off the line: shown, and not believed.
+  final List<FlSpot> hollowSpots;
+  final String? hollowNote;
 
   /// Work done to the pack, drawn over the line. A capacity that jumps reads
   /// as noise until a marker says a cell was replaced that week.
@@ -363,6 +424,10 @@ class _TrendSection extends StatelessWidget {
   /// guess from a chart whose x axis is an index rather than a date.
   final String? axisNote;
 
+  /// What to say while there are too few points, when "it fills in on its
+  /// own" is not true: capacity needs a full discharge per point.
+  final String? notEnough;
+
   @override
   Widget build(BuildContext context) {
     if (pointCount < 3) {
@@ -372,7 +437,7 @@ class _TrendSection extends StatelessWidget {
         // somebody wants to know what it is going to tell them.
         intro: hint,
         children: [
-          InfoRow(t.trendsNotEnough, '', dim: true, last: true),
+          InfoRow(notEnough ?? t.trendsNotEnough, '', dim: true, last: true),
           const SizedBox(height: 6),
         ],
       );
@@ -412,6 +477,18 @@ class _TrendSection extends StatelessWidget {
               ),
             ),
           ),
+        if (hollowNote != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Text(
+              hollowNote!,
+              style: const TextStyle(
+                fontSize: 11,
+                height: 1.4,
+                color: AppTheme.textFaint,
+              ),
+            ),
+          ),
         SizedBox(
           height: 150,
           child: LineChart(
@@ -420,7 +497,20 @@ class _TrendSection extends StatelessWidget {
               titlesData: FlTitlesData(
                 topTitles: const AxisTitles(),
                 rightTitles: const AxisTitles(),
-                bottomTitles: const AxisTitles(),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: firstDate != null && spanDays > 0,
+                    reservedSize: 20,
+                    interval: spanDays <= 0 ? 1 : spanDays / 3,
+                    getTitlesWidget: (v, m) => Text(
+                      _day(firstDate!.add(Duration(minutes: (v * 1440).round()))),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: AppTheme.textFaint,
+                      ),
+                    ),
+                  ),
+                ),
                 leftTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
@@ -450,17 +540,37 @@ class _TrendSection extends StatelessWidget {
                 ],
               ),
               lineBarsData: [
-                LineChartBarData(
-                  spots: spots,
-                  isCurved: true,
-                  barWidth: 2.2,
-                  color: AppTheme.good,
-                  dotData: const FlDotData(show: true),
-                  belowBarData: BarAreaData(
-                    show: true,
-                    color: AppTheme.good.withValues(alpha: 0.08),
+                if (spots.isNotEmpty)
+                  LineChartBarData(
+                    spots: spots,
+                    // Straight, not curved: points days or months apart are
+                    // joined by a line, and a curve between them would draw
+                    // a shape nothing measured.
+                    isCurved: false,
+                    barWidth: 2.2,
+                    color: AppTheme.good,
+                    dotData: const FlDotData(show: true),
+                    belowBarData: BarAreaData(
+                      show: true,
+                      color: AppTheme.good.withValues(alpha: 0.08),
+                    ),
                   ),
-                ),
+                if (hollowSpots.isNotEmpty)
+                  LineChartBarData(
+                    spots: hollowSpots,
+                    barWidth: 0,
+                    color: Colors.transparent,
+                    dotData: FlDotData(
+                      show: true,
+                      getDotPainter: (spot, percent, bar, index) =>
+                          FlDotCirclePainter(
+                            radius: 3.5,
+                            color: AppTheme.surface,
+                            strokeWidth: 1.6,
+                            strokeColor: AppTheme.good,
+                          ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -505,4 +615,10 @@ class _Legend extends StatelessWidget {
       ),
     ],
   );
+}
+
+/// A date as the charts label it: day and month.
+String _day(DateTime utc) {
+  final d = utc.toLocal();
+  return '${d.day}/${d.month}';
 }

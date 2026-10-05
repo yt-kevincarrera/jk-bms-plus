@@ -52,7 +52,11 @@ void main() {
       expect(fromRow.maxDeltaVolts, fromStop.maxDeltaVolts);
       expect(fromRow.socUsed, fromStop.socUsed);
       expect(fromRow.socPerKm, fromStop.socPerKm);
-      expect(fromRow.sagVolts, fromStop.sagVolts);
+      expect(
+        fromRow.packResistanceMilliohms,
+        fromStop.packResistanceMilliohms,
+      );
+      expect(fromRow.energySource, fromStop.energySource);
     });
 
     test('carries what the ride taught the range estimate, from either path', () {
@@ -107,6 +111,7 @@ TripOutcome _outcome({
     maxDeltaVolts: 0.042,
     climbM: 120,
     descentM: 95,
+    packResistanceMilliohms: 22,
   );
   const conclusions = TripConclusions(
     whPerKmBefore: 22.0,
@@ -153,5 +158,7 @@ Trip _storedTrip({
     confidence: hasConclusions ? RangeConfidence.medium.name : null,
     representative: representative,
     summarySeen: false,
+    energySource: 'integrated',
+    packResistanceMilliohms: 22,
   );
 }

@@ -16,10 +16,13 @@ import '../../report/certificate.dart';
 import '../../report/pdf_reports.dart';
 import '../../report/report_data.dart';
 import '../../report/report_sharing.dart';
+import '../../report/workshop_branding.dart';
 import '../license_scope.dart';
 import '../theme.dart';
 import '../widgets/advice_list.dart';
 import '../widgets/common.dart';
+import 'inspection_sections.dart';
+import 'inspection_texts.dart';
 
 /// The traffic light, three sentences, the fidelity, and a save button.
 ///
@@ -37,6 +40,7 @@ class InspectionVerdictScreen extends StatefulWidget {
     required this.bmsName,
     this.savedId,
     this.initialNote = '',
+    this.runTotal,
     super.key,
   });
 
@@ -49,6 +53,11 @@ class InspectionVerdictScreen extends StatefulWidget {
   /// Set when this is a saved inspection being reread.
   final int? savedId;
   final String initialNote;
+
+  /// How many runs this pack has in all, when the list that opened a saved
+  /// run knows. The series only reads the runs before this one, so on its
+  /// own it can only say "run 2 of 2" about the second of five.
+  final int? runTotal;
 
   @override
   State<InspectionVerdictScreen> createState() =>
@@ -108,6 +117,7 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
     final earlier = await repo.pastInspections(
       bmsId: widget.bmsId,
       serialNumber: r.reported.serialNumber,
+      bmsName: widget.bmsName,
       before: widget.savedId == null ? null : r.at,
       excludeId: widget.savedId,
     );
@@ -129,14 +139,12 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
     final r = widget.result;
     final light = _verdicts.light(r);
     final advice = _verdicts.evaluate(r);
-    final (headline, tone) = switch (light) {
-      InspectionLight.good => (t.inspectionLightGood, AppTheme.good),
-      InspectionLight.watch => (t.inspectionLightWatch, AppTheme.watch),
-      InspectionLight.problem => (t.inspectionLightProblem, AppTheme.bad),
-      InspectionLight.unmeasured => (
-        t.inspectionLightUnmeasured,
-        AppTheme.textFaint,
-      ),
+    final headline = inspectionHeadline(t, light, r, verdicts: _verdicts);
+    final tone = switch (light) {
+      InspectionLight.good => AppTheme.good,
+      InspectionLight.watch => AppTheme.watch,
+      InspectionLight.problem => AppTheme.bad,
+      InspectionLight.unmeasured => AppTheme.textFaint,
     };
 
     return Scaffold(
@@ -145,6 +153,11 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
         child: ListView(
           padding: const EdgeInsets.only(top: 4, bottom: 28),
           children: [
+            // A rehearsal against the app's own simulator looks exactly like
+            // a real result. Said first and loudly, on every screen it is
+            // shown on, so nobody reads a demo pack's figures as a battery.
+            if (r.simulated == true)
+              inspectionSimulatedBanner(t.inspectionSimulatedBanner),
             // --- The light ---
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 4),
@@ -211,7 +224,7 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
                     border: Border.all(color: AppTheme.watch),
                   ),
                   child: Text(
-                    t.inspectionUnmeasuredBody,
+                    inspectionUnmeasuredText(t, r, verdicts: _verdicts),
                     style: const TextStyle(
                       fontSize: 12.5,
                       height: 1.45,
@@ -225,30 +238,11 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
               title: t.verdictTitle,
               showHonestyNote: false,
             ),
-            if (r.caveats.isNotEmpty)
-              Section(
-                title: t.inspectionCaveatsTitle,
-                accent: AppTheme.watch,
-                children: [
-                  for (final c in r.caveats)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Text(
-                        _caveat(t, c),
-                        style: const TextStyle(
-                          fontSize: 12.5,
-                          height: 1.45,
-                          color: AppTheme.textSecondary,
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: 4),
-                ],
-              ),
+            inspectionCaveatsSection(t, r),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 4, 20, 6),
               child: Text(
-                t.inspectionFidelityNote,
+                inspectionFidelityText(t, light, r, verdicts: _verdicts),
                 style: const TextStyle(
                   fontSize: 12,
                   height: 1.45,
@@ -257,11 +251,11 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
               ),
             ),
             _seriesSection(t),
-            _cellsSection(t, r),
-            _reportedSection(t, r),
+            inspectionCellsSection(t, r, verdicts: _verdicts),
+            inspectionReportedSection(t, r),
             _sheetSection(t),
             Section(
-              title: t.inspectionsTitle,
+              title: t.inspectionSaveTitle,
               children: [
                 TextField(
                   controller: _note,
@@ -299,9 +293,10 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
                 if (widget.savedId == null) ...[
                   const SizedBox(height: 14),
                   // Repeating is what saving is for: the next run is compared
-                  // against this one, and the one after that against both.
-                  // Popping with true tells the connect screen to stay in
-                  // inspection mode and start looking again.
+                  // against the saved ones. Popping with true tells the
+                  // inspection screen under this one to pop with true in turn,
+                  // and the connect screen to stay in inspection mode and
+                  // start looking again.
                   OutlinedButton.icon(
                     onPressed: () => Navigator.of(context).pop(true),
                     icon: const Icon(Icons.replay, size: 18),
@@ -379,7 +374,7 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
             InfoRow(
               t.inspectionSeriesRun(
                 '${series.runNumber}',
-                '${series.runNumber}',
+                '${widget.runTotal ?? series.runNumber}',
               ),
               _date(series.result.at),
             ),
@@ -411,7 +406,10 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
 
   Widget _sheetSection(AppL10n t) {
     final e = LicenseScope.entitlements(context);
-    final canSign = e.allows(Feature.sellerCertificate);
+    // A rehearsal with the simulated pack is never signed. A certificate is
+    // a statement that these figures came off a battery, and these did not.
+    final simulated = widget.result.simulated == true;
+    final canSign = e.allows(Feature.sellerCertificate) && !simulated;
     return Section(
       title: t.reportSectionCertificate,
       children: [
@@ -430,7 +428,7 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          _certificateCreditsLine(t, e),
+          simulated ? t.certificateNoSimulated : _certificateCreditsLine(t, e),
           style: const TextStyle(
             fontSize: 11.5,
             height: 1.45,
@@ -460,9 +458,13 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
     setState(() => _sharing = true);
     final messenger = ScaffoldMessenger.of(context);
     final license = LicenseScope.of(context);
+    // The workshop's name and logo, when the tier includes it. Asked before
+    // anything is awaited, while the context still answers.
+    final branded = license.entitlements.allows(Feature.workshopExtras);
     try {
       final r = widget.result;
       Certificate? certificate;
+      if (sign && r.simulated == true) return;
       if (sign) {
         if (!await license.consumeCertificate()) {
           messenger.showSnackBar(
@@ -505,6 +507,9 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
               ? const []
               : const InspectionSeries().evaluate(series),
         ),
+        branding: branded
+            ? await WorkshopBrandingStore().load()
+            : ReportBranding.none,
       );
       await const ReportSharing().share(
         bytes,
@@ -551,7 +556,14 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
 
   Future<void> _save(AppL10n t) async {
     final repo = widget.service.repository;
-    if (repo == null) return;
+    if (repo == null) {
+      // Used to return without a word, so the button did nothing and the
+      // rider walked away believing the run was kept.
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(t.inspectionSaveNoStore)));
+      return;
+    }
     setState(() => _saving = true);
 
     // The credit is spent on saving, not on looking: a test that was aborted
@@ -592,143 +604,6 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
       context,
     ).showSnackBar(SnackBar(content: Text(t.inspectionSaved)));
   }
-
-  Widget _cellsSection(AppL10n t, InspectionResult r) {
-    if (r.cells.isEmpty) return const SizedBox.shrink();
-    final worstSag = r.worstSag?.index;
-    final slow = r.slowestRecovery;
-    const label = TextStyle(fontSize: 10.5, color: AppTheme.textFaint);
-    const cell = TextStyle(
-      fontSize: 12,
-      fontFeatures: AppTheme.tabular,
-      color: AppTheme.textSecondary,
-    );
-    return Section(
-      title: t.inspectionCellsTitle,
-      children: [
-        Row(
-          children: [
-            const SizedBox(width: 30, child: Text('#', style: label)),
-            Expanded(child: Text(t.inspectionCellHeaderRest, style: label)),
-            Expanded(child: Text(t.inspectionCellHeaderSag, style: label)),
-            Expanded(child: Text(t.inspectionCellHeaderIr, style: label)),
-            Expanded(child: Text(t.inspectionCellHeaderRec, style: label)),
-          ],
-        ),
-        const SizedBox(height: 4),
-        for (final c in r.cells)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 30,
-                  child: Text(
-                    '${c.index}',
-                    style: cell.copyWith(
-                      color: c.index == worstSag && r.worstSagExcess != null
-                          ? AppTheme.watch
-                          : AppTheme.textPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    '${c.restVolts.toStringAsFixed(3)} V',
-                    style: cell,
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    c.heavySagVolts == null
-                        ? '--'
-                        : '${(c.heavySagVolts! * 1000).toStringAsFixed(0)} mV',
-                    style: cell.copyWith(
-                      color:
-                          c.index == worstSag &&
-                              (r.worstSagExcess ?? 0) >=
-                                  _verdicts.thresholds.sagWatchVolts
-                          ? AppTheme.watch
-                          : null,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    c.resistanceOhms == null
-                        ? '--'
-                        : '${(c.resistanceOhms! * 1000).toStringAsFixed(1)} mΩ',
-                    style: cell,
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    c.recoverySeconds == null
-                        ? '--'
-                        : c.recovered
-                        ? '${c.recoverySeconds!.toStringAsFixed(0)} s'
-                        : '> ${c.recoverySeconds!.toStringAsFixed(0)} s',
-                    style: cell.copyWith(
-                      color:
-                          slow != null && slow.index == c.index && !c.recovered
-                          ? AppTheme.watch
-                          : null,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        const SizedBox(height: 6),
-      ],
-    );
-  }
-
-  Widget _reportedSection(AppL10n t, InspectionResult r) {
-    final rep = r.reported;
-    return Section(
-      title: t.inspectionReportedTitle,
-      intro: t.inspectionReportedHint,
-      accent: AppTheme.textFaint,
-      children: [
-        if (rep.model.isNotEmpty) InfoRow(t.inspectionReportedModel, rep.model),
-        InfoRow(
-          t.inspectionReportedCycles,
-          rep.cycleCount?.toString() ?? '--',
-          dim: rep.cycleCount == null,
-        ),
-        InfoRow(
-          t.inspectionReportedCapacity,
-          rep.configuredCapacityAh == null
-              ? '--'
-              : '${rep.configuredCapacityAh!.toStringAsFixed(0)} Ah',
-          dim: rep.configuredCapacityAh == null,
-        ),
-        InfoRow(
-          t.inspectionReportedSoc,
-          rep.soc == null ? '--' : '${rep.soc!.toStringAsFixed(0)} %',
-          dim: rep.soc == null,
-        ),
-        InfoRow(
-          t.inspectionReportedSoh,
-          rep.soh == null ? '--' : '${rep.soh!.toStringAsFixed(0)} %',
-          dim: rep.soh == null,
-          last: true,
-        ),
-      ],
-    );
-  }
-
-  static String _caveat(AppL10n t, InspectionCaveat c) => switch (c) {
-    InspectionCaveat.noHeavyLoad => t.inspectionCaveatNoHeavyLoad,
-    InspectionCaveat.noLightLoad => t.inspectionCaveatNoLightLoad,
-    InspectionCaveat.restNoisy => t.inspectionCaveatRestNoisy,
-    InspectionCaveat.noRecovery => t.inspectionCaveatNoRecovery,
-    InspectionCaveat.currentStepTooSmall => t.inspectionCaveatStepTooSmall,
-    InspectionCaveat.fewReadings => t.inspectionCaveatFewReadings,
-    InspectionCaveat.heavyWasCharge => t.inspectionCaveatHeavyWasCharge,
-  };
 
   static String _date(DateTime utc) {
     final d = utc.toLocal();

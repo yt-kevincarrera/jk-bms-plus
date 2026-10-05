@@ -7,13 +7,11 @@ import '../../bms_service.dart';
 import '../../metrics/cell_drift.dart';
 import '../../metrics/degradation.dart';
 import '../../metrics/pack_health_report.dart';
-import '../../metrics/range_estimator.dart';
 import '../../model/bms_snapshot.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../../metrics/advice_engine.dart';
 import '../../metrics/advice_grouping.dart';
-import '../../metrics/snapshot_history.dart';
 import '../../pack/pack_baseline.dart';
 import '../../license/entitlements.dart';
 import '../widgets/advice_list.dart';
@@ -81,11 +79,12 @@ class _HealthTabState extends State<HealthTab> {
     final device = widget.service.activeDeviceId;
     if (repo == null || device == null) return;
 
-    final readings = await repo.allSnapshots(device, days: 365);
+    // From the last cell replacement, where there was one.
+    final readings = await repo.currentPackSnapshots(device, days: 365);
     final result = Degradation.from(
-      tests: await repo.capacityTests(device),
+      tests: await repo.currentPackCapacityTests(device),
       readings: readings,
-      advertisedAh: widget.service.catalogueCapacityAh,
+      advertisedAh: widget.service.advertisedCapacityAh,
     );
     final drift = const CellDriftAnalysis().analyse(readings);
     final baseline = await repo.baseline(device);
@@ -107,33 +106,38 @@ class _HealthTabState extends State<HealthTab> {
       return WaitingForData(message: t.waitingFor(t.waitingFirstReading));
     }
 
+    // One definition of the energy left, shared with the live tab, the widget
+    // and the saved-pack screen. See [PackEnergy] for why it is not remaining
+    // amp-hours times the voltage of the moment any more.
+    final energy = service.energyOf(s);
+    final usableWh = energy.usableWh;
     final report = PackHealthReport.from(
       snapshot: s,
       settings: service.lastSettings,
-      catalogueCapacityAh: service.catalogueCapacityAh,
-      cutoffVoltagePerCell: service.cutoffVoltagePerCell,
+      // What it was sold as, never the BMS's own setting borrowed in its
+      // place: that would compare the configuration with itself.
+      catalogueCapacityAh: service.advertisedCapacityAh,
+      energy: energy,
     );
     final estimator = service.rangeEstimator;
-
-    final usableWh = RangeEstimator.usableWh(
-      remainingAh: s.remainingCapacityAh,
-      packVoltage: s.packVoltage,
-      cellCount: s.cellCount,
-      minCellVoltage: s.minCellVoltage,
-      averageCellVoltage: s.averageCellVoltage,
-      cutoffVoltagePerCell: service.cutoffVoltagePerCell,
-    );
 
     // Degradation is measured against the best this pack has ever held, not
     // against what it was advertised as. Measuring wear against a marketing
     // figure reported a pack sold as 45 Ah that was always 40 as permanently
     // 89% healthy, on day one, before it had lost anything: a number that
     // described the advert and never the battery.
-    final catalogue = service.catalogueCapacityAh;
+    final catalogue = service.advertisedCapacityAh;
     final degradation = _degradation;
     final lost = degradation?.lostFraction;
     final healthPercent = lost != null ? (1 - lost) * 100 : s.soh;
-    final tone = _healthTone(healthPercent);
+    // With nothing measured the gauge shows what the BMS reports, and only
+    // that: neutral, with no sentence drawn from it. The app calls this same
+    // figure decorative elsewhere, and on a pack reporting 0 it used to print
+    // "quite worn" in red off a number nobody measured.
+    final tone = lost != null ? _healthTone(healthPercent) : AppTheme.textFaint;
+    // The figure beside the gauge: measured when there is a test, otherwise
+    // the configured capacity read back off the counter, and labelled so.
+    final measuredNow = degradation?.current?.ah;
 
     return ListView(
       padding: const EdgeInsets.only(top: 4, bottom: 28),
@@ -162,7 +166,9 @@ class _HealthTabState extends State<HealthTab> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      _verdict(t, healthPercent),
+                      lost != null
+                          ? _verdict(t, healthPercent)
+                          : t.healthVerdictReported,
                       style: TextStyle(
                         fontSize: 15.5,
                         height: 1.3,
@@ -175,9 +181,11 @@ class _HealthTabState extends State<HealthTab> {
                     // actually held. Not against the advert, which is a
                     // different question answered further down.
                     Readout(
-                      label: t.degNowTitle,
+                      label: measuredNow == null && report.impliedCapacityAh != null
+                          ? t.degConfiguredTitle
+                          : t.degNowTitle,
                       value:
-                          degradation?.current?.ah.toStringAsFixed(1) ??
+                          measuredNow?.toStringAsFixed(1) ??
                           report.impliedCapacityAh?.toStringAsFixed(1) ??
                           '--',
                       unit: 'Ah',
@@ -227,16 +235,20 @@ class _HealthTabState extends State<HealthTab> {
                 if (catalogue != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
+                    // Only a measured baseline can be held against the
+                    // advert. With none, the shortfall is null, and it used
+                    // to be read as zero: "delivered what was advertised"
+                    // about a pack nothing had measured.
                     child: Text(
-                      (degradation.shortOfAdvertisedFraction ?? 0) < 0.02
-                          ? t.degSoldOk
-                          : t.degSoldShort(
-                              catalogue.toStringAsFixed(0),
-                              degradation.baseline!.ah.toStringAsFixed(1),
-                              ((degradation.shortOfAdvertisedFraction ?? 0) *
-                                      100)
-                                  .toStringAsFixed(0),
-                            ),
+                      switch (degradation.shortOfAdvertisedFraction) {
+                        null => t.degSoldUnmeasured,
+                        < 0.02 => t.degSoldOk,
+                        final short => t.degSoldShort(
+                          catalogue.toStringAsFixed(0),
+                          degradation.baseline!.ah.toStringAsFixed(1),
+                          (short * 100).toStringAsFixed(0),
+                        ),
+                      },
                       style: const TextStyle(
                         fontSize: 12,
                         height: 1.45,
@@ -329,14 +341,19 @@ class _HealthTabState extends State<HealthTab> {
               report: report,
               estimator: estimator,
               settings: service.lastSettings,
-              restingDelta: service.history.restingDelta,
-              loadedDelta: service.history.loadedDelta,
-              weakCellCounts: service.history.weakCellCounts,
-              balancerEverSeen: service.history.balancerEverSeen,
+              // Since the pack connected, not over the reading buffer's
+              // twenty-odd minutes.
+              restingDelta: service.history.session.restingDelta,
+              loadedDelta: service.history.session.loadedDelta,
+              restingDeltaCell: service.history.session.restingDeltaCell,
+              loadedDeltaCell: service.history.session.loadedDeltaCell,
+              heavyLoadFrames: service.history.session.heavyLoadFrames,
+              weakCellCounts: service.history.session.weakCellCounts,
+              balancerEverSeen: service.history.session.balancerEverSeen,
               capacityTestCount: service.capacityTestCount,
               degradationMeasurable: lost != null,
               usableWh: usableWh,
-              grossWh: s.remainingCapacityAh * s.packVoltage,
+              grossWh: energy.grossWh,
               degradation: degradation,
               drift: _drift,
               outlook: service.rangeOutlook,
@@ -377,7 +394,7 @@ class _HealthTabState extends State<HealthTab> {
               t.historyItemTrips,
               t.historyItemDelta,
               t.historyItemSag,
-              t.historyItemBalance,
+              t.historyItemDrift,
             ].map((e) => '  .  $e').join('\n'),
           ],
         ),
@@ -432,12 +449,25 @@ class _WeakCellSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strandedFraction = report.imbalanceLossFraction;
-    final strandedAh = report.imbalanceLossAh;
+    final strandedWh = report.imbalanceLossWh;
+    final measuredAt = report.imbalanceMeasuredAt;
+    // The imbalance is judged at rest, so on a ride with no stops the figure
+    // is from before it. Said when it is more than a few minutes old.
+    final ageMinutes = measuredAt == null
+        ? null
+        : DateTime.now().toUtc().difference(measuredAt.toUtc()).inMinutes;
     final rise = comparison?.worstResistanceRise;
+
+    // An ANT reports no per-cell figure at all, and "no lead has moved" would
+    // claim a comparison of numbers that were never there.
+    final anyPair =
+        comparison?.cells.any((c) => c.resistanceRise != null) ?? false;
 
     final String resistance;
     if (comparison == null) {
       resistance = t.healthWeakCellResistanceNoBaseline;
+    } else if (!anyPair) {
+      resistance = t.notReported;
     } else if (rise == null) {
       resistance = t.healthWeakCellResistanceFlat;
     } else {
@@ -457,13 +487,22 @@ class _WeakCellSection extends StatelessWidget {
           strandedFraction == null
               ? '--'
               : '${(strandedFraction * 100).toStringAsFixed(1)} %'
-                  '${strandedAh == null ? "" : "  ·  ${strandedAh.toStringAsFixed(1)} Ah"}',
+                  '${strandedWh == null ? "" : "  ·  ${strandedWh.toStringAsFixed(0)} Wh"}',
           dim: strandedFraction == null,
+          hint: strandedFraction == null
+              ? t.healthWeakCellStrandsNeedsRest
+              : (ageMinutes ?? 0) >= 5
+              ? t.healthWeakCellStrandsAge('$ageMinutes')
+              : null,
           valueColor: (strandedFraction ?? 0) > 0.05 ? AppTheme.watch : null,
         ),
         InfoRow(
           t.healthWeakCellResistance,
           resistance,
+          // What JK reports per cell is the balance lead and its connection.
+          // Filed under the cell that sets the pack's limit it read as the
+          // cell's own resistance, which it is not.
+          hint: anyPair ? t.healthWeakCellResistanceHint : null,
           dim: rise == null,
           valueColor: rise == null ? null : AppTheme.watch,
           last: true,

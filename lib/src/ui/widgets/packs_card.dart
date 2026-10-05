@@ -169,6 +169,9 @@ class _PacksCardState extends State<PacksCard> {
               onPressed: _busy
                   ? null
                   : () async {
+                      // Asked first: this deletes the rows for good, and a
+                      // red text button is one stray tap away.
+                      if (!await _confirmDiscard(t)) return;
                       setState(() => _busy = true);
                       await widget.service.repository?.discardOrphans();
                       if (mounted) setState(() => _busy = false);
@@ -182,6 +185,31 @@ class _PacksCardState extends State<PacksCard> {
           ],
         ),
       ];
+
+  Future<bool> _confirmDiscard(AppL10n t) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(t.orphansDiscardConfirmTitle),
+        content: Text(
+          t.orphansDiscardConfirmBody('$_orphans'),
+          style: const TextStyle(fontSize: 13, height: 1.45),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(t.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.bad),
+            child: Text(t.orphansDiscard),
+          ),
+        ],
+      ),
+    );
+    return ok ?? false;
+  }
 
   Future<void> _rename(AppL10n t, Device d) async {
     final controller = TextEditingController(text: d.name);

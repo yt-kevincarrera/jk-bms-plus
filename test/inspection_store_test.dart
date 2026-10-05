@@ -12,6 +12,7 @@ InspectionsCompanion row({
   required DateTime at,
   String bmsId = 'AA:BB',
   String serial = 'SN-1',
+  String name = '',
   int weakCell = 7,
   double weakSag = 0.30,
   String light = 'problem',
@@ -45,6 +46,7 @@ InspectionsCompanion row({
   return InspectionsCompanion.insert(
     at: at,
     bmsId: bmsId,
+    bmsName: Value(name),
     serialNumber: Value(serial),
     light: light,
     resultJson: jsonEncode(result.toJson()),
@@ -92,6 +94,26 @@ void main() {
       serialNumber: 'SN-9',
     );
     expect(bySerial, hasLength(1));
+  });
+
+  test('a shared serial under another name is another pack', () async {
+    // Clone boards ship with one default serial. The database query finds
+    // the row by serial; the series rule then turns it away.
+    await db.insertInspection(
+      row(at: april, bmsId: 'OLD', serial: 'SN-9', name: 'Pack A'),
+    );
+    final other = await repo.pastInspections(
+      bmsId: 'NEW',
+      serialNumber: 'SN-9',
+      bmsName: 'Pack B',
+    );
+    expect(other, isEmpty);
+    final same = await repo.pastInspections(
+      bmsId: 'NEW',
+      serialNumber: 'SN-9',
+      bmsName: 'Pack A',
+    );
+    expect(same, hasLength(1));
   });
 
   test('an empty serial does not merge two anonymous packs', () async {

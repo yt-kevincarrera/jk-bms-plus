@@ -9,8 +9,10 @@ import '../inspection/inspection_series.dart';
 import '../pack/chemistry.dart';
 import '../metrics/advice_engine.dart';
 import '../metrics/maintenance.dart';
+import '../ui/inspection/inspection_texts.dart';
 import '../ui/widgets/advice_list.dart';
 import 'report_data.dart';
+import 'workshop_branding.dart';
 
 /// The printed sheets: one for the rider's own pack, one for an inspection.
 ///
@@ -39,7 +41,35 @@ class PdfReports {
   static const PdfColor _bad = PdfColor.fromInt(0xFFB3261E);
 
   /// The "my battery" sheet.
-  Future<Uint8List> packReport(AppL10n t, PackReportData d) async {
+  ///
+  /// [branding] is the workshop's name, line and logo, printed at the top
+  /// when the phone holds the workshop tier; the caller decides that.
+  Future<Uint8List> packReport(
+    AppL10n t,
+    PackReportData d, {
+    ReportBranding branding = ReportBranding.none,
+  }) => _readableLogo(branding, (b) => _packReport(t, d, b));
+
+  /// Builds a sheet with the logo, and again without it when the library
+  /// could not read it. The image is only decoded as the file is written, so
+  /// a corrupt picture would otherwise cost the rider the whole sheet.
+  static Future<Uint8List> _readableLogo(
+    ReportBranding b,
+    Future<Uint8List> Function(ReportBranding) build,
+  ) async {
+    if (b.logo == null) return build(b);
+    try {
+      return await build(b);
+    } on Object {
+      return build(ReportBranding(name: b.name, line: b.line));
+    }
+  }
+
+  Future<Uint8List> _packReport(
+    AppL10n t,
+    PackReportData d,
+    ReportBranding branding,
+  ) async {
     final doc = pw.Document(
       title: t.reportPackTitle,
       author: t.appTitle,
@@ -62,6 +92,7 @@ class PdfReports {
             detail: _identityLine(d.model, d.serialNumber),
             generatedAt: d.generatedAt,
             appVersion: d.appVersion,
+            branding: branding,
           ),
           _section(t.reportSectionNow, [
             _row(t.reportLastReading, _dateTime(d.lastReadingAt)),
@@ -108,6 +139,8 @@ class PdfReports {
               t.reportRangeBasis,
               d.rangeFromMeasuredCapacity
                   ? t.reportRangeFromMeasured
+                  : d.rangeFromBmsConfig
+                  ? t.reportRangeFromBmsConfig
                   : t.reportRangeFromCatalogue,
             ),
           ]),
@@ -159,10 +192,17 @@ class PdfReports {
         ),
       if (since?.cyclesSince != null)
         _row(t.profileCyclesSince, '${since!.cyclesSince}'),
+      if (since != null && since.worstDrift == null && !since.sameChargeLevel)
+        _row(t.profileWorstDrift, t.profileDriftOtherCharge),
+      // The saved-pack sheet has no settings frame to compare with (none is
+      // stored), so it says so. It used to print "same as day one" on every
+      // sheet, an ANT's included.
       if (since != null)
         _row(
           t.profileConfigChanged,
-          since.configChanged.isEmpty
+          !since.configCompared
+              ? t.profileConfigNotCompared
+              : since.configChanged.isEmpty
               ? t.profileConfigUnchanged
               : t.profileConfigChangedCount('${since.configChanged.length}'),
         ),
@@ -176,7 +216,17 @@ class PdfReports {
   };
 
   /// The inspection sheet, signed or not.
-  Future<Uint8List> inspectionReport(AppL10n t, InspectionReportData d) async {
+  Future<Uint8List> inspectionReport(
+    AppL10n t,
+    InspectionReportData d, {
+    ReportBranding branding = ReportBranding.none,
+  }) => _readableLogo(branding, (b) => _inspectionReport(t, d, b));
+
+  Future<Uint8List> _inspectionReport(
+    AppL10n t,
+    InspectionReportData d,
+    ReportBranding branding,
+  ) async {
     final r = d.result;
     final title = d.isCertificate
         ? t.reportCertificateTitle
@@ -203,8 +253,10 @@ class PdfReports {
             detail: _identityLine(r.reported.model, r.reported.serialNumber),
             generatedAt: d.generatedAt,
             appVersion: d.appVersion,
+            branding: branding,
           ),
-          _lightBanner(t, d.light),
+          if (r.simulated == true) _simulatedBanner(t),
+          _lightBanner(t, d.light, r),
           _section(t.reportSectionTest, [
             _row(t.reportTestedAt, _dateTime(r.at)),
             _row(t.reportCellCount, '${r.cellCount}'),
@@ -212,8 +264,17 @@ class PdfReports {
               t.reportPeakCurrent,
               '${r.peakDischargeAmps.toStringAsFixed(1)} A',
             ),
+            _row(
+              t.reportCurrentStep,
+              r.hasHeavyLoad
+                  ? '${r.currentStepAmps.toStringAsFixed(1)} A'
+                  : _dash,
+            ),
             _row(t.reportRestDelta, _volts(r.restDeltaVolts, 3)),
-            _row(t.reportMedianSag, _volts(r.medianHeavySagVolts, 3)),
+            _row(
+              r.heavyWasCharge ? t.reportMedianRise : t.reportMedianSag,
+              _volts(r.medianHeavySagVolts, 3),
+            ),
             _row(
               t.reportMedianResistance,
               r.medianResistanceOhms == null
@@ -242,7 +303,15 @@ class PdfReports {
               _t(d.note, style: const pw.TextStyle(fontSize: 9.5)),
             ]),
           if (d.certificate != null) _certificateBlock(t, d),
-          _honesty(t.reportHonestyInspection(_date(r.at))),
+          // Said about this test. It used to say "verified", "catches the bad
+          // cell" and "capacity is estimated" under every result, including
+          // a test that never loaded the pack, on a sheet that never
+          // estimates capacity at all.
+          _honesty(
+            d.light == InspectionLight.unmeasured
+                ? t.reportHonestyInspectionUnmeasured(_date(r.at))
+                : t.reportHonestyInspection(_date(r.at)),
+          ),
         ],
       ),
     );
@@ -326,9 +395,11 @@ class PdfReports {
     required String detail,
     required DateTime generatedAt,
     required String appVersion,
+    ReportBranding branding = ReportBranding.none,
   }) => pw.Column(
     crossAxisAlignment: pw.CrossAxisAlignment.start,
     children: [
+      if (!branding.isEmpty) ..._branding(branding),
       pw.Row(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -382,6 +453,63 @@ class PdfReports {
       pw.Divider(color: _rule, height: 1, thickness: 1),
     ],
   );
+
+  /// The workshop's block, above the title: logo, name, contact line. The
+  /// app's own name stays on the right of the title, because the figures are
+  /// still the app's and the sheet should not read as if the workshop
+  /// measured them by other means.
+  ///
+  /// A logo the library refuses here is dropped; one it only fails on as the
+  /// file is written is caught by [_readableLogo].
+  List<pw.Widget> _branding(ReportBranding b) {
+    pw.ImageProvider? logo;
+    final bytes = b.logo;
+    if (bytes != null) {
+      try {
+        logo = pw.MemoryImage(bytes);
+      } on Object {
+        logo = null;
+      }
+    }
+    return [
+      pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.center,
+        children: [
+          if (logo != null) ...[
+            pw.ConstrainedBox(
+              constraints: const pw.BoxConstraints(
+                maxHeight: 40,
+                maxWidth: 120,
+              ),
+              child: pw.Image(logo, fit: pw.BoxFit.contain),
+            ),
+            pw.SizedBox(width: 10),
+          ],
+          pw.Expanded(
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                if (b.name.trim().isNotEmpty)
+                  _t(
+                    b.name.trim(),
+                    style: pw.TextStyle(
+                      fontSize: 12,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                if (b.line.trim().isNotEmpty)
+                  _t(
+                    b.line.trim(),
+                    style: const pw.TextStyle(fontSize: 8.5, color: _faint),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      pw.SizedBox(height: 10),
+    ];
+  }
 
   pw.Widget _footer(AppL10n t, pw.Context context) => pw.Padding(
     padding: const pw.EdgeInsets.only(top: 8),
@@ -539,31 +667,39 @@ class PdfReports {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        _section(t.reportSectionSeries, [
-          _table(
-            headers: [
-              t.reportDate,
-              t.reportSeriesWorstCell,
-              t.reportSag,
-              t.reportRestDelta,
-              t.reportPeakCurrent,
-            ],
-            rows: [
-              for (final p in [...c.earlier, _asPast(c)])
-                [
-                  _date(p.at),
-                  p.result.worstSag == null
-                      ? _dash
-                      : '${p.result.worstSag!.index}',
-                  p.result.worstSag?.heavySagVolts == null
-                      ? _dash
-                      : p.result.worstSag!.heavySagVolts!.toStringAsFixed(3),
-                  p.result.restDeltaVolts.toStringAsFixed(3),
-                  '${p.result.currentStepAmps.toStringAsFixed(1)} A',
-                ],
-            ],
-          ),
-        ], note: t.reportSeriesNote),
+        _section(
+          t.reportSectionSeries,
+          [
+            _table(
+              headers: [
+                t.reportDate,
+                t.reportSeriesWorstCell,
+                t.reportSag,
+                t.reportRestDelta,
+                // The figure in the column is the current step, not the peak:
+                // the column says so.
+                t.reportCurrentStep,
+              ],
+              rows: [
+                for (final p in [...c.earlier, _asPast(c)])
+                  [
+                    _date(p.at),
+                    p.result.worstSag == null
+                        ? _dash
+                        : '${p.result.worstSag!.index}',
+                    p.result.worstSag?.heavySagVolts == null
+                        ? _dash
+                        : p.result.worstSag!.heavySagVolts!.toStringAsFixed(3),
+                    p.result.restDeltaVolts.toStringAsFixed(3),
+                    '${p.result.currentStepAmps.toStringAsFixed(1)} A',
+                  ],
+              ],
+            ),
+          ],
+          note: d.isCertificate
+              ? t.reportSeriesNote
+              : t.reportSeriesNoteUnsigned,
+        ),
         if (d.seriesAdvice.isNotEmpty)
           _verdicts(t, d.seriesAdvice, title: t.inspectionSeriesTitle),
       ],
@@ -575,34 +711,39 @@ class PdfReports {
   static PastInspection _asPast(InspectionComparison c) =>
       PastInspection(at: c.result.at, result: c.result);
 
-  pw.Widget _cellTable(AppL10n t, InspectionResult r) =>
-      _section(t.reportSectionCells, [
-        _table(
-          headers: [
-            t.reportCell,
-            t.reportRestVolts,
-            t.reportSag,
-            t.reportResistance,
-            t.reportRecovery,
-          ],
-          rows: [
-            for (final c in r.cells)
-              [
-                '${c.index}',
-                c.restVolts.toStringAsFixed(3),
-                c.heavySagVolts == null
-                    ? _dash
-                    : c.heavySagVolts!.toStringAsFixed(3),
-                c.resistanceOhms == null
-                    ? _dash
-                    : (c.resistanceOhms! * 1000).toStringAsFixed(1),
-                c.recoverySeconds == null
-                    ? (c.recovered ? _dash : t.reportNotRecovered)
-                    : c.recoverySeconds!.toStringAsFixed(1),
-              ],
-          ],
-        ),
-      ], note: t.reportCellTableNote);
+  pw.Widget _cellTable(AppL10n t, InspectionResult r) => _section(
+    t.reportSectionCells,
+    [
+      _table(
+        headers: [
+          t.reportCell,
+          t.reportRestVolts,
+          r.heavyWasCharge ? t.reportChange : t.reportSag,
+          t.reportResistance,
+          t.reportRecovery,
+        ],
+        rows: [
+          for (final c in r.cells)
+            [
+              '${c.index}',
+              c.restVolts.toStringAsFixed(3),
+              c.heavySagVolts == null
+                  ? _dash
+                  : c.heavySagVolts!.toStringAsFixed(3),
+              c.resistanceOhms == null
+                  ? _dash
+                  : (c.resistanceOhms! * 1000).toStringAsFixed(1),
+              // The same as the screen: a cell still not back when the
+              // window closed is "> time", not a time it never made.
+              inspectionRecoveryCell(t, c, unit: false),
+            ],
+        ],
+      ),
+    ],
+    note: r.heavyWasCharge
+        ? t.reportCellTableNoteCharge
+        : t.reportCellTableNote,
+  );
 
   pw.Widget _table({
     required List<String> headers,
@@ -688,7 +829,27 @@ class PdfReports {
         ),
       ]);
 
-  pw.Widget _lightBanner(AppL10n t, InspectionLight light) {
+  /// A run against the app's own simulator, said at the top in red. The
+  /// figures under it look like any battery's.
+  pw.Widget _simulatedBanner(AppL10n t) => pw.Container(
+    margin: const pw.EdgeInsets.only(top: 14),
+    padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+    decoration: pw.BoxDecoration(
+      color: PdfColor.fromInt(0xFFFBE9E7),
+      border: pw.Border.all(color: _bad, width: 1.5),
+      borderRadius: pw.BorderRadius.circular(4),
+    ),
+    child: _t(
+      t.inspectionSimulatedBanner,
+      style: pw.TextStyle(
+        fontSize: 12,
+        fontWeight: pw.FontWeight.bold,
+        color: _bad,
+      ),
+    ),
+  );
+
+  pw.Widget _lightBanner(AppL10n t, InspectionLight light, InspectionResult r) {
     final colour = switch (light) {
       InspectionLight.good => _good,
       InspectionLight.watch => _watch,
@@ -697,12 +858,7 @@ class PdfReports {
       // sheet that shaded this green or red would be making a claim.
       InspectionLight.unmeasured => _faint,
     };
-    final text = switch (light) {
-      InspectionLight.good => t.inspectionLightGood,
-      InspectionLight.watch => t.inspectionLightWatch,
-      InspectionLight.problem => t.inspectionLightProblem,
-      InspectionLight.unmeasured => t.inspectionLightUnmeasured,
-    };
+    final text = inspectionHeadline(t, light, r);
     return pw.Container(
       margin: const pw.EdgeInsets.only(top: 14),
       padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 9),
@@ -766,7 +922,19 @@ class PdfReports {
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 _row(t.reportCertificateCode, cert.code, strong: true),
-                _row(t.reportCertificateIssuer, cert.issuer),
+                // The issuer is what a buyer has to compare with the code the
+                // seller or the workshop publishes. Without that comparison
+                // the signature only proves that somebody with the app signed.
+                _row(t.reportCertificateIssuer, cert.issuer, strong: true),
+                _t(
+                  t.reportCertificateIssuerCheck,
+                  style: pw.TextStyle(
+                    fontSize: 8.5,
+                    fontWeight: pw.FontWeight.bold,
+                    color: _ink,
+                  ),
+                ),
+                pw.SizedBox(height: 4),
                 _row(
                   t.reportCertificateIssuedAt,
                   _dateTime(cert.content.issuedAt),
@@ -801,15 +969,8 @@ class PdfReports {
     AdviceLevel.info => _faint,
   };
 
-  static String _caveatText(AppL10n t, InspectionCaveat c) => switch (c) {
-    InspectionCaveat.noHeavyLoad => t.inspectionCaveatNoHeavyLoad,
-    InspectionCaveat.noLightLoad => t.inspectionCaveatNoLightLoad,
-    InspectionCaveat.restNoisy => t.inspectionCaveatRestNoisy,
-    InspectionCaveat.noRecovery => t.inspectionCaveatNoRecovery,
-    InspectionCaveat.currentStepTooSmall => t.inspectionCaveatStepTooSmall,
-    InspectionCaveat.fewReadings => t.inspectionCaveatFewReadings,
-    InspectionCaveat.heavyWasCharge => t.inspectionCaveatHeavyWasCharge,
-  };
+  static String _caveatText(AppL10n t, InspectionCaveat c) =>
+      inspectionCaveatText(t, c);
 
   /// The stored kind is an enum name, which is fine in a database and no use
   /// on a printed page.

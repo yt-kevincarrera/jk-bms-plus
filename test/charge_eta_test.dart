@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:jk_bms/src/metrics/charge_eta.dart';
 import 'package:jk_bms/src/metrics/soc_trust.dart';
 
+import 'fixtures/snapshot_builder.dart';
+
 void main() {
   const estimator = ChargeEtaEstimator();
 
@@ -66,16 +68,64 @@ void main() {
       expect(eta.remaining!.inSeconds, greaterThan(naive * 1.5));
     });
 
-    test('reaches zero once the pack is full', () {
-      // With the cells at the cutoff, so the near-full reading is believed.
+    test('reaches zero once the pack is full and the current has let go', () {
+      // With the cells at the cutoff, so the near-full reading is believed,
+      // and 1 A in on a 40 Ah pack: under C/20.
       expect(
-        at(soc: 100, highestCellVolts: 4.20, cellFullVolts: 4.25).remaining,
+        at(
+          soc: 100,
+          current: 1,
+          highestCellVolts: 4.20,
+          cellFullVolts: 4.25,
+        ).remaining,
         Duration.zero,
       );
       expect(
-        at(soc: 99.6, highestCellVolts: 4.20, cellFullVolts: 4.25).remaining,
+        at(
+          soc: 99.6,
+          current: 1,
+          highestCellVolts: 4.20,
+          cellFullVolts: 4.25,
+        ).remaining,
         Duration.zero,
       );
+    });
+
+    test('is never full while the charger still pushes', () {
+      // The ANT case: nothing to check the counter against, 99.6 % with
+      // 3 A going in, over C/20 of 40 Ah and under the C/10 that would make
+      // the counter itself suspect. That used to read "full".
+      final eta = at(soc: 99.6, current: 3);
+      expect(eta.remaining, isNull);
+      expect(eta.nearlyFull, isTrue);
+    });
+  });
+
+  group('what the screen is given', () {
+    test('rounds to five minutes, ten past an hour, never under five', () {
+      expect(ChargeEta.rounded(const Duration(minutes: 2)).inMinutes, 5);
+      expect(ChargeEta.rounded(const Duration(minutes: 23)).inMinutes, 25);
+      expect(ChargeEta.rounded(const Duration(minutes: 47)).inMinutes, 45);
+      expect(
+        ChargeEta.rounded(const Duration(hours: 1, minutes: 24)).inMinutes,
+        80,
+      );
+    });
+
+    test('smooths the current over distinct readings', () {
+      // The BMS repeats a value across frames: five frames of 10 A and one of
+      // 4 A are two readings, not six.
+      final t0 = DateTime.utc(2026, 1, 1);
+      final frames = [
+        for (var i = 0; i < 5; i++)
+          buildSnapshot(
+            timestamp: t0.add(Duration(milliseconds: 400 * i)),
+            current: 10,
+          ),
+        buildSnapshot(timestamp: t0.add(const Duration(seconds: 3)), current: 4),
+      ];
+      expect(ChargeEta.smoothedCurrent(frames), 7);
+      expect(ChargeEta.smoothedCurrent(const []), isNull);
     });
   });
 

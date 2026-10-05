@@ -43,6 +43,7 @@ class AppSettings extends ChangeNotifier {
   static const _deltaWarnKey = 'alert_delta_warn';
   static const _tempWarnKey = 'alert_temp_warn';
   static const _lowChargeWarnKey = 'alert_low_charge_warn';
+  static const _allowBmsWritesKey = 'allow_bms_writes';
 
   /// A GitHub token, only for checking and fetching updates.
   ///
@@ -136,10 +137,23 @@ class AppSettings extends ChangeNotifier {
   /// is not a reason for a phone that never sleeps.
   ScreenAwake screenAwake = ScreenAwake.whileRiding;
 
-  /// Whether the 300-byte frames are kept. On by default and worth leaving on:
-  /// it is what makes a wrongly-decoded byte offset recoverable rather than
-  /// months of history lost.
+  /// Whether the raw frames are kept. On by default and worth leaving on: the
+  /// last 30 days of them ([BmsRepository.rawFrameRetention]) are what a
+  /// diagnosis reads, and what would let a wrongly-decoded byte offset be
+  /// re-read for recent readings. Not months: older frames are pruned at
+  /// every start, and the app has no reparse of its own; they travel in a
+  /// backup.
   bool recordRawFrames = true;
+
+  /// Whether the app may turn the BMS's charge, discharge and balancer
+  /// switches on and off. Nothing else on a BMS is ever written.
+  ///
+  /// Off by default and off until the rider turns it on here, after a
+  /// warning: the app spent its life read-only, and a rider who never asked
+  /// for writes must never get one. Deliberately left out of the backup, so
+  /// restoring a file on another phone, or a file somebody else made, can
+  /// never switch writes on.
+  bool allowBmsWrites = false;
 
   Future<void> load() async {
     try {
@@ -166,6 +180,7 @@ class AppSettings extends ChangeNotifier {
       alertTempWarn = prefs.getDouble(_tempWarnKey) ?? defaultTempWarn;
       alertLowChargeWarn =
           prefs.getDouble(_lowChargeWarnKey) ?? defaultLowChargeWarn;
+      allowBmsWrites = prefs.getBool(_allowBmsWritesKey) ?? false;
       notifyListeners();
     } on Exception catch (_) {
       // Defaults are usable; a broken preference store is not worth failing on.
@@ -271,6 +286,12 @@ class AppSettings extends ChangeNotifier {
     await _writeBool(_rawFramesKey, value);
   }
 
+  Future<void> setAllowBmsWrites(bool value) async {
+    allowBmsWrites = value;
+    notifyListeners();
+    await _writeBool(_allowBmsWritesKey, value);
+  }
+
   Future<void> setNotifyAlerts(bool value) async {
     notifyAlerts = value;
     notifyListeners();
@@ -297,6 +318,62 @@ class AppSettings extends ChangeNotifier {
     temperature: defaultTempWarn,
     lowCharge: defaultLowChargeWarn,
   );
+
+  /// The rider's own settings, for a backup.
+  ///
+  /// Only what the rider chose. Not the update token, which is a credential,
+  /// nor the update check's bookkeeping, which belongs to this install, nor
+  /// the licence, which is bound to this phone and kept elsewhere.
+  Map<String, Object?> toBackup() => {
+    'hapticAlerts': hapticAlerts,
+    'recordRawFrames': recordRawFrames,
+    'chargeTargetSoc': chargeTargetSoc,
+    'chargeWatchEnabled': chargeWatchEnabled,
+    'mutedAlerts': mutedAlerts.toList()..sort(),
+    'autoTripEnabled': autoTripEnabled,
+    'screenAwake': screenAwake.name,
+    'linkWatchEnabled': linkWatchEnabled,
+    'notifyAlerts': notifyAlerts,
+    'alertDeltaWarn': alertDeltaWarn,
+    'alertTempWarn': alertTempWarn,
+    'alertLowChargeWarn': alertLowChargeWarn,
+  };
+
+  /// Puts back what [toBackup] wrote. A key that is missing or of the wrong
+  /// type is left as it is: a hand-edited or older file restores what it can.
+  Future<void> restoreBackup(Map<String, dynamic> m) async {
+    bool? flag(String k) => m[k] is bool ? m[k] as bool : null;
+    double? number(String k) => m[k] is num ? (m[k] as num).toDouble() : null;
+
+    if (flag('hapticAlerts') case final v?) await setHapticAlerts(v);
+    if (flag('recordRawFrames') case final v?) await setRecordRawFrames(v);
+    if (m.containsKey('chargeTargetSoc')) {
+      // Null is an answer here: the rider switched the target off.
+      final v = m['chargeTargetSoc'];
+      if (v == null || v is num) {
+        await setChargeTarget(v == null ? null : (v as num).toDouble());
+      }
+    }
+    if (flag('chargeWatchEnabled') case final v?) await setChargeWatch(v);
+    final muted = m['mutedAlerts'];
+    if (muted is List) {
+      final wanted = {for (final x in muted) if (x is String) x};
+      for (final name in {...mutedAlerts, ...wanted}) {
+        await setAlertMuted(name, wanted.contains(name));
+      }
+    }
+    if (flag('autoTripEnabled') case final v?) await setAutoTrip(v);
+    if (m['screenAwake'] is String) {
+      await setScreenAwake(ScreenAwake.parse(m['screenAwake'] as String));
+    }
+    if (flag('linkWatchEnabled') case final v?) await setLinkWatch(v);
+    if (flag('notifyAlerts') case final v?) await setNotifyAlerts(v);
+    await setAlertThresholds(
+      delta: number('alertDeltaWarn'),
+      temperature: number('alertTempWarn'),
+      lowCharge: number('alertLowChargeWarn'),
+    );
+  }
 
   Future<void> _writeDouble(String key, double value) async {
     try {

@@ -1,4 +1,5 @@
 import '../data/database.dart';
+import 'capacity_endpoints.dart';
 
 /// Where a capacity figure came from, because it changes what it is worth.
 enum CapacitySource {
@@ -130,9 +131,13 @@ class Degradation {
     required List<Snapshot> readings,
     double? advertisedAh,
   }) {
+    // Only the tests that measured the pack. This used to take every finished
+    // one, so a test with twenty minutes unwatched, or one charged in the
+    // middle, could be the "current" figure and report wear that was only a
+    // hole in the count. The same rule the range uses: [CapacityTestTrust].
     final measured = [
       for (final t in tests)
-        if (t.completed && t.measuredAh > 0)
+        if (t.isTrustworthy)
           CapacityPointOfRecord(
             ah: t.measuredAh,
             at: t.endedAt ?? t.startedAt,
@@ -170,11 +175,32 @@ class Degradation {
   /// disagreement is worth seeing. It is not worth calling health.
   static double? _configuredCapacity(List<Snapshot> readings) {
     for (final r in readings.reversed) {
-      final fraction = r.soc / 100.0;
-      if (fraction < 0.25 || fraction > 0.9) continue;
-      if (r.remainingAh <= 0) continue;
-      return r.remainingAh / fraction;
+      final c = configuredCapacityFrom(soc: r.soc, remainingAh: r.remainingAh);
+      if (c != null) return c;
     }
     return null;
+  }
+
+  /// The charge window inside which remaining over charge can be read as the
+  /// configured capacity, in percent.
+  ///
+  /// One window for every screen that shows the figure. There were two, 15
+  /// to 95 in the summaries and 25 to 90 here, and the text under the figure
+  /// quoted the second while the screens used the first. Outside it the
+  /// rounded whole-number percentage is too coarse a divisor: at 15 % a
+  /// rounding of half a point is 3 % of the answer.
+  static const double configuredReadableMinSoc = 25;
+  static const double configuredReadableMaxSoc = 90;
+
+  /// Remaining over charge, when the charge is inside the readable window.
+  static double? configuredCapacityFrom({
+    required double soc,
+    required double remainingAh,
+  }) {
+    if (soc < configuredReadableMinSoc || soc > configuredReadableMaxSoc) {
+      return null;
+    }
+    if (remainingAh <= 0) return null;
+    return remainingAh / (soc / 100.0);
   }
 }

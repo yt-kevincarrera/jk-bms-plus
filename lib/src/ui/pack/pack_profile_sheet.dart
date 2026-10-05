@@ -79,6 +79,20 @@ class _PackProfileSheetState extends State<PackProfileSheet> {
   late bool _captureBaseline = widget.offerBaseline;
   bool _saving = false;
 
+  /// Whether this pack already has a day one. Then the sheet does not offer
+  /// to take another: it used to, ticked by default, so editing a pack's name
+  /// quietly replaced its day-one snapshot with today's and wiped the note.
+  /// Replacing it is the profile card's "redo", behind a confirmation.
+  bool _hasBaseline = false;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.service.repository?.baseline(widget.device.id).then((b) {
+      if (b != null && mounted) setState(() => _hasBaseline = true);
+    });
+  }
+
   @override
   void dispose() {
     _name.dispose();
@@ -90,7 +104,9 @@ class _PackProfileSheetState extends State<PackProfileSheet> {
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final canCapture =
-        widget.offerBaseline && widget.service.lastSnapshot != null;
+        widget.offerBaseline &&
+        !_hasBaseline &&
+        widget.service.lastSnapshot != null;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -232,8 +248,18 @@ class _PackProfileSheetState extends State<PackProfileSheet> {
                   t.profileCaptureBaseline,
                   style: const TextStyle(fontSize: 13.5),
                 ),
+                // An ANT sends neither lead resistances nor its settings, and
+                // the snapshot was promising both.
                 subtitle: Text(
-                  t.profileCaptureBaselineHint,
+                  widget.service.lastSettings == null &&
+                          (widget
+                                  .service
+                                  .lastSnapshot
+                                  ?.cellResistances
+                                  ?.isEmpty ??
+                              true)
+                      ? t.profileCaptureBaselineHintNoSettings
+                      : t.profileCaptureBaselineHint,
                   style: const TextStyle(
                     fontSize: 11.5,
                     height: 1.4,
@@ -324,7 +350,11 @@ class _PackProfileSheetState extends State<PackProfileSheet> {
     );
 
     final snapshot = widget.service.lastSnapshot;
-    if (_captureBaseline && snapshot != null) {
+    // Checked again here rather than trusted from the checkbox: the lookup
+    // in initState may not have answered before a quick tap on save.
+    if (_captureBaseline &&
+        snapshot != null &&
+        await repo.baseline(id) == null) {
       await repo.saveBaseline(
         id,
         PackBaseline.capture(

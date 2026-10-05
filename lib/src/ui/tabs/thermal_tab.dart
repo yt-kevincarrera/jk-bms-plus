@@ -29,6 +29,11 @@ class ThermalTab extends StatelessWidget {
     }
 
     final recent = service.history.recent(_window);
+    final mirror = s.mosfetMirrorSlot;
+    // With no battery probe anywhere in the window, the chart plots the
+    // MOSFET and says so, rather than drawing a flat line at nothing.
+    final mosfetOnly = recent.every((r) => r.hottestBatteryTemp == null) &&
+        recent.any((r) => r.mosfetTemp != null);
 
     return ListView(
       padding: const EdgeInsets.only(bottom: 28),
@@ -42,7 +47,9 @@ class ThermalTab extends StatelessWidget {
               // Only the probes that are wired to something. An unconnected
               // one reads about -200 C, which is not a cold battery, and a
               // tile saying so is worse than no tile: it invites you to worry
-              // about a number that means "no sensor here".
+              // about a number that means "no sensor here". The slot that
+              // only repeats the MOSFET is not listed either: the MOSFET gets
+              // its own tile, once.
               for (final probe in s.connectedTemperatures)
                 SizedBox(
                   width: 108,
@@ -85,12 +92,17 @@ class ThermalTab extends StatelessWidget {
                         ),
                       ),
                     )
-                  : _TempCurrentChart(samples: recent),
+                  : _TempCurrentChart(samples: recent, mosfetOnly: mosfetOnly),
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                _Legend(colour: AppTheme.good, label: t.thermalLegendHottest),
+                _Legend(
+                  colour: AppTheme.good,
+                  label: mosfetOnly
+                      ? t.thermalLegendMosfet
+                      : t.thermalLegendHottest,
+                ),
                 const SizedBox(width: 16),
                 _Legend(colour: AppTheme.cool, label: t.thermalLegendCurrent),
               ],
@@ -104,8 +116,8 @@ class ThermalTab extends StatelessWidget {
             InfoRow(
               t.thermalProbesReported,
               s.absentTemperatureProbes.isEmpty
-                  ? '${s.temperatures.length}'
-                  : '${s.connectedTemperatures.length} / ${s.temperatures.length}',
+                  ? '${s.probeInputCount}'
+                  : '${s.connectedTemperatures.length} / ${s.probeInputCount}',
               hint: s.absentTemperatureProbes.isEmpty
                   ? null
                   : t.thermalAbsentNote,
@@ -117,6 +129,13 @@ class ThermalTab extends StatelessWidget {
                   t.thermalProbeAbsent,
                   dim: true,
                 ),
+            if (mirror != null)
+              InfoRow(
+                t.thermalProbe(mirror + 1),
+                t.thermalMosfet,
+                dim: true,
+                hint: t.thermalMirrorNote,
+              ),
 
             // Which rows follow depends on the brand: ANT reports no sensor
             // mask and no heater, so the MOSFET row can be the last one, and
@@ -132,7 +151,7 @@ class ThermalTab extends StatelessWidget {
             if (s.temperatureSensorMask != null)
               InfoRow(
                 t.thermalSensorMask,
-                '0x${s.temperatureSensorMask!.toRadixString(16).padLeft(4, '0')}',
+                '0x${s.temperatureSensorMask!.toRadixString(16).padLeft(2, '0')}',
                 hint: t.thermalMaskNote,
                 last: s.heatingOn == null && s.heatingCurrent == null,
               ),
@@ -163,9 +182,12 @@ class ThermalTab extends StatelessWidget {
 }
 
 class _TempCurrentChart extends StatelessWidget {
-  const _TempCurrentChart({required this.samples});
+  const _TempCurrentChart({required this.samples, required this.mosfetOnly});
 
   final List<BmsSnapshot> samples;
+
+  /// Plot the MOSFET instead of the battery, because the pack has no probe.
+  final bool mosfetOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -176,10 +198,12 @@ class _TempCurrentChart extends StatelessWidget {
     // nothing. Switch to seconds until there is enough history for minutes.
     final inSeconds = spanMinutes < 2;
 
-    double hottest(BmsSnapshot s) {
-      final all = [...s.temperatures, if (s.mosfetTemp != null) s.mosfetTemp!];
-      return all.isEmpty ? 0 : all.reduce((a, b) => a > b ? a : b);
-    }
+    // The hottest battery probe, as the legend says. It used to be the
+    // maximum over every raw slot and the MOSFET, so the line was the MOSFET
+    // whenever it ran warmest, and an empty input could sit in it at -200 C.
+    // A reading with nothing to plot leaves a gap rather than a zero.
+    double? hottest(BmsSnapshot s) =>
+        mosfetOnly ? s.mosfetTemp : s.hottestBatteryTemp;
 
     final tempSpots = <FlSpot>[];
     final currentSpots = <FlSpot>[];
@@ -190,9 +214,11 @@ class _TempCurrentChart extends StatelessWidget {
       final x = s.timestamp.difference(t0).inMilliseconds / 60000.0;
       final temp = hottest(s);
       final amps = s.current.abs();
-      tempSpots.add(FlSpot(x, temp));
+      if (temp != null) {
+        tempSpots.add(FlSpot(x, temp));
+        if (temp > maxTemp) maxTemp = temp;
+      }
       currentSpots.add(FlSpot(x, amps));
-      if (temp > maxTemp) maxTemp = temp;
       if (amps > maxCurrent) maxCurrent = amps;
     }
 

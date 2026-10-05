@@ -1,7 +1,11 @@
 # JK BMS +
 
-A phone app for a JK (Jikong) Smart BMS over Bluetooth LE. Read-only, on
-purpose: it never writes settings to the BMS.
+A phone app for a JK (Jikong) Smart BMS over Bluetooth LE. Read-only by
+default: it never writes setting values to the BMS, and with the write
+permission off it changes nothing at all. With the permission on (Settings,
+"Changes to the BMS") it can switch a JK02's charging, discharging and
+balancer on and off, one confirmed tap at a time. See
+[docs/PROTOCOL.md](docs/PROTOCOL.md#what-this-app-writes).
 
 Target pack: Yoazaky 72 V 45 Ah, 20S Li-ion NMC, on an electric motorcycle.
 
@@ -22,7 +26,10 @@ load. It is quoted as a band, and the band narrows as the estimate earns it.
 
 **Trip mode.** Speedometer, distance, top and average speed, climb and descent,
 with pause and resume — alongside what the pack did over that same ride. Keeps
-recording with the screen off. Every trip is stored with its track.
+recording with the screen off. Every trip is stored with its track, drawn on
+an OpenStreetMap map in the trip detail and coloured by speed or by the power
+the pack gave. The tiles are fetched only while that screen is open; offline,
+the route still draws on a plain background.
 
 **The numbers the vendor would rather not show.** Implied real capacity against
 what the pack was sold as. Honest full-equivalent cycles against the BMS's
@@ -53,12 +60,14 @@ buzzes when the spread, the temperature, a cell near cutoff or the BMS itself
 crosses a line. Each one fires once and needs to genuinely clear before it can
 fire again.
 
-**Over time.** Consumption per ride, measured capacity, sag as apparent internal
-resistance, and delta plotted against charge — all from rows already being
-stored. Each says how many days of history is behind it.
+**Over time.** Consumption per ride, measured capacity, the pack's apparent
+resistance from the stretches where the current swung, and delta plotted
+against charge, all from rows already being stored and drawn against time.
+Each says how many days of history is behind it.
 
-**Export.** Trips and readings as CSV, tracks as GPX, and the raw frames as hex
-so the history can be re-read if a byte offset here turns out to be wrong.
+**Export.** Trips and readings as CSV, a ride's track as GPX from its detail,
+and the raw frames as hex so the history can be re-read if a byte offset here
+turns out to be wrong.
 
 **ANT BMS (2021 and later).** Read the same way as a JK, read-only: the app
 only ever sends the two ANT read requests. If a pack does not decode, connect
@@ -114,7 +123,7 @@ Spanish by default, English available, remembered across restarts.
 | Repeated inspections | Done: an inspection can be run again on the same pack, any number of times, and every run is compared against the ones before it. The comparison is a layer of its own: the same cell failing twice is called out as a finding rather than a reading, a cell that moves between runs is reported as the measurement problem it usually is, sag figures are only compared when the two runs pulled similar current, and counters that moved the way counters cannot (cycles down, health up, configured capacity changed) are named as a reset between visits. The earlier runs are printed on the inspection sheet and signed into the certificate, so a repeated fault is provable rather than assertable |
 | M11 — onboarding and baseline | Done: a battery is asked four things once, and none of them can be read off the wire — what it is called, what it was sold as, what the cells are made of, and when the rider got it. The chemistry is suggested from the overvoltage the pack builder set, never applied silently, and "not sure" stays a real answer because every safe range in the audit hangs off it. Today's reading can be kept as day one: cells, per-cell resistances, temperatures, counters and the whole BMS configuration, stored once and left alone. Everything the app later says about drift is measured against that rather than against whenever the app started looking, and a stated capacity is never invented. Profiles and baselines travel with the backup |
 | M12 — background alerts | Done: alerts now leave the app. They post to their own high-importance notification channel, separate from the foreground service's quiet readout, because a channel's importance is fixed when it is created and the readout must never make a sound while the service one has to be able to light the screen at three in the morning. Two new ones: the current getting close to what the BMS is configured to allow, which is the moment before it cuts the power without explanation, and the link going down when nobody asked, which overnight is the difference between "the pack finished" and "the app stopped looking four hours ago". The spread, temperature and low-charge thresholds are movable from settings and take effect on the next reading. Everything fails soft: a refused permission is said out loud and the alerts still reach the screen and the haptics | |
-| M13 — configuration audit | Done, and read only on purpose: the BMS's own settings read against what the declared chemistry can take. The charge and discharge cutoffs, the cold cutoff that decides whether the pack will charge below freezing, the heat cutoffs, the configured capacity against what the battery was sold as, the cell count against what is connected, the charge rate against the pack's own rating, the switches, where balancing starts, and anything that is not what it was on day one. With no chemistry declared the voltage checks stay quiet rather than guessing, because the two chemistries are a volt a cell apart and a wrong guess would bless a dangerous setting or condemn a normal one. The app never writes to a BMS and says so on the screen |
+| M13 — configuration audit | Done, and read only on purpose: the BMS's own settings read against what the declared chemistry can take. The charge and discharge cutoffs, the cold cutoff that decides whether the pack will charge below freezing, the heat cutoffs, the configured capacity against what the battery was sold as, the cell count against what is connected, the charge rate against the pack's own rating, the switches, where balancing starts, and anything that is not what it was on day one. With no chemistry declared the voltage checks stay quiet rather than guessing, because the two chemistries are a volt a cell apart and a wrong guess would bless a dangerous setting or condemn a normal one. The audit never writes to a BMS, and the screen says the only thing the app can write is the three switches, with the permission on |
 
 ## Running it
 
@@ -161,9 +170,10 @@ watching the first real connection, settle these:
 flutter test
 ```
 
-679 tests, no device needed. The protocol ones run against 11 real 300-byte
-frames captured from JK hardware, with expected values taken from the reference
-implementation's byte-layout tables rather than from this parser's own output.
+No device needed for any of them. The protocol ones run against 11 real
+300-byte frames captured from JK hardware, with expected values taken from the
+reference implementation's byte-layout tables rather than from this parser's
+own output.
 
 ## Layout
 
@@ -238,5 +248,6 @@ cutting one.
 ## Out of scope
 
 
-Writing to the BMS. Multi-pack support. Cloud, accounts, sync. Store
-publication. Other BMS brands, for now.
+Writing setting values to the BMS (anything beyond the three switches), and
+any write to an ANT or a JK04. Cloud, accounts, sync. Store publication. BMS brands
+other than JK and ANT, for now.
