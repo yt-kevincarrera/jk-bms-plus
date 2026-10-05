@@ -209,7 +209,7 @@ class _NowTabState extends State<NowTab> {
       lowestCellVolts: s.cellVoltages.isEmpty ? null : s.minCellVoltage,
       full: SocTrust.fullAnchor(
         soc100Volts: service.lastSettings?.soc100Voltage,
-        cellOvp: service.lastSettings?.cellOvp,
+        cellOvp: service.configuredCellOvp,
       ),
       empty: SocTrust.emptyAnchor(
         soc0Volts: service.lastSettings?.soc0Voltage,
@@ -427,7 +427,11 @@ class _NowTabState extends State<NowTab> {
               s.cycleCount == null ? t.notReported : '${s.cycleCount}',
               dim: s.cycleCount == null,
             ),
-            InfoRow(t.packSoh, '${s.soh.toStringAsFixed(0)} %'),
+            InfoRow(
+              t.packSoh,
+              s.soh == null ? t.notReported : '${s.soh!.toStringAsFixed(0)} %',
+              dim: s.soh == null,
+            ),
             InfoRow(
               t.packSag,
               history.sagVolts == null

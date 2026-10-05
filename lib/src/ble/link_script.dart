@@ -1,4 +1,5 @@
 import '../protocol/ant_constants.dart';
+import '../protocol/ant_legacy.dart';
 import '../protocol/bms_brand.dart';
 import '../protocol/jk_commands.dart';
 import '../protocol/jk_constants.dart';
@@ -16,11 +17,19 @@ class NoAction extends TickAction {
 
 /// Write [bytes] to the pack.
 class WriteFrame extends TickAction {
-  const WriteFrame(this.bytes, {this.countsAsNudge = false});
+  const WriteFrame(
+    this.bytes, {
+    this.countsAsNudge = false,
+    this.settingsRead = false,
+  });
   final List<int> bytes;
 
   /// Whether this write was prompted by silence, for [LinkHealth.nudges].
   final bool countsAsNudge;
+
+  /// Whether this is one of [LinkScript.settingsReads], so the transport can
+  /// move on to the next one.
+  final bool settingsRead;
 }
 
 /// The link has been up and mute for too long; let go and come back.
@@ -41,6 +50,8 @@ class LinkScript {
     required this.askAgain,
     required this.pollsAlways,
     required this.deviceInfo,
+    this.settingsReads = const [],
+    this.silentProbe,
   });
 
   /// JK streams on its own; the script only nudges a pack that went quiet.
@@ -61,13 +72,33 @@ class LinkScript {
       );
 
   /// ANT says nothing unless asked, so it is asked for its status every tick.
-  static const LinkScript ant = LinkScript._(
+  ///
+  /// Its settings come one register per request, so once the pack has
+  /// identified itself every other tick reads one of them instead, until
+  /// each has been asked once on this link. The status still arrives every
+  /// four seconds meanwhile, and a pack that does not answer a settings read
+  /// costs nothing but the question.
+  static final LinkScript ant = LinkScript._(
     brand: BmsBrand.ant,
-    onConnect: [antDeviceInfoRequest, antStatusRequest],
-    tickEvery: Duration(seconds: 2),
+    onConnect: const [antDeviceInfoRequest, antStatusRequest],
+    tickEvery: const Duration(seconds: 2),
     askAgain: antStatusRequest,
     pollsAlways: true,
     deviceInfo: antDeviceInfoRequest,
+    settingsReads: antSettingsReadRequests,
+    silentProbe: antLegacyStatusRequest,
+  );
+
+  /// The ANT protocol from before 2021 (see protocol/ant_legacy.dart): one
+  /// request, the live-data read, every tick. There is no device info and no
+  /// settings read in it.
+  static const LinkScript antLegacy = LinkScript._(
+    brand: BmsBrand.ant,
+    onConnect: [antLegacyStatusRequest],
+    tickEvery: Duration(seconds: 2),
+    askAgain: antLegacyStatusRequest,
+    pollsAlways: true,
+    deviceInfo: antLegacyStatusRequest,
   );
 
   /// The script for [b], with the JK one at its default tick.
@@ -93,10 +124,26 @@ class LinkScript {
   /// The request that makes the pack identify itself.
   final List<int> deviceInfo;
 
+  /// Read requests for the pack's settings, asked once each per link. Empty
+  /// for a JK, whose settings arrive as one frame of their own.
+  final List<List<int>> settingsReads;
+
+  /// A read in the brand's other protocol, asked now and then of a pack that
+  /// has not answered anything at all on this link: for ANT, the pre-2021
+  /// live-data read, which a board that predates the 2021 protocol answers
+  /// and the 2021 requests do not reach.
+  final List<int>? silentProbe;
+
   /// Every frame this script can ever write, as hex, so the read-only promise
   /// is a set a test can compare rather than a claim.
   Set<String> get everyFrameHex => {
-        for (final f in [...onConnect, askAgain, deviceInfo])
+        for (final f in [
+          ...onConnect,
+          askAgain,
+          deviceInfo,
+          ...settingsReads,
+          ?silentProbe,
+        ])
           f.map((b) => b.toRadixString(16).padLeft(2, '0')).join(),
       };
 
@@ -110,6 +157,7 @@ class LinkScript {
     required bool deviceInfoSeen,
     required Duration quietBefore,
     required Duration muteBefore,
+    int settingsReadsSent = 0,
   }) {
     final lastSign = lastFrameAt ?? connectedAt;
     if (lastSign != null && now.difference(lastSign) > muteBefore) {
@@ -129,6 +177,21 @@ class LinkScript {
     // every tick, so the status stream it is also being asked for keeps
     // flowing.
     if (!deviceInfoSeen && tickNumber % 5 == 0) return WriteFrame(deviceInfo);
+    // Nothing at all heard on this link: every fifth tick, offset from the
+    // device info retry, try the other protocol's read too.
+    final probe = silentProbe;
+    if (probe != null && lastFrameAt == null && tickNumber % 5 == 3) {
+      return WriteFrame(probe);
+    }
+    // Settings only once the pack has answered something and is answering
+    // now: a quiet pack is asked for its status, which is what tells the
+    // link it is alive.
+    if (deviceInfoSeen &&
+        !quiet &&
+        tickNumber.isEven &&
+        settingsReadsSent < settingsReads.length) {
+      return WriteFrame(settingsReads[settingsReadsSent], settingsRead: true);
+    }
     return WriteFrame(askAgain, countsAsNudge: quiet);
   }
 }

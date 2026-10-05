@@ -163,7 +163,7 @@ void main() {
       () async {
         // Any query forces drift to open the database and run the upgrade.
         await db.allDevices();
-        expect(raw.userVersion, 18);
+        expect(raw.userVersion, 19);
       },
     );
 
@@ -246,7 +246,7 @@ void main() {
           packVoltage: 80,
           current: -10,
           soc: 90,
-          soh: 100,
+          soh: const Value(100.0),
           remainingAh: 40,
           cycleCount: const Value(62),
           deltaVolts: 0.01,

@@ -248,8 +248,9 @@ class _PackProfileSheetState extends State<PackProfileSheet> {
                   t.profileCaptureBaseline,
                   style: const TextStyle(fontSize: 13.5),
                 ),
-                // An ANT sends neither lead resistances nor its settings, and
-                // the snapshot was promising both.
+                // An ANT sends no lead resistances, and its settings, read
+                // register by register when it answers, are not kept in the
+                // snapshot; the snapshot was promising both.
                 subtitle: Text(
                   widget.service.lastSettings == null &&
                           (widget

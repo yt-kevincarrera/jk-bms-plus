@@ -639,6 +639,83 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
+  String get antBatteryType => 'Cell type, as the BMS has it';
+
+  @override
+  String antBatteryTypeName(String type) {
+    String _temp0 = intl.Intl.selectLogic(type, {
+      'ternary': 'Ternary lithium (NMC/NCA)',
+      'lfp': 'LiFePO4 (LFP)',
+      'lto': 'Lithium titanate (LTO)',
+      'custom': 'Custom',
+      'other': 'Unknown',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get antTotalCharged => 'Charged in total';
+
+  @override
+  String get antTotalDischarged => 'Discharged in total';
+
+  @override
+  String get antChargingTime => 'Time charging';
+
+  @override
+  String get antDischargingTime => 'Time discharging';
+
+  @override
+  String get antCountersHint =>
+      'The BMS\'s own counters: everything the board has seen, including what happened with this app not connected.';
+
+  @override
+  String get antSettingsPending =>
+      'An ANT does not send its configuration on its own: the app asks for it one setting at a time during the first minute of a connection, with read requests. If it does not answer, this BMS does not expose it.';
+
+  @override
+  String get antSettingShortCircuit => 'Short-circuit cutoff';
+
+  @override
+  String get antProtocol => 'Protocol';
+
+  @override
+  String get antProtocol2021 => 'ANT, 2021 and later';
+
+  @override
+  String get antProtocolLegacy => 'ANT, before 2021';
+
+  @override
+  String get antSettingsLegacy =>
+      'This ANT speaks the protocol from before 2021, which gives the app no way to ask for its configuration over Bluetooth: it is not read.';
+
+  @override
+  String get demoScenarioAntRiding => 'ANT, riding';
+
+  @override
+  String get demoScenarioAntRidingDesc =>
+      'A simulated 20S ANT answering the app\'s read requests, ridden';
+
+  @override
+  String get demoScenarioAntCharging => 'ANT, charging';
+
+  @override
+  String get demoScenarioAntChargingDesc =>
+      'A simulated 20S ANT on the charger; it sends charge current as negative, like a real one';
+
+  @override
+  String get demoExplanationAnt =>
+      'A simulated 20S ANT answers the app\'s read requests with real 2021-protocol frames, CRC and all. They go through the same reassembly, CRC check and parser as a real ANT. The values themselves are modelled, not measured.';
+
+  @override
+  String get antSettingsNote =>
+      'Read from the BMS itself, one setting per request. An ANT does not report its temperature cutoffs, so they are not here.';
+
+  @override
+  String get verdictConfigVoltagesLookSaneBody =>
+      'The voltage cutoffs are where they should be for this chemistry. This BMS does not report its temperature cutoffs or its switches, so those were not checked. This says nothing about the state of the cells: it is a review of the settings, not of the battery.';
+
+  @override
   String get systemConnectionTitle => 'Connection';
 
   @override
@@ -668,7 +745,7 @@ class AppL10nEn extends AppL10n {
   String get systemBytesReceived => 'Bytes received';
 
   @override
-  String get systemSettingsTitle => 'BMS settings';
+  String get systemSettingsTitle => 'BMS settings (read-only)';
 
   @override
   String get settingsNotExposed =>
@@ -682,7 +759,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get systemReadOnlyNote =>
-      'With the write permission off, the app changes nothing on the BMS: everything above is read-only.';
+      'The app changes nothing on the BMS: it only sends it read requests. Everything above is read-only.';
 
   @override
   String get systemLanguageTitle => 'Language';
@@ -1296,7 +1373,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String adviceBalancerNeverSeenBody(String voltage) {
-    return 'The cells sit apart at rest but the balancer has not worked since the pack connected. Either it is switched off, or its start voltage ($voltage V) is above where your cells get to. The start voltage is changed with the BMS\'s official app. The balancer switch can be turned on from System, under BMS settings, if you turn on the write permission in Settings; with the permission off, this app changes nothing on the BMS.';
+    return 'The cells sit apart at rest but the balancer has not worked since the pack connected. Either it is switched off, or its start voltage ($voltage V) is above where your cells get to. Check it in the BMS settings with its official app: this app changes nothing on the BMS, it only sends it read requests.';
   }
 
   @override
@@ -4104,7 +4181,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String verdictConfigOvpDangerousBody(String value, String limit) {
-    return 'The BMS stops charging at $value V a cell and the safe maximum for this chemistry is $limit V. Every full charge is doing damage. Change it in the official BMS app, on your own responsibility; this app does not write setting values to a battery.';
+    return 'The BMS stops charging at $value V a cell and the safe maximum for this chemistry is $limit V. Every full charge is doing damage. Change it in the official BMS app, on your own responsibility. The app changes nothing on the BMS: it only sends it read requests.';
   }
 
   @override
@@ -4271,7 +4348,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get configAuditReadOnly =>
-      'Read only. This app does not write setting values to a BMS: a wrong value written to a battery is a fire, and the protocol\'s write path is reverse-engineered. Anything that needs changing is changed in the official BMS app, and that decision is yours. The only things the app can touch are the charge, discharge and balancer switches, and only with the write permission on in Settings.';
+      'Read only. The app changes nothing on the BMS: it only sends it read requests. A wrong value written to a battery is a fire, and the protocol\'s write path is reverse-engineered. Anything that needs changing is changed in the official BMS app, and that decision is yours.';
 
   @override
   String get configAuditSettings => 'Everything that was looked at';
@@ -4664,7 +4741,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get alertNearLimitUnavailable =>
-      'Not available on this BMS: it does not report its current limit.';
+      'Not available for now: this BMS has not reported its current limit. An ANT gives it when the app asks, if it answers.';
 
   @override
   String get sessionEnergyIn => 'Energy put into the pack';
@@ -4722,7 +4799,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get profileCaptureBaselineHintNoSettings =>
-      'The cells exactly as they are now. This BMS reports neither resistances nor its configuration, so the snapshot keeps what it does give. Everything the app later says about drift is measured against this. Best done with the pack at rest.';
+      'The cells exactly as they are now. This BMS reports no resistances, and its configuration does not go into the snapshot, so the snapshot keeps the rest. Everything the app later says about drift is measured against this. Best done with the pack at rest.';
 
   @override
   String get profileConfigNotCompared => 'Not compared';

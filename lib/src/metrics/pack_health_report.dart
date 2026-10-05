@@ -171,7 +171,8 @@ class PackHealthReport {
   /// 1-based index of the cell that will hit cutoff first.
   final int weakestCellIndex;
 
-  final double reportedSoh;
+  /// Null when the BMS reports no health figure (a pre-2021 ANT).
+  final double? reportedSoh;
 
   /// False when charge is too near either end for the capacity maths to mean
   /// anything.
@@ -181,7 +182,7 @@ class PackHealthReport {
   /// never recomputes. A pack with real cycles on it that still reads exactly
   /// 100% is almost certainly showing a placeholder.
   bool get sohLooksDecorative =>
-      reportedSoh >= 100 && equivalentFullCycles > 20;
+      (reportedSoh ?? 0) >= 100 && equivalentFullCycles > 20;
 
   /// A blunt one-line verdict, or null when there is not enough to say.
   double? get worstLossPercent {

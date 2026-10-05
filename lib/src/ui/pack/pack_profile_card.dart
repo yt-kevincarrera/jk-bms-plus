@@ -277,13 +277,15 @@ class _PackProfileCardState extends State<PackProfileCard> {
         InfoRow(t.profileCyclesSince, '${c.cyclesSince}'),
       InfoRow(
         t.profileConfigChanged,
-        // ANT never hands over a settings frame this app can read, so there
-        // is no baseline to compare against -- "unchanged" would claim a
-        // comparison that was never made.
+        // An ANT's settings, when it answers for them, are read register by
+        // register and never go into the day-one snapshot, so there is no
+        // baseline to compare against: "unchanged" would claim a comparison
+        // that was never made. It used to say the ANT exposes nothing, which
+        // stopped being true once its settings could be read.
         // Before a settings frame arrives, or with a day-one snapshot that
         // holds none, nothing was compared, and "unchanged" would say it was.
         widget.service.brand == BmsBrand.ant
-            ? t.settingsNotExposed
+            ? t.profileConfigNotCompared
             : !c.configCompared
             ? t.profileConfigNotCompared
             : changed.isEmpty
@@ -310,7 +312,7 @@ class _PackProfileCardState extends State<PackProfileCard> {
       service: widget.service,
       device: device,
       suggestion: ChemistryHint.from(
-        cellOvp: widget.service.lastSettings?.cellOvp,
+        cellOvp: widget.service.configuredCellOvp,
         highestCellVolts: widget.service.lastSnapshot?.maxCellVoltage,
       ),
       offerBaseline: true,

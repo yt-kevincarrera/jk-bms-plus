@@ -17,8 +17,10 @@ import '../../ble/simulator/simulated_pack.dart';
 import '../../bms_service.dart';
 import '../../model/bms_snapshot.dart';
 import '../../model/bms_device_info.dart';
+import '../../model/ant_settings.dart';
 import '../../model/jk_settings.dart';
 import '../../protocol/ant_constants.dart';
+import '../../protocol/ant_legacy.dart';
 import '../../protocol/ant_parser.dart';
 import '../../protocol/bms_brand.dart';
 import '../../protocol/jk_frame.dart';
@@ -30,6 +32,7 @@ import '../pack/pack_profile_card.dart';
 import '../bms_code_labels.dart';
 import '../fault_history_screen.dart';
 import '../link_events_screen.dart';
+import '../../ble/bms_write_gate.dart';
 import '../widgets/bms_switches.dart';
 import '../widgets/pro_gate.dart';
 import '../locale_controller.dart';
@@ -75,6 +78,7 @@ class _SystemTabState extends State<SystemTab> {
   JkSettings? _settings;
   FrameStats? _stats;
   AntStatus? _antStatus;
+  AntSettings? _antSettings;
 
   @override
   void initState() {
@@ -84,11 +88,13 @@ class _SystemTabState extends State<SystemTab> {
     _settings = s.lastSettings;
     _stats = s.stats;
     _antStatus = s.lastAntStatus;
+    _antSettings = s.lastAntSettings;
     _subs.addAll([
       s.deviceInfo.listen((v) => setState(() => _info = v)),
       s.settings.listen((v) => setState(() => _settings = v)),
       s.frameStats.listen((v) => setState(() => _stats = v)),
       s.antStatus.listen((v) => setState(() => _antStatus = v)),
+      s.antSettings.listen((v) => setState(() => _antSettings = v)),
       s.problems.listen(
         (v) => setState(() {
           _problems.insert(0, v);
@@ -261,12 +267,7 @@ class _SystemTabState extends State<SystemTab> {
         if (_settings != null)
           _bmsSettingsSection(t, _settings!)
         else if (service.brand == BmsBrand.ant)
-          Section(
-            title: t.systemSettingsTitle,
-            children: [
-              InfoRow(t.systemSettingsTitle, t.settingsNotExposed, dim: true, last: true),
-            ],
-          ),
+          _antSettingsSection(t, _antSettings),
         if (service.repository != null)
           StorageSection(repository: service.repository!, t: t),
         _settingsSection(t),
@@ -345,22 +346,16 @@ class _SystemTabState extends State<SystemTab> {
             ),
           ),
         ),
-        // Says what is true now. It used to say the app never writes, which
-        // stopped being true the day the switches arrived; with the
-        // permission off it still is.
-        ListenableBuilder(
-          listenable: widget.settings,
-          builder: (context, _) => Padding(
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
-            child: Text(
-              widget.settings.allowBmsWrites
-                  ? t.systemWritesOnNote
-                  : t.systemReadOnlyNote,
-              style: const TextStyle(
-                fontSize: 11.5,
-                height: 1.4,
-                color: AppTheme.textFaint,
-              ),
+        // Read-only again (bmsWritesShipped is false), whatever the
+        // preference stored by 2.29 says, so the note does not look at it.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+          child: Text(
+            t.systemReadOnlyNote,
+            style: const TextStyle(
+              fontSize: 11.5,
+              height: 1.4,
+              color: AppTheme.textFaint,
             ),
           ),
         ),
@@ -379,7 +374,9 @@ class _SystemTabState extends State<SystemTab> {
     return Section(
       title: t.demoTitle,
       accent: AppTheme.cool,
-      intro: t.demoExplanation,
+      intro: service.brand == BmsBrand.ant
+          ? t.demoExplanationAnt
+          : t.demoExplanation,
       children: [
         for (final scenario in DemoScenario.values)
           RadioListTile<DemoScenario>(
@@ -521,44 +518,203 @@ class _SystemTabState extends State<SystemTab> {
   Widget _antStatusSection(AppL10n t, AntStatus st) => Section(
     title: t.antStatusTitle,
     children: [
+      // The protocol first: the rows below mean slightly different things
+      // in each, and the pre-2021 one leaves several out.
       InfoRow(
-        t.antBatteryState,
-        _antCode(
-          t,
-          antBatteryStateText,
-          t.antBatteryStateCode,
-          st.batteryState,
-        ),
+        t.antProtocol,
+        st.legacy ? t.antProtocolLegacy : t.antProtocol2021,
       ),
+      // No state byte in the pre-2021 frame: left out, not shown as unknown.
+      if (st.batteryState case final state?)
+        InfoRow(
+          t.antBatteryState,
+          _antCode(t, antBatteryStateText, t.antBatteryStateCode, state),
+        ),
       InfoRow(
         t.antChargeMosfet,
-        _antCode(
-          t,
-          antChargeMosfetText,
-          t.antChargeMosfetCode,
-          st.chargeMosfetCode,
-        ),
+        st.legacy &&
+                !antLegacyCodeKnown(st.chargeMosfetCode, charge: true)
+            ? _unknownCode(t, st.chargeMosfetCode)
+            : _antCode(
+                t,
+                antChargeMosfetText,
+                t.antChargeMosfetCode,
+                st.chargeMosfetCode,
+              ),
       ),
       InfoRow(
         t.antDischargeMosfet,
-        _antCode(
-          t,
-          antDischargeMosfetText,
-          t.antDischargeMosfetCode,
-          st.dischargeMosfetCode,
-        ),
+        st.legacy &&
+                !antLegacyCodeKnown(st.dischargeMosfetCode, charge: false)
+            ? _unknownCode(t, st.dischargeMosfetCode)
+            : _antCode(
+                t,
+                antDischargeMosfetText,
+                t.antDischargeMosfetCode,
+                st.dischargeMosfetCode,
+              ),
       ),
       InfoRow(
         t.antBalancer,
         _antCode(t, antBalancerText, t.antBalancerCode, st.balancerCode),
+        last:
+            st.balancerTemp == null &&
+            st.batteryTypeCode == null &&
+            st.totalChargedAh == null,
       ),
-      InfoRow(
-        t.antBalancerTemp,
-        '${st.balancerTemp.toStringAsFixed(0)} °C',
-        last: true,
-      ),
+      if (st.balancerTemp case final temp?)
+        InfoRow(
+          t.antBalancerTemp,
+          '${temp.toStringAsFixed(0)} °C',
+          last: st.batteryTypeCode == null && st.totalChargedAh == null,
+        ),
+      if (st.batteryTypeCode case final code?)
+        InfoRow(
+          t.antBatteryType,
+          switch (antBatteryTypeOf(code)) {
+            final type? => t.antBatteryTypeName(type.name),
+            null => t.antUnknownCode(code.toRadixString(16).padLeft(4, '0')),
+          },
+          last: st.totalChargedAh == null,
+        ),
+      // The board's own lifetime counters: everything it has seen, rides
+      // this app never watched included, so they are labelled as the BMS's.
+      if (st.totalChargedAh case final charged?) ...[
+        InfoRow(
+          t.antTotalCharged,
+          '${charged.toStringAsFixed(1)} Ah',
+          hint: t.antCountersHint,
+        ),
+        InfoRow(
+          t.antTotalDischarged,
+          '${(st.totalDischargedAh ?? 0).toStringAsFixed(1)} Ah',
+        ),
+        InfoRow(
+          t.antChargingTime,
+          _duration(st.totalChargingSeconds ?? 0),
+        ),
+        InfoRow(
+          t.antDischargingTime,
+          _duration(st.totalDischargingSeconds ?? 0),
+          last: true,
+        ),
+      ],
     ],
   );
+
+  /// What an ANT has answered of its settings. There is no settings frame:
+  /// the app reads the registers one by one (see LinkScript.ant), so rows
+  /// appear as answers land, and one the pack has not answered is left out
+  /// rather than shown as zero. The reference lists no temperature
+  /// thresholds for ANT, so there is no temperature group.
+  Widget _antSettingsSection(AppL10n t, AntSettings? s) {
+    if (s == null || s.isEmpty) {
+      return Section(
+        title: t.systemSettingsTitle,
+        children: [
+          InfoRow(
+            t.systemSettingsTitle,
+            widget.service.antLegacy
+                ? t.antSettingsLegacy
+                : t.antSettingsPending,
+            dim: true,
+            last: true,
+          ),
+        ],
+      );
+    }
+    String volts(double v) => _v(v);
+    String amps(double v) => '${v.toStringAsFixed(1)} A';
+    String seconds(double v) => '${v.toStringAsFixed(0)} s';
+    List<Widget> rows(List<(AntSetting, String, String Function(double))> l) {
+      final present = [
+        for (final (k, label, fmt) in l)
+          if (s[k] case final v?) (label, fmt(v)),
+      ];
+      return [
+        for (var i = 0; i < present.length; i++)
+          InfoRow(
+            present[i].$1,
+            present[i].$2,
+            last: i == present.length - 1,
+          ),
+      ];
+    }
+
+    final cell = rows([
+      (AntSetting.cellOvp, t.settingCellOvp, volts),
+      (AntSetting.cellOvpRecovery, t.settingCellOvpRecovery, volts),
+      (AntSetting.cellUvp, t.settingCellUvp, volts),
+      (AntSetting.cellUvpRecovery, t.settingCellUvpRecovery, volts),
+      (AntSetting.shutdownVoltage, t.settingPowerOff, volts),
+    ]);
+    final current = rows([
+      (AntSetting.chargeOcp, t.settingMaxCharge, amps),
+      (AntSetting.chargeOcpDelay, t.settingChargeOcpDelay, seconds),
+      (AntSetting.dischargeOcp, t.settingMaxDischarge, amps),
+      (AntSetting.dischargeOcpDelay, t.settingDischargeOcpDelay, seconds),
+      (
+        AntSetting.shortCircuit,
+        t.antSettingShortCircuit,
+        (v) => '${v.toStringAsFixed(0)} A',
+      ),
+    ]);
+    final balance = rows([
+      (AntSetting.balanceStart, t.settingBalanceStart, volts),
+      (
+        AntSetting.balanceTrigger,
+        t.settingBalanceTrigger,
+        (v) => '${(v * 1000).toStringAsFixed(0)} mV',
+      ),
+      (
+        AntSetting.balanceCurrent,
+        t.settingMaxBalance,
+        (v) => '${(v / 1000).toStringAsFixed(2)} A',
+      ),
+    ]);
+    final other = rows([
+      (AntSetting.cellCount, t.settingCellCount, (v) => v.toStringAsFixed(0)),
+    ]);
+    return Section(
+      title: t.systemSettingsTitle,
+      children: [
+        // The same audit a JK gets, on whatever the ANT has answered.
+        ProGate(
+          feature: Feature.configAudit,
+          compact: true,
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: OutlinedButton.icon(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => ConfigAuditScreen(service: widget.service),
+                ),
+              ),
+              icon: const Icon(Icons.rule, size: 18),
+              label: Text(t.configAuditOpen),
+            ),
+          ),
+        ),
+        if (cell.isNotEmpty) ..._settingsGroup(t.settingsGroupCell, cell),
+        if (current.isNotEmpty)
+          ..._settingsGroup(t.settingsGroupCurrent, current),
+        if (balance.isNotEmpty)
+          ..._settingsGroup(t.settingsGroupBalance, balance),
+        if (other.isNotEmpty) ..._settingsGroup(t.settingsGroupOther, other),
+        Padding(
+          padding: const EdgeInsets.only(top: 8, bottom: 4),
+          child: Text(
+            t.antSettingsNote,
+            style: const TextStyle(
+              fontSize: 11.5,
+              height: 1.4,
+              color: AppTheme.textFaint,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
   /// An ANT state code in the rider's language. The English table stays the
   /// authority on which codes exist, so the logs and this screen agree on
@@ -568,9 +724,10 @@ class _SystemTabState extends State<SystemTab> {
     List<String> table,
     String Function(String code) text,
     int code,
-  ) => code < table.length
-      ? text('$code')
-      : t.antUnknownCode(code.toRadixString(16).padLeft(2, '0'));
+  ) => code < table.length ? text('$code') : _unknownCode(t, code);
+
+  static String _unknownCode(AppL10n t, int code) =>
+      t.antUnknownCode(code.toRadixString(16).padLeft(2, '0'));
 
   Widget _proximitySection(AppL10n t) {
     final watcher = widget.proximity;
@@ -892,11 +1049,11 @@ class _SystemTabState extends State<SystemTab> {
     return Section(
       title: t.systemSettingsTitle,
       children: [
-        // First, because they are the only rows here a rider can act on.
-        // A settings frame only ever comes from a JK; the brand check is
-        // there so an ANT can never be offered a write, whatever else
-        // changes around it.
-        if (widget.service.brand == BmsBrand.jk)
+        // The write controls exist only in a build that ships writes; this
+        // one does not (bmsWritesShipped), so the three switches are plain
+        // rows further down, in their groups. The brand check stays so an
+        // ANT could never be offered a write, whatever changes around it.
+        if (bmsWritesShipped && widget.service.brand == BmsBrand.jk)
           BmsSwitchesGroup(
             service: widget.service,
             settings: s,
@@ -978,8 +1135,9 @@ class _SystemTabState extends State<SystemTab> {
             last: true,
           ),
         ]),
-        // The three switches are at the top of the section, as switches.
         ..._settingsGroup(t.settingsGroupBalance, [
+          if (!bmsWritesShipped)
+            InfoRow(t.configBalancerSwitch, _onOff(t, s.balancerSwitchOn)),
           InfoRow(
             t.settingMaxBalance,
             '${s.maxBalanceCurrent.toStringAsFixed(2)} A',
@@ -997,6 +1155,10 @@ class _SystemTabState extends State<SystemTab> {
             t.settingNominalCapacity,
             '${s.nominalCapacityAh.toStringAsFixed(1)} Ah',
           ),
+          if (!bmsWritesShipped) ...[
+            InfoRow(t.configChargeSwitch, _onOff(t, s.chargeSwitchOn)),
+            InfoRow(t.configDischargeSwitch, _onOff(t, s.dischargeSwitchOn)),
+          ],
           InfoRow(t.configSoc100, _v(s.soc100Voltage)),
           InfoRow(t.configSoc0, _v(s.soc0Voltage)),
           InfoRow(t.settingRequestCharge, _v(s.cellRequestChargeVoltage)),
@@ -1099,6 +1261,8 @@ class _SystemTabState extends State<SystemTab> {
     DemoScenario.idle => t.demoScenarioIdle,
     DemoScenario.weakCell => t.demoScenarioWeakCell,
     DemoScenario.inspection => t.demoScenarioInspection,
+    DemoScenario.antRiding => t.demoScenarioAntRiding,
+    DemoScenario.antCharging => t.demoScenarioAntCharging,
   };
 
   String _scenarioDescription(AppL10n t, DemoScenario s) => switch (s) {
@@ -1107,6 +1271,8 @@ class _SystemTabState extends State<SystemTab> {
     DemoScenario.idle => t.demoScenarioIdleDesc,
     DemoScenario.weakCell => t.demoScenarioWeakCellDesc,
     DemoScenario.inspection => t.demoScenarioInspectionDesc,
+    DemoScenario.antRiding => t.demoScenarioAntRidingDesc,
+    DemoScenario.antCharging => t.demoScenarioAntChargingDesc,
   };
 
   String _linkLabel(AppL10n t, BleLinkState state) => switch (state) {

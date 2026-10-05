@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
 import 'app_settings.dart';
+import 'ble/bms_write_gate.dart';
 import 'ble/proximity_watcher.dart';
 import 'bms_service.dart';
 import 'metrics/charge_alerts.dart';
@@ -193,7 +194,9 @@ class _JkBmsAppState extends State<JkBmsApp> {
     );
     // Its own assignment rather than a parameter with a default, so a caller
     // of applySettings that forgets it cannot quietly turn writes on or off.
-    _service.bmsWritesAllowed = _settings.allowBmsWrites;
+    // A preference stored by 2.29 counts for nothing while the writes are
+    // not shipped; the gate refuses first anyway.
+    _service.bmsWritesAllowed = bmsWritesShipped && _settings.allowBmsWrites;
   }
 
   @override

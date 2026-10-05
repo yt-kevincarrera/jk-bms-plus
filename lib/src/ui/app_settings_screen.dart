@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../app_settings.dart';
+import '../ble/bms_write_gate.dart';
 import '../bms_service.dart';
 import '../protocol/bms_brand.dart';
 import '../metrics/charge_alerts.dart';
@@ -114,11 +115,14 @@ class AppSettingsScreen extends StatefulWidget {
 
 class _AppSettingsScreenState extends State<AppSettingsScreen> {
   /// Whether the alert [name] cannot fire on the pack connected now. Only the
-  /// current-limit alert, and only on an ANT, which reports no limits.
+  /// current-limit alert, and only on an ANT that has not answered the read
+  /// of its discharge overcurrent limit (it does not come in the status
+  /// frame, and some packs may never answer).
   bool _unavailableHere(String name) =>
       name == RideAlert.nearCurrentLimit.name &&
       widget.service.activeDevice != null &&
-      widget.service.brand == BmsBrand.ant;
+      widget.service.brand == BmsBrand.ant &&
+      widget.service.lastAntSettings?.dischargeOcp == null;
 
   /// Whether the link-lost alert can fire at all: only while one of the two
   /// watches holds the connection. See [BmsService._noteLinkLost].
@@ -433,9 +437,10 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                         a.label,
                         style: const TextStyle(fontSize: 13.5),
                       ),
-                      // An ANT reports no current limit, so this alert has
-                      // nothing to compare against and can never fire. Said,
-                      // rather than leaving a switch that looks like it works.
+                      // An ANT that has not answered the read of its current
+                      // limit leaves this alert nothing to compare against,
+                      // so it cannot fire. Said, rather than leaving a
+                      // switch that looks like it works.
                       subtitle: _alertHint(t, a.name) == null
                           ? null
                           : Text(
@@ -618,7 +623,9 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
             // Its own section, with its own warning, and never next to a
             // switch somebody flicks without reading. Turning it on asks
             // first; turning it off does not, because off is the safe way.
-            Section(
+            // Not shown at all while the writes are not shipped: a setting
+            // that can do nothing would be a promise the app does not keep.
+            if (bmsWritesShipped) Section(
               title: t.settingsSectionBmsWrites,
               accent: settings.allowBmsWrites ? AppTheme.watch : null,
               children: [

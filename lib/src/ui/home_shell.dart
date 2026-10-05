@@ -159,7 +159,7 @@ class _HomeShellState extends State<HomeShell> {
       service: service,
       device: device,
       suggestion: ChemistryHint.from(
-        cellOvp: service.lastSettings?.cellOvp,
+        cellOvp: service.configuredCellOvp,
         highestCellVolts: service.lastSnapshot?.maxCellVoltage,
       ),
     );

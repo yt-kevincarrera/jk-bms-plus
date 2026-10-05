@@ -20,15 +20,18 @@ import 'platform/alert_notifications.dart';
 import 'platform/live_notification.dart';
 import 'platform/pack_widget.dart';
 import 'platform/widget_publisher.dart';
+import 'model/ant_settings.dart';
 import 'model/bms_device_info.dart';
 import 'model/bms_snapshot.dart';
 import 'model/jk_device_info.dart';
 import 'model/jk_settings.dart';
 import 'pack/chemistry.dart';
+import 'pack/pack_config.dart';
 import 'protocol/ant_constants.dart';
 import 'protocol/ant_current_sign.dart';
 import 'protocol/ant_frame.dart';
 import 'protocol/ant_frame_assembler.dart';
+import 'protocol/ant_legacy.dart';
 import 'protocol/ant_parser.dart';
 import 'protocol/bms_brand.dart';
 import 'protocol/frame_assembler.dart';
@@ -352,6 +355,36 @@ class BmsService {
   /// Every plausible ANT status, as it arrives.
   Stream<AntStatus> get antStatus => _antStatusController.stream;
 
+  /// The ANT settings answered so far on this pack, one register at a time
+  /// (see [LinkScript.ant]), or null before the first answer. Read-only, like
+  /// a JK's settings frame.
+  AntSettings? get lastAntSettings => _antSettings;
+  AntSettings? _antSettings;
+
+  final _antSettingsController = StreamController<AntSettings>.broadcast();
+
+  /// The ANT settings, every time a register is answered.
+  Stream<AntSettings> get antSettings => _antSettingsController.stream;
+
+  /// The BMS's own charge cutoff a cell, JK or ANT, or null when it has not
+  /// said.
+  double? get configuredCellOvp =>
+      _lastSettings?.cellOvp ?? _antSettings?.cellOvp;
+
+  /// Everything the BMS has said about its configuration, in the audit's
+  /// fields, or null before it has said anything. A JK's comes whole from
+  /// its settings frame; an ANT's is whatever registers it has answered,
+  /// with the configured capacity from its status frame.
+  PackConfig? get packConfig {
+    if (_lastSettings case final s?) return PackConfig.from(s);
+    final ant = _antSettings;
+    if (ant == null || ant.isEmpty) return null;
+    return PackConfig.fromAnt(
+      ant,
+      nominalCapacityAh: _lastAntStatus?.snapshot.nominalCapacityAh,
+    );
+  }
+
   /// What the ANT path has seen on this connection, by outcome. Reset on
   /// every connect, like the JK counters.
   int antStatusFrames = 0;
@@ -374,8 +407,20 @@ class BmsService {
   int _rejectedRawKept = 0;
   static const int _rejectedRawCap = 200;
 
-  /// Whether the pre-2021 ANT protocol has been named on this connection.
-  bool _oldAntNoted = false;
+  /// Whether this connection's ANT speaks the protocol from before 2021
+  /// (protocol/ant_legacy.dart). Decided by the bytes: a checksum-valid
+  /// legacy frame before anything in the 2021 protocol has decoded.
+  bool get antLegacy => _antLegacy;
+  bool _antLegacy = false;
+
+  late final AntLegacyAssembler _antLegacyAssembler = AntLegacyAssembler(
+    clock: _now,
+  )..onBadChecksum = _onAntLegacyBadChecksum;
+  final AntLegacyParser _antLegacyParser = const AntLegacyParser();
+
+  /// Legacy frames looked for on a JK connection before it proves itself,
+  /// the way [_antProbe] looks for 2021 ones.
+  final AntLegacyAssembler _antLegacyProbe = AntLegacyAssembler();
 
   /// Whether the ANT nominal capacity has been offered to the stored pack on
   /// this connection. Once is enough: it is a setting, not a reading.
@@ -435,10 +480,11 @@ class BmsService {
   double? get catalogueCapacityAh => activeDevice?.catalogueCapacityAh;
 
   /// Volts per cell at which the pack cuts off. Taken from the BMS's own
-  /// undervoltage setting once the settings frame arrives, so the usable-energy
-  /// figure follows how this pack is actually configured.
+  /// undervoltage setting once it is known (a JK's settings frame, or an
+  /// ANT's answer to the read of its cell undervoltage register), so the
+  /// usable-energy figure follows how this pack is actually configured.
   ///
-  /// Until then, and always on an ANT, which reports no settings, it is the
+  /// Until then, and on an ANT that does not answer that read, it is the
   /// usual cutoff for the pack's chemistry
   /// ([ChemistryLimits.typicalCutoffVolts]), and [cutoffIsAssumed] says so. It used to be a flat 3.0 V whatever the
   /// cells, which on an LFP pack put the "near cutoff" warning at 3.1 V, where
@@ -453,7 +499,7 @@ class BmsService {
   bool get cutoffIsAssumed => _configuredCutoff == null;
 
   double? get _configuredCutoff {
-    final configured = _lastSettings?.cellUvp;
+    final configured = _lastSettings?.cellUvp ?? _antSettings?.cellUvp;
     if (configured != null && configured > 1.5 && configured < 3.6) {
       return configured;
     }
@@ -466,7 +512,7 @@ class BmsService {
   /// else unknown.
   CellChemistry get cutoffChemistry => PackEnergy.chemistryFor(
     declared: activeDevice?.chemistry,
-    cellOvp: _lastSettings?.cellOvp,
+    cellOvp: configuredCellOvp,
     highestCellVolts:
         history.maxCellVoltageSeen ?? _lastSnapshot?.maxCellVoltage,
   );
@@ -605,6 +651,7 @@ class BmsService {
     // nothing on this connection: the 3000 were the last pack's.
     _assembler.stats.reset();
     _antAssembler.stats.reset();
+    _antLegacyAssembler.stats.reset();
     _bytesReceived = 0;
   }
 
@@ -644,7 +691,11 @@ class BmsService {
   /// One object, updated in place, so a screen holding it stays current.
   FrameStats get stats {
     final from =
-        _brand == BmsBrand.ant ? _antAssembler.stats : _assembler.stats;
+        _brand == BmsBrand.jk
+            ? _assembler.stats
+            : _antLegacy
+            ? _antLegacyAssembler.stats
+            : _antAssembler.stats;
     _linkStats
       ..accepted = from.accepted
       ..badChecksum = from.badChecksum
@@ -714,8 +765,18 @@ class BmsService {
 
   DemoScenario? get demoScenario => _switchable?.simulator?.scenario;
 
+  /// Changes what the simulated pack does. Within a brand that is the same
+  /// pack doing something else; a scenario of the other brand is a
+  /// different pack, so demo mode starts again with it, exactly as entering
+  /// it does.
   set demoScenario(DemoScenario? value) {
-    if (value != null) _switchable?.simulator?.scenario = value;
+    final sim = _switchable?.simulator;
+    if (value == null || sim == null) return;
+    if (value.brand == sim.brand) {
+      sim.scenario = value;
+    } else {
+      unawaited(enterDemoMode(scenario: value));
+    }
   }
 
   /// Starts the simulated pack. Drops any real connection first.
@@ -725,24 +786,38 @@ class BmsService {
     final link = _switchable;
     if (link == null) return;
     _resetDecoding();
-    // The simulator speaks JK. Without this, a demo entered after an ANT
-    // session would feed its JK frames to the ANT assembler and show nothing.
+    // The simulator speaks the scenario's brand. Without this, a JK demo
+    // entered after an ANT session would feed its JK frames to the ANT
+    // assembler and show nothing, and the other way round.
     _brandChosenByRider = false;
     _resetBrandEvidence();
     // A connection like any other, so its counters start from nothing too.
     _resetCounters();
-    _useBrand(BmsBrand.jk);
+    final brand = scenario.brand;
+    _useBrand(brand);
+    if (brand == BmsBrand.ant) {
+      _stopCellInfoRequests();
+    }
     await link.useSimulator(scenario: scenario);
     // The simulated pack is a pack like any other as far as storage goes. It
     // gets its own row, so demo rides learn from demo rides and never touch
-    // what the app believes about a real battery.
-    await _activate(id: demoDeviceId, name: 'Pack demo', demo: true);
+    // what the app believes about a real battery. The simulated ANT has a
+    // row of its own too: a different BMS is a different pack.
+    final id = brand == BmsBrand.ant ? demoAntDeviceId : demoDeviceId;
+    await _activate(
+      id: id,
+      name: brand == BmsBrand.ant ? 'Pack demo ANT' : 'Pack demo',
+      demo: true,
+    );
     _armSilenceWatchdog();
-    await link.connect(demoDeviceId);
+    await link.connect(id);
   }
 
   /// The id the simulated pack is stored under.
   static const String demoDeviceId = 'demo';
+
+  /// The id the simulated ANT is stored under.
+  static const String demoAntDeviceId = 'demo-ant';
 
   /// Records which pack is connected and points storage at it.
   ///
@@ -861,6 +936,7 @@ class BmsService {
     _assembler.reset();
     _antAssembler.reset();
     _lastAntStatus = null;
+    _antSettings = null;
     _antNominalOffered = false;
     history.clear();
     _segments.reset();
@@ -990,7 +1066,9 @@ class BmsService {
     _antProbe.reset();
     _rejectedNoted = 0;
     _rejectedRawKept = 0;
-    _oldAntNoted = false;
+    _antLegacy = false;
+    _antLegacyAssembler.reset();
+    _antLegacyProbe.reset();
   }
 
   void _stopCellInfoRequests() {
@@ -1145,14 +1223,6 @@ class BmsService {
     _statsController.add(stats);
   }
 
-  static bool _startsWith(List<int> c, List<int> p) {
-    if (c.length < p.length) return false;
-    for (var i = 0; i < p.length; i++) {
-      if (c[i] != p[i]) return false;
-    }
-    return true;
-  }
-
   /// Reads the brand off the bytes themselves, and returns whether it
   /// switched. Writes nothing to the pack: the only evidence used is what the
   /// pack chose to send, and only a whole frame with a valid checksum counts.
@@ -1166,25 +1236,77 @@ class BmsService {
       _switchBrand(BmsBrand.jk, 'a checksum-valid JK frame arrived');
       return true;
     }
-    if (!_oldAntNoted && _startsWith(chunk, const [0xAA, 0x55, 0xAA, 0xFF])) {
-      // Named rather than decoded: the pre-2021 frames are a different
-      // protocol altogether, and a rider staring at "waiting for the first
-      // reading" deserves to know it is not their pack that is broken.
-      _oldAntNoted = true;
-      _problem(
-        'This ANT speaks the protocol from before 2021, which the app '
-        'cannot read yet. Nothing was changed on the pack.',
-      );
-      unawaited(
-        repository?.note(
-              LinkEventKind.oldAntProtocolSeen,
-              deviceId: activeDeviceId ?? _pendingDeviceId,
-            ) ??
-            Future.value(),
-      );
+    if (_brand == BmsBrand.jk) {
+      // A pre-2021 ANT frame, whole and checksum-valid, is as good a proof
+      // as a 2021 one. It used to be named and not read.
+      final legacy = _antLegacyProbe.addChunk(chunk);
+      if (legacy.isNotEmpty) {
+        _switchBrand(
+          BmsBrand.ant,
+          'a checksum-valid pre-2021 ANT frame arrived',
+        );
+        _adoptAntLegacy('it sent one on a connection taken for a JK');
+        _onAntLegacyFrames(legacy);
+        return true;
+      }
     }
     return false;
   }
+
+  /// Reads this connection's ANT with the pre-2021 protocol from now on: its
+  /// script polls with the legacy read, and its bytes go to the legacy
+  /// assembler. Only ever before anything in the 2021 protocol has decoded.
+  void _adoptAntLegacy(String why) {
+    _antLegacy = true;
+    _antAssembler.reset();
+    _antProbe.reset();
+    // The 2021 assembler threw these bytes away as overflow until now; that
+    // must not leave the legacy reading less diagnosis budget.
+    _rejectedNoted = 0;
+    _transport.script = LinkScript.antLegacy;
+    _problem(
+      'This ANT speaks the protocol from before 2021 ($why). Read with that '
+      'protocol from now on; it reports no device info, settings or health '
+      'figure.',
+    );
+    unawaited(
+      repository?.note(
+            LinkEventKind.oldAntProtocolSeen,
+            detail: why,
+            deviceId: activeDeviceId ?? _pendingDeviceId,
+          ) ??
+          Future.value(),
+    );
+  }
+
+  void _onAntLegacyFrames(List<AntLegacyFrame> frames) {
+    for (final frame in frames) {
+      _brandProved = true;
+      _transport.frameAccepted();
+      repository?.addRawFrame(RawBmsFrame.antLegacy(frame));
+      try {
+        antStatusFrames++;
+        unawaited(
+          _handleAntStatus(_antLegacyParser.parseStatus(frame), frame.bytes),
+        );
+      } on AntParseException catch (e) {
+        decodeFailures++;
+        lastDecodeError = e.message;
+        if (decodeFailures == 1 || decodeFailures % 100 == 0) {
+          _problem('Could not decode an ANT frame: ${e.message}');
+        }
+        _noteDiagnosis(
+          LinkEventKind.antDecodeFailed,
+          '${e.message} ${_hex(frame.bytes)}',
+        );
+      }
+    }
+  }
+
+  /// A 140-byte legacy buffer whose checksum failed, written down like a
+  /// 2021 one with a bad CRC.
+  void _onAntLegacyBadChecksum(Uint8List bytes) =>
+      _onAntRejected(AntRejected(AntRejection.badCrc, bytes));
 
   void _switchBrand(BmsBrand to, String why) {
     final from = _brand;
@@ -1227,6 +1349,23 @@ class BmsService {
   }
 
   void _onAntBytes(List<int> chunk) {
+    if (_antLegacy) {
+      _onAntLegacyFrames(_antLegacyAssembler.addChunk(chunk));
+      _statsController.add(stats);
+      return;
+    }
+    // Until the 2021 protocol has decoded something, a pre-2021 frame (the
+    // answer to the script's silent probe, LinkScript.silentProbe) settles
+    // it the other way.
+    if (!_brandProved) {
+      final legacy = _antLegacyAssembler.addChunk(chunk);
+      if (legacy.isNotEmpty) {
+        _adoptAntLegacy('it answered the pre-2021 read');
+        _onAntLegacyFrames(legacy);
+        _statsController.add(stats);
+        return;
+      }
+    }
     for (final frame in _antAssembler.addChunk(chunk)) {
       _brandProved = true;
       // Same proof as for JK: any CRC-valid frame is the pack talking, even
@@ -1237,10 +1376,22 @@ class BmsService {
       try {
         if (frame.isStatus) {
           antStatusFrames++;
-          unawaited(_handleAntStatus(_antParser.parseStatus(frame), frame));
+          unawaited(
+            _handleAntStatus(_antParser.parseStatus(frame), frame.bytes),
+          );
         } else if (frame.isDeviceInfo) {
           antInfoFrames++;
           _handleDeviceInfo(_antParser.parseDeviceInfo(frame));
+        } else if ((frame.isSettingsReply
+                ? _antParser.parseSetting(frame)
+                : null)
+            case (final setting, final value)) {
+          // One register, answering one of the script's reads. Kept per pack
+          // until the source changes: settings do not move between frames.
+          final next = (_antSettings ?? const AntSettings())
+              .withValue(setting, value);
+          _antSettings = next;
+          _antSettingsController.add(next);
         } else {
           // A valid frame this app does not read, such as a refusal of the
           // device-info request. The raw frame above is dropped until a pack
@@ -1342,7 +1493,7 @@ class BmsService {
   static String _hex(List<int> b) =>
       b.map((x) => x.toRadixString(16).padLeft(2, '0')).join();
 
-  Future<void> _handleAntStatus(AntStatus status, AntFrame frame) async {
+  Future<void> _handleAntStatus(AntStatus status, List<int> bytes) async {
     // ANT has no framing to guess, so a reading that fails physics is not a
     // question of variant: it is a bad frame, and it is held back rather than
     // shown. Its raw frame is only stored once a pack is active, and a pack
@@ -1359,7 +1510,7 @@ class BmsService {
       }
       _noteDiagnosis(
         LinkEventKind.antDecodeFailed,
-        'implausible ${reasons.join('; ')} ${_hex(frame.bytes)}',
+        'implausible ${reasons.join('; ')} ${_hex(bytes)}',
       );
       return;
     }
@@ -1367,11 +1518,15 @@ class BmsService {
     // own battery state says which way the charge is going. Per pack, and
     // kept across reconnects, so a pack found to run backwards is corrected
     // from its first frame the next time rather than after three wrong ones.
+    // A pre-2021 frame has no state byte to check against, and its sign is
+    // the one its own captures show (see AntLegacyParser).
+    final batteryState = status.batteryState;
     final packKey = activeDeviceId ?? _pendingDeviceId ?? '';
     final sign = _antCurrentSign.putIfAbsent(packKey, AntCurrentSign.new);
     final raw = status.snapshot.current;
-    if (sign.observe(batteryState: status.batteryState, current: raw)) {
-      final state = antText(antBatteryStateText, status.batteryState);
+    if (batteryState != null &&
+        sign.observe(batteryState: batteryState, current: raw)) {
+      final state = antText(antBatteryStateText, batteryState);
       _problem(
         'This ANT reports its current with the opposite sign to its own '
         'battery state ($state at ${raw.toStringAsFixed(1)} A, several '
@@ -1386,7 +1541,7 @@ class BmsService {
             Future.value(),
       );
     }
-    if (sign.inverted) {
+    if (batteryState != null && sign.inverted) {
       status = status.withSnapshot(status.snapshot.withCurrent(-raw));
     }
     _lastAntStatus = status;
@@ -1682,10 +1837,13 @@ class BmsService {
 
   // --- Switch writes ---
   //
-  // The one thing the app can change on a BMS: the charge, discharge and
-  // balancer switches of a JK02, and only with the rider's permission on.
-  // Every attempt goes through [decideSwitchWrite], the only code that can
-  // make a write frame, and every attempt leaves a row in the link events.
+  // Dormant: the app is read-only (bmsWritesShipped is false), so
+  // [decideSwitchWrite] refuses every attempt with notShipped, no
+  // [RegisterWrite] is ever made and [BmsLink.writeRegister] is never
+  // reached from here. Kept compiled for a later decision. When shipped: the
+  // charge, discharge and balancer switches of a JK02, only with the rider's
+  // permission on. Every attempt goes through [decideSwitchWrite], the only
+  // code that can make a write frame, and leaves a row in the link events.
 
   /// The rider's "let the app change the BMS" setting. Off until the
   /// settings say otherwise; with it off [decideSwitchWrite] refuses every
@@ -2691,8 +2849,9 @@ class BmsService {
       cutoffVoltagePerCell: cutoffVoltagePerCell,
       // The pack's own configured limits, so "close to the limit" means this
       // battery's limit rather than a number picked here.
-      dischargeLimitAmps: settings?.maxDischargeCurrent,
-      chargeLimitAmps: settings?.maxChargeCurrent,
+      dischargeLimitAmps:
+          settings?.maxDischargeCurrent ?? _antSettings?.dischargeOcp,
+      chargeLimitAmps: settings?.maxChargeCurrent ?? _antSettings?.chargeOcp,
       // Its own MOSFET protection, so the switch is warned about below the
       // point where this board cuts the power.
       mosfetOtpCelsius: settings?.mosfetOtp,
@@ -3543,7 +3702,7 @@ class BmsService {
     }
     final chemistry = PackEnergy.chemistryFor(
       declared: activeDevice?.chemistry,
-      cellOvp: _lastSettings?.cellOvp,
+      cellOvp: configuredCellOvp,
       highestCellVolts: highest > 0 ? highest : null,
     );
     final detector = CapacityCycleDetector(
@@ -3660,6 +3819,7 @@ class BmsService {
     await _deviceInfoController.close();
     await _settingsController.close();
     await _antStatusController.close();
+    await _antSettingsController.close();
     await _statsController.close();
     await _problemController.close();
     await _alertController.close();

@@ -639,6 +639,83 @@ class AppL10nEs extends AppL10n {
   }
 
   @override
+  String get antBatteryType => 'Tipo de celda según el BMS';
+
+  @override
+  String antBatteryTypeName(String type) {
+    String _temp0 = intl.Intl.selectLogic(type, {
+      'ternary': 'Litio ternario (NMC/NCA)',
+      'lfp': 'LiFePO4 (LFP)',
+      'lto': 'Titanato de litio (LTO)',
+      'custom': 'Personalizado',
+      'other': 'Desconocido',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get antTotalCharged => 'Carga acumulada';
+
+  @override
+  String get antTotalDischarged => 'Descarga acumulada';
+
+  @override
+  String get antChargingTime => 'Tiempo cargando';
+
+  @override
+  String get antDischargingTime => 'Tiempo descargando';
+
+  @override
+  String get antCountersHint =>
+      'Contadores del propio BMS: cuentan todo lo que la placa ha visto, también lo que pasó sin esta app conectada.';
+
+  @override
+  String get antSettingsPending =>
+      'Un ANT no manda su configuración por su cuenta: la app se la pide ajuste por ajuste durante el primer minuto de conexión, con peticiones de lectura. Si no contesta, este BMS no la expone.';
+
+  @override
+  String get antSettingShortCircuit => 'Corte por cortocircuito';
+
+  @override
+  String get antProtocol => 'Protocolo';
+
+  @override
+  String get antProtocol2021 => 'ANT de 2021 en adelante';
+
+  @override
+  String get antProtocolLegacy => 'ANT anterior a 2021';
+
+  @override
+  String get antSettingsLegacy =>
+      'Este ANT habla el protocolo anterior a 2021, y en ese la app no tiene cómo pedirle su configuración por Bluetooth: no se lee.';
+
+  @override
+  String get demoScenarioAntRiding => 'ANT, rodando';
+
+  @override
+  String get demoScenarioAntRidingDesc =>
+      'Un ANT 20S simulado que contesta las peticiones de lectura de la app, en marcha';
+
+  @override
+  String get demoScenarioAntCharging => 'ANT, cargando';
+
+  @override
+  String get demoScenarioAntChargingDesc =>
+      'Un ANT 20S simulado en el cargador; manda la corriente de carga en negativo, como uno real';
+
+  @override
+  String get demoExplanationAnt =>
+      'Un ANT 20S simulado contesta las peticiones de lectura de la app con frames reales del protocolo de 2021, con su CRC. Pasan por el mismo ensamblado, CRC y parser que un ANT de verdad. Los valores en sí son modelados, no medidos.';
+
+  @override
+  String get antSettingsNote =>
+      'Leído del propio BMS, un ajuste por petición. Un ANT no informa sus cortes de temperatura, así que aquí no salen.';
+
+  @override
+  String get verdictConfigVoltagesLookSaneBody =>
+      'Los cortes de voltaje están donde deberían para esta química. Este BMS no informa sus cortes de temperatura ni sus interruptores, así que esos no se revisaron. Esto no dice nada sobre el estado de las celdas: es una revisión de los ajustes, no de la batería.';
+
+  @override
   String get systemConnectionTitle => 'Conexión';
 
   @override
@@ -668,7 +745,7 @@ class AppL10nEs extends AppL10n {
   String get systemBytesReceived => 'Bytes recibidos';
 
   @override
-  String get systemSettingsTitle => 'Configuración del BMS';
+  String get systemSettingsTitle => 'Configuración del BMS (solo lectura)';
 
   @override
   String get settingsNotExposed =>
@@ -682,7 +759,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get systemReadOnlyNote =>
-      'Con el permiso de escritura apagado, la app no cambia nada en el BMS: todo lo de arriba es solo lectura.';
+      'La app no cambia nada en el BMS: solo le envía peticiones de lectura. Todo lo de arriba es solo lectura.';
 
   @override
   String get systemLanguageTitle => 'Idioma';
@@ -1298,7 +1375,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String adviceBalancerNeverSeenBody(String voltage) {
-    return 'Las celdas están desparejas en reposo pero el balanceador no ha trabajado desde que se conectó el pack. O está apagado, o su voltaje de arranque ($voltage V) está por encima de donde llegan tus celdas. El voltaje de arranque se cambia con la app oficial del BMS. El interruptor del balanceador se puede encender desde Sistema, en Configuración del BMS, si activas el permiso de escritura en Ajustes; con el permiso apagado, la app no cambia nada en el BMS.';
+    return 'Las celdas están desparejas en reposo pero el balanceador no ha trabajado desde que se conectó el pack. O está apagado, o su voltaje de arranque ($voltage V) está por encima de donde llegan tus celdas. Se revisa en los ajustes del BMS con su app oficial: esta app no cambia nada en el BMS, solo le envía peticiones de lectura.';
   }
 
   @override
@@ -4123,7 +4200,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String verdictConfigOvpDangerousBody(String value, String limit) {
-    return 'El BMS corta la carga a $value V por celda y el máximo seguro para esta química es $limit V. Cada carga completa está haciendo daño. Se cambia desde la app oficial del BMS, bajo tu responsabilidad; esta app no escribe valores de configuración en la batería.';
+    return 'El BMS corta la carga a $value V por celda y el máximo seguro para esta química es $limit V. Cada carga completa está haciendo daño. Se cambia desde la app oficial del BMS, bajo tu responsabilidad. La app no cambia nada en el BMS: solo le envía peticiones de lectura.';
   }
 
   @override
@@ -4291,7 +4368,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get configAuditReadOnly =>
-      'Solo lectura. Esta app no escribe valores de configuración en el BMS: un valor mal escrito en una batería es un incendio, y el camino de escritura del protocolo está sacado a base de ingeniería inversa. Lo que haya que cambiar se cambia desde la app oficial del BMS, y esa decisión es tuya. Lo único que la app puede tocar son los interruptores de carga, descarga y balanceador, y solo con el permiso de escritura encendido en Ajustes.';
+      'Solo lectura. La app no cambia nada en el BMS: solo le envía peticiones de lectura. Un valor mal escrito en una batería es un incendio, y el camino de escritura del protocolo está sacado a base de ingeniería inversa. Lo que haya que cambiar se cambia desde la app oficial del BMS, y esa decisión es tuya.';
 
   @override
   String get configAuditSettings => 'Todo lo que se ha mirado';
@@ -4684,7 +4761,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get alertNearLimitUnavailable =>
-      'No disponible en este BMS: no informa su límite de corriente.';
+      'No disponible por ahora: este BMS no ha informado su límite de corriente. Un ANT lo da cuando la app se lo pide, si contesta.';
 
   @override
   String get sessionEnergyIn => 'Energía que entró al pack';
@@ -4742,7 +4819,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get profileCaptureBaselineHintNoSettings =>
-      'Las celdas tal como están ahora. Este BMS no informa resistencias ni su configuración, así que la foto guarda lo que sí da. Todo lo que la app diga después sobre derivas se compara contra esto. Mejor con la batería en reposo.';
+      'Las celdas tal como están ahora. Este BMS no informa resistencias, y su configuración no entra en la foto, así que la foto guarda lo demás. Todo lo que la app diga después sobre derivas se compara contra esto. Mejor con la batería en reposo.';
 
   @override
   String get profileConfigNotCompared => 'Sin comparar';

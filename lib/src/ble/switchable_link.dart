@@ -77,9 +77,10 @@ class SwitchableLink implements BmsLink {
   @override
   set script(LinkScript value) => _real.script = value;
 
-  /// Nothing in demo mode, where there is no pack to ask.
+  /// To whichever pack is on the other end. A simulated JK streams on its
+  /// own and ignores it; a simulated ANT answers it like a pack.
   @override
-  Future<void> askAgain() => isSimulated ? Future.value() : _real.askAgain();
+  Future<void> askAgain() => _active.askAgain();
 
   /// To whichever pack is on the other end: in demo mode the simulator
   /// honours the write, so the switches can be seen working with no BMS.

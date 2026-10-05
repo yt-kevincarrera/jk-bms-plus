@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import '../../model/bms_warning.dart';
+import '../../protocol/bms_brand.dart';
 
 /// What the simulated pack is doing. Pick one in demo mode to see how each
 /// screen reacts.
@@ -25,11 +26,42 @@ enum DemoScenario {
   inspection(
     'Inspection rehearsal',
     'Quiet 35 s, lights 20 s, hard pull 8 s, then released. Cell 7 weak',
+  ),
+
+  /// The same riding, from a simulated ANT: 2021 frames, answered only when
+  /// asked, through the ANT assembler and parser.
+  antRiding(
+    'ANT, riding',
+    'A 20S ANT answering the app\'s read requests, ridden',
+    brand: BmsBrand.ant,
+    behaviour: riding,
+  ),
+
+  /// Charging on an ANT, which sends charge current negative on the wire.
+  antCharging(
+    'ANT, charging',
+    'A 20S ANT on the charger, current negative on the wire as on a real one',
+    brand: BmsBrand.ant,
+    behaviour: charging,
   );
 
-  const DemoScenario(this.label, this.description);
+  const DemoScenario(
+    this.label,
+    this.description, {
+    this.brand = BmsBrand.jk,
+    DemoScenario? behaviour,
+  }) : _behaviour = behaviour;
   final String label;
   final String description;
+
+  /// Which BMS the simulator speaks for this scenario.
+  final BmsBrand brand;
+
+  final DemoScenario? _behaviour;
+
+  /// What the pack does electrically. An ANT scenario does what its JK
+  /// counterpart does; only the frames differ.
+  DemoScenario get behaviour => _behaviour ?? this;
 }
 
 /// A plausible 72 V 20S Li-ion NMC pack, advanced one tick at a time.
@@ -44,7 +76,8 @@ class SimulatedPack {
     this.nominalCapacityAh = 45,
     DemoScenario scenario = DemoScenario.riding,
     int seed = 20250826,
-  }) : _scenario = scenario,
+  }) : _selected = scenario,
+       _scenario = scenario.behaviour,
        _random = math.Random(seed) {
     // A spread of internal resistances, with cell 7 the worst of them. Real
     // packs are never uniform, and a screen that only ever sees uniform cells
@@ -73,11 +106,17 @@ class SimulatedPack {
   late final List<double> _resistances;
   late final List<double> _cellOffsets;
 
+  /// The scenario as picked, ANT ones included.
+  DemoScenario _selected;
+
+  /// What the pack is doing: [_selected]'s behaviour, so every rule below
+  /// reads the same for an ANT scenario as for its JK counterpart.
   DemoScenario _scenario;
-  DemoScenario get scenario => _scenario;
+  DemoScenario get scenario => _selected;
 
   set scenario(DemoScenario value) {
-    _scenario = value;
+    _selected = value;
+    _scenario = value.behaviour;
     _scenarioTicks = 0;
     _throttle = 0;
   }
@@ -279,6 +318,11 @@ class SimulatedPack {
         final taper = _soc > 0.90 ? (1.0 - _soc) / 0.10 : 1.0;
         _current = 12.0 * taper.clamp(0.06, 1.0);
       case DemoScenario.idle:
+      // Never reached: _scenario is always a behaviour, and an ANT scenario's
+      // behaviour is its JK counterpart. Listed so the switch stays
+      // exhaustive.
+      case DemoScenario.antRiding:
+      case DemoScenario.antCharging:
         _current = 0;
         _throttle = 0;
     }

@@ -536,7 +536,7 @@ class BackupCodec {
     packVoltage: _d(s['packVoltage']),
     current: _d(s['current']),
     soc: _d(s['soc']),
-    soh: _d(s['soh']),
+    soh: Value(_double(s['soh'])),
     remainingAh: _d(s['remainingAh']),
     // An ANT has no cycle counter. Backups made before the column could be
     // empty carry a filler 0 for it, which would restore as a new pack.

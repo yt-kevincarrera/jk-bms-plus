@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' show visibleForTesting;
+
 import '../model/bms_snapshot.dart';
 import '../model/jk_settings.dart';
 import '../protocol/bms_brand.dart';
@@ -43,9 +45,26 @@ enum BmsSwitch {
   };
 }
 
+/// Whether the switch writes are part of the app at all. False: the app is
+/// read-only (owner, 2026-10-05: "por ahora la app será solo lectura").
+///
+/// A compile-time constant on purpose, not a preference. A phone that ran
+/// 2.29 may still have "let the app change the BMS" stored as on, and a
+/// restored backup or a stale preference must never be able to reopen the
+/// write path: with this false, [decideSwitchWrite] refuses before it reads
+/// anything else, no [RegisterWrite] can exist, and so nothing can reach
+/// [BmsLink.writeRegister]. The rest of the write code (frames, gate, the
+/// confirmation loop) stays compiled and tested so the decision can be taken
+/// again later without rebuilding it.
+const bool bmsWritesShipped = false;
+
 /// Why a switch write was not made. In the order they are checked: the first
 /// that applies is the one reported.
 enum WriteRefusal {
+  /// The writes are not shipped in this build ([bmsWritesShipped]). Checked
+  /// before everything else, the stored permission included.
+  notShipped,
+
   /// The rider has not turned on "let the app change the BMS".
   notPermitted,
 
@@ -198,9 +217,31 @@ const double movingDrawAmps = 2.0;
 /// Decides whether [target] may be set to [on]. The only function that can
 /// produce a [RegisterWrite].
 ///
-/// The permission is checked first and alone: with it off the answer is
-/// [WriteRefusal.notPermitted] whatever else is true, and no frame is built.
+/// [bmsWritesShipped] is checked first, then the permission, each alone:
+/// with either off the answer is a refusal whatever else is true, and no
+/// frame is built.
 WriteDecision decideSwitchWrite(BmsSwitch target, bool on, WriteContext c) {
+  return _decide(target, on, c, shipped: bmsWritesShipped);
+}
+
+/// [decideSwitchWrite] with the shipping switch as a parameter, so the tests
+/// can keep the rest of the gate honest while the writes are not shipped.
+/// Not for the service: it calls [decideSwitchWrite], which passes the
+/// constant.
+@visibleForTesting
+WriteDecision decideSwitchWriteAsIfShipped(
+  BmsSwitch target,
+  bool on,
+  WriteContext c,
+) => _decide(target, on, c, shipped: true);
+
+WriteDecision _decide(
+  BmsSwitch target,
+  bool on,
+  WriteContext c, {
+  required bool shipped,
+}) {
+  if (!shipped) return const WriteRefused(WriteRefusal.notShipped);
   if (!c.permitted) return const WriteRefused(WriteRefusal.notPermitted);
   if (c.brand != BmsBrand.jk) return const WriteRefused(WriteRefusal.notJk);
   if (c.link != BleLinkState.connected) {

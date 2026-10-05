@@ -159,17 +159,26 @@ loss. See section 8 of the PRD.
 
 ## What this app writes
 
-It never writes setting values (voltages, currents, temperatures) to the BMS.
-The protocol is reverse-engineered; a wrong value written to a protection
+Read requests only. The app changes nothing on the BMS: it writes only the
+read requests its `LinkScript` produces (`0x97` device info, `0x96` cell info
+on a JK; on an ANT the status request and function `0x02` reads, which fetch
+the device info and, once per link, one settings register each). The transport's
+script path, `BleTransport._write`, refuses any frame whose value length is
+not zero. It never writes setting values (voltages, currents, temperatures):
+the protocol is reverse-engineered, and a wrong value written to a protection
 register can brick the BMS or disable a protection.
 
-On its own it writes only the 20-byte read requests its `LinkScript` produces
-(`0x97` device info, `0x96` cell info on a JK). The transport's script path,
-`BleTransport._write`, refuses any frame whose value length is not zero.
+Writes exist in the code but are not shipped. 2.29 added the three JK02
+switches behind a rider setting; since then the app is read-only again
+(owner's decision, 2026-10-05) and the code is kept dormant for a later
+decision: `bmsWritesShipped` in `lib/src/ble/bms_write_gate.dart` is a
+compile-time `false`, `decideSwitchWrite` refuses every write with
+`notShipped` before looking at anything else (a 2.29 preference stored as on
+included), so no write frame can be built and none can reach the transport.
+The settings row and the switch controls are not shown. What follows
+documents the dormant code, so it stays correct.
 
-With the rider's "let the app change the BMS" setting on (off by default, not
-carried in a backup), it can also write the three JK02 switches, from System,
-BMS settings:
+The three JK02 switches it would write:
 
 | Switch | Register (JK02_24S and JK02_32S) | Read back from settings byte |
 |---|---|---|
@@ -184,7 +193,8 @@ Source: `SWITCHES` in `components/jk_bms_ble/switch/__init__.py` (listed as
 `AA 55 90 EB 1E 04 00 00 00 00 00 00 00 00 00 00 00 00 00 9C`.
 
 Every write goes through `decideSwitchWrite` in `lib/src/ble/bms_write_gate.dart`,
-the only code that can build one: it refuses with the setting off, on an ANT,
+the only code that can build one: today it refuses everything (not shipped);
+once shipped it would refuse with the setting off, on an ANT,
 on JK04 or an unknown framing, without a settings frame or a recent plausible
 reading, and turning discharging off while the bike is ridden (riding gate,
 ride recording, or more than 2 A drawn). A change counts as applied only when a
@@ -220,3 +230,36 @@ fire on that framing. That is a property of the protocol, not a bug here.
 **The cutoff voltage** used by both the usable-energy figure and the near-cutoff
 alert comes from the settings frame at byte 10 (cell UVP), so it follows how the
 pack is actually configured rather than a constant chosen here.
+
+**ANT settings** have no frame of their own. The app reads them one register
+at a time with the function `0x02` read the reference's `read_settings()`
+sends (`7E A1 02 addr_lo addr_hi 02 crc_lo crc_hi AA 55`), every other poll
+tick once the pack has identified itself, each register once per link. The
+reply is function `0x12` at that address with the value little-endian at
+byte 6. Registers and scales are `SETTINGS_REGISTERS` in `ant_bms_ble.cpp`;
+the request frames are byte for byte those in
+`tests/components/ant_bms_ble/frames_settings.h`, whose one real reply (cell
+overvoltage 0x1036 = 4.150 V, from issue #18) is a fixture here. Only the
+protections and balancing figures the app uses are read (`AntSetting`). The
+reference lists no temperature thresholds, so an ANT's are never shown or
+audited. Cell UVP becomes the cutoff, cell OVP feeds the chemistry hint, the
+charge and discharge overcurrent limits feed the near-limit alert, and all of
+it feeds the configuration audit. A pack that never answers leaves the app
+where it was before: chemistry cutoff, assumed.
+
+**The ANT protocol from before 2021** is read too, from
+`components/ant_bms_old_ble` in syssi/esphome-ant-bms and the status table in
+its README. Request `DB DB 00 00 00 00` (`read_registers_()`; the official
+app's Bluetooth live-data read per klotztech/VBMS). Reply: 140 bytes from
+`AA 55 AA FF`, big-endian, checksum the sum of bytes 4 to 137 at 138. The ANT
+script sends that request every fifth tick only while nothing at all has
+been heard on the link; a checksum-valid legacy frame before any 2021 frame
+has decoded switches the connection to `LinkScript.antLegacy`. Current is
+positive on discharge in this protocol: on the reference's own capture
+(`docs/pdus/model2019-req-dbdb00000000.txt`) it reads +8.0 A and +390 W while
+the remaining capacity falls frame after frame, so it is negated. The frame
+has no state byte (so no sign cross-check), no SOH (stored as none, which
+needed schema 19), no device info and no settings read; its six temperatures
+are unlabelled and all taken as probes, with -40 meaning an empty input as in
+2021. Fixtures are the reference's captures, including a 2021 board answering
+the same read.

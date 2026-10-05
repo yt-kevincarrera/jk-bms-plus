@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'ble/bms_write_gate.dart';
+
 /// The handful of things about this particular pack and rider that the app
 /// cannot work out for itself.
 ///
@@ -180,7 +182,11 @@ class AppSettings extends ChangeNotifier {
       alertTempWarn = prefs.getDouble(_tempWarnKey) ?? defaultTempWarn;
       alertLowChargeWarn =
           prefs.getDouble(_lowChargeWarnKey) ?? defaultLowChargeWarn;
-      allowBmsWrites = prefs.getBool(_allowBmsWritesKey) ?? false;
+      // Ignored while the writes are not shipped: a phone that ran 2.29 may
+      // have it stored as on, and it must not come back on by itself the
+      // day they are.
+      allowBmsWrites =
+          bmsWritesShipped && (prefs.getBool(_allowBmsWritesKey) ?? false);
       notifyListeners();
     } on Exception catch (_) {
       // Defaults are usable; a broken preference store is not worth failing on.

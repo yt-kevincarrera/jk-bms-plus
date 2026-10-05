@@ -40,7 +40,7 @@ void main() {
           packVoltage: 75,
           current: -20,
           soc: 62,
-          soh: 100,
+          soh: const Value(100.0),
           remainingAh: remainingAh,
           cycleCount: const Value(2),
           deltaVolts: 0.003,

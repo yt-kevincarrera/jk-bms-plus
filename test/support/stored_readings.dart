@@ -23,7 +23,7 @@ SnapshotsCompanion storedReading({
     packVoltage: cells.reduce((a, b) => a + b),
     current: current,
     soc: soc,
-    soh: 100,
+    soh: const Value(100.0),
     remainingAh: 24,
     deltaVolts: high - low,
     minCellVoltage: low,

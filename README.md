@@ -1,10 +1,9 @@
 # JK BMS +
 
-A phone app for a JK (Jikong) Smart BMS over Bluetooth LE. Read-only by
-default: it never writes setting values to the BMS, and with the write
-permission off it changes nothing at all. With the permission on (Settings,
-"Changes to the BMS") it can switch a JK02's charging, discharging and
-balancer on and off, one confirmed tap at a time. See
+A phone app for a JK (Jikong) Smart BMS over Bluetooth LE. Read-only: it
+changes nothing on the BMS and only ever sends it read requests. Code to
+switch a JK02's charging, discharging and balancer exists but is not shipped
+(`bmsWritesShipped` is false). See
 [docs/PROTOCOL.md](docs/PROTOCOL.md#what-this-app-writes).
 
 Target pack: Yoazaky 72 V 45 Ah, 20S Li-ion NMC, on an electric motorcycle.
@@ -70,9 +69,17 @@ and the raw frames as hex so the history can be re-read if a byte offset here
 turns out to be wrong.
 
 **ANT BMS (2021 and later).** Read the same way as a JK, read-only: the app
-only ever sends the two ANT read requests. If a pack does not decode, connect
+only ever sends ANT read requests: the status, the device info and, once per
+connection, its protection settings one register at a time. If a pack does not decode, connect
 for a minute, make a backup with raw frames and use it as a fixture in
 `test/ant_backup_replay_test.dart`.
+
+**ANT BMS (before 2021).** An ANT that answers nothing in the 2021 protocol
+is asked, now and then, with the older live-data read (`DB DB 00 00 00 00`);
+one that answers with a checksum-valid 140-byte frame is read in that
+protocol from then on. It carries cells, current, charge, capacities,
+runtime, six temperatures and the MOSFET and balancer states, and no device
+info, settings or health figure, so those stay empty rather than invented.
 
 **Updates from inside the app.** There is no store, so the System tab asks
 GitHub whether a newer release exists and installs it if you say so. Nothing
@@ -100,7 +107,10 @@ tool that issues keys.
 **Demo mode.**
 
  A simulated 20S pack generating real 300-byte frames through the
-real parser, so every screen can be judged with no BMS in the room. Demo rides
+real parser, so every screen can be judged with no BMS in the room. Two
+scenarios simulate a 20S ANT instead: it answers the app's own read requests
+with CRC'd 2021 frames through the ANT assembler and parser, charge current
+negative on the wire as on a real one. Demo rides
 are stored and learned from in their own world, so you can watch the learning
 work without it ever touching what the app believes about the real pack.
 
@@ -123,7 +133,7 @@ Spanish by default, English available, remembered across restarts.
 | Repeated inspections | Done: an inspection can be run again on the same pack, any number of times, and every run is compared against the ones before it. The comparison is a layer of its own: the same cell failing twice is called out as a finding rather than a reading, a cell that moves between runs is reported as the measurement problem it usually is, sag figures are only compared when the two runs pulled similar current, and counters that moved the way counters cannot (cycles down, health up, configured capacity changed) are named as a reset between visits. The earlier runs are printed on the inspection sheet and signed into the certificate, so a repeated fault is provable rather than assertable |
 | M11 — onboarding and baseline | Done: a battery is asked four things once, and none of them can be read off the wire — what it is called, what it was sold as, what the cells are made of, and when the rider got it. The chemistry is suggested from the overvoltage the pack builder set, never applied silently, and "not sure" stays a real answer because every safe range in the audit hangs off it. Today's reading can be kept as day one: cells, per-cell resistances, temperatures, counters and the whole BMS configuration, stored once and left alone. Everything the app later says about drift is measured against that rather than against whenever the app started looking, and a stated capacity is never invented. Profiles and baselines travel with the backup |
 | M12 — background alerts | Done: alerts now leave the app. They post to their own high-importance notification channel, separate from the foreground service's quiet readout, because a channel's importance is fixed when it is created and the readout must never make a sound while the service one has to be able to light the screen at three in the morning. Two new ones: the current getting close to what the BMS is configured to allow, which is the moment before it cuts the power without explanation, and the link going down when nobody asked, which overnight is the difference between "the pack finished" and "the app stopped looking four hours ago". The spread, temperature and low-charge thresholds are movable from settings and take effect on the next reading. Everything fails soft: a refused permission is said out loud and the alerts still reach the screen and the haptics | |
-| M13 — configuration audit | Done, and read only on purpose: the BMS's own settings read against what the declared chemistry can take. The charge and discharge cutoffs, the cold cutoff that decides whether the pack will charge below freezing, the heat cutoffs, the configured capacity against what the battery was sold as, the cell count against what is connected, the charge rate against the pack's own rating, the switches, where balancing starts, and anything that is not what it was on day one. With no chemistry declared the voltage checks stay quiet rather than guessing, because the two chemistries are a volt a cell apart and a wrong guess would bless a dangerous setting or condemn a normal one. The audit never writes to a BMS, and the screen says the only thing the app can write is the three switches, with the permission on |
+| M13 — configuration audit | Done, and read only on purpose: the BMS's own settings read against what the declared chemistry can take. The charge and discharge cutoffs, the cold cutoff that decides whether the pack will charge below freezing, the heat cutoffs, the configured capacity against what the battery was sold as, the cell count against what is connected, the charge rate against the pack's own rating, the switches, where balancing starts, and anything that is not what it was on day one. With no chemistry declared the voltage checks stay quiet rather than guessing, because the two chemistries are a volt a cell apart and a wrong guess would bless a dangerous setting or condemn a normal one. The app changes nothing on a BMS and says so on the screen |
 
 ## Running it
 
@@ -248,6 +258,6 @@ cutting one.
 ## Out of scope
 
 
-Writing setting values to the BMS (anything beyond the three switches), and
-any write to an ANT or a JK04. Cloud, accounts, sync. Store publication. BMS brands
+Writing to the BMS, for now (the JK02 switch code is kept dormant for a later
+decision). Cloud, accounts, sync. Store publication. BMS brands
 other than JK and ANT, for now.

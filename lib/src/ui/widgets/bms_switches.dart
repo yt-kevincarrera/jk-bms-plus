@@ -14,6 +14,10 @@ import 'common.dart';
 /// Each row shows what the BMS said, never what was asked for: a tap does not
 /// move the switch, the next settings frame does. With the write permission
 /// off the rows are there to read and cannot be touched.
+///
+/// Dormant: the System tab mounts it only when `bmsWritesShipped` is true,
+/// and it is false (the app is read-only). Kept so the decision can be taken
+/// again without rebuilding it.
 class BmsSwitchesGroup extends StatefulWidget {
   const BmsSwitchesGroup({
     required this.service,

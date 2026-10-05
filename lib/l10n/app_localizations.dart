@@ -1099,6 +1099,126 @@ abstract class AppL10n {
   /// **'Desconocido (0x{hex})'**
   String antUnknownCode(String hex);
 
+  /// No description provided for @antBatteryType.
+  ///
+  /// In es, this message translates to:
+  /// **'Tipo de celda según el BMS'**
+  String get antBatteryType;
+
+  /// No description provided for @antBatteryTypeName.
+  ///
+  /// In es, this message translates to:
+  /// **'{type, select, ternary{Litio ternario (NMC/NCA)} lfp{LiFePO4 (LFP)} lto{Titanato de litio (LTO)} custom{Personalizado} other{Desconocido}}'**
+  String antBatteryTypeName(String type);
+
+  /// No description provided for @antTotalCharged.
+  ///
+  /// In es, this message translates to:
+  /// **'Carga acumulada'**
+  String get antTotalCharged;
+
+  /// No description provided for @antTotalDischarged.
+  ///
+  /// In es, this message translates to:
+  /// **'Descarga acumulada'**
+  String get antTotalDischarged;
+
+  /// No description provided for @antChargingTime.
+  ///
+  /// In es, this message translates to:
+  /// **'Tiempo cargando'**
+  String get antChargingTime;
+
+  /// No description provided for @antDischargingTime.
+  ///
+  /// In es, this message translates to:
+  /// **'Tiempo descargando'**
+  String get antDischargingTime;
+
+  /// No description provided for @antCountersHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Contadores del propio BMS: cuentan todo lo que la placa ha visto, también lo que pasó sin esta app conectada.'**
+  String get antCountersHint;
+
+  /// No description provided for @antSettingsPending.
+  ///
+  /// In es, this message translates to:
+  /// **'Un ANT no manda su configuración por su cuenta: la app se la pide ajuste por ajuste durante el primer minuto de conexión, con peticiones de lectura. Si no contesta, este BMS no la expone.'**
+  String get antSettingsPending;
+
+  /// No description provided for @antSettingShortCircuit.
+  ///
+  /// In es, this message translates to:
+  /// **'Corte por cortocircuito'**
+  String get antSettingShortCircuit;
+
+  /// No description provided for @antProtocol.
+  ///
+  /// In es, this message translates to:
+  /// **'Protocolo'**
+  String get antProtocol;
+
+  /// No description provided for @antProtocol2021.
+  ///
+  /// In es, this message translates to:
+  /// **'ANT de 2021 en adelante'**
+  String get antProtocol2021;
+
+  /// No description provided for @antProtocolLegacy.
+  ///
+  /// In es, this message translates to:
+  /// **'ANT anterior a 2021'**
+  String get antProtocolLegacy;
+
+  /// No description provided for @antSettingsLegacy.
+  ///
+  /// In es, this message translates to:
+  /// **'Este ANT habla el protocolo anterior a 2021, y en ese la app no tiene cómo pedirle su configuración por Bluetooth: no se lee.'**
+  String get antSettingsLegacy;
+
+  /// No description provided for @demoScenarioAntRiding.
+  ///
+  /// In es, this message translates to:
+  /// **'ANT, rodando'**
+  String get demoScenarioAntRiding;
+
+  /// No description provided for @demoScenarioAntRidingDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Un ANT 20S simulado que contesta las peticiones de lectura de la app, en marcha'**
+  String get demoScenarioAntRidingDesc;
+
+  /// No description provided for @demoScenarioAntCharging.
+  ///
+  /// In es, this message translates to:
+  /// **'ANT, cargando'**
+  String get demoScenarioAntCharging;
+
+  /// No description provided for @demoScenarioAntChargingDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Un ANT 20S simulado en el cargador; manda la corriente de carga en negativo, como uno real'**
+  String get demoScenarioAntChargingDesc;
+
+  /// No description provided for @demoExplanationAnt.
+  ///
+  /// In es, this message translates to:
+  /// **'Un ANT 20S simulado contesta las peticiones de lectura de la app con frames reales del protocolo de 2021, con su CRC. Pasan por el mismo ensamblado, CRC y parser que un ANT de verdad. Los valores en sí son modelados, no medidos.'**
+  String get demoExplanationAnt;
+
+  /// No description provided for @antSettingsNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Leído del propio BMS, un ajuste por petición. Un ANT no informa sus cortes de temperatura, así que aquí no salen.'**
+  String get antSettingsNote;
+
+  /// No description provided for @verdictConfigVoltagesLookSaneBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Los cortes de voltaje están donde deberían para esta química. Este BMS no informa sus cortes de temperatura ni sus interruptores, así que esos no se revisaron. Esto no dice nada sobre el estado de las celdas: es una revisión de los ajustes, no de la batería.'**
+  String get verdictConfigVoltagesLookSaneBody;
+
   /// No description provided for @systemConnectionTitle.
   ///
   /// In es, this message translates to:
@@ -1156,7 +1276,7 @@ abstract class AppL10n {
   /// No description provided for @systemSettingsTitle.
   ///
   /// In es, this message translates to:
-  /// **'Configuración del BMS'**
+  /// **'Configuración del BMS (solo lectura)'**
   String get systemSettingsTitle;
 
   /// No description provided for @settingsNotExposed.
@@ -1180,7 +1300,7 @@ abstract class AppL10n {
   /// No description provided for @systemReadOnlyNote.
   ///
   /// In es, this message translates to:
-  /// **'Con el permiso de escritura apagado, la app no cambia nada en el BMS: todo lo de arriba es solo lectura.'**
+  /// **'La app no cambia nada en el BMS: solo le envía peticiones de lectura. Todo lo de arriba es solo lectura.'**
   String get systemReadOnlyNote;
 
   /// No description provided for @systemLanguageTitle.
@@ -2290,7 +2410,7 @@ abstract class AppL10n {
   /// No description provided for @adviceBalancerNeverSeenBody.
   ///
   /// In es, this message translates to:
-  /// **'Las celdas están desparejas en reposo pero el balanceador no ha trabajado desde que se conectó el pack. O está apagado, o su voltaje de arranque ({voltage} V) está por encima de donde llegan tus celdas. El voltaje de arranque se cambia con la app oficial del BMS. El interruptor del balanceador se puede encender desde Sistema, en Configuración del BMS, si activas el permiso de escritura en Ajustes; con el permiso apagado, la app no cambia nada en el BMS.'**
+  /// **'Las celdas están desparejas en reposo pero el balanceador no ha trabajado desde que se conectó el pack. O está apagado, o su voltaje de arranque ({voltage} V) está por encima de donde llegan tus celdas. Se revisa en los ajustes del BMS con su app oficial: esta app no cambia nada en el BMS, solo le envía peticiones de lectura.'**
   String adviceBalancerNeverSeenBody(String voltage);
 
   /// No description provided for @adviceOvervoltageHighTitle.
@@ -6981,7 +7101,7 @@ abstract class AppL10n {
   /// No description provided for @verdictConfigOvpDangerousBody.
   ///
   /// In es, this message translates to:
-  /// **'El BMS corta la carga a {value} V por celda y el máximo seguro para esta química es {limit} V. Cada carga completa está haciendo daño. Se cambia desde la app oficial del BMS, bajo tu responsabilidad; esta app no escribe valores de configuración en la batería.'**
+  /// **'El BMS corta la carga a {value} V por celda y el máximo seguro para esta química es {limit} V. Cada carga completa está haciendo daño. Se cambia desde la app oficial del BMS, bajo tu responsabilidad. La app no cambia nada en el BMS: solo le envía peticiones de lectura.'**
   String verdictConfigOvpDangerousBody(String value, String limit);
 
   /// No description provided for @verdictConfigOvpHighTitle.
@@ -7227,7 +7347,7 @@ abstract class AppL10n {
   /// No description provided for @configAuditReadOnly.
   ///
   /// In es, this message translates to:
-  /// **'Solo lectura. Esta app no escribe valores de configuración en el BMS: un valor mal escrito en una batería es un incendio, y el camino de escritura del protocolo está sacado a base de ingeniería inversa. Lo que haya que cambiar se cambia desde la app oficial del BMS, y esa decisión es tuya. Lo único que la app puede tocar son los interruptores de carga, descarga y balanceador, y solo con el permiso de escritura encendido en Ajustes.'**
+  /// **'Solo lectura. La app no cambia nada en el BMS: solo le envía peticiones de lectura. Un valor mal escrito en una batería es un incendio, y el camino de escritura del protocolo está sacado a base de ingeniería inversa. Lo que haya que cambiar se cambia desde la app oficial del BMS, y esa decisión es tuya.'**
   String get configAuditReadOnly;
 
   /// No description provided for @configAuditSettings.
@@ -7829,7 +7949,7 @@ abstract class AppL10n {
   /// No description provided for @alertNearLimitUnavailable.
   ///
   /// In es, this message translates to:
-  /// **'No disponible en este BMS: no informa su límite de corriente.'**
+  /// **'No disponible por ahora: este BMS no ha informado su límite de corriente. Un ANT lo da cuando la app se lo pide, si contesta.'**
   String get alertNearLimitUnavailable;
 
   /// No description provided for @sessionEnergyIn.
@@ -7919,7 +8039,7 @@ abstract class AppL10n {
   /// No description provided for @profileCaptureBaselineHintNoSettings.
   ///
   /// In es, this message translates to:
-  /// **'Las celdas tal como están ahora. Este BMS no informa resistencias ni su configuración, así que la foto guarda lo que sí da. Todo lo que la app diga después sobre derivas se compara contra esto. Mejor con la batería en reposo.'**
+  /// **'Las celdas tal como están ahora. Este BMS no informa resistencias, y su configuración no entra en la foto, así que la foto guarda lo demás. Todo lo que la app diga después sobre derivas se compara contra esto. Mejor con la batería en reposo.'**
   String get profileCaptureBaselineHintNoSettings;
 
   /// No description provided for @profileConfigNotCompared.

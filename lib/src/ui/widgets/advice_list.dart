@@ -680,6 +680,7 @@ String adviceTitle(AppL10n t, Advice advice) {
       t.verdictConfigChangedSinceDayOneTitle,
     AdviceCode.configChemistryUnknown => t.verdictConfigChemistryUnknownTitle,
     AdviceCode.configLooksSane => t.verdictConfigLooksSaneTitle,
+    AdviceCode.configVoltagesLookSane => t.verdictConfigLooksSaneTitle,
   };
 }
 
@@ -922,6 +923,7 @@ String adviceBody(AppL10n t, Advice advice) {
       t.verdictConfigChangedSinceDayOneBody(v.toStringAsFixed(0)),
     AdviceCode.configChemistryUnknown => t.verdictConfigChemistryUnknownBody,
     AdviceCode.configLooksSane => t.verdictConfigLooksSaneBody,
+    AdviceCode.configVoltagesLookSane => t.verdictConfigVoltagesLookSaneBody,
   };
 }
 

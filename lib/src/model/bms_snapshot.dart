@@ -211,8 +211,10 @@ class BmsSnapshot {
   /// Percent, 0-100, from the BMS coulomb counter.
   final double soc;
 
-  /// Percent, 0-100.
-  final double soh;
+  /// Percent, 0-100, as the BMS reports it. Null when the BMS has no such
+  /// field: the pre-2021 ANT frame carries none, and a stand-in 100 would
+  /// read as a pack in perfect health.
+  final double? soh;
 
   final double remainingCapacityAh;
   final double nominalCapacityAh;

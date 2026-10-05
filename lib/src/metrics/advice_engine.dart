@@ -240,6 +240,10 @@ enum AdviceCode {
 
   /// Everything checked came back sensible.
   configLooksSane,
+
+  /// The voltage settings came back sensible, and the BMS reports no
+  /// temperature cutoffs or switches to check (an ANT).
+  configVoltagesLookSane,
 }
 
 /// One measured thing a verdict rests on.
