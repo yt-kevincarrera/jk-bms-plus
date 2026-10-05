@@ -1,3 +1,4 @@
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jk_bms/l10n/app_localizations_es.dart';
@@ -5,7 +6,10 @@ import 'package:jk_bms/src/app_settings.dart';
 import 'package:jk_bms/src/ble/ble_transport.dart';
 import 'package:jk_bms/src/ble/proximity_watcher.dart';
 import 'package:jk_bms/src/bms_service.dart';
+import 'package:jk_bms/src/data/database.dart';
+import 'package:jk_bms/src/data/repository.dart';
 import 'package:jk_bms/src/model/ant_settings.dart';
+import 'package:jk_bms/src/ui/app_settings_screen.dart';
 import 'package:jk_bms/src/ui/locale_controller.dart';
 import 'package:jk_bms/src/ui/tabs/system_tab.dart';
 import 'package:jk_bms/src/update/app_version.dart';
@@ -112,5 +116,65 @@ void main() {
     // Not answered, so not shown, rather than shown as zero.
     expect(find.text(t.settingCellUvp), findsNothing);
     service.dispose();
+  });
+
+  testWidgets('the near-limit alert is unavailable only until the ANT gives '
+      'its limit', (tester) async {
+    // Built inside runAsync: the database's work has to run on the real
+    // clock, which the widget test's fake one never advances on its own.
+    final (db, repo, link, service) = (await tester.runAsync(() async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final repo = BmsRepository(database: db);
+      final link = FakeLink();
+      final service = BmsService(
+        transport: link,
+        locationFactory: StubLocation.new,
+      )..repository = repo;
+      await service.connect('ANT1', name: 'ANT@BLE22AAUB');
+      link.announce(BleLinkState.connected);
+      await link.deliver(antInfo22ph);
+      await link.deliver(antStatus20s4tCharging);
+      await pumpEventQueue();
+      return (db, repo, link, service);
+    }))!;
+    expect(service.activeDevice, isNotNull);
+
+    Future<bool> hintShown() async {
+      final license = await unlockedLicense(tester);
+      await tester.pumpWidget(
+        harness(
+          license,
+          AppSettingsScreen(
+            service: service,
+            settings: AppSettings(),
+            localeController: LocaleController(),
+            updateService: UpdateService(
+              currentVersion: const AppVersion(2, 29, 1),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      final list = find.byType(Scrollable).first;
+      for (var i = 0; i < 40; i++) {
+        if (find.text(t.alertNearLimitUnavailable).evaluate().isNotEmpty) {
+          return true;
+        }
+        await tester.drag(list, const Offset(0, -400));
+        await tester.pump();
+      }
+      return false;
+    }
+
+    expect(await hintShown(), isTrue);
+    await tester.runAsync(
+      () => link.deliver(settingReply(AntSetting.dischargeOcp, 1200)),
+    );
+    expect(await hintShown(), isFalse);
+    await tester.runAsync(() async {
+      await service.dispose();
+      await repo.dispose();
+      await db.close();
+    });
   });
 }

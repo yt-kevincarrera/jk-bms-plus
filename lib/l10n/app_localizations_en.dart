@@ -4741,7 +4741,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get alertNearLimitUnavailable =>
-      'Not available on this BMS: it does not report its current limit.';
+      'Not available for now: this BMS has not reported its current limit. An ANT gives it when the app asks, if it answers.';
 
   @override
   String get sessionEnergyIn => 'Energy put into the pack';
@@ -4799,7 +4799,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get profileCaptureBaselineHintNoSettings =>
-      'The cells exactly as they are now. This BMS reports neither resistances nor its configuration, so the snapshot keeps what it does give. Everything the app later says about drift is measured against this. Best done with the pack at rest.';
+      'The cells exactly as they are now. This BMS reports no resistances, and its configuration does not go into the snapshot, so the snapshot keeps the rest. Everything the app later says about drift is measured against this. Best done with the pack at rest.';
 
   @override
   String get profileConfigNotCompared => 'Not compared';

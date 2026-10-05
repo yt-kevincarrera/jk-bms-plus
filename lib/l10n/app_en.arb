@@ -2993,7 +2993,7 @@
       }
     }
   },
-  "alertNearLimitUnavailable": "Not available on this BMS: it does not report its current limit.",
+  "alertNearLimitUnavailable": "Not available for now: this BMS has not reported its current limit. An ANT gives it when the app asks, if it answers.",
   "sessionEnergyIn": "Energy put into the pack",
   "sessionEnergyHint": "Since the pack connected. Only counts the moments readings were arriving.",
   "healthWeakCellStrandsNeedsRest": "Needs a reading at rest, with no current. On LFP, also off the flat part of the curve.",
@@ -3022,7 +3022,7 @@
   },
   "historyItemDrift": "Which cell is pulling away from the others over the weeks",
   "trendsCapacityNotEnough": "Each point is a full discharge measured with the app connected, so this does not fill in on its own: it needs at least three.",
-  "profileCaptureBaselineHintNoSettings": "The cells exactly as they are now. This BMS reports neither resistances nor its configuration, so the snapshot keeps what it does give. Everything the app later says about drift is measured against this. Best done with the pack at rest.",
+  "profileCaptureBaselineHintNoSettings": "The cells exactly as they are now. This BMS reports no resistances, and its configuration does not go into the snapshot, so the snapshot keeps the rest. Everything the app later says about drift is measured against this. Best done with the pack at rest.",
   "profileConfigNotCompared": "Not compared",
   "profileDriftOtherCharge": "at another charge level, not comparable",
   "adviceCycleMismatchTitle": "The cycle counter does not add up",

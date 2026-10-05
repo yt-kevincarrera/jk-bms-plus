@@ -209,7 +209,7 @@ class _NowTabState extends State<NowTab> {
       lowestCellVolts: s.cellVoltages.isEmpty ? null : s.minCellVoltage,
       full: SocTrust.fullAnchor(
         soc100Volts: service.lastSettings?.soc100Voltage,
-        cellOvp: service.lastSettings?.cellOvp,
+        cellOvp: service.configuredCellOvp,
       ),
       empty: SocTrust.emptyAnchor(
         soc0Volts: service.lastSettings?.soc0Voltage,

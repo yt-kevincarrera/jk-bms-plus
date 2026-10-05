@@ -7949,7 +7949,7 @@ abstract class AppL10n {
   /// No description provided for @alertNearLimitUnavailable.
   ///
   /// In es, this message translates to:
-  /// **'No disponible en este BMS: no informa su límite de corriente.'**
+  /// **'No disponible por ahora: este BMS no ha informado su límite de corriente. Un ANT lo da cuando la app se lo pide, si contesta.'**
   String get alertNearLimitUnavailable;
 
   /// No description provided for @sessionEnergyIn.
@@ -8039,7 +8039,7 @@ abstract class AppL10n {
   /// No description provided for @profileCaptureBaselineHintNoSettings.
   ///
   /// In es, this message translates to:
-  /// **'Las celdas tal como están ahora. Este BMS no informa resistencias ni su configuración, así que la foto guarda lo que sí da. Todo lo que la app diga después sobre derivas se compara contra esto. Mejor con la batería en reposo.'**
+  /// **'Las celdas tal como están ahora. Este BMS no informa resistencias, y su configuración no entra en la foto, así que la foto guarda lo demás. Todo lo que la app diga después sobre derivas se compara contra esto. Mejor con la batería en reposo.'**
   String get profileCaptureBaselineHintNoSettings;
 
   /// No description provided for @profileConfigNotCompared.

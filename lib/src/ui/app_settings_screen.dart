@@ -437,9 +437,10 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                         a.label,
                         style: const TextStyle(fontSize: 13.5),
                       ),
-                      // An ANT reports no current limit, so this alert has
-                      // nothing to compare against and can never fire. Said,
-                      // rather than leaving a switch that looks like it works.
+                      // An ANT that has not answered the read of its current
+                      // limit leaves this alert nothing to compare against,
+                      // so it cannot fire. Said, rather than leaving a
+                      // switch that looks like it works.
                       subtitle: _alertHint(t, a.name) == null
                           ? null
                           : Text(

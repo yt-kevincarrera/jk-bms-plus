@@ -3166,7 +3166,7 @@
       }
     }
   },
-  "alertNearLimitUnavailable": "No disponible en este BMS: no informa su límite de corriente.",
+  "alertNearLimitUnavailable": "No disponible por ahora: este BMS no ha informado su límite de corriente. Un ANT lo da cuando la app se lo pide, si contesta.",
   "sessionEnergyIn": "Energía que entró al pack",
   "sessionEnergyHint": "Desde que se conectó el pack. Solo cuenta los momentos en que llegaban lecturas.",
   "healthWeakCellStrandsNeedsRest": "Hace falta una lectura en reposo, sin corriente. En LFP, además, fuera de la zona plana de la curva.",
@@ -3195,7 +3195,7 @@
   },
   "historyItemDrift": "Qué celda se va separando de las demás con las semanas",
   "trendsCapacityNotEnough": "Cada punto es una descarga completa medida con la app conectada, así que no se llena sola: hacen falta al menos tres.",
-  "profileCaptureBaselineHintNoSettings": "Las celdas tal como están ahora. Este BMS no informa resistencias ni su configuración, así que la foto guarda lo que sí da. Todo lo que la app diga después sobre derivas se compara contra esto. Mejor con la batería en reposo.",
+  "profileCaptureBaselineHintNoSettings": "Las celdas tal como están ahora. Este BMS no informa resistencias, y su configuración no entra en la foto, así que la foto guarda lo demás. Todo lo que la app diga después sobre derivas se compara contra esto. Mejor con la batería en reposo.",
   "profileConfigNotCompared": "Sin comparar",
   "profileDriftOtherCharge": "a otro nivel de carga, no comparable",
   "adviceCycleMismatchTitle": "El contador de ciclos no cuadra",
