@@ -51,14 +51,18 @@ class LiveNotification {
         eventAction: ForegroundTaskEventAction.nothing(),
         allowWakeLock: true,
         allowWifiLock: false,
-        // Swiping the app away destroys the activity, and with it the one
-        // isolate that holds the radio, the recorder and the alerts; there is
-        // no task handler to carry on. Left unset, the plugin schedules the
-        // service to restart a second later (ForegroundService.onTaskRemoved),
-        // and it would sit in the shade showing a reading nothing updates, as
-        // though the app were still watching. So it goes with the app, and
-        // the texts say that a swiped-away app is not watching.
-        stopWithTask: true,
+        // Deliberately not set here. `stopWithTask: true` in these options
+        // does more than its name says: the plugin also installs an activity
+        // watcher (TrackVisibilityUtils) that stops the service the moment no
+        // activity is resumed, which is every time the screen goes off or the
+        // phone goes in a pocket. Shipped in 2.28.0, it took the service away
+        // from every ride, Android stopped the GPS for the backgrounded app,
+        // and a 45-minute ride came back with 0 km.
+        //
+        // Left as it was before 2.28: the service is not stopped with the
+        // task either. The rider's call: a ride must not end because the app
+        // was swiped from the recent list. Null here also removes the `true`
+        // that 2.28 and 2.29 left in the plugin's stored options on the phone.
       ),
     );
     _initialised = true;
