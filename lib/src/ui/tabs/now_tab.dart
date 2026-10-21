@@ -194,7 +194,7 @@ class _NowTabState extends State<NowTab> {
     final estimator = service.rangeEstimator;
     final outlook = service.rangeOutlook;
 
-    final (low, high) = estimator.rangeBandKm(service.energyOf(s).usableWh);
+    final (low, high) = outlook.nowBandKm ?? (0.0, 0.0);
 
     final status = packStatusOf(s, chemistry: service.cutoffChemistry);
 
@@ -211,9 +211,7 @@ class _NowTabState extends State<NowTab> {
         soc100Volts: service.lastSettings?.soc100Voltage,
         cellOvp: service.configuredCellOvp,
       ),
-      empty: SocTrust.emptyAnchor(
-        soc0Volts: service.lastSettings?.soc0Voltage,
-      ),
+      empty: SocTrust.emptyAnchor(soc0Volts: service.lastSettings?.soc0Voltage),
     );
 
     return ListView(
@@ -481,7 +479,12 @@ class _TripStripState extends State<_TripStrip> {
     super.initState();
     _tick = Timer.periodic(
       const Duration(seconds: 1),
-      (_) => mounted && widget.service.trip.isActive ? setState(() {}) : null,
+      (_) =>
+          mounted &&
+              (widget.service.trip.isActive ||
+                  widget.service.autoTripWaitingForGps)
+          ? setState(() {})
+          : null,
     );
   }
 
@@ -536,13 +539,35 @@ class _TripStripState extends State<_TripStrip> {
               const SizedBox(width: 10),
               if (!active)
                 Expanded(
-                  child: Text(
-                    t.tripOpen,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        t.tripOpen,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.textPrimary,
+                        ),
+                      ),
+                      if (widget.service.autoTripWaitingForGps)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            widget.service.autoTripGpsStalled
+                                ? t.autoTripRecoveringGps
+                                : t.autoTripWaitingGps,
+                            style: TextStyle(
+                              fontSize: 12,
+                              height: 1.4,
+                              color: widget.service.autoTripGpsStalled
+                                  ? AppTheme.watch
+                                  : AppTheme.textSecondary,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 )
               else ...[
@@ -622,7 +647,9 @@ class _FullPackRange extends StatelessWidget {
     final full = outlook.fullKm;
     if (full == null) {
       return Text(
-        t.rangeFullUnknown,
+        outlook.fullNeedsChemistry
+            ? t.rangeFullNeedsChemistry
+            : t.rangeFullUnknown,
         style: const TextStyle(
           fontSize: 11,
           height: 1.35,

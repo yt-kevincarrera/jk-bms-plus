@@ -57,6 +57,7 @@
   "tileStackSaturated": "En espera: el Bluetooth del teléfono necesita reiniciarse",
   "tilePillOpen": "abierta",
   "connectedCardNote": "El enlace sigue abierto. Salir de las pantallas de la batería ya no lo corta, así que puedes entrar y salir sin reconectar.",
+  "connectedCardNoReadings": "Sin lecturas actuales. Abre la batería para ver el estado de conexión y volver a intentarlo.",
   "connectedCardOpen": "Ver la batería",
   "connectedCardRelease": "Desconectar",
   "connectNoBle": "Este teléfono no tiene Bluetooth LE.",
@@ -1583,7 +1584,10 @@
       }
     }
   },
-  "rangeFullUnknown": "Hace falta una capacidad medida para poder decir esto.",
+  "rangeFullUnknown": "Hace falta conocer la capacidad de esta batería para estimar su autonomía llena.",
+  "rangeFullNeedsChemistry": "Indica la química de la batería en su perfil para estimar la autonomía con carga completa.",
+  "autoTripWaitingGps": "Inicio automático: esperando una posición GPS para confirmar el movimiento.",
+  "autoTripRecoveringGps": "Inicio automático: el GPS no entrega posiciones. Se reintentará mientras la moto esté en marcha.",
   "rangeFullFromAdvert": "Sale de la capacidad que pusiste tú, no de una medida.",
   "rangeFullFromMeasured": "Sale de una descarga completa medida en esta batería, de celdas arriba a celda en el corte.",
   "rangeNoneLearned": "Todavía no ha aprendido nada, así que no hay distancia que valga la pena decir, a ninguna carga.",

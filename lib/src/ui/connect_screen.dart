@@ -234,7 +234,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
     _cooldownTick = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
       final cooling = _anyCooling();
-      if (cooling || _wasCooling) setState(() {});
+      if (cooling || _wasCooling || _connected != null) setState(() {});
       _wasCooling = cooling;
     });
 
@@ -928,25 +928,23 @@ class _ConnectScreenState extends State<ConnectScreen> {
     if (device == null) return const SizedBox.shrink();
     final name = device.name.isEmpty ? device.id : device.name;
     final soc = _liveSnapshot?.soc;
+    final reading = widget.service.hasCurrentReadings;
+    final statusColor = reading ? AppTheme.good : AppTheme.watch;
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 14, 16, 2),
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
       decoration: BoxDecoration(
-        color: AppTheme.good.withValues(alpha: 0.10),
+        color: statusColor.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.good.withValues(alpha: 0.35)),
+        border: Border.all(color: statusColor.withValues(alpha: 0.35)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.bluetooth_connected,
-                size: 17,
-                color: AppTheme.good,
-              ),
+              Icon(Icons.bluetooth_connected, size: 17, color: statusColor),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -957,13 +955,13 @@ class _ConnectScreenState extends State<ConnectScreen> {
                   ),
                 ),
               ),
-              if (soc != null)
+              if (soc != null && reading)
                 Pill('${soc.toStringAsFixed(0)} %', color: AppTheme.good),
             ],
           ),
           const SizedBox(height: 2),
           Text(
-            t.connectedCardNote,
+            reading ? t.connectedCardNote : t.connectedCardNoReadings,
             style: const TextStyle(
               fontSize: 11.5,
               height: 1.35,
@@ -1126,7 +1124,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
               alignment: Alignment.centerLeft,
               child: Text(
                 t.brandAskTitle,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
@@ -1160,7 +1161,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
     ),
   );
 
-  Future<void> _connect(DiscoveredBms device, {bool fromProximity = false}) async {
+  Future<void> _connect(
+    DiscoveredBms device, {
+    bool fromProximity = false,
+  }) async {
     await _cancelScan();
     _troubleDuringAttempt = false;
 
@@ -1286,9 +1290,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
               // A device that announces itself as a likely BMS and then says
               // nothing is that BMS with its attention elsewhere, not a pair
               // of headphones, and the advice is different.
-              _message = device.likelyBms
-                  ? t.connectSilent
-                  : t.connectNotABms;
+              _message = device.likelyBms ? t.connectSilent : t.connectNotABms;
               _messageDetail = evidence;
               _busyMessage = false;
             case FirstContactOutcome.talkingButUndecoded:

@@ -137,21 +137,23 @@ class LinkScript {
   /// Every frame this script can ever write, as hex, so the read-only promise
   /// is a set a test can compare rather than a claim.
   Set<String> get everyFrameHex => {
-        for (final f in [
-          ...onConnect,
-          askAgain,
-          deviceInfo,
-          ...settingsReads,
-          ?silentProbe,
-        ])
-          f.map((b) => b.toRadixString(16).padLeft(2, '0')).join(),
-      };
+    for (final f in [
+      ...onConnect,
+      askAgain,
+      deviceInfo,
+      ...settingsReads,
+      ?silentProbe,
+    ])
+      f.map((b) => b.toRadixString(16).padLeft(2, '0')).join(),
+  };
 
   /// Decides what one tick does. Pure, so the whole schedule can be tested
   /// without a timer or a radio.
   TickAction tick({
     required DateTime now,
     DateTime? lastFrameAt,
+    DateTime? lastReadingAt,
+    bool expectsReadings = false,
     DateTime? connectedAt,
     required int tickNumber,
     required bool deviceInfoSeen,
@@ -159,12 +161,15 @@ class LinkScript {
     required Duration muteBefore,
     int settingsReadsSent = 0,
   }) {
-    final lastSign = lastFrameAt ?? connectedAt;
+    // Frames identify the protocol; a usable reading is the progress that a
+    // live monitor needs. Device-info alone must not keep a frozen link alive.
+    final lastUseful = expectsReadings ? lastReadingAt : lastFrameAt;
+    final lastSign = lastUseful ?? connectedAt;
     if (lastSign != null && now.difference(lastSign) > muteBefore) {
       return const ReleaseMute();
     }
     final quiet = shouldNudge(
-      lastHeardAt: lastFrameAt,
+      lastHeardAt: lastUseful,
       now: now,
       quietBefore: quietBefore,
     );

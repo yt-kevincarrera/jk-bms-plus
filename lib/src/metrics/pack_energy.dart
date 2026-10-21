@@ -20,10 +20,9 @@ class RestingCells {
 
 /// Energy left in the pack, and how much of it the weakest cell lets out.
 ///
-/// One definition, used by every screen that quotes watt-hours or a range: the
-/// health tab, the live tab, the saved-pack screen, the home-screen widget and
-/// the range stored with a ride. They used to share a formula that multiplied
-/// remaining amp-hours by the pack voltage of the moment, which is the voltage
+/// Shared energy models for watt-hour readouts and range predictions. Earlier
+/// estimates multiplied remaining amp-hours by the pack voltage of the moment,
+/// which is the voltage
 /// the *next* amp-hour comes out at and not the ones after it. At the top of
 /// an NMC pack that is some 12% high, higher still while charging, and it
 /// swung with the throttle.
@@ -33,6 +32,10 @@ class RestingCells {
 /// BMS's own charge percentage. The percentage rather than a voltage, because
 /// the voltage is exactly the thing load and charger move; the percentage is
 /// the BMS's counter, and it is what the remaining amp-hours come from anyway.
+///
+/// [remaining] preserves those reported amp-hours for energy readouts and
+/// history. [operationalRemaining] calibrates only the range prediction to the
+/// capacity also used for a full pack; it never changes the stored reading.
 class PackEnergy {
   const PackEnergy._({
     required this.grossWh,
@@ -93,8 +96,7 @@ class PackEnergy {
       soc: soc,
       chemistry: chemistry,
       cutoffVoltagePerCell: cutoffVoltagePerCell,
-      averageCellVoltage:
-          resting?.averageCellVoltage ?? liveAverageCellVoltage,
+      averageCellVoltage: resting?.averageCellVoltage ?? liveAverageCellVoltage,
     );
     final fraction = resting == null
         ? null
@@ -111,6 +113,69 @@ class PackEnergy {
       restingAt: fraction == null ? null : resting?.at,
     );
   }
+
+  /// Remaining energy for comparing today's range with a full pack's range.
+  ///
+  /// The BMS's remaining-Ah counter is scaled against its configured nominal
+  /// capacity. A trusted capacity measurement can calibrate that scale, while
+  /// an advertised capacity must not replace a nominal capacity the BMS has
+  /// actually reported. The caller selects [referenceCapacityAh] once for
+  /// both range figures (see RangeCapacityReference).
+  ///
+  /// Charge comes from remaining Ah / nominal Ah, including the small deficit
+  /// a BMS can still report at "100 %". The separately rounded [soc] never
+  /// fills that deficit or overrides a contradictory Ah counter. Without a
+  /// nominal capacity, the reported Ah are retained, capped at the reference;
+  /// without either capacity, [remaining] remains the only available model.
+  ///
+  /// For known chemistry the same discharge curve prices both figures. With
+  /// unknown chemistry the existing conservative voltage estimate is retained
+  /// here, but [operationalFullPackVoltage] refuses a second figure based on a
+  /// different assumed curve.
+  static PackEnergy operationalRemaining({
+    required double remainingAh,
+    required double soc,
+    required int cellCount,
+    required CellChemistry chemistry,
+    required double cutoffVoltagePerCell,
+    double? nominalCapacityAh,
+    double? referenceCapacityAh,
+    RestingCells? resting,
+    double? liveAverageCellVoltage,
+  }) {
+    if (!remainingAh.isFinite || remainingAh <= 0 || cellCount <= 0) {
+      return none;
+    }
+    final nominal = _positiveCapacity(nominalCapacityAh);
+    final reference = _positiveCapacity(referenceCapacityAh) ?? nominal;
+    if (reference == null) {
+      if (!soc.isFinite) return none;
+      final result = remaining(
+        remainingAh: remainingAh,
+        soc: soc,
+        cellCount: cellCount,
+        chemistry: chemistry,
+        cutoffVoltagePerCell: cutoffVoltagePerCell,
+        resting: resting,
+        liveAverageCellVoltage: liveAverageCellVoltage,
+      );
+      return result.usableWh.isFinite ? result : none;
+    }
+    final charge = (remainingAh / (nominal ?? reference)).clamp(0.0, 1.0);
+    final result = remaining(
+      remainingAh: reference * charge,
+      soc: charge * 100,
+      cellCount: cellCount,
+      chemistry: chemistry,
+      cutoffVoltagePerCell: cutoffVoltagePerCell,
+      resting: resting,
+      liveAverageCellVoltage: liveAverageCellVoltage,
+    );
+    return result.usableWh.isFinite ? result : none;
+  }
+
+  static double? _positiveCapacity(double? capacity) =>
+      capacity != null && capacity.isFinite && capacity > 0 ? capacity : null;
 
   /// Mean volts per cell over the discharge still to come.
   ///
@@ -154,6 +219,18 @@ class PackEnergy {
     required int cellCount,
     required CellChemistry chemistry,
   }) => cellCount <= 0 ? null : cellCount * meanCellVoltsFull(chemistry);
+
+  /// Full-pack range needs the same known curve as its remaining range.
+  ///
+  /// The raw energy model's unknown-chemistry midpoint and an assumed LFP
+  /// full-discharge curve can disagree even at full charge. Keep that full
+  /// prediction unknown until the chemistry can be declared or inferred.
+  static double? operationalFullPackVoltage({
+    required int cellCount,
+    required CellChemistry chemistry,
+  }) => chemistry.isKnown
+      ? fullPackVoltage(cellCount: cellCount, chemistry: chemistry)
+      : null;
 
   /// How much of the average cell's remaining energy the weakest cell has,
   /// from a resting reading.

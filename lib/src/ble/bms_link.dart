@@ -91,21 +91,18 @@ abstract interface class BmsLink {
 
   /// A checksum-valid frame was assembled from this link's bytes.
   ///
-  /// The transport cannot know this on its own: it emits notification
-  /// payloads and deliberately does not parse them. It used to judge the link
-  /// alive by those payloads instead, and any byte at all reset its silence
-  /// clock and its failure ledger. The rider's report was the case that
-  /// exposes the difference: a link that came back after a drop, delivered
-  /// bytes that never became a frame, and was therefore never let go of, so
-  /// the banner disappeared and every reading on screen stayed frozen for
-  /// good. A frame is proof the pack is talking. Bytes are not.
-  ///
-  /// Called by the service for every accepted frame, whatever its record
-  /// type. A transport that cannot go quiet has nothing to do here.
+  /// This proves the protocol is talking, not that battery readings resumed.
+  /// Called for every accepted frame, including device info and frames whose
+  /// contents cannot decode. Only [readingAccepted] proves useful progress.
   ///
   /// [deviceInfo] says the frame was the pack identifying itself, so a script
   /// that keeps asking until it hears that can stop.
   void frameAccepted({bool deviceInfo = false}) {}
+
+  /// A battery reading decoded successfully on this link. This advances the
+  /// useful-data watchdog and clears the reconnect failure streak. Device
+  /// info, settings and checksum-valid undecodable frames never call it.
+  void readingAccepted() {}
 
   /// What to write and when, for the brand being spoken. A transport that
   /// writes nothing (simulated, captured bytes) ignores it.

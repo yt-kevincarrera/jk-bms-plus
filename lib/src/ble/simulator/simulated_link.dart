@@ -104,14 +104,14 @@ class SimulatedLink implements BmsLink {
 
   @override
   Stream<List<DiscoveredBms>> scan() => Stream.value([
-        brand == BmsBrand.ant
-            ? const DiscoveredBms(id: 'demo', name: 'ANT-BLE20S (demo)', rssi: -54)
-            : const DiscoveredBms(
-                id: 'demo',
-                name: 'JK-B2A24S20P (demo)',
-                rssi: -54,
-              ),
-      ]);
+    brand == BmsBrand.ant
+        ? const DiscoveredBms(id: 'demo', name: 'ANT-BLE20S (demo)', rssi: -54)
+        : const DiscoveredBms(
+            id: 'demo',
+            name: 'JK-B2A24S20P (demo)',
+            rssi: -54,
+          ),
+  ]);
 
   @override
   Future<void> connect(String deviceId) async {
@@ -367,6 +367,9 @@ class SimulatedLink implements BmsLink {
     _lastAnsweredAt = DateTime.now();
     if (deviceInfo) _antInfoSeen = true;
   }
+
+  @override
+  void readingAccepted() {}
 
   /// The simulator runs the script of the brand it is, whatever the radio's
   /// is set to, so there is nothing to steer here.

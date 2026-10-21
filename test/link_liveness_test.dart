@@ -63,8 +63,10 @@ void main() {
       await service.connect('AA:BB', name: 'KevinJK');
       await link.deliver(deviceInfoFrames[1]);
       expect(link.framesHeard, 1);
+      expect(link.readingsHeard, 0);
       await link.deliver(cellInfo24s[0]);
       expect(link.framesHeard, 2);
+      expect(link.readingsHeard, 1);
     });
 
     test('bytes that never become a frame are not', () async {
@@ -102,6 +104,30 @@ void main() {
   });
 
   group('what the log says about a reconnect', () {
+    test(
+      'readings resume only after new data, not when GATT comes back',
+      () async {
+        await liveLink();
+        link.announce(BleLinkState.reconnecting);
+        link.announce(BleLinkState.connecting);
+        link.announce(BleLinkState.connected);
+        await link.deliver(deviceInfoFrames[1]);
+        expect(
+          (await events()).where(
+            (e) => e.kind == LinkEventKind.readingsResumed.name,
+          ),
+          isEmpty,
+        );
+        await link.deliver(cellInfo24s[0]);
+        await pumpEventQueue();
+        expect(
+          (await events()).where(
+            (e) => e.kind == LinkEventKind.readingsResumed.name,
+          ),
+          hasLength(1),
+        );
+      },
+    );
     test('the first connect is not a reconnect', () async {
       await service.connect('AA:BB', name: 'KevinJK');
       link.announce(BleLinkState.connecting);
@@ -124,10 +150,7 @@ void main() {
       );
       expect(attempt.detail, contains('attempt 1'));
       expect(attempt.deviceId, 'AA:BB');
-      expect(
-        rows.map((e) => e.kind),
-        contains(LinkEventKind.linkDropped.name),
-      );
+      expect(rows.map((e) => e.kind), contains(LinkEventKind.linkDropped.name));
     });
 
     test('a failure carries the radio\'s own words', () async {
@@ -181,25 +204,28 @@ void main() {
       expect(rows.single.detail, contains('12'));
     });
 
-    test('letting go of a mute link is written down with what arrived',
-        () async {
-      await liveLink();
-      const detail = 'connected, 21 s without a frame, 300 bytes arrived, '
-          '3 nudge(s) unanswered';
-      link.fail(
-        const BleLinkError(
-          detail,
-          trouble: LinkTrouble(LinkTroubleKind.packMute, detail: detail),
-        ),
-      );
-      await pumpEventQueue();
+    test(
+      'letting go of a mute link is written down with what arrived',
+      () async {
+        await liveLink();
+        const detail =
+            'connected, 21 s without a frame, 300 bytes arrived, '
+            '3 nudge(s) unanswered';
+        link.fail(
+          const BleLinkError(
+            detail,
+            trouble: LinkTrouble(LinkTroubleKind.packMute, detail: detail),
+          ),
+        );
+        await pumpEventQueue();
 
-      final row = (await events()).firstWhere(
-        (e) => e.kind == LinkEventKind.muteLinkReleased.name,
-      );
-      expect(row.detail, contains('300 bytes'));
-      expect(row.deviceId, 'AA:BB');
-    });
+        final row = (await events()).firstWhere(
+          (e) => e.kind == LinkEventKind.muteLinkReleased.name,
+        );
+        expect(row.detail, contains('300 bytes'));
+        expect(row.deviceId, 'AA:BB');
+      },
+    );
 
     test('nothing is written about a link the rider let go of', () async {
       await liveLink();

@@ -1,5 +1,33 @@
 import 'range_estimator.dart';
 
+enum RangeCapacitySource { measured, bmsConfig, catalogue }
+
+/// One capacity reference for both range predictions. A sales claim is only a
+/// fallback when neither a trusted measurement nor a BMS setting is available.
+class RangeCapacityReference {
+  const RangeCapacityReference._(this.capacityAh, this.source);
+
+  final double capacityAh;
+  final RangeCapacitySource source;
+
+  static RangeCapacityReference? best({
+    double? measuredCapacityAh,
+    double? configuredCapacityAh,
+    double? catalogueCapacityAh,
+  }) {
+    for (final (capacity, source) in [
+      (measuredCapacityAh, RangeCapacitySource.measured),
+      (configuredCapacityAh, RangeCapacitySource.bmsConfig),
+      (catalogueCapacityAh, RangeCapacitySource.catalogue),
+    ]) {
+      if (capacity != null && capacity.isFinite && capacity > 0) {
+        return RangeCapacityReference._(capacity, source);
+      }
+    }
+    return null;
+  }
+}
+
 /// How far the bike can go now, and how far it could go on a full pack.
 ///
 /// These were the same number wearing one label, and that was a real problem:
@@ -24,6 +52,7 @@ class RangeOutlook {
     required this.hasLearned,
     this.fullFromMeasuredCapacity = false,
     this.fullFromBmsConfig = false,
+    this.fullNeedsChemistry = false,
   });
 
   /// Kilometres left at the current charge.
@@ -49,10 +78,13 @@ class RangeOutlook {
   /// who knows which they are looking at.
   final bool fullFromMeasuredCapacity;
 
-  /// Whether [fullKm] rests on the capacity configured in the BMS, adopted as
-  /// the catalogue figure because the rider has not stated one. Neither a
-  /// measurement nor what the pack was sold as, and the screen has to say so.
+  /// Whether [fullKm] rests on the BMS's configured capacity. That reference
+  /// outranks a sales claim, even when the rider entered a catalogue capacity.
   final bool fullFromBmsConfig;
+
+  /// The capacity is available, but a full range cannot share a known
+  /// discharge curve with the remaining range until the chemistry is known.
+  final bool fullNeedsChemistry;
 
   static const RangeOutlook unknown = RangeOutlook(
     confidence: RangeConfidence.low,
@@ -61,10 +93,12 @@ class RangeOutlook {
 
   /// Builds both figures.
   ///
-  /// [usableWhNow] is PackEnergy.usableWh for the live reading.
+  /// [usableWhNow] is PackEnergy.operationalRemaining's usableWh for the live
+  /// reading, calibrated to the same capacity as [fullCapacityAh].
   /// [fullCapacityAh] is the best figure available for what the pack holds
   /// when full, and [fullPackVoltage] the mean voltage a full discharge is
-  /// delivered at (PackEnergy.fullPackVoltage), not the voltage at the top.
+  /// delivered at (PackEnergy.operationalFullPackVoltage), not the voltage at
+  /// the top.
   ///
   /// The full-pack figure deliberately does *not* scale the current one by
   /// charge. Usable energy is not linear in percent near the cutoff, and the
@@ -78,6 +112,7 @@ class RangeOutlook {
     double usableFraction = 1,
     bool capacityWasMeasured = false,
     bool capacityFromBmsConfig = false,
+    bool fullNeedsChemistry = false,
   }) {
     if (!estimator.hasLearned) {
       // No learned consumption means no range worth quoting, at any charge.
@@ -86,22 +121,30 @@ class RangeOutlook {
       return RangeOutlook(
         confidence: estimator.confidence,
         hasLearned: false,
+        fullNeedsChemistry: fullNeedsChemistry,
       );
     }
 
-    final now = usableWhNow > 0 ? estimator.rangeKm(usableWhNow) : null;
+    final now = usableWhNow.isFinite && usableWhNow > 0
+        ? estimator.rangeKm(usableWhNow)
+        : null;
 
     // The imbalance derating applies to a full pack too. Without it the
     // full-pack figure came out *higher* than the remaining one on a fully
     // charged battery, which is nonsense: the weakest cell reaches cutoff
     // first whatever the charge was when it started.
-    final fullWh = fullCapacityAh != null &&
+    final fullWh =
+        fullCapacityAh != null &&
+            fullCapacityAh.isFinite &&
             fullCapacityAh > 0 &&
             fullPackVoltage != null &&
+            fullPackVoltage.isFinite &&
+            usableFraction.isFinite &&
+            !fullNeedsChemistry &&
             fullPackVoltage > 0
         ? fullCapacityAh * fullPackVoltage * usableFraction.clamp(0.0, 1.0)
         : null;
-    final full = fullWh == null || fullWh <= 0
+    final full = fullWh == null || !fullWh.isFinite || fullWh <= 0
         ? null
         : estimator.rangeKm(fullWh);
 
@@ -116,6 +159,7 @@ class RangeOutlook {
       hasLearned: true,
       fullFromMeasuredCapacity: capacityWasMeasured,
       fullFromBmsConfig: !capacityWasMeasured && capacityFromBmsConfig,
+      fullNeedsChemistry: fullNeedsChemistry,
     );
   }
 }

@@ -15,8 +15,7 @@ import 'simulator/simulated_pack.dart';
 /// Swapping what feeds the bottom of that stack is the only honest way to add a
 /// demo mode without duplicating the pipeline it is supposed to be previewing.
 class SwitchableLink implements BmsLink {
-  SwitchableLink({BleTransport? real})
-      : _real = real ?? BleTransport() {
+  SwitchableLink({BleTransport? real}) : _real = real ?? BleTransport() {
     _bind(_real);
   }
 
@@ -71,6 +70,9 @@ class SwitchableLink implements BmsLink {
   @override
   void frameAccepted({bool deviceInfo = false}) =>
       _active.frameAccepted(deviceInfo: deviceInfo);
+
+  @override
+  void readingAccepted() => _active.readingAccepted();
 
   /// Always the radio's: the simulator needs no script, and the brand being
   /// spoken belongs to the real pack whether or not demo mode is on.
@@ -167,6 +169,8 @@ class _Uninitialised implements BmsLink {
   Future<void> retryNow() async {}
   @override
   void frameAccepted({bool deviceInfo = false}) {}
+  @override
+  void readingAccepted() {}
   @override
   set script(LinkScript value) {}
   @override

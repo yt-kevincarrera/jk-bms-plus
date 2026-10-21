@@ -8,11 +8,10 @@ import '../metrics/advice_engine.dart';
 import '../metrics/cell_drift.dart';
 import '../metrics/capacity_endpoints.dart';
 import '../metrics/degradation.dart';
-import '../metrics/pack_energy.dart';
+import '../metrics/pack_summary.dart';
 import '../metrics/range_estimator.dart';
 import '../metrics/range_outlook.dart';
 import '../metrics/trip_learning.dart';
-import '../pack/chemistry.dart';
 import '../pack/pack_baseline.dart';
 import '../metrics/maintenance.dart';
 import '../license/entitlements.dart';
@@ -137,75 +136,12 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
     // used to quote one range with a label that did not say which question it
     // answered, and it happened to be the full-pack one computed a third
     // different way. One definition now, in one place.
-    final measured = _bestMeasured(tests);
-    final capacity = measured ?? widget.device.catalogueCapacityAh;
-
-    final cells = newest == null
-        ? const <double>[]
-        : decodeCellVoltages(newest.cellVoltagesJson);
-    double averageOf(List<double> v) =>
-        v.isEmpty ? 0.0 : v.reduce((a, b) => a + b) / v.length;
-
-    // The same chemistry and cutoff the live screen would use without a
-    // settings frame: the pack's own cutoff is not stored with a reading.
-    var highestCell = 0.0;
-    for (final r in readings) {
-      if (r.maxCellVoltage > highestCell) highestCell = r.maxCellVoltage;
-    }
-    final chemistry = PackEnergy.chemistryFor(
-      declared: widget.device.chemistry,
-      highestCellVolts: highestCell > 0 ? highestCell : null,
-    );
-    final cutoffPerCell =
-        ChemistryLimits.of(chemistry)?.typicalCutoffVolts ??
-        ChemistryLimits.unknownCutoffVolts;
-
-    // The imbalance from a resting reading only, as live, and only one taken
-    // close enough to the last reading to describe the same charge.
-    Snapshot? resting;
-    for (final r in readings.reversed) {
-      if (newest != null &&
-          newest.timestamp.difference(r.timestamp) > _restingReadingReach) {
-        break;
-      }
-      if (r.current > -1.0 && r.current <= 0.05) {
-        resting = r;
-        break;
-      }
-    }
-    final restingCells = resting == null
-        ? const <double>[]
-        : decodeCellVoltages(resting.cellVoltagesJson);
-
-    final energy = newest == null || cells.isEmpty
-        ? PackEnergy.none
-        : PackEnergy.remaining(
-            remainingAh: newest.remainingAh,
-            soc: newest.soc,
-            cellCount: cells.length,
-            chemistry: chemistry,
-            cutoffVoltagePerCell: cutoffPerCell,
-            resting: resting == null || restingCells.isEmpty
-                ? null
-                : RestingCells(
-                    minCellVoltage: resting.minCellVoltage,
-                    averageCellVoltage: averageOf(restingCells),
-                    at: resting.timestamp,
-                  ),
-            liveAverageCellVoltage: averageOf(cells),
-          );
-
-    final outlook = RangeOutlook.from(
+    final outlook = PackSummary.rangeOutlookFrom(
+      device: widget.device,
+      readings: readings,
       estimator: estimator,
-      usableWhNow: energy.usableWh,
-      fullCapacityAh: capacity,
-      fullPackVoltage: PackEnergy.fullPackVoltage(
-        cellCount: cells.length,
-        chemistry: chemistry,
-      ),
-      usableFraction: energy.usableFraction ?? 1,
-      capacityWasMeasured: measured != null,
-      capacityFromBmsConfig: widget.device.catalogueFromBms,
+      measuredCapacityAh: _bestMeasured(tests),
+      latestReading: newest,
     );
 
     if (!mounted) return;
@@ -235,10 +171,6 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
     return DateTime.now().toUtc().difference(at.toUtc()) >
         const Duration(days: 3);
   }
-
-  /// How far before the last reading a resting one may be and still describe
-  /// the charge the last reading was taken at.
-  static const Duration _restingReadingReach = Duration(minutes: 30);
 
   /// The best capacity this pack has ever measured, by the one trust rule
   /// every capacity figure uses ([CapacityTestTrust]): a test with a hole in
@@ -548,6 +480,18 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
                 ),
               ),
             ),
+          if (_outlook.fullNeedsChemistry)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                t.rangeFullNeedsChemistry,
+                style: const TextStyle(
+                  fontSize: 11,
+                  height: 1.35,
+                  color: AppTheme.textFaint,
+                ),
+              ),
+            ),
           if (completed.isNotEmpty) ...[
             const SizedBox(height: 8),
             Caption(t.capacityHistory, color: AppTheme.textFaint),
@@ -643,8 +587,7 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
   /// Rides that actually went somewhere. A row exists from the moment
   /// recording starts, so one in progress has no distance yet; the same cut
   /// the totals use.
-  int get _rideCount =>
-      _trips.where((tr) => tr.distanceKm > 0).length;
+  int get _rideCount => _trips.where((tr) => tr.distanceKm > 0).length;
 
   /// Opens this pack's rides, and takes back whatever changed while they were
   /// open: deleting a ride or calling it an exception moves the totals and the
@@ -692,8 +635,8 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
         tests: _tests,
         readings: const [],
         advertisedAh: widget.device.catalogueFromBms
-          ? null
-          : widget.device.catalogueCapacityAh,
+            ? null
+            : widget.device.catalogueCapacityAh,
       );
       // The day-one copy, and today against it, when both exist. Read here
       // rather than held in state: a sheet is built once and this is the only

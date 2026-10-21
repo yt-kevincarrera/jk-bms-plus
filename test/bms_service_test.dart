@@ -52,6 +52,8 @@ class FakeLink implements BmsLink {
   @override
   void frameAccepted({bool deviceInfo = false}) {}
   @override
+  void readingAccepted() {}
+  @override
   set script(LinkScript value) {}
   @override
   Future<void> askAgain() async {}

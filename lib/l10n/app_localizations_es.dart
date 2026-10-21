@@ -113,6 +113,10 @@ class AppL10nEs extends AppL10n {
       'El enlace sigue abierto. Salir de las pantallas de la batería ya no lo corta, así que puedes entrar y salir sin reconectar.';
 
   @override
+  String get connectedCardNoReadings =>
+      'Sin lecturas actuales. Abre la batería para ver el estado de conexión y volver a intentarlo.';
+
+  @override
   String get connectedCardOpen => 'Ver la batería';
 
   @override
@@ -2760,7 +2764,19 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get rangeFullUnknown =>
-      'Hace falta una capacidad medida para poder decir esto.';
+      'Hace falta conocer la capacidad de esta batería para estimar su autonomía llena.';
+
+  @override
+  String get rangeFullNeedsChemistry =>
+      'Indica la química de la batería en su perfil para estimar la autonomía con carga completa.';
+
+  @override
+  String get autoTripWaitingGps =>
+      'Inicio automático: esperando una posición GPS para confirmar el movimiento.';
+
+  @override
+  String get autoTripRecoveringGps =>
+      'Inicio automático: el GPS no entrega posiciones. Se reintentará mientras la moto esté en marcha.';
 
   @override
   String get rangeFullFromAdvert =>

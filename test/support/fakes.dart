@@ -52,6 +52,11 @@ class FakeLink implements BmsLink {
   /// the service tell the transport so.
   int deviceInfoHeard = 0;
 
+  int readingsHeard = 0;
+
+  @override
+  void readingAccepted() => readingsHeard++;
+
   @override
   void frameAccepted({bool deviceInfo = false}) {
     framesHeard++;

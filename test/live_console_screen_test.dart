@@ -17,6 +17,8 @@ void main() {
   // The console is opened from the connect screen after an attempt has
   // failed, so what it has to show is what happened before it was opened.
   // It used to show decoded frames only, which a failing pack has none of.
+  // Service subscriptions live in the same real zone as its link operations
+  // and disposal; mixing zones leaves pending lifecycle futures undrained.
 
   Future<void> open(WidgetTester tester, BmsService service) async {
     await tester.pumpWidget(
@@ -33,10 +35,10 @@ void main() {
   testWidgets('shows the bytes of an attempt made before it was opened, '
       'both ways, and keeps adding to them', (tester) async {
     final link = FakeLink();
-    final service = BmsService(
-      transport: link,
-      locationFactory: StubLocation.new,
-    );
+    final service = (await tester.runAsync(
+      () async =>
+          BmsService(transport: link, locationFactory: StubLocation.new),
+    ))!;
     await tester.runAsync(() async {
       await service.connect('X', name: 'KevinJK');
       link.announce(BleLinkState.connected);
@@ -60,18 +62,14 @@ void main() {
     expect(find.textContaining('→ TX  20 B\nAA 55 90 EB 97'), findsOneWidget);
     expect(find.text('--- en vivo desde aquí ---'), findsOneWidget);
 
-    await tester.runAsync(
-      () => link.deliver(Uint8List.fromList([0x01, 0x02])),
-    );
+    await tester.runAsync(() => link.deliver(Uint8List.fromList([0x01, 0x02])));
     await tester.pump();
     expect(find.textContaining('← RX  2 B\n01 02'), findsOneWidget);
 
     // Paused holds the list still; what arrives meanwhile shows on resume.
     await tester.tap(find.byTooltip('Siguiendo'));
     await tester.pump();
-    await tester.runAsync(
-      () => link.deliver(Uint8List.fromList([0x03, 0x04])),
-    );
+    await tester.runAsync(() => link.deliver(Uint8List.fromList([0x03, 0x04])));
     await tester.pump();
     expect(find.textContaining('03 04'), findsNothing);
     await tester.tap(find.byTooltip('Pausado'));
@@ -82,18 +80,21 @@ void main() {
     await tester.runAsync(service.dispose);
   });
 
-  testWidgets('the diagnostic copy carries the last connect attempts',
-      (tester) async {
+  testWidgets('the diagnostic copy carries the last connect attempts', (
+    tester,
+  ) async {
     // A morning that would not connect has no frames to show, so the copy
     // has to carry what each attempt could see, or it says nothing useful.
     final recovery = ConnectRecovery(
       radio: FakeRecoveryRadio(),
       adverts: AdvertBook(),
     );
-    final service = BmsService(
-      transport: SwitchableLink(real: BleTransport(recovery: recovery)),
-      locationFactory: StubLocation.new,
-    );
+    final service = (await tester.runAsync(
+      () async => BmsService(
+        transport: SwitchableLink(real: BleTransport(recovery: recovery)),
+        locationFactory: StubLocation.new,
+      ),
+    ))!;
     await tester.runAsync(() async {
       final a = recovery.begin('C8:47');
       await recovery.prepare(a, stillWanted: () => true);
@@ -126,17 +127,14 @@ void main() {
   });
 
   testWidgets('says so when nothing has crossed the link', (tester) async {
-    final service = BmsService(
-      transport: FakeLink(),
-      locationFactory: StubLocation.new,
-    );
+    final service = (await tester.runAsync(
+      () async =>
+          BmsService(transport: FakeLink(), locationFactory: StubLocation.new),
+    ))!;
     await open(tester, service);
     await tester.tap(find.text('Bytes'));
     await tester.pump();
-    expect(
-      find.textContaining('Todavía no pasó ningún byte'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('Todavía no pasó ningún byte'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
     await tester.runAsync(service.dispose);
   });

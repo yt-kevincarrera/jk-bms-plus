@@ -72,16 +72,16 @@ DiscoveredBms classifyAdvertisement({
   required String name,
   required int rssi,
   required Iterable<String> serviceUuids,
-}) =>
-    DiscoveredBms(
-      id: id,
-      name: name,
-      rssi: rssi,
-      advertisesJkService:
-          serviceUuids.any((u) => u.toLowerCase().contains('ffe0')),
-      nameLooksLikeJk: name.toUpperCase().contains('JK'),
-      brandHint: brandFromName(name),
-    );
+}) => DiscoveredBms(
+  id: id,
+  name: name,
+  rssi: rssi,
+  advertisesJkService: serviceUuids.any(
+    (u) => u.toLowerCase().contains('ffe0'),
+  ),
+  nameLooksLikeJk: name.toUpperCase().contains('JK'),
+  brandHint: brandFromName(name),
+);
 
 /// Strongest signal of being the BMS first, then closest.
 int compareDiscovered(DiscoveredBms a, DiscoveredBms b) {
@@ -92,7 +92,6 @@ int compareDiscovered(DiscoveredBms a, DiscoveredBms b) {
   // Closest first among equals: the pack under you outshouts a neighbour's.
   return b.rssi.compareTo(a.rssi);
 }
-
 
 /// Decides when a scan is genuinely over, from the radio's own scanning flag.
 ///
@@ -153,11 +152,7 @@ class BleLinkError {
   /// 133` reaching a screen as the headline.
   factory BleLinkError.from(Object error) {
     final t = LinkTrouble.from(error);
-    return BleLinkError(
-      error.toString(),
-      likelyBusy: t.likelyBusy,
-      trouble: t,
-    );
+    return BleLinkError(error.toString(), likelyBusy: t.likelyBusy, trouble: t);
   }
 
   /// The raw text. Kept for the frame console and the details view; never the
@@ -249,14 +244,14 @@ class BleTransport implements BmsLink {
 
   @override
   LinkHealth get health => LinkHealth(
-        drops: drops,
-        // Counts the stretch currently in progress, so a link that went away a
-        // minute ago and has not come back says a minute rather than nothing.
-        timeDisconnected: _droppedAt == null
-            ? timeDisconnected
-            : timeDisconnected + DateTime.now().difference(_droppedAt!),
-        nudges: nudges,
-      );
+    drops: drops,
+    // Counts the stretch currently in progress, so a link that went away a
+    // minute ago and has not come back says a minute rather than nothing.
+    timeDisconnected: _droppedAt == null
+        ? timeDisconnected
+        : timeDisconnected + DateTime.now().difference(_droppedAt!),
+    nudges: nudges,
+  );
 
   /// How often to check whether the BMS has gone quiet.
   ///
@@ -359,6 +354,11 @@ class BleTransport implements BmsLink {
   /// connecting can be timed too.
   DateTime? _connectedAt;
 
+  /// The most recent usable battery reading on this link. Device-info and
+  /// settings prove the peripheral is talking, but cannot keep stale battery
+  /// data looking healthy or forgive a failed recovery streak.
+  DateTime? _lastReadingAt;
+
   /// Nudges sent because the pack really had gone quiet. Counted so the effect
   /// of not polling can be seen rather than assumed.
   int nudges = 0;
@@ -390,12 +390,12 @@ class BleTransport implements BmsLink {
 
   /// Negotiated MTU, once known. Useful for the System tab: a link stuck at 23
   /// explains a lot of dropped frames.
-  
+
   @override
   int? negotiatedMtu;
 
   BluetoothDevice? _device;
-  BluetoothCharacteristic? _characteristic;
+  BluetoothCharacteristic? _writeCharacteristic;
   StreamSubscription<List<int>>? _notifySub;
   StreamSubscription<BluetoothConnectionState>? _connectionSub;
   Timer? _pollTimer;
@@ -411,7 +411,7 @@ class BleTransport implements BmsLink {
   /// Whether an attempt is running right now.
   ///
   /// One at a time, always. Two attaches on one device share `_notifySub`,
-  /// `_characteristic` and the plugin's operation mutex, so the second
+  /// `_writeCharacteristic` and the plugin's operation mutex, so the second
   /// overwrites what the first is still using and each waits on the other's
   /// operations. The scheduled retry and the connection-state stream can both
   /// start one, and before this flag they did.
@@ -444,10 +444,8 @@ class BleTransport implements BmsLink {
   );
 
   @override
-  LinkRetryState get retry => LinkRetryState(
-        failures: _backoff.failures,
-        gaveUp: _backoff.hasGivenUp,
-      );
+  LinkRetryState get retry =>
+      LinkRetryState(failures: _backoff.failures, gaveUp: _backoff.hasGivenUp);
 
   /// Scans for BLE devices and reports every one of them.
   ///
@@ -587,7 +585,7 @@ class BleTransport implements BmsLink {
       _pollTimer?.cancel();
       await _notifySub?.cancel();
       _notifySub = null;
-      _characteristic = null;
+      _writeCharacteristic = null;
       unawaited(_letGo(previous));
     }
     final device = BluetoothDevice.fromId(deviceId);
@@ -693,49 +691,55 @@ class BleTransport implements BmsLink {
       }
 
       if (await _abandonedMidway(device, id)) return;
-      final characteristic = await _findCharacteristic(device);
+      final characteristics = await _findCharacteristics(device);
       if (await _abandonedMidway(device, id)) return;
-      _characteristic = characteristic;
+      _writeCharacteristic = characteristics.write;
 
-      await _notifySub?.cancel();
-      _notifySub = characteristic.onValueReceived.listen(
-        (bytes) {
-          // Counted, not trusted. Whether these bytes are the pack talking is
-          // settled downstream, when the decoder either assembles a frame out
-          // of them and says so through [frameAccepted], or does not. Judging
-          // the link alive here, on the bytes alone, is what kept a link that
-          // delivered undecodable bytes open for ever.
-          _bytesThisLink += bytes.length;
-          _bytesController.add(bytes);
-        },
-        onError: (Object e) =>
-            _errorController.add(BleLinkError.from(e)),
-      );
-      await characteristic.setNotifyValue(true);
-      if (await _abandonedMidway(device, id)) return;
-
-      _setState(BleLinkState.connected);
-      recovery.connected(attempt);
-      _connectedAt = DateTime.now();
+      // Reset before subscribing: a pack can answer during the opening
+      // requests, and that first reading belongs to this link too.
+      _tick = 0;
+      _deviceInfoSeen = false;
+      _settingsReadsSent = 0;
+      _lastFrameAt = null;
+      _lastReadingAt = null;
+      _connectedAt = null;
       _nudgesThisLink = 0;
       _bytesThisLink = 0;
-      final since = _droppedAt;
-      if (since != null) {
-        timeDisconnected += DateTime.now().difference(since);
-        _droppedAt = null;
-      }
+
+      await _notifySub?.cancel();
+      _notifySub = characteristics.notify.onValueReceived.listen((bytes) {
+        // Counted, not trusted. Whether these bytes are the pack talking is
+        // settled downstream, when the decoder either assembles a frame out
+        // of them and says so through [frameAccepted], or does not. Judging
+        // the link alive here, on the bytes alone, is what kept a link that
+        // delivered undecodable bytes open for ever.
+        _bytesThisLink += bytes.length;
+        _bytesController.add(bytes);
+      }, onError: (Object e) => _errorController.add(BleLinkError.from(e)));
+      await characteristics.notify.setNotifyValue(true);
+      if (await _abandonedMidway(device, id)) return;
 
       // The script's opening requests, in its order. For a JK that is device
       // info first: the variant we decode everything else with comes out of
       // that frame, so it has to be the first request.
-      _tick = 0;
-      _deviceInfoSeen = false;
-      _settingsReadsSent = 0;
-      // A frame heard from whatever was connected before is not this pack
-      // talking; the script's silence rules start from this link.
-      _lastFrameAt = null;
       for (final f in _script.onConnect) {
-        await _write(f);
+        await _write(f, failOnError: true);
+        if (await _abandonedMidway(device, id)) return;
+      }
+      if (!device.isConnected) {
+        throw Exception('The BMS disconnected while starting readings.');
+      }
+
+      // A successful subscription alone does not mean we can ask the pack
+      // anything. Failed opening writes must release and retry this attempt,
+      // without briefly announcing a connection that cannot fetch readings.
+      _connectedAt = DateTime.now();
+      _setState(BleLinkState.connected);
+      recovery.connected(attempt);
+      final since = _droppedAt;
+      if (since != null) {
+        timeDisconnected += DateTime.now().difference(since);
+        _droppedAt = null;
       }
 
       _pollTimer?.cancel();
@@ -804,7 +808,8 @@ class BleTransport implements BmsLink {
     _attachId++;
     _attaching = false;
     final device = _device;
-    final detail = 'connect attempt gave up after ${attachTimeout.inSeconds} s '
+    final detail =
+        'connect attempt gave up after ${attachTimeout.inSeconds} s '
         'without finishing; letting go of the link so the next one can start';
     final attempt = _attempt;
     if (attempt != null) recovery.failed(attempt, detail, timedOut: true);
@@ -843,7 +848,7 @@ class BleTransport implements BmsLink {
     _pollTimer?.cancel();
     await _notifySub?.cancel();
     _notifySub = null;
-    _characteristic = null;
+    _writeCharacteristic = null;
     await _letGo(device);
     _setState(BleLinkState.idle);
     return true;
@@ -943,22 +948,32 @@ class BleTransport implements BmsLink {
     }
   }
 
-  Future<BluetoothCharacteristic> _findCharacteristic(
-    BluetoothDevice device,
-  ) async {
+  Future<({BluetoothCharacteristic notify, BluetoothCharacteristic write})>
+  _findCharacteristics(BluetoothDevice device) async {
     final services = await device.discoverServices();
     for (final service in services) {
       if (!service.uuid.str.toLowerCase().contains('ffe0')) continue;
+      BluetoothCharacteristic? notify;
+      BluetoothCharacteristic? write;
       for (final c in service.characteristics) {
         if (!c.uuid.str.toLowerCase().contains('ffe1')) continue;
-        // Newer BLE modules expose 0xFFE1 twice: one write-only, one notify.
-        // We need the one that can notify.
-        if (c.properties.notify || c.properties.indicate) return c;
+        // Some JK modules use separate FFE1 instances for commands and
+        // notifications. Select each capability, preserving the combined
+        // characteristic used by older JK modules and ANT.
+        if (c.properties.notify || c.properties.indicate) {
+          notify ??= c;
+        }
+        if (c.properties.write || c.properties.writeWithoutResponse) {
+          write ??= c;
+        }
+      }
+      if (notify != null && write != null) {
+        return (notify: notify, write: write);
       }
     }
     throw NotABmsException(
-      'This device does not expose a notifying $jkCharacteristicUuid16 '
-      'characteristic on service $jkServiceUuid16, so it is not a BMS '
+      'This device does not expose both notifications and writes on '
+      '$jkCharacteristicUuid16 in service $jkServiceUuid16, so it is not a BMS '
       'this app can talk to.',
     );
   }
@@ -988,12 +1003,13 @@ class BleTransport implements BmsLink {
     // Forgotten on a drop, so the first check after reconnecting nudges rather
     // than trusting a timestamp from before the link went away.
     _lastFrameAt = null;
+    _lastReadingAt = null;
     _connectedAt = null;
     _droppedAt ??= DateTime.now();
     _pollTimer?.cancel();
     _notifySub?.cancel();
     _notifySub = null;
-    _characteristic = null;
+    _writeCharacteristic = null;
     _setState(BleLinkState.reconnecting);
     _scheduleReconnect();
   }
@@ -1067,16 +1083,17 @@ class BleTransport implements BmsLink {
   void frameAccepted({bool deviceInfo = false}) {
     _lastFrameAt = DateTime.now();
     if (deviceInfo) _deviceInfoSeen = true;
-    // The one thing that disproves what the failures implied, which is why the
-    // ledger is cleared here and not on the link coming up, and not on bytes
-    // either. A pack that accepts the connection and then says nothing, or
-    // says something no decoder can read, has proved nothing; clearing the
-    // ledger on the link coming up was what let the mute-link loop run for
-    // ever, with the count back at zero every time.
+  }
+
+  @override
+  void readingAccepted() {
+    _lastReadingAt = DateTime.now();
+    // Only useful battery data disproves the failure. Device info or a
+    // checksum-valid frame the parser cannot read must not forgive retries.
     _backoff.recordSuccess();
   }
 
-  /// Lets go of a link that is up and has said nothing for [muteBefore].
+  /// Lets go of a link that has produced no battery reading for [muteBefore].
   ///
   /// Counted as a drop, because from the rider's side that is what it was: no
   /// readings for that long, followed by a reconnect. [_onDropped] is called
@@ -1086,25 +1103,28 @@ class BleTransport implements BmsLink {
     final device = _device;
     if (device == null || !_wantConnection) return;
     _nextReconnectDelay = muteRetryDelay;
-    // A link that came up and never spoke is a failed attempt, whatever
-    // Android thought of it. Counting it is what lets the loop end: a mute
-    // that clears reports a byte and wipes the ledger, and one that does not
-    // keeps counting until the app stops and says so.
+    // A link without usable readings is a failed attempt, whatever Android
+    // thought of it. Only a fresh battery reading clears that streak; other
+    // traffic must not keep the failed recovery loop running forever.
     _backoff.recordFailure();
     _pollTimer?.cancel();
 
     // Said before it is done, so the screen can name the reason while the
     // link is being re-established rather than showing a bare "lost".
     final now = DateTime.now();
-    final since = _lastFrameAt ?? _connectedAt ?? now;
+    final since = _lastReadingAt ?? _connectedAt ?? now;
+    final nextStep = _backoff.hasGivenUp
+        ? 'automatic retries stopped'
+        : 'retrying with backoff';
     // Bytes and frames separately, because they answer different questions.
     // Zero bytes is a module that never spoke; thousands of bytes and no
     // frame is a stream the app cannot read, and the two need different
     // fixes.
-    final detail = 'connected, ${now.difference(since).inSeconds} s without a '
-        'decodable frame, $_bytesThisLink byte(s) arrived on this link, '
+    final detail =
+        'connected, ${now.difference(since).inSeconds} s without a '
+        'decoded battery reading, $_bytesThisLink byte(s) arrived on this link, '
         '$_nudgesThisLink nudge(s) unanswered, MTU ${negotiatedMtu ?? '?'}; '
-        'letting go, back in ${muteRetryDelay.inSeconds} s';
+        'letting go; $nextStep';
     _errorController.add(
       BleLinkError(
         detail,
@@ -1112,6 +1132,14 @@ class BleTransport implements BmsLink {
       ),
     );
 
+    // _onDropped ignores callbacks after the retry budget is exhausted, so
+    // the final mute reset must enter failed itself before releasing GATT.
+    // Otherwise the radio is disconnected with connected still on screen
+    // and neither a poll timer nor another attempt left to change it.
+    if (_backoff.hasGivenUp) {
+      _giveUp();
+      return;
+    }
     await _letGo(device);
     if (_wantConnection) _onDropped();
   }
@@ -1151,6 +1179,8 @@ class BleTransport implements BmsLink {
     final action = _script.tick(
       now: DateTime.now(),
       lastFrameAt: _lastFrameAt,
+      lastReadingAt: _lastReadingAt,
+      expectsReadings: true,
       connectedAt: _connectedAt,
       tickNumber: _tick,
       deviceInfoSeen: _deviceInfoSeen,
@@ -1197,19 +1227,24 @@ class BleTransport implements BmsLink {
   /// worst ask a question the pack ignores. Settings values (voltages,
   /// currents, temperatures) are never written at all: the protocols are
   /// reverse-engineered, and a wrong value can disable a protection.
-  Future<void> _write(List<int> frame) async {
+  Future<void> _write(List<int> frame, {bool failOnError = false}) async {
     if (isJkRegisterWrite(frame)) {
       assert(false, 'a register write reached the read path');
       return;
     }
-    await _send(frame);
+    await _send(frame, failOnError: failOnError);
   }
 
   /// Puts [frame] on the radio. Private: [_write] and [writeRegister] are the
   /// two ways in, and each decides what it lets through.
-  Future<bool> _send(List<int> frame) async {
-    final c = _characteristic;
-    if (c == null) return false;
+  Future<bool> _send(List<int> frame, {bool failOnError = false}) async {
+    final c = _writeCharacteristic;
+    if (c == null) {
+      if (failOnError) {
+        throw Exception('No writable BMS characteristic is available.');
+      }
+      return false;
+    }
 
     try {
       await c.write(frame, withoutResponse: c.properties.writeWithoutResponse);
@@ -1219,6 +1254,7 @@ class BleTransport implements BmsLink {
       if (!_writesController.isClosed) _writesController.add(frame);
       return true;
     } on Exception catch (e) {
+      if (failOnError) rethrow;
       _errorController.add(BleLinkError.from(e));
       return false;
     }
@@ -1247,7 +1283,8 @@ class BleTransport implements BmsLink {
     await _connectionSub?.cancel();
     _notifySub = null;
     _connectionSub = null;
-    _characteristic = null;
+    _writeCharacteristic = null;
+    _lastReadingAt = null;
     final device = _device;
     // Same reasoning as _letGo: a teardown that queues behind a hung
     // operation is a teardown that never happens, and a link nobody can close.

@@ -1,7 +1,10 @@
 import '../data/database.dart';
+import '../pack/chemistry.dart';
 import 'capacity_endpoints.dart';
 import 'degradation.dart';
 import 'pack_energy.dart';
+import 'range_estimator.dart';
+import 'range_outlook.dart';
 import 'trip_learning.dart';
 
 /// What can be said about one battery from what is on disk.
@@ -72,6 +75,154 @@ class PackSummary {
     return reported / honest;
   }
 
+  /// A stored snapshot has no nominal-Ah field. Read the BMS scale back only
+  /// from a recent, usable charge percentage in this pack's own history.
+  /// The window is relative to the last stored reading, not today's clock.
+  static const Duration configuredCapacityEvidenceReach = Duration(days: 1);
+
+  static Snapshot? _latestReadingFor(
+    Device device,
+    List<Snapshot> readings,
+    Snapshot? latestReading,
+  ) {
+    if (latestReading?.deviceId == device.id) return latestReading;
+    for (final r in readings.reversed) {
+      if (r.deviceId == device.id) return r;
+    }
+    return null;
+  }
+
+  static double? _configuredCapacityOf(Snapshot reading) {
+    if (!reading.soc.isFinite || !reading.remainingAh.isFinite) return null;
+    final capacity = Degradation.configuredCapacityFrom(
+      soc: reading.soc,
+      remainingAh: reading.remainingAh,
+    );
+    return capacity != null && capacity.isFinite && capacity > 0
+        ? capacity
+        : null;
+  }
+
+  static double? configuredCapacityFromHistory({
+    required Device device,
+    required List<Snapshot> readings,
+    Snapshot? latestReading,
+  }) {
+    final newest = _latestReadingFor(device, readings, latestReading);
+    if (newest != null) {
+      final latestCapacity = _configuredCapacityOf(newest);
+      if (latestCapacity != null) return latestCapacity;
+      for (final r in readings.reversed) {
+        if (r.deviceId != device.id) continue;
+        final age = newest.timestamp.difference(r.timestamp);
+        if (age.isNegative) continue;
+        if (age > configuredCapacityEvidenceReach) break;
+        final capacity = _configuredCapacityOf(r);
+        if (capacity != null) return capacity;
+      }
+    }
+    final borrowed = device.catalogueCapacityAh;
+    return device.catalogueFromBms &&
+            borrowed != null &&
+            borrowed.isFinite &&
+            borrowed > 0
+        ? borrowed
+        : null;
+  }
+
+  /// The saved-pack screen and comparison use the same operational range as
+  /// live, with only the evidence that survived in storage. A sales claim
+  /// cannot be relabelled as a BMS setting when no useful counter was saved.
+  static RangeOutlook rangeOutlookFrom({
+    required Device device,
+    required List<Snapshot> readings,
+    required RangeEstimator estimator,
+    double? measuredCapacityAh,
+    Snapshot? latestReading,
+  }) {
+    final last = _latestReadingFor(device, readings, latestReading);
+    final configured = configuredCapacityFromHistory(
+      device: device,
+      readings: readings,
+      latestReading: last,
+    );
+    final reference = RangeCapacityReference.best(
+      measuredCapacityAh: measuredCapacityAh,
+      configuredCapacityAh: configured,
+      catalogueCapacityAh: device.catalogueCapacityAh,
+    );
+    var highestCell = last?.maxCellVoltage ?? 0.0;
+    for (final r in readings) {
+      if (r.deviceId == device.id && r.maxCellVoltage > highestCell) {
+        highestCell = r.maxCellVoltage;
+      }
+    }
+    final chemistry = PackEnergy.chemistryFor(
+      declared: device.chemistry,
+      highestCellVolts: highestCell > 0 ? highestCell : null,
+    );
+    final cutoff =
+        ChemistryLimits.of(chemistry)?.typicalCutoffVolts ??
+        ChemistryLimits.unknownCutoffVolts;
+    final cells = last == null
+        ? const <double>[]
+        : decodeCellVoltages(last.cellVoltagesJson);
+    double averageOf(List<double> values) =>
+        values.isEmpty ? 0 : values.reduce((a, b) => a + b) / values.length;
+
+    // As on the saved-pack screen before this shared calculation: only a
+    // resting reading close enough to the last charge may derate its energy.
+    bool isResting(Snapshot r) => r.current > -1.0 && r.current <= 0.05;
+    Snapshot? resting = last != null && isResting(last) ? last : null;
+    if (last != null && resting == null) {
+      for (final r in readings.reversed) {
+        if (r.deviceId != device.id) continue;
+        final age = last.timestamp.difference(r.timestamp);
+        if (age.isNegative) continue;
+        if (age > const Duration(minutes: 30)) break;
+        if (isResting(r)) {
+          resting = r;
+          break;
+        }
+      }
+    }
+    final restingCells = resting == null
+        ? const <double>[]
+        : decodeCellVoltages(resting.cellVoltagesJson);
+    final energy = last == null || cells.isEmpty
+        ? PackEnergy.none
+        : PackEnergy.operationalRemaining(
+            remainingAh: last.remainingAh,
+            nominalCapacityAh: configured,
+            referenceCapacityAh: reference?.capacityAh,
+            soc: last.soc,
+            cellCount: cells.length,
+            chemistry: chemistry,
+            cutoffVoltagePerCell: cutoff,
+            resting: resting == null || restingCells.isEmpty
+                ? null
+                : RestingCells(
+                    minCellVoltage: resting.minCellVoltage,
+                    averageCellVoltage: averageOf(restingCells),
+                    at: resting.timestamp,
+                  ),
+            liveAverageCellVoltage: averageOf(cells),
+          );
+    return RangeOutlook.from(
+      estimator: estimator,
+      usableWhNow: energy.usableWh,
+      fullCapacityAh: reference?.capacityAh,
+      fullPackVoltage: PackEnergy.operationalFullPackVoltage(
+        cellCount: cells.length,
+        chemistry: chemistry,
+      ),
+      usableFraction: energy.usableFraction ?? 1,
+      capacityWasMeasured: reference?.source == RangeCapacitySource.measured,
+      capacityFromBmsConfig: reference?.source == RangeCapacitySource.bmsConfig,
+      fullNeedsChemistry: reference != null && !chemistry.isKnown,
+    );
+  }
+
   /// Builds a summary from rows already read off disk.
   ///
   /// Takes the rows rather than the repository so it stays testable and so the
@@ -128,23 +279,16 @@ class PackSummary {
 
     final deltas = readings.map((r) => r.deltaVolts).toList();
 
-    // A full pack's energy at the mean voltage of a whole discharge for this
-    // chemistry, as on the live screen. It used to be the catalogue capacity
-    // times whatever the pack voltage happened to be at the last reading, so
-    // the same pack's full range moved with the charge it was left at.
-    var highestCell = 0.0;
-    for (final r in readings) {
-      if (r.maxCellVoltage > highestCell) highestCell = r.maxCellVoltage;
-    }
-    final fullVolts = last == null
+    final bestMeasured = measured.isEmpty
         ? null
-        : PackEnergy.fullPackVoltage(
-            cellCount: decodeCellVoltages(last.cellVoltagesJson).length,
-            chemistry: PackEnergy.chemistryFor(
-              declared: device.chemistry,
-              highestCellVolts: highestCell > 0 ? highestCell : null,
-            ),
-          );
+        : measured.reduce((a, b) => a > b ? a : b);
+    final outlook = rangeOutlookFrom(
+      device: device,
+      readings: readings,
+      estimator: estimator,
+      measuredCapacityAh: bestMeasured,
+      latestReading: last,
+    );
 
     return PackSummary(
       device: device,
@@ -160,13 +304,11 @@ class PackSummary {
       reportedCycles: last?.cycleCount,
       honestCycles: honest != null && honest > 0 ? honest : null,
       whPerKm: estimator.hasLearned ? estimator.whPerKm : null,
-      rangeKm: estimator.hasLearned && catalogue != null && fullVolts != null
-          ? estimator.rangeKm(catalogue * fullVolts)
-          : null,
-      bestMeasuredAh:
-          measured.isEmpty ? null : measured.reduce((a, b) => a > b ? a : b),
-      worstDeltaVolts:
-          deltas.isEmpty ? null : deltas.reduce((a, b) => a > b ? a : b),
+      rangeKm: outlook.fullKm,
+      bestMeasuredAh: bestMeasured,
+      worstDeltaVolts: deltas.isEmpty
+          ? null
+          : deltas.reduce((a, b) => a > b ? a : b),
     );
   }
 }

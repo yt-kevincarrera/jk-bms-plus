@@ -41,8 +41,10 @@ flutter build apk --release --split-per-abi
    phone would download two architectures it cannot run. The app asks Android
    which ABIs it supports and picks the matching asset.
 
-   Note that all three carry the same `versionCode`. That is fine here and would
-   not be on Google Play: a phone only ever sees one of them.
+   Flutter adds an ABI offset to the build number in `pubspec.yaml`: 1000 for
+   armeabi-v7a, 2000 for arm64-v8a and 4000 for x86_64. For example, build 2076
+   produces version codes 3076, 4076 and 6076. Increment the base build number
+   on each release so an installed APK can update within its ABI.
 
 3. Tag and publish, attaching all three:
 

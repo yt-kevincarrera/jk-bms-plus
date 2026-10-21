@@ -113,6 +113,10 @@ class AppL10nEn extends AppL10n {
       'The link is still open. Leaving the pack screens no longer cuts it, so you can come and go without reconnecting.';
 
   @override
+  String get connectedCardNoReadings =>
+      'No current readings. Open the battery to check the connection and try again.';
+
+  @override
   String get connectedCardOpen => 'View the pack';
 
   @override
@@ -2750,7 +2754,19 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get rangeFullUnknown =>
-      'Needs a measured capacity before this can be said.';
+      'This battery\'s capacity is needed to estimate its full-charge range.';
+
+  @override
+  String get rangeFullNeedsChemistry =>
+      'Set the battery chemistry in its profile to estimate its full-charge range.';
+
+  @override
+  String get autoTripWaitingGps =>
+      'Automatic trips: waiting for a GPS position to confirm movement.';
+
+  @override
+  String get autoTripRecoveringGps =>
+      'Automatic trips: GPS is not delivering positions. It will be retried while the bike is working.';
 
   @override
   String get rangeFullFromAdvert =>

@@ -271,6 +271,12 @@ abstract class AppL10n {
   /// **'El enlace sigue abierto. Salir de las pantallas de la batería ya no lo corta, así que puedes entrar y salir sin reconectar.'**
   String get connectedCardNote;
 
+  /// No description provided for @connectedCardNoReadings.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin lecturas actuales. Abre la batería para ver el estado de conexión y volver a intentarlo.'**
+  String get connectedCardNoReadings;
+
   /// No description provided for @connectedCardOpen.
   ///
   /// In es, this message translates to:
@@ -4732,8 +4738,26 @@ abstract class AppL10n {
   /// No description provided for @rangeFullUnknown.
   ///
   /// In es, this message translates to:
-  /// **'Hace falta una capacidad medida para poder decir esto.'**
+  /// **'Hace falta conocer la capacidad de esta batería para estimar su autonomía llena.'**
   String get rangeFullUnknown;
+
+  /// No description provided for @rangeFullNeedsChemistry.
+  ///
+  /// In es, this message translates to:
+  /// **'Indica la química de la batería en su perfil para estimar la autonomía con carga completa.'**
+  String get rangeFullNeedsChemistry;
+
+  /// No description provided for @autoTripWaitingGps.
+  ///
+  /// In es, this message translates to:
+  /// **'Inicio automático: esperando una posición GPS para confirmar el movimiento.'**
+  String get autoTripWaitingGps;
+
+  /// No description provided for @autoTripRecoveringGps.
+  ///
+  /// In es, this message translates to:
+  /// **'Inicio automático: el GPS no entrega posiciones. Se reintentará mientras la moto esté en marcha.'**
+  String get autoTripRecoveringGps;
 
   /// No description provided for @rangeFullFromAdvert.
   ///

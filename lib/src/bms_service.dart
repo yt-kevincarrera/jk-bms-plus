@@ -6,6 +6,7 @@ import 'ble/bms_link.dart';
 import 'ble/bms_write_gate.dart';
 import 'ble/connect_recovery.dart';
 import 'ble/link_script.dart';
+import 'ble/link_quiet.dart';
 import 'ble/link_lost_alarm.dart';
 import 'ble/link_trouble.dart';
 import 'ble/link_traffic.dart';
@@ -99,10 +100,12 @@ class BmsService {
     BmsLink? transport,
     JkParser parser = const JkParser(),
     LocationSource Function()? locationFactory,
+    LiveNotification? notificationService,
     @visibleForTesting DateTime Function()? clock,
   }) : _transport = transport ?? SwitchableLink(),
        _parser = parser,
        _locationFactory = locationFactory,
+       notifications = notificationService ?? LiveNotification(),
        _now = clock ?? (() => DateTime.now().toUtc()) {
     _assembler.onRejected = _onJkRejected;
     _antAssembler.onRejected = _onAntRejected;
@@ -113,6 +116,15 @@ class BmsService {
     _stateSub = _transport.state.listen((s) {
       final was = lastLinkState;
       lastLinkState = s;
+      if (s == BleLinkState.connecting) {
+        if (_hasReadingThisLink) _readingsMissingSince ??= _now();
+        _hasReadingThisLink = false;
+        _stopCellInfoRequests();
+        _silenceTimer?.cancel();
+        _assembler.reset();
+        _antAssembler.reset();
+        _antLegacyAssembler.reset();
+      }
       // A link that was up and is now down, with nobody having asked for it.
       // Overnight, watching a charge, this is the difference between "the
       // pack finished" and "the app stopped looking four hours ago". Mid-ride
@@ -182,7 +194,9 @@ class BmsService {
         unawaited(
           repo?.note(
                 LinkEventKind.bluetoothRemedy,
-                detail: detail.isEmpty ? remedy.name : '${remedy.name}: $detail',
+                detail: detail.isEmpty
+                    ? remedy.name
+                    : '${remedy.name}: $detail',
               ) ??
               Future.value(),
         );
@@ -540,8 +554,53 @@ class BmsService {
               averageCellVoltage: rest.averageCellVoltage,
               at: rest.timestamp,
             ),
-      liveAverageCellVoltage:
-          s.cellVoltages.isEmpty ? null : s.averageCellVoltage,
+      liveAverageCellVoltage: s.cellVoltages.isEmpty
+          ? null
+          : s.averageCellVoltage,
+    );
+  }
+
+  double? _configuredRangeCapacityOf(BmsSnapshot s) {
+    for (final capacity in [
+      s.nominalCapacityAh,
+      _lastSettings?.nominalCapacityAh,
+    ]) {
+      if (capacity != null && capacity.isFinite && capacity > 0) {
+        return capacity;
+      }
+    }
+    return null;
+  }
+
+  RangeCapacityReference? _rangeCapacityFor(BmsSnapshot s) =>
+      RangeCapacityReference.best(
+        measuredCapacityAh: bestMeasuredCapacityAh,
+        configuredCapacityAh: _configuredRangeCapacityOf(s),
+        catalogueCapacityAh: catalogueCapacityAh,
+      );
+
+  /// Energy for range predictions, calibrated against the same capacity used
+  /// for a full pack. Raw readings and recorded energy remain unchanged.
+  PackEnergy rangeEnergyOf(BmsSnapshot s) {
+    final rest = history.latestResting;
+    return PackEnergy.operationalRemaining(
+      remainingAh: s.remainingCapacityAh,
+      nominalCapacityAh: _configuredRangeCapacityOf(s),
+      referenceCapacityAh: _rangeCapacityFor(s)?.capacityAh,
+      soc: s.soc,
+      cellCount: s.cellCount,
+      chemistry: cutoffChemistry,
+      cutoffVoltagePerCell: cutoffVoltagePerCell,
+      resting: rest == null || rest.cellVoltages.isEmpty
+          ? null
+          : RestingCells(
+              minCellVoltage: rest.minCellVoltage,
+              averageCellVoltage: rest.averageCellVoltage,
+              at: rest.timestamp,
+            ),
+      liveAverageCellVoltage: s.cellVoltages.isEmpty
+          ? null
+          : s.averageCellVoltage,
     );
   }
 
@@ -659,6 +718,12 @@ class BmsService {
   /// the right thing instead of the value it was constructed with.
   BleLinkState lastLinkState = BleLinkState.idle;
 
+  bool get hasCurrentReadings =>
+      _hasReadingThisLink &&
+      lastLinkState == BleLinkState.connected &&
+      _lastSnapshot != null &&
+      !readingIsStale(lastReadingAt: _lastSnapshot!.timestamp, now: _now());
+
   Stream<BleLinkState> get linkState => _transport.state;
   Stream<BleLinkError> get linkErrors => _transport.errors;
 
@@ -679,6 +744,7 @@ class BmsService {
   /// speak JK and have not been converted to the brand-neutral type yet.
   JkDeviceInfo? get jkDeviceInfo => _lastDeviceInfo?.jk;
   JkSettings? get lastSettings => _lastSettings;
+
   /// Link quality counters for this connection: frame outcomes from the
   /// assembler the current brand is read with, and bytes from the service's
   /// own count. All four restart on every connect, like [cellInfoFrames] and
@@ -690,12 +756,11 @@ class BmsService {
   /// brand's probe, was missing from the new one's figure.
   /// One object, updated in place, so a screen holding it stays current.
   FrameStats get stats {
-    final from =
-        _brand == BmsBrand.jk
-            ? _assembler.stats
-            : _antLegacy
-            ? _antLegacyAssembler.stats
-            : _antAssembler.stats;
+    final from = _brand == BmsBrand.jk
+        ? _assembler.stats
+        : _antLegacy
+        ? _antLegacyAssembler.stats
+        : _antAssembler.stats;
     _linkStats
       ..accepted = from.accepted
       ..badChecksum = from.badChecksum
@@ -945,6 +1010,8 @@ class BmsService {
     _variantConfirmed = false;
     _override = null;
     _lastSnapshot = null;
+    _hasReadingThisLink = false;
+    _readingsMissingSince = null;
     _lastDeviceInfo = null;
     _lastSettings = null;
     chargeAlerts.reset();
@@ -1000,6 +1067,8 @@ class BmsService {
     }
     // From here on, a link that goes down went down by itself.
     _disconnectRequested = false;
+    _hasReadingThisLink = false;
+    _readingsMissingSince = null;
     _assembler.reset();
     _inspecting = inspecting;
     // Held, not stored. A device only becomes a battery on record once it has
@@ -1076,25 +1145,20 @@ class BmsService {
     _cellInfoTimer = null;
   }
 
-  /// Asks the pack for cell info again, every few seconds, until one arrives.
-  ///
-  /// The transport asks once on connect and then only nudges a pack that has
-  /// gone completely quiet. A pack that answers the device-info request and
-  /// then keeps talking, but never with cell info, is neither quiet nor
-  /// working: the transport hears bytes and stays its hand, and the screens
-  /// wait forever. This is the service's own view, by record type, so it can
-  /// tell that case from a healthy stream and ask again. It stops on the first
-  /// cell info frame, so a pack that streams normally is never written to.
+  /// Asks for cell info until a usable reading arrives on this specific link.
+  /// Raw cell frames can fail decoding, and a reading before a reconnect says
+  /// nothing about the new link. A streaming pack is left alone.
   Timer? _cellInfoTimer;
   int _cellInfoAsks = 0;
+  bool _hasReadingThisLink = false;
+  DateTime? _readingsMissingSince;
 
   void _armCellInfoRequests() {
     _cellInfoTimer?.cancel();
     _cellInfoAsks = 0;
     _cellInfoTimer = Timer.periodic(const Duration(seconds: 3), (_) {
-      if (cellInfoFrames > 0) {
-        _cellInfoTimer?.cancel();
-        _cellInfoTimer = null;
+      if (_hasReadingThisLink) {
+        _stopCellInfoRequests();
         return;
       }
       if (isDemo || lastLinkState != BleLinkState.connected) return;
@@ -1103,7 +1167,7 @@ class BmsService {
         _problem(
           'Asked the pack for cell info again (attempt $_cellInfoAsks): the '
           'link is up and $deviceInfoFrames device-info frame(s) arrived, but '
-          'no cell readings have.',
+          'no usable cell readings have arrived on this link.',
         );
       }
       unawaited(_transport.askAgain());
@@ -1128,7 +1192,9 @@ class BmsService {
   void _armSilenceWatchdog() {
     _silenceTimer?.cancel();
     _silenceTimer = Timer(_silenceTimeout, () {
-      if (_lastSnapshot != null) return;
+      if (_hasReadingThisLink || lastLinkState != BleLinkState.connected) {
+        return;
+      }
       // A brand the rider picked and the pack never answered to is most
       // likely the wrong brand, and saying so is the one hint that gets them
       // reading. A brand the app inferred gets the general explanation.
@@ -1175,6 +1241,7 @@ class BmsService {
   /// it, the stored row it was pointing at, its notification and its widget.
   Future<void> _standDown() async {
     _resetDecoding();
+    if (!trip.isActive) await _stopLocation();
     activeDevice = null;
     repository?.activeDeviceId = null;
     _deviceController.add(null);
@@ -1212,9 +1279,9 @@ class BmsService {
     }
     for (final frame in _assembler.addChunk(chunk)) {
       _brandProved = true;
-      // The one proof the link has that the pack is talking. Every accepted
-      // frame, whatever its type: a record the app cannot decode is still the
-      // pack speaking JK, and not a reason for the link to let go.
+      // Protocol evidence identifies the pack and stops identification probes.
+      // Only a decoded battery reading advances the useful-data watchdog;
+      // device info alone must not keep a frozen monitor connected forever.
       _transport.frameAccepted(
         deviceInfo: frame.type == JkRecordType.deviceInfo,
       );
@@ -1388,8 +1455,10 @@ class BmsService {
             case (final setting, final value)) {
           // One register, answering one of the script's reads. Kept per pack
           // until the source changes: settings do not move between frames.
-          final next = (_antSettings ?? const AntSettings())
-              .withValue(setting, value);
+          final next = (_antSettings ?? const AntSettings()).withValue(
+            setting,
+            value,
+          );
           _antSettings = next;
           _antSettingsController.add(next);
         } else {
@@ -1786,6 +1855,22 @@ class BmsService {
   /// has its own framing and its own doubts, below it a reading is a reading.
   Future<void> _acceptSnapshot(BmsSnapshot snapshot) async {
     _silenceTimer?.cancel();
+    _hasReadingThisLink = true;
+    _stopCellInfoRequests();
+    _transport.readingAccepted();
+    final missingSince = _readingsMissingSince;
+    _readingsMissingSince = null;
+    if (missingSince != null) {
+      unawaited(
+        repository?.note(
+              LinkEventKind.readingsResumed,
+              detail:
+                  '${_now().difference(missingSince).inSeconds}s without readings',
+              deviceId: activeDeviceId,
+            ) ??
+            Future.value(),
+      );
+    }
 
     // A frame that decodes into cell voltages is the proof that this is a BMS,
     // and the first moment it is honest to file the device away as a battery.
@@ -1996,7 +2081,9 @@ class BmsService {
     // nothing and its watt-hours ended at the drop, because the only thing
     // that revives the loop is a tap nobody is there to make.
     _syncRetryPersistence();
-    unawaited(repository?.note(LinkEventKind.reconnectPersisting) ?? Future.value());
+    unawaited(
+      repository?.note(LinkEventKind.reconnectPersisting) ?? Future.value(),
+    );
     // The row is opened now rather than at the end, so readings taken during
     // the ride can be attributed to it and so a ride that ends badly still
     // leaves something behind.
@@ -2063,8 +2150,7 @@ class BmsService {
     if (!isDemo &&
         trip.fixesSeen == 0 &&
         startedAt != null &&
-        _now().difference(startedAt.toUtc()) >
-            const Duration(minutes: 2)) {
+        _now().difference(startedAt.toUtc()) > const Duration(minutes: 2)) {
       unawaited(
         repository?.note(
               LinkEventKind.tripWithoutFixes,
@@ -2079,7 +2165,9 @@ class BmsService {
     // Off the bike the old answer is the right one again, unless a charge
     // is being watched.
     _syncRetryPersistence();
-    unawaited(repository?.note(LinkEventKind.reconnectRelaxed) ?? Future.value());
+    unawaited(
+      repository?.note(LinkEventKind.reconnectRelaxed) ?? Future.value(),
+    );
     await _stopLocation();
 
     final id = _currentTripId;
@@ -2125,7 +2213,7 @@ class BmsService {
     }
 
     final snapshot = _lastSnapshot;
-    final usableWh = snapshot == null ? 0.0 : energyOf(snapshot).usableWh;
+    final usableWh = snapshot == null ? 0.0 : rangeEnergyOf(snapshot).usableWh;
 
     final conclusions = TripConclusions(
       whPerKmBefore: hadLearnedBefore ? whPerKmBefore : null,
@@ -2155,11 +2243,26 @@ class BmsService {
   /// something about it. `_currentTripId` is cleared by then.
   int? lastStoredTripId;
 
-  Future<LocationProblem?> _ensureLocation() async {
-    await _fixSub?.cancel();
-    _fixSub = null;
-    await _location?.stop();
-    _location = null;
+  Future<LocationProblem?>? _locationOpening;
+  int _locationEpoch = 0;
+  DateTime? _locationStartedAt;
+  DateTime? _lastLocationFixAt;
+  bool _locationStreamFailed = false;
+
+  Future<LocationProblem?> _ensureLocation() {
+    final pending = _locationOpening;
+    if (pending != null) return pending;
+    final opening = _openLocation();
+    _locationOpening = opening;
+    return opening.whenComplete(() {
+      if (identical(_locationOpening, opening)) _locationOpening = null;
+    });
+  }
+
+  Future<LocationProblem?> _openLocation() async {
+    final epoch = ++_locationEpoch;
+    await _releaseLocation();
+    if (epoch != _locationEpoch) return LocationProblem.serviceDisabled;
 
     // In demo mode the position comes from the simulated pack, so the riding
     // screens can be judged with no window and no satellites.
@@ -2171,49 +2274,88 @@ class BmsService {
             : GeolocatorSource());
     _location = source;
 
-    final problem = await source.start();
+    LocationProblem? problem;
+    try {
+      problem = await source.start();
+    } on Object catch (e) {
+      if (epoch != _locationEpoch || !identical(_location, source)) {
+        if (!identical(_location, source)) await source.stop();
+        return LocationProblem.serviceDisabled;
+      }
+      _locationStartedAt = _now();
+      _locationFailed(source, 'Could not open location: $e', epoch);
+      rethrow;
+    }
+    // A disconnect or standing down can finish while the platform is still
+    // opening GPS. That old request must not publish a new live stream.
+    if (epoch != _locationEpoch || !identical(_location, source)) {
+      if (!identical(_location, source)) await source.stop();
+      return LocationProblem.serviceDisabled;
+    }
     if (problem != null) {
       // Not left in place. A source that refused to start is not a location
       // stream, and holding it would make the next check think one is running.
       _location = null;
+      await source.stop();
       return problem;
     }
+    _locationStartedAt = _now();
 
-    _fixSub = source.fixes.listen((fix) {
-      // While a trip is open the recorder owns the fixes; before one, they
-      // exist only so the auto-start detector has a speed to judge.
-      if (trip.isRecording) {
-        trip.addFix(fix);
-      } else {
-        _lastAutoSpeedKmh = fix.speedKmh;
-        final moving = fix.speedKmh >= tripAutoStart.minSpeedKmh;
-        if (moving && !_noticedSpeed) {
-          _noticedSpeed = true;
-          unawaited(
-            repository?.note(
-                  LinkEventKind.idleSpeedSeen,
-                  detail: fix.speedKmh.toStringAsFixed(1),
-                  deviceId: activeDeviceId,
-                ) ??
-                Future.value(),
-          );
-        } else if (!moving) {
-          _noticedSpeed = false;
+    _fixSub = source.fixes.listen(
+      (fix) {
+        if (epoch != _locationEpoch || !identical(_location, source)) return;
+        _lastLocationFixAt = _now();
+        _locationStreamFailed = false;
+        // While a trip is open the recorder owns the fixes; before one, they
+        // exist only so the auto-start detector has a speed to judge.
+        if (trip.isRecording) {
+          trip.addFix(fix);
+        } else {
+          _lastAutoSpeedKmh = fix.speedKmh;
+          final moving = fix.speedKmh >= tripAutoStart.minSpeedKmh;
+          if (moving && !_noticedSpeed) {
+            _noticedSpeed = true;
+            unawaited(
+              repository?.note(
+                    LinkEventKind.idleSpeedSeen,
+                    detail: fix.speedKmh.toStringAsFixed(1),
+                    deviceId: activeDeviceId,
+                  ) ??
+                  Future.value(),
+            );
+          } else if (!moving) {
+            _noticedSpeed = false;
+          }
         }
-      }
-    }, onError: (Object e) {
-      // Kept, not thrown into the zone: an error here used to vanish, and the
-      // stream behind it delivered nothing for the rest of the ride.
-      unawaited(
-        repository?.note(
-              LinkEventKind.locationStreamError,
-              detail: '$e',
-              deviceId: activeDeviceId,
-            ) ??
-            Future.value(),
-      );
-    });
+      },
+      onError: (Object e) {
+        _locationFailed(source, '$e', epoch);
+      },
+      onDone: () {
+        _locationFailed(source, 'Location stream ended', epoch);
+      },
+    );
     return null;
+  }
+
+  void _locationFailed(LocationSource source, String detail, int epoch) {
+    if (epoch != _locationEpoch ||
+        !identical(_location, source) ||
+        _locationStreamFailed) {
+      return;
+    }
+    _locationStreamFailed = true;
+    _lastAutoSpeedKmh = null;
+    _noticedSpeed = false;
+    if (!trip.isActive) tripAutoStart.reset();
+    unawaited(
+      repository?.note(
+            LinkEventKind.locationStreamError,
+            detail: detail,
+            deviceId: activeDeviceId,
+          ) ??
+          Future.value(),
+    );
   }
 
   /// How long a ride may record with no fix before the GPS is suspected.
@@ -2236,6 +2378,7 @@ class BmsService {
   Future<void> _watchTripFixes(BmsSnapshot snapshot) async {
     if (!trip.isRecording || isDemo) {
       _fixSilenceNoted = false;
+      await _watchAutoTripFixes(snapshot);
       return;
     }
     final now = _now();
@@ -2260,7 +2403,8 @@ class BmsService {
       unawaited(
         repository?.note(
               LinkEventKind.tripWithoutFixes,
-              detail: '${silent.inSeconds} s, ${trip.fixesSeen} fixes so far, '
+              detail:
+                  '${silent.inSeconds} s, ${trip.fixesSeen} fixes so far, '
                   '${_gpsDiagnostics()}, '
                   'service ${_serviceOwner?.name ?? 'none'} '
                   'location-typed $_serviceLocationTyped',
@@ -2271,11 +2415,15 @@ class BmsService {
     }
 
     final rebuilt = _fixRebuiltAt;
-    if (rebuilt != null && now.difference(rebuilt) < const Duration(minutes: 2)) {
+    if (rebuilt != null &&
+        now.difference(rebuilt) < const Duration(minutes: 2)) {
       return;
     }
     _fixRebuiltAt = now;
-    final problem = await _ensureLocation();
+    final opening = _ensureLocation();
+    final epoch = _locationEpoch;
+    final problem = await opening;
+    if (epoch != _locationEpoch) return;
     lastLocationProblem = problem;
     if (problem != null) {
       unawaited(
@@ -2311,10 +2459,29 @@ class BmsService {
   }
 
   Future<void> _stopLocation() async {
-    await _fixSub?.cancel();
+    _locationEpoch++;
+    // Retire the old request without waiting for an uncooperative platform.
+    // Its completion is still observed, but cannot own the next pack's slot.
+    _locationOpening = null;
+    _armingLocation = false;
+    _locationRefusedAt = null;
+    lastLocationProblem = null;
+    _autoFixRebuiltAt = null;
+    await _releaseLocation();
+  }
+
+  Future<void> _releaseLocation() async {
+    final sub = _fixSub;
+    final source = _location;
     _fixSub = null;
-    await _location?.stop();
     _location = null;
+    _locationStartedAt = null;
+    _lastLocationFixAt = null;
+    _locationStreamFailed = false;
+    _lastAutoSpeedKmh = null;
+    _noticedSpeed = false;
+    await sub?.cancel();
+    await source?.stop();
   }
 
   /// How far it can go now, and how far a full pack is worth.
@@ -2326,12 +2493,9 @@ class BmsService {
     final s = _lastSnapshot;
     if (s == null) return RangeOutlook.unknown;
 
-    final energy = energyOf(s);
-
-    // A measured capacity outranks the catalogue figure, which is a claim
-    // about a purchase rather than a measurement of this battery.
-    final measured = bestMeasuredCapacityAh;
-    final capacity = measured ?? catalogueCapacityAh;
+    final energy = rangeEnergyOf(s);
+    final reference = _rangeCapacityFor(s);
+    final capacity = reference?.capacityAh;
 
     return RangeOutlook.from(
       estimator: rangeEstimator,
@@ -2342,15 +2506,17 @@ class BmsService {
       // It used to be 3.7 V a cell whatever the cells, 14% high on LFP.
       fullPackVoltage: capacity == null
           ? null
-          : PackEnergy.fullPackVoltage(
+          : PackEnergy.operationalFullPackVoltage(
               cellCount: s.cellCount,
               chemistry: cutoffChemistry,
             ),
       // The same derating the remaining figure gets. A weak cell shortens a
       // full pack exactly as much as it shortens a half-empty one.
       usableFraction: energy.usableFraction ?? 1,
-      capacityWasMeasured: measured != null,
-      capacityFromBmsConfig: catalogueFromBms,
+      capacityWasMeasured: reference?.source == RangeCapacitySource.measured,
+      capacityFromBmsConfig: reference?.source == RangeCapacitySource.bmsConfig,
+      fullNeedsChemistry:
+          capacity != null && cutoffChemistry == CellChemistry.unknown,
     );
   }
 
@@ -2463,7 +2629,7 @@ class BmsService {
   // quietly stops receiving. Readings do not fail, they thin out and stop,
   // which is the worst way for a logger to break.
 
-  final LiveNotification notifications = LiveNotification();
+  final LiveNotification notifications;
   Timer? _notificationTimer;
 
   /// Wording for the notification, set by the UI so the analysis layer does not
@@ -2608,10 +2774,8 @@ class BmsService {
   }
 
   @visibleForTesting
-  bool get serviceUsesLocationForTest {
-    final claim = _claim;
-    return claim != null && _serviceNeedsLocation(claim);
-  }
+  bool get serviceUsesLocationForTest =>
+      _serviceOwner != null && _serviceLocationTyped;
 
   /// Times the service was (re)started, so a test can tell a hand-over that
   /// kept the running service from one that restarted it.
@@ -2663,7 +2827,38 @@ class BmsService {
   ///
   /// Safe to call as often as readings arrive. Starting is the only expensive
   /// part and it only happens when the owner actually changes.
-  Future<void> _updateForegroundService() async {
+  Future<void>? _foregroundUpdate;
+  bool _foregroundUpdateRequested = false;
+  bool _notificationDisposed = false;
+
+  Future<void> _updateForegroundService() {
+    if (_notificationDisposed) return Future<void>.value();
+    _foregroundUpdateRequested = true;
+    return _foregroundUpdate ??= _drainForegroundUpdates();
+  }
+
+  Future<void> _drainForegroundUpdates() async {
+    try {
+      while (_foregroundUpdateRequested && !_notificationDisposed) {
+        _foregroundUpdateRequested = false;
+        await _reconcileForegroundService();
+        final wanted = _claim;
+        // Frequent readings can queue text refreshes faster than Android can
+        // render them. Once ownership and type are right, let callers finish;
+        // the next reading/timer supplies the next text refresh.
+        if (_serviceOwner == wanted &&
+            (wanted == null ||
+                _serviceLocationTyped == _serviceNeedsLocation(wanted))) {
+          _foregroundUpdateRequested = false;
+        }
+      }
+    } finally {
+      _foregroundUpdate = null;
+    }
+  }
+
+  Future<void> _reconcileForegroundService() async {
+    if (_notificationDisposed) return;
     _syncRetryPersistence();
     final wanted = _claim;
 
@@ -2694,8 +2889,10 @@ class BmsService {
       _notificationTimer?.cancel();
       _notificationTimer = null;
     }
+    if (_notificationDisposed) return;
 
-    if (_serviceOwner == wanted) {
+    final needsLocation = _serviceNeedsLocation(wanted);
+    if (_serviceOwner == wanted && _serviceLocationTyped == needsLocation) {
       await notifications.update(
         title: _serviceTitle(wanted),
         text: _serviceText(wanted),
@@ -2711,7 +2908,6 @@ class BmsService {
     // identical one is what threw it away: the new start was refused, the
     // ride had no service, and Android stopped delivering fixes to a
     // backgrounded app. A 45-minute ride came back with 0 km.
-    final needsLocation = _serviceNeedsLocation(wanted);
     if (_serviceOwner != null && _serviceLocationTyped == needsLocation) {
       _adoptService(wanted);
       await notifications.update(
@@ -2723,7 +2919,20 @@ class BmsService {
 
     // A change of type does need a restart: Android will not reclassify a
     // running service.
-    if (_serviceOwner != null) await notifications.stop();
+    if (_serviceOwner != null) {
+      await notifications.stop();
+      _serviceOwner = null;
+      _notificationTimer?.cancel();
+      _notificationTimer = null;
+    }
+    if (_notificationDisposed) return;
+
+    // The rider may have changed the setting or ended the claim while Android
+    // was stopping the old service. Start only what the latest state needs.
+    if (_claim != wanted || _serviceNeedsLocation(wanted) != needsLocation) {
+      _foregroundUpdateRequested = true;
+      return;
+    }
 
     if (!await notifications.requestPermission()) {
       _serviceOwner = null;
@@ -2733,6 +2942,12 @@ class BmsService {
           'recording when the app leaves the screen.',
         );
       }
+      return;
+    }
+    if (_notificationDisposed) return;
+
+    if (_claim != wanted || _serviceNeedsLocation(wanted) != needsLocation) {
+      _foregroundUpdateRequested = true;
       return;
     }
 
@@ -2746,6 +2961,7 @@ class BmsService {
       // the bike is.
       usesRealLocation: needsLocation,
     );
+    if (_notificationDisposed) return;
     if (!started) {
       _serviceOwner = null;
       _notificationTimer?.cancel();
@@ -2759,7 +2975,8 @@ class BmsService {
       unawaited(
         repository?.note(
               LinkEventKind.foregroundServiceRefused,
-              detail: '${wanted.name} location=$needsLocation '
+              detail:
+                  '${wanted.name} location=$needsLocation '
                   '${notifications.lastFailure ?? ''}',
               deviceId: activeDeviceId,
             ) ??
@@ -2959,6 +3176,9 @@ class BmsService {
   /// interrupted. A real ride has 26 gaps in 21 minutes, all of which closed
   /// on their own, so that is 26 interruptions for nothing.
   void _onLinkDown() {
+    _hasReadingThisLink = false;
+    _stopCellInfoRequests();
+    _silenceTimer?.cancel();
     // A frame cut in half by the drop must not be finished by whatever the
     // next link sends first. The ANT assembler only restarts on a notification
     // that begins 7E A1, so a leftover head plus a tail from a later frame
@@ -2967,6 +3187,7 @@ class BmsService {
     _assembler.reset();
     _antAssembler.reset();
     if (_disconnectRequested) return;
+    _readingsMissingSince ??= _now();
     if (_linkDownSince != null) return;
     _linkDownSince = DateTime.now();
     // How long it had been up, which is what separates a pack dropping every
@@ -2992,19 +3213,12 @@ class BmsService {
 
   /// The link came back. Whatever was said about it being gone is over.
   void _onLinkUp() {
-    // The gap, which is the number that says whether a recovery worked or the
-    // ride simply ended. A ride's worst measured gap was 169 seconds and it
-    // closed on its own; anything much longer is the failure being chased.
-    final downFor = _linkDownSince;
-    if (downFor != null) {
-      unawaited(
-        repository?.note(
-              LinkEventKind.readingsResumed,
-              detail: '${DateTime.now().difference(downFor).inSeconds}s down',
-              deviceId: activeDeviceId,
-            ) ??
-            Future.value(),
-      );
+    // Bootstrap may already have delivered a valid reading before connected.
+    // Otherwise every reconstructed JK link gets its own recovery, regardless
+    // of how many frames an earlier link delivered.
+    if (!_disconnectRequested && !_hasReadingThisLink) {
+      _armSilenceWatchdog();
+      if (_brand == BmsBrand.jk && !isDemo) _armCellInfoRequests();
     }
     _linkUpSince = DateTime.now();
     _linkLostTimer?.cancel();
@@ -3082,6 +3296,80 @@ class BmsService {
 
   Stream<AutoTripAction> get autoTripEvents => _autoTripController.stream;
 
+  DateTime? _autoFixRebuiltAt;
+
+  bool get autoTripWaitingForGps =>
+      autoTripEnabled &&
+      !isDemo &&
+      !trip.isActive &&
+      activeDevice != null &&
+      (tripAutoStart.wantsGps(_now()) ||
+          _locationOpening != null ||
+          _locationStreamFailed) &&
+      _lastAutoSpeedKmh == null;
+
+  bool get autoTripGpsStalled {
+    if (!autoTripWaitingForGps) return false;
+    if (_locationStreamFailed) return true;
+    final since = _lastLocationFixAt ?? _locationStartedAt;
+    return since != null && _now().difference(since) >= tripFixSilence;
+  }
+
+  /// Before a ride exists, an accepted stream can still be silent or dead.
+  /// Retry only while the pack is working; a parked phone's distance-filtered
+  /// GPS has no obligation to deliver fixes. Keep retries two minutes apart.
+  Future<void> _watchAutoTripFixes(BmsSnapshot snapshot) async {
+    if (!autoTripEnabled ||
+        isDemo ||
+        trip.isActive ||
+        activeDevice == null ||
+        _location == null ||
+        _armingLocation ||
+        _locationOpening != null ||
+        snapshot.current > -tripAutoStart.minCurrentAmps) {
+      return;
+    }
+    final now = _now();
+    final since = _lastLocationFixAt ?? _locationStartedAt;
+    if (since == null) return;
+    final silent = now.difference(since);
+    if (!_locationStreamFailed && silent < tripFixSilence) return;
+    final rebuilt = _autoFixRebuiltAt;
+    if (rebuilt != null &&
+        now.difference(rebuilt) < const Duration(minutes: 2)) {
+      return;
+    }
+    _autoFixRebuiltAt = now;
+    _armingLocation = true;
+    final diagnostics = _gpsDiagnostics();
+    final opening = _ensureLocation();
+    final epoch = _locationEpoch;
+    try {
+      final refused = await opening;
+      if (epoch != _locationEpoch) return;
+      lastLocationProblem = refused;
+      _locationRefusedAt = refused == null ? null : now;
+      unawaited(
+        repository?.note(
+              refused == null
+                  ? LinkEventKind.locationArmed
+                  : LinkEventKind.locationRefused,
+              detail:
+                  'pre-trip recovery after ${silent.inSeconds} s without a fix, '
+                  '$diagnostics, ${refused?.name ?? _locationContext()}',
+              deviceId: activeDeviceId,
+            ) ??
+            Future.value(),
+      );
+    } on Object catch (e) {
+      if (epoch != _locationEpoch) return;
+      _locationRefusedAt = now;
+      _problem('Could not restart location for automatic trips: $e');
+    } finally {
+      if (epoch == _locationEpoch) _armingLocation = false;
+    }
+  }
+
   Future<void> _updateAutoTrip(BmsSnapshot snapshot) async {
     // Never against the simulated pack: a demo ride that opened itself would
     // be teaching the demo world things nobody asked for.
@@ -3102,8 +3390,20 @@ class BmsService {
     // The radio is not on until the pack is drawing, which is what keeps this
     // from being a GPS listener running all day. Current is cheap to watch and
     // already arriving; satellites are not.
-    await _armLocationForAutoTrip(snapshot);
+    final arming = _armLocationForAutoTrip(snapshot);
+    final epoch = _locationEpoch;
+    await arming;
+    if (epoch != _locationEpoch) return;
 
+    // The source can fail while the asynchronous arming step is completing.
+    // A decision made from its old speed must not open a track without GPS.
+    if (action == AutoTripAction.start &&
+        (trip.isActive ||
+            !autoTripEnabled ||
+            activeDevice == null ||
+            (_lastAutoSpeedKmh ?? 0) < tripAutoStart.minSpeedKmh)) {
+      return;
+    }
     await _runAutoTripAction(action);
   }
 
@@ -3193,12 +3493,17 @@ class BmsService {
 
     final wanted = tripAutoStart.wantsGps(snapshot.timestamp);
     final refusedAt = _locationRefusedAt;
-    final retrySoon = refusedAt != null &&
+    final retrySoon =
+        refusedAt != null &&
         snapshot.timestamp.difference(refusedAt) < const Duration(seconds: 30);
     if (wanted && _location == null && !retrySoon) {
       _armingLocation = true;
+      final opening = _ensureLocation();
+      final epoch = _locationEpoch;
       try {
-        final refused = await _ensureLocation();
+        final refused = await opening;
+        if (epoch != _locationEpoch) return;
+        lastLocationProblem = refused;
         _locationRefusedAt = refused == null ? null : snapshot.timestamp;
         unawaited(
           repository?.note(
@@ -3208,14 +3513,20 @@ class BmsService {
                 // What a pocket start depends on, written down where the
                 // next backup can show it: whether Android was asked for
                 // location from a service it will let read it.
-                detail: '${refused == null ? '' : '${refused.name}, '}'
+                detail:
+                    '${refused == null ? '' : '${refused.name}, '}'
                     '${_locationContext()}',
                 deviceId: activeDeviceId,
               ) ??
               Future.value(),
         );
+      } on Object catch (e) {
+        if (epoch != _locationEpoch) return;
+        _locationRefusedAt = snapshot.timestamp;
+        _autoFixRebuiltAt = _now();
+        _problem('Could not open location for automatic trips: $e');
       } finally {
-        _armingLocation = false;
+        if (epoch == _locationEpoch) _armingLocation = false;
       }
     } else if (!wanted && _location != null) {
       // Stood down, a couple of minutes after the pack last drew. The speed
@@ -3245,8 +3556,9 @@ class BmsService {
   /// The circumstances of a GPS switch-on, in one line for the log.
   String _locationContext() {
     final source = _location;
-    final permission =
-        source is LocationDiagnostics ? (source as LocationDiagnostics).permission : null;
+    final permission = source is LocationDiagnostics
+        ? (source as LocationDiagnostics).permission
+        : null;
     return 'permission ${permission ?? '?'}, '
         'app ${appVisible ? 'visible' : 'in background'}, '
         'service ${_serviceOwner?.name ?? 'none'} '
@@ -3335,7 +3647,7 @@ class BmsService {
         // range quoted from the default consumption would look identical to
         // one it had earned.
         rangeKm: rangeEstimator.hasLearned
-            ? rangeEstimator.rangeKm(energyOf(snapshot).usableWh)
+            ? rangeEstimator.rangeKm(rangeEnergyOf(snapshot).usableWh)
             : null,
         strings: words,
       ),
@@ -3662,7 +3974,8 @@ class BmsService {
         gapSeconds: unfinished.gapSeconds,
         chargedDuringRun: unfinished.chargedDuringRun,
         lastSeen:
-            lastSeen == null || lastSeen.timestamp.isBefore(unfinished.startedAt)
+            lastSeen == null ||
+                lastSeen.timestamp.isBefore(unfinished.startedAt)
             ? null
             : CapacityBridgePoint(
                 at: lastSeen.timestamp,
@@ -3799,11 +4112,14 @@ class BmsService {
   }
 
   Future<void> dispose() async {
+    _notificationDisposed = true;
+    _foregroundUpdateRequested = false;
     _silenceTimer?.cancel();
     _linkLostTimer?.cancel();
     _cellInfoTimer?.cancel();
     _notificationTimer?.cancel();
     _notificationTimer = null;
+    await _foregroundUpdate?.catchError((Object _) {});
     _serviceOwner = null;
     await notifications.stop();
     await _stopLocation();
