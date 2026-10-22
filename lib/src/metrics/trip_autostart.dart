@@ -109,6 +109,10 @@ class TripAutoStart {
   /// Whether conditions currently look like riding.
   bool get looksLikeRiding => _movingSince != null;
 
+  DateTime? get candidateStartedAt => _movingSince;
+
+  DateTime? get gpsHoldUntil => _lastDrawAt?.add(gpsHold);
+
   /// Whether the GPS should be on, before any ride is open, at [at].
   ///
   /// On from the first reading that draws, and kept on for [gpsHold] after
@@ -161,14 +165,14 @@ class TripAutoStart {
     final drawing = current <= -minCurrentAmps;
     if (drawing) _lastDrawAt = at;
     final drew = _lastDrawAt;
-    final working = drew != null &&
-        !at.isBefore(drew) &&
-        at.difference(drew) <= drawGrace;
+    final working =
+        drew != null && !at.isBefore(drew) && at.difference(drew) <= drawGrace;
     final moving = (speedKmh ?? 0) >= minSpeedKmh;
     final riding = working && moving;
 
     // Stillness has to be witnessed, not assumed from silence.
-    final idle = current.abs() <= idleCurrentAmps &&
+    final idle =
+        current.abs() <= idleCurrentAmps &&
         speedKmh != null &&
         speedKmh <= idleSpeedKmh;
 
@@ -201,7 +205,8 @@ class TripAutoStart {
       _stillSince = null;
       // The long fuse, for a ride whose GPS never came back. Only a pack that
       // has drawn nothing for twenty minutes gets here.
-      if (recording && _quietSince != null &&
+      if (recording &&
+          _quietSince != null &&
           at.difference(_quietSince!) >= stopWithoutFixAfter) {
         _quietSince = null;
         return AutoTripAction.stop;

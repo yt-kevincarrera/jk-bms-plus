@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../bms_service.dart';
+import '../../ble/hands_free_controller.dart';
 import '../../data/database.dart';
 import '../theme.dart';
 import '../compare_packs_screen.dart';
@@ -14,9 +15,10 @@ import 'common.dart';
 /// in. Pooling them would not average anything — it would produce a history
 /// describing no battery that exists.
 class PacksCard extends StatefulWidget {
-  const PacksCard({required this.service, super.key});
+  const PacksCard({required this.service, this.handsFree, super.key});
 
   final BmsService service;
+  final HandsFreeController? handsFree;
 
   @override
   State<PacksCard> createState() => _PacksCardState();
@@ -266,6 +268,7 @@ class _PacksCardState extends State<PacksCard> {
     if (confirmed != true) return;
 
     setState(() => _busy = true);
+    await widget.handsFree?.forgetDevice(d.id);
     await widget.service.repository?.deleteDevice(d.id);
     // The range estimate is rebuilt from stored rides, so deleting a pack has
     // to be followed by a relearn or the number keeps the deleted pack in it.

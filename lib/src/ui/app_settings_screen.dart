@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../app_settings.dart';
 import '../ble/bms_write_gate.dart';
+import '../ble/hands_free_controller.dart';
+import 'widgets/hands_free_card.dart';
 import '../bms_service.dart';
 import '../protocol/bms_brand.dart';
 import '../metrics/charge_alerts.dart';
@@ -101,6 +103,7 @@ class AppSettingsScreen extends StatefulWidget {
     required this.settings,
     required this.localeController,
     required this.updateService,
+    this.handsFree,
     super.key,
   });
 
@@ -108,6 +111,7 @@ class AppSettingsScreen extends StatefulWidget {
   final AppSettings settings;
   final LocaleController localeController;
   final UpdateService updateService;
+  final HandsFreeController? handsFree;
 
   @override
   State<AppSettingsScreen> createState() => _AppSettingsScreenState();
@@ -158,7 +162,9 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           children: [
             UpdateCard(service: widget.updateService, settings: settings),
             const LicenseCard(),
-            PacksCard(service: widget.service),
+            PacksCard(service: widget.service, handsFree: widget.handsFree),
+            if (widget.handsFree case final controller?)
+              HandsFreeCard(controller: controller),
             Section(
               title: t.inspectionsTitle,
               intro: t.inspectionsIntro,

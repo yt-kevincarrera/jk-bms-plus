@@ -129,9 +129,9 @@ class GeolocatorSource implements LocationSource, LocationDiagnostics {
     }
 
     await _sub?.cancel();
-    _sub = Geolocator.getPositionStream(
-      locationSettings: _settings(),
-    ).listen((p) {
+    _sub = Geolocator.getPositionStream(locationSettings: _settings()).listen((
+      p,
+    ) {
       received++;
       final best = bestAccuracyM;
       if (best == null || p.accuracy < best) bestAccuracyM = p.accuracy;
@@ -141,7 +141,7 @@ class GeolocatorSource implements LocationSource, LocationDiagnostics {
       }
       _controller.add(
         GeoFix(
-          timestamp: DateTime.now().toUtc(),
+          timestamp: p.timestamp.toUtc(),
           latitude: p.latitude,
           longitude: p.longitude,
           speedMs: p.speed.isFinite && p.speed > 0 ? p.speed : 0,

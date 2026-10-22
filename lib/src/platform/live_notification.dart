@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+
+import 'hands_free_platform.dart';
 
 /// The notification that keeps a trip alive and readable from anywhere.
 ///
@@ -14,7 +17,24 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 /// Declared as `location` type: that is the category that grants continued GPS
 /// access, and it is the honest label for what the service is actually doing.
 class LiveNotification {
-  LiveNotification();
+  LiveNotification({HandsFreePlatform? handsFree, bool? isAndroid})
+    : _handsFree = handsFree ?? HandsFreePlatform.shared,
+      _isAndroid = isAndroid ?? Platform.isAndroid;
+
+  final HandsFreePlatform _handsFree;
+  final bool _isAndroid;
+  bool _nativeOwned = false;
+  bool get _wantsNative => _handsFree.status.ownsForeground;
+  bool _locationActive = false;
+
+  /// The foreground type can stay location-capable while GPS rests. Only a
+  /// live location source needs the companion host to hold the CPU awake.
+  set locationActive(bool value) {
+    _locationActive = value;
+    if (_isAndroid && _nativeOwned) {
+      unawaited(_handsFree.notificationPower(active: value));
+    }
+  }
 
   static const _channelId = 'jk_bms_trip';
   static const _serviceId = 5510;
@@ -29,7 +49,7 @@ class LiveNotification {
     required String channelName,
     required String channelDescription,
   }) {
-    if (_initialised || !Platform.isAndroid) return;
+    if (_initialised || !_isAndroid) return;
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
         channelId: _channelId,
@@ -73,7 +93,12 @@ class LiveNotification {
   /// Returns false when it was refused, in which case the service cannot start
   /// and the caller should say so rather than silently recording nothing.
   Future<bool> requestPermission() async {
-    if (!Platform.isAndroid) return true;
+    if (!_isAndroid) return true;
+    // Setup already requested consent while an Activity was visible. A
+    // presence callback must never try to show a permission dialog headlessly.
+    if (_wantsNative) {
+      return _handsFree.status.reason != 'notification_permission';
+    }
     final status = await FlutterForegroundTask.checkNotificationPermission();
     if (status == NotificationPermission.granted) return true;
     final result = await FlutterForegroundTask.requestNotificationPermission();
@@ -90,12 +115,39 @@ class LiveNotification {
     required String text,
     bool usesRealLocation = true,
   }) async {
-    if (!Platform.isAndroid) return true;
+    if (!_isAndroid) return true;
+    _checkedAt = null;
+    if (_wantsNative) {
+      final wasNative = _nativeOwned;
+      final started = await _handsFree.notificationStart(
+        title: title,
+        text: text,
+        usesLocation: usesRealLocation,
+      );
+      if (started) {
+        if (await FlutterForegroundTask.isRunningService) {
+          await FlutterForegroundTask.stopService();
+        }
+        _nativeOwned = true;
+        _running = true;
+        await _handsFree.notificationPower(active: _locationActive);
+      } else {
+        _nativeOwned = wasNative;
+        _running = wasNative || await FlutterForegroundTask.isRunningService;
+      }
+      lastFailure = _handsFree.lastFailure;
+      return started;
+    }
+    final handingOffNative = _nativeOwned;
     // Asked of Android, not of the flag. The flag only knew what this object
     // had done, and Android also stops services on its own (a dataSync one
     // after six hours on Android 15): a flag still saying "running" made this
     // return true for a service that was gone, and a ride went without one.
-    if (_running && await FlutterForegroundTask.isRunningService) return true;
+    if (_running &&
+        !handingOffNative &&
+        await FlutterForegroundTask.isRunningService) {
+      return true;
+    }
 
     final result = await FlutterForegroundTask.startService(
       serviceId: _serviceId,
@@ -107,9 +159,16 @@ class LiveNotification {
       notificationTitle: title,
       notificationText: text,
     );
-    _running = result is ServiceRequestSuccess;
+    final started = result is ServiceRequestSuccess;
+    if (handingOffNative && started) {
+      // Keep the old location owner alive until Android accepts its successor.
+      // Disabling proximity from a notification can happen with no Activity.
+      await _handsFree.notificationStop();
+      _nativeOwned = false;
+    }
+    _running = started || handingOffNative;
     lastFailure = result is ServiceRequestFailure ? '${result.error}' : null;
-    return _running;
+    return started;
   }
 
   /// Why the last start or stop failed, for writing down. Null after one
@@ -123,7 +182,10 @@ class LiveNotification {
   /// For the caller that holds a service for hours: it is the only way to find
   /// out Android stopped it, short of the fixes or the radio quietly stopping.
   Future<bool> stillRunning() async {
-    if (!Platform.isAndroid) return true;
+    if (!_isAndroid) return true;
+    // A changed backend needs the service arbiter to reclaim the notification
+    // even if the old Android service is still running.
+    if (_wantsNative != _nativeOwned) return false;
     if (!_running) return false;
     final now = DateTime.now();
     final last = _checkedAt;
@@ -131,14 +193,21 @@ class LiveNotification {
       return true;
     }
     _checkedAt = now;
-    final running = await FlutterForegroundTask.isRunningService;
+    final running = _nativeOwned
+        ? await _handsFree.notificationRunning()
+        : await FlutterForegroundTask.isRunningService;
     if (!running) _running = false;
     return running;
   }
 
   /// Rewrites the notification. Cheap enough to call once a second.
   Future<void> update({required String title, required String text}) async {
-    if (!_running || !Platform.isAndroid) return;
+    if (!_running || !_isAndroid) return;
+    if (_nativeOwned) {
+      await _handsFree.notificationPower(active: _locationActive);
+      await _handsFree.notificationUpdate(title: title, text: text);
+      return;
+    }
     await FlutterForegroundTask.updateService(
       notificationTitle: title,
       notificationText: text,
@@ -146,7 +215,14 @@ class LiveNotification {
   }
 
   Future<void> stop() async {
-    if (!Platform.isAndroid) return;
+    if (!_isAndroid) return;
+    _checkedAt = null;
+    if (_nativeOwned) {
+      await _handsFree.notificationStop();
+      _nativeOwned = false;
+      _running = false;
+      return;
+    }
     // Not gated on the flag: a service this object lost track of is still a
     // service, and the start after this stop would be refused as "already
     // started" with it in the way.

@@ -167,6 +167,7 @@ class TripSummary {
   final double minPackVoltage;
   final double maxPackVoltage;
   final double maxDischargeCurrent;
+
   /// Hottest battery probe over the ride, or null when the pack has none.
   final double? maxTemperature;
   final double maxDeltaVolts;
@@ -204,7 +205,6 @@ class TripSummary {
   /// people actually reason with when they are sizing a commute.
   double? get socPerKm =>
       distanceKm < 0.2 || socUsed <= 0 ? null : socUsed / distanceKm;
-
 }
 
 /// Records a ride: distance and speed from GPS, everything else from the BMS.
@@ -213,7 +213,7 @@ class TripSummary {
 /// minutes parked outside a shop is not a trip you can learn consumption from.
 class TripRecorder {
   TripRecorder({DateTime Function()? clock})
-      : _clock = clock ?? (() => DateTime.now().toUtc());
+    : _clock = clock ?? (() => DateTime.now().toUtc());
 
   /// Where the ride's own sense of time comes from.
   ///
@@ -256,6 +256,7 @@ class TripRecorder {
   double _maxSpeedKmh = 0;
   double _speedKmh = 0;
   Duration _movingDuration = Duration.zero;
+
   /// Time spent paused, so it can be taken back out of the elapsed clock.
   Duration _pausedTotal = Duration.zero;
   DateTime? _pausedAt;
@@ -325,6 +326,7 @@ class TripRecorder {
     final age = _clock().difference(last);
     return age > const Duration(seconds: 20) ? null : _speedKmh;
   }
+
   double get maxSpeedKmh => _maxSpeedKmh;
   Duration get movingDuration => _movingDuration;
 
@@ -335,6 +337,7 @@ class TripRecorder {
 
   /// GPS fixes this ride has taken in.
   int get fixesSeen => _points.length;
+
   /// Wall-clock time since the trip started, minus whatever was spent paused.
   ///
   /// Deliberately different from [movingDuration]: the gap between the two is
@@ -347,10 +350,9 @@ class TripRecorder {
     final started = _startedAt;
     if (started == null) return Duration.zero;
 
-    final pausedSoFar = _pausedTotal +
-        (_pausedAt == null
-            ? Duration.zero
-            : _clock().difference(_pausedAt!));
+    final pausedSoFar =
+        _pausedTotal +
+        (_pausedAt == null ? Duration.zero : _clock().difference(_pausedAt!));
     final elapsed = _clock().difference(started) - pausedSoFar;
     return elapsed.isNegative ? Duration.zero : elapsed;
   }
@@ -360,6 +362,7 @@ class TripRecorder {
     final idle = totalDuration - _movingDuration;
     return idle.isNegative ? Duration.zero : idle;
   }
+
   /// Amp-hours the pack's own counter says have left, or null when it has not
   /// moved enough to mean anything.
   ///
@@ -486,10 +489,13 @@ class TripRecorder {
     return hours <= 0 ? 0 : _distanceKm / hours;
   }
 
-  void start() {
+  void start({DateTime? at, BmsSnapshot? initialSnapshot}) {
     _reset();
     _state = TripState.recording;
-    _startedAt = _clock();
+    _startedAt = at ?? _clock();
+    // Context for the first GPS point, without integrating a sample from
+    // before the observed trip window as if it belonged to this ride.
+    _lastSnapshot = initialSnapshot;
   }
 
   void pause() {
@@ -605,7 +611,6 @@ class TripRecorder {
       fix.latitude,
       fix.longitude,
     );
-
 
     // Below walking pace this is GPS jitter, not movement.
     if (metres < 1.5 || fix.speedKmh < 1.5) return;
@@ -734,7 +739,8 @@ class TripRecorder {
     const earthRadiusM = 6371000.0;
     final dLat = _radians(lat2 - lat1);
     final dLon = _radians(lon2 - lon1);
-    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+    final a =
+        math.sin(dLat / 2) * math.sin(dLat / 2) +
         math.cos(_radians(lat1)) *
             math.cos(_radians(lat2)) *
             math.sin(dLon / 2) *
@@ -783,7 +789,8 @@ class TripConclusions {
   bool get hadLearnedBefore => whPerKmBefore != null;
 
   /// True when the ride moved the estimate by more than rounding.
-  bool get moved => (whPerKmAfter - (whPerKmBefore ?? whPerKmAfter)).abs() > 0.5;
+  bool get moved =>
+      (whPerKmAfter - (whPerKmBefore ?? whPerKmAfter)).abs() > 0.5;
 
   /// How much thirstier a ride costing [rideWhPerKm] was than the learned
   /// average, as a percentage. Null when there is nothing to compare against,

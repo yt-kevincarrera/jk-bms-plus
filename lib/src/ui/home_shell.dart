@@ -9,6 +9,7 @@ import '../ble/link_quiet.dart';
 import '../ble/link_trouble.dart';
 import '../app_settings.dart';
 import '../ble/proximity_watcher.dart';
+import '../ble/hands_free_controller.dart';
 import '../bms_service.dart';
 import '../model/bms_snapshot.dart';
 import 'pack/pack_profile_sheet.dart';
@@ -38,6 +39,7 @@ class HomeShell extends StatefulWidget {
     required this.proximity,
     required this.settings,
     required this.updateService,
+    this.handsFree,
     super.key,
   });
 
@@ -47,6 +49,7 @@ class HomeShell extends StatefulWidget {
   final ProximityWatcher proximity;
   final AppSettings settings;
   final UpdateService updateService;
+  final HandsFreeController? handsFree;
 
   @override
   State<HomeShell> createState() => _HomeShellState();
@@ -138,6 +141,7 @@ class _HomeShellState extends State<HomeShell> {
   /// simulation, and the answers would be fiction in the same tables the
   /// real ones live in.
   Future<void> _offerProfileOnce() async {
+    if (!widget.service.appVisible) return;
     if (_profileOffered) return;
     _profileOffered = true;
 
@@ -233,6 +237,7 @@ class _HomeShellState extends State<HomeShell> {
               proximity: widget.proximity,
               settings: widget.settings,
               updateService: widget.updateService,
+              handsFree: widget.handsFree,
             ),
           ],
         ),
@@ -379,11 +384,7 @@ class _LinkBanner extends StatelessWidget {
               // A spinner claims something is happening. Once the loop has
               // stopped, nothing is.
               child: gaveUp
-                  ? const Icon(
-                      Icons.link_off,
-                      size: 12,
-                      color: AppTheme.watch,
-                    )
+                  ? const Icon(Icons.link_off, size: 12, color: AppTheme.watch)
                   : const CircularProgressIndicator(
                       strokeWidth: 1.8,
                       color: AppTheme.watch,

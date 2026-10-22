@@ -1533,11 +1533,11 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get proximityBody =>
-      'While this is on, the app looks for your BMS every half minute and connects on its own the moment it appears. Meant to be left on for a stretch while a new battery is being calibrated, not forever: while it is connected your BMS\'s official app cannot get in, and scanning costs some phone battery.';
+      'Associate your battery with Android once to connect without opening the app, including after a reboot or removing it from recents. Enable automatic trip recording too. Bluetooth, notifications and precise location set to “Allow all the time” are needed to record with the screen off.';
 
   @override
   String get proximityLimit =>
-      'Works with the app open or backgrounded. If Android kills the process it stops looking until you open it again.';
+      'A notification and Bluetooth connection stay active while your battery is nearby; the official BMS app cannot connect at the same time. GPS warms up on connection and runs when power draw is detected. After choosing “Force stop” in Android, open the app again to re-enable it.';
 
   @override
   String get proximityRemembered => 'Watching for';
@@ -1551,6 +1551,69 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get proximityScanning => 'looking';
+
+  @override
+  String get handsFreeEnable => 'Automatic connection';
+
+  @override
+  String get handsFreeUnsupported =>
+      'This phone needs Android 12 or later with companion device detection. Manual connection remains available.';
+
+  @override
+  String get handsFreeBluetoothPermission =>
+      'Nearby devices permission is needed to detect and connect your battery.';
+
+  @override
+  String get handsFreeNotificationPermission =>
+      'Allow notifications to see and maintain the background connection.';
+
+  @override
+  String get handsFreePrecisePermission =>
+      'Allow precise location to measure the route.';
+
+  @override
+  String get handsFreeBackgroundPermission =>
+      'In Android settings, open Permissions → Location and choose “Allow all the time”. Then return here and enable automatic connection.';
+
+  @override
+  String get handsFreeLocationOff =>
+      'Turn on phone location to record the route.';
+
+  @override
+  String get handsFreeAssociationRequired =>
+      'Enable the option and confirm your battery in Android’s window. The battery must be on and free of other connections.';
+
+  @override
+  String get handsFreeCancelled =>
+      'Association cancelled. You can try again or connect manually.';
+
+  @override
+  String get handsFreeFinishTrip =>
+      'Finish the trip before setting up the first battery association.';
+
+  @override
+  String get handsFreeRunning =>
+      'Background connection is active. The trip will start when movement and power draw are detected.';
+
+  @override
+  String get handsFreeWaiting =>
+      'Ready. Android will notify the app when it detects your battery.';
+
+  @override
+  String get handsFreeDisabled => 'Disabled. You can still connect manually.';
+
+  @override
+  String get handsFreeFailed =>
+      'Setup could not finish. Check permissions and try again; manual connection remains available.';
+
+  @override
+  String get handsFreeSettingUp => 'Setting up the Android connection…';
+
+  @override
+  String get handsFreeOpenSettings => 'Open Android settings';
+
+  @override
+  String get handsFreeRepair => 'Review setup';
 
   @override
   String get capacityTitle => 'Capacity test';
@@ -2452,7 +2515,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get autoTripHint =>
-      'Opens the ride when the pack is drawing and the GPS says you are moving, both for about 20 seconds (setting off at walking pace, it waits until you pass 6 km/h), and closes it after about three minutes standing still. Whatever you cover before it opens is not recorded. Turn it off and the app only learns your range from rides you start by hand, and the ones people forget are not a random sample: they are the short ones and the rushed ones.';
+      'Warms up GPS on connection. Starts the trip after about 20 seconds of power draw and movement above 6 km/h, keeping the route observed during that confirmation. Ends it after about three minutes standing still. A section covered before GPS gets a fix cannot be recovered. To work without opening the app, also set up “Connect when I get close”.';
 
   @override
   String get autoTripStarted => 'Ride started automatically';

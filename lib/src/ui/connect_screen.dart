@@ -10,6 +10,7 @@ import '../ble/connect_guard.dart';
 import '../ble/first_contact.dart';
 import '../app_settings.dart';
 import '../ble/proximity_watcher.dart';
+import '../ble/hands_free_controller.dart';
 import '../ble/simulator/simulated_pack.dart';
 import '../bms_service.dart';
 import '../model/bms_snapshot.dart';
@@ -67,6 +68,7 @@ class ConnectScreen extends StatefulWidget {
     required this.proximity,
     required this.settings,
     required this.updateService,
+    this.handsFree,
     super.key,
   });
 
@@ -75,6 +77,7 @@ class ConnectScreen extends StatefulWidget {
   final ProximityWatcher proximity;
   final AppSettings settings;
   final UpdateService updateService;
+  final HandsFreeController? handsFree;
 
   @override
   State<ConnectScreen> createState() => _ConnectScreenState();
@@ -83,10 +86,15 @@ class ConnectScreen extends StatefulWidget {
 class _ConnectScreenState extends State<ConnectScreen> {
   StreamSubscription<List<DiscoveredBms>>? _scanSub;
   StreamSubscription<BleLinkError>? _errorSub;
-  StreamSubscription<DiscoveredBms>? _foundSub;
+  AppLifecycleListener? _lifecycle;
+  bool _initialVisibleWorkDone = false;
   bool _connecting = false;
   List<DiscoveredBms> _devices = const [];
   bool _scanning = false;
+  bool _scanStarting = false;
+  bool _scanStopping = false;
+  bool _settingsOpen = false;
+  int _scanEpoch = 0;
 
   /// Whether a scan has been run and finished. Distinguishes "you have not
   /// looked yet" from "we looked and found nothing", which need different
@@ -167,21 +175,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
   @override
   void initState() {
     super.initState();
-    // When the watcher spots the bike, walk straight in. This is the whole
-    // point of the feature: get on, ride, and the app is already recording.
-    _foundSub = widget.proximity.found.listen((device) {
-      // Not while inspecting: the watcher exists to find the rider's own
-      // bike, and that is the one pack the quick test must never be run on
-      // by accident.
-      //
-      // And not while a pack is already connected. The link outlives this
-      // screen now, so the watcher spotting the bike again while the app is
-      // holding a working link would tear it down to rebuild it -- the one
-      // sequence this whole change exists to stop.
-      if (!mounted || _connecting || _inspecting || _connected != null) return;
-      _connecting = true;
-      _connect(device, fromProximity: true);
-    });
+    // Connection ownership lives above the screen, including when Android
+    // starts the shared engine without opening an Activity.
+    widget.handsFree?.addListener(_runtimeChanged);
+    _lifecycle = AppLifecycleListener(onResume: _visibleWork);
 
     _errorSub = widget.service.linkErrors.listen((e) {
       if (mounted && !_settling) {
@@ -239,7 +236,6 @@ class _ConnectScreenState extends State<ConnectScreen> {
     });
 
     _loadStored();
-    unawaited(_checkForUpdateQuietly());
 
     // Scanning is what anybody opens this screen to do, so it starts on its
     // own. The button below becomes a retry rather than the way in.
@@ -251,17 +247,43 @@ class _ConnectScreenState extends State<ConnectScreen> {
     // screens lands on the connected card instead, which is the thing worth
     // seeing.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      if (widget.service.activeDevice == null) {
-        _startScan();
-      } else {
-        // The pack was already active before this screen existed -- this
-        // instance's own deviceStream subscription started too late to see
-        // that promotion go by, so it would otherwise never get a chance to
-        // ask.
-        unawaited(_offerPendingSummary());
-      }
+      _visibleWork();
     });
+  }
+
+  void _runtimeChanged() {
+    if (!mounted) return;
+    setState(() {});
+    _visibleWork();
+  }
+
+  void _visibleWork() {
+    if (!mounted || !widget.service.appVisible) return;
+    if (widget.handsFree case final handsFree?) {
+      if (!handsFree.ready) return;
+    }
+    if (!_initialVisibleWorkDone) {
+      _initialVisibleWorkDone = true;
+      unawaited(_checkForUpdateQuietly());
+      if (widget.service.activeDevice == null &&
+          !widget.service.radioBusy &&
+          !(widget.handsFree?.enabled ?? false)) {
+        unawaited(_startScan());
+      }
+    }
+    if (widget.service.activeDevice != null) unawaited(_offerPendingSummary());
+  }
+
+  void _resumeAutomaticIfIdle() {
+    if (!_scanning &&
+        !_scanStarting &&
+        !_scanStopping &&
+        !_connecting &&
+        !_inspecting &&
+        !_resetting &&
+        !_settingsOpen) {
+      widget.handsFree?.connection.resumeAfterManual();
+    }
   }
 
   /// Whether a countdown was running at the previous tick, so the tick that
@@ -281,10 +303,13 @@ class _ConnectScreenState extends State<ConnectScreen> {
 
   @override
   void dispose() {
+    _scanEpoch++;
     _cooldownTick?.cancel();
     _scanSub?.cancel();
     _errorSub?.cancel();
-    _foundSub?.cancel();
+    widget.handsFree?.removeListener(_runtimeChanged);
+    _lifecycle?.dispose();
+    widget.handsFree?.connection.resumeAfterManual();
     _deviceSub?.cancel();
     _liveSub?.cancel();
     _recoverySub?.cancel();
@@ -299,7 +324,12 @@ class _ConnectScreenState extends State<ConnectScreen> {
   /// downloading anything, and still dismissible for good.
   Future<void> _offerUpdate(AppL10n t) async {
     final check = widget.updateService.lastCheck;
-    if (!mounted || check == null || !check.hasUpdate) return;
+    if (!mounted ||
+        !widget.service.appVisible ||
+        check == null ||
+        !check.hasUpdate) {
+      return;
+    }
 
     final release = check.release!;
     final version = release.version.toString();
@@ -381,6 +411,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
   /// work: the guard stops a second ask from this screen's own rebuilds, the
   /// query stops a queue of them from a week of unwatched rides.
   Future<void> _offerPendingSummary() async {
+    if (!widget.service.appVisible) return;
     if (_offeredPendingSummary) return;
     _offeredPendingSummary = true;
 
@@ -389,7 +420,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
     if (device == null || repo == null) return;
 
     final trip = await repo.pendingSummaryTrip(device);
-    if (trip == null || !mounted) return;
+    if (trip == null || !mounted || !widget.service.appVisible) return;
 
     final t = AppL10n.of(context);
     // Marked seen only after the sheet has actually run its course, not
@@ -410,16 +441,29 @@ class _ConnectScreenState extends State<ConnectScreen> {
   }
 
   Future<void> _openSettings() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => AppSettingsScreen(
-          service: widget.service,
-          settings: widget.settings,
-          localeController: widget.localeController,
-          updateService: widget.updateService,
+    _settingsOpen = true;
+    await _cancelScan();
+    if (!mounted) {
+      _settingsOpen = false;
+      _resumeAutomaticIfIdle();
+      return;
+    }
+    try {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => AppSettingsScreen(
+            service: widget.service,
+            settings: widget.settings,
+            localeController: widget.localeController,
+            updateService: widget.updateService,
+            handsFree: widget.handsFree,
+          ),
         ),
-      ),
-    );
+      );
+    } finally {
+      _settingsOpen = false;
+      _resumeAutomaticIfIdle();
+    }
     if (mounted) setState(() {});
   }
 
@@ -640,6 +684,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
     );
     if (confirmed != true) return;
 
+    await widget.handsFree?.forgetDevice(d.id);
     await widget.service.repository?.deleteDevice(d.id);
     await _loadStored();
   }
@@ -676,6 +721,33 @@ class _ConnectScreenState extends State<ConnectScreen> {
   }
 
   Future<void> _startScan() async {
+    if (_connecting ||
+        _scanning ||
+        _scanStarting ||
+        _scanStopping ||
+        _settingsOpen) {
+      return;
+    }
+    final epoch = ++_scanEpoch;
+    _scanStarting = true;
+    try {
+      await widget.handsFree?.connection.suspendForManual();
+      if (!_scanWanted(epoch)) return;
+      await _startScanOwned(epoch);
+    } finally {
+      _scanStarting = false;
+      _resumeAutomaticIfIdle();
+    }
+  }
+
+  bool _scanWanted(int epoch) =>
+      mounted &&
+      epoch == _scanEpoch &&
+      !_connecting &&
+      !_settingsOpen &&
+      !_scanStopping;
+
+  Future<void> _startScanOwned(int epoch) async {
     final t = AppL10n.of(context);
     // Searching again is the deliberate, slow action that follows the advice
     // to restart Bluetooth, so it is what lifts a saturation refusal. Without
@@ -690,8 +762,9 @@ class _ConnectScreenState extends State<ConnectScreen> {
       _devices = const [];
     });
 
-    if (!await FlutterBluePlus.isSupported) {
-      if (!mounted) return;
+    final supported = await FlutterBluePlus.isSupported;
+    if (!_scanWanted(epoch)) return;
+    if (!supported) {
       setState(() {
         _scanning = false;
         _message = t.connectNoBle;
@@ -716,8 +789,8 @@ class _ConnectScreenState extends State<ConnectScreen> {
           const Duration(seconds: 6),
           onTimeout: () => BluetoothAdapterState.unknown,
         );
+    if (!_scanWanted(epoch)) return;
     if (adapterState != BluetoothAdapterState.on) {
-      if (!mounted) return;
       setState(() {
         _scanning = false;
         _message = t.connectBluetoothOff;
@@ -730,8 +803,9 @@ class _ConnectScreenState extends State<ConnectScreen> {
     // permission being granted. With it off the scan succeeds and returns
     // nothing, which looks exactly like no BMS being present -- so this is
     // checked and named rather than left to be guessed at.
-    if (!await Geolocator.isLocationServiceEnabled()) {
-      if (!mounted) return;
+    final locationEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!_scanWanted(epoch)) return;
+    if (!locationEnabled) {
       setState(() {
         _scanning = false;
         _message = t.connectLocationOff;
@@ -746,8 +820,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
     // hands back nothing. Asked here, with a reason, rather than left to fail
     // silently.
     var permission = await Geolocator.checkPermission();
+    if (!_scanWanted(epoch)) return;
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
+      if (!_scanWanted(epoch)) return;
     }
     if (permission == LocationPermission.denied ||
         permission == LocationPermission.deniedForever) {
@@ -761,14 +837,16 @@ class _ConnectScreenState extends State<ConnectScreen> {
     }
 
     await _scanSub?.cancel();
+    if (!_scanWanted(epoch)) return;
     // Reset per scan, not per screen: a failure from a previous attempt must
     // not suppress the result of this one.
     var couldNotSearch = false;
     _scanSub = widget.service.scan().listen(
       (devices) {
-        if (mounted) setState(() => _devices = devices);
+        if (_scanWanted(epoch)) setState(() => _devices = devices);
       },
       onError: (Object e) {
+        if (!_scanWanted(epoch)) return;
         if (e is! ScanNeverStarted) return;
         couldNotSearch = true;
         if (mounted) {
@@ -780,6 +858,8 @@ class _ConnectScreenState extends State<ConnectScreen> {
         }
       },
       onDone: () {
+        if (epoch != _scanEpoch) return;
+        _scanSub = null;
         if (mounted) {
           setState(() {
             _scanning = false;
@@ -787,6 +867,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
             _searched = !couldNotSearch;
           });
         }
+        _resumeAutomaticIfIdle();
       },
     );
   }
@@ -998,6 +1079,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
   /// half-open links the failure count was counting, and the pack is free
   /// again straight away.
   Future<void> _disconnectByHand() async {
+    widget.handsFree?.connection.suppressUntilReturn();
     await widget.service.disconnect();
     _guard.forgive();
     if (!mounted) return;
@@ -1018,34 +1100,49 @@ class _ConnectScreenState extends State<ConnectScreen> {
   Future<void> _resetBluetooth() async {
     if (_resetting) return;
     setState(() => _resetting = true);
-    await _cancelScan();
-    await widget.service.resetBluetooth();
-    _guard.forgive();
-    if (!mounted) return;
-    final t = AppL10n.of(context);
-    setState(() => _resetting = false);
-    // The search clears the message as it starts, so the message goes in
-    // after that first step and stays while the search runs.
-    final search = _startScan();
-    setState(() {
-      _message = t.stuckResetDone;
-      _messageDetail = '';
-      _busyMessage = true;
-    });
-    await search;
+    try {
+      await widget.handsFree?.connection.suspendForManual();
+      await _cancelScan();
+      await widget.service.resetBluetooth();
+      _guard.forgive();
+      if (!mounted) return;
+      final t = AppL10n.of(context);
+      setState(() => _resetting = false);
+      // The search clears the message as it starts, so the message goes in
+      // after that first step and stays while the search runs.
+      final search = _startScan();
+      setState(() {
+        _message = t.stuckResetDone;
+        _messageDetail = '';
+        _busyMessage = true;
+      });
+      await search;
+    } finally {
+      _resetting = false;
+      if (mounted) setState(() {});
+      _resumeAutomaticIfIdle();
+    }
   }
 
   /// Stops a scan the user started. Cancelling the subscription also stops the
   /// radio, so this genuinely ends the scan rather than just hiding it.
   Future<void> _cancelScan({String? message}) async {
-    await _scanSub?.cancel();
-    _scanSub = null;
-    await FlutterBluePlus.stopScan();
-    if (mounted) {
-      setState(() {
-        _scanning = false;
-        if (message != null) _message = message;
-      });
+    _scanEpoch++;
+    _scanStopping = true;
+    final owned = _scanSub != null || _scanning;
+    try {
+      await _scanSub?.cancel();
+      _scanSub = null;
+      if (owned) await FlutterBluePlus.stopScan();
+      if (mounted) {
+        setState(() {
+          _scanning = false;
+          if (message != null) _message = message;
+        });
+      }
+    } finally {
+      _scanStopping = false;
+      _resumeAutomaticIfIdle();
     }
   }
 
@@ -1093,20 +1190,30 @@ class _ConnectScreenState extends State<ConnectScreen> {
         return;
     }
 
-    // The phone's own list of open connections, asked before attempting. If
-    // the pack is in it while this app holds nothing, the link is stranded,
-    // most likely by an earlier attempt from here. This used to refuse the
-    // tap and say no attempt could win it, which was wrong twice over: on
-    // Android a connect from this app joins the link the phone already has,
-    // and joining it is the only handle an app gets on a stranded link. So
-    // the attempt goes ahead, and closes that link before opening its own.
-    if (widget.service.activeDevice == null &&
-        await widget.service.heldByPhone(device.id)) {
-      widget.service.suspectStranded(device.id);
-    }
-    if (!mounted) return;
+    // Acquire manual priority before asking the phone about the link, too:
+    // an automatic attempt can otherwise start during this await.
+    _connecting = true;
+    try {
+      await widget.handsFree?.connection.suspendForManual();
+      // The phone's own list of open connections, asked before attempting. If
+      // the pack is in it while this app holds nothing, the link is stranded,
+      // most likely by an earlier attempt from here. This used to refuse the
+      // tap and say no attempt could win it, which was wrong twice over: on
+      // Android a connect from this app joins the link the phone already has,
+      // and joining it is the only handle an app gets on a stranded link. So
+      // the attempt goes ahead, and closes that link before opening its own.
+      if (widget.service.activeDevice == null &&
+          await widget.service.heldByPhone(device.id)) {
+        widget.service.suspectStranded(device.id);
+      }
+      if (!mounted) return;
 
-    await _connect(device);
+      await _connect(device);
+    } finally {
+      _connecting = false;
+      if (mounted) setState(() {});
+      _resumeAutomaticIfIdle();
+    }
   }
 
   /// Asks which BMS this is, when nothing already on hand says. Dismissing it
@@ -1343,7 +1450,11 @@ class _ConnectScreenState extends State<ConnectScreen> {
     // Only now is it worth remembering: the proximity watcher exists to
     // reconnect to a BMS, and remembering whatever was tapped last would have
     // it chasing a speaker.
-    await widget.proximity.remember(device.id, device.name);
+    if (widget.handsFree case final handsFree?) {
+      await handsFree.rememberConnectedDevice(device.id, device.name);
+    } else {
+      await widget.proximity.remember(device.id, device.name);
+    }
 
     _connecting = false;
     // The link belongs to the session, not to this screen. Coming back from
@@ -1368,6 +1479,18 @@ class _ConnectScreenState extends State<ConnectScreen> {
 
   Future<void> _startDemo() async {
     final t = AppL10n.of(context);
+    _connecting = true;
+    try {
+      await widget.handsFree?.connection.suspendForManual();
+      await _startDemoOwned(t);
+    } finally {
+      _connecting = false;
+      if (mounted) setState(() {});
+      _resumeAutomaticIfIdle();
+    }
+  }
+
+  Future<void> _startDemoOwned(AppL10n t) async {
     await _cancelScan();
     if (_inspecting) {
       // A rehearsal: the simulated pack plays a seller's battery with one
@@ -1393,7 +1516,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
   /// toggle. With it on, a rider without credits is sent to the licence
   /// screen instead, and one with a finite number is told what the next
   /// inspection costs before they connect to anything.
-  void _enterInspection() {
+  Future<void> _enterInspection() async {
     final t = AppL10n.of(context);
     final controller = LicenseScope.of(context);
     final entitlements = controller.entitlements;
@@ -1418,6 +1541,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
       _message = null;
       _messageDetail = '';
     });
+    await widget.handsFree?.connection.suspendForManual();
     unawaited(_loadInspectedBefore());
   }
 
@@ -1454,6 +1578,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
           proximity: widget.proximity,
           settings: widget.settings,
           updateService: widget.updateService,
+          handsFree: widget.handsFree,
         ),
       ),
     );
@@ -1725,7 +1850,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
             child: TextButton(
               onPressed: _connecting
                   ? null
-                  : () => setState(() => _inspecting = false),
+                  : () {
+                      setState(() => _inspecting = false);
+                      _resumeAutomaticIfIdle();
+                    },
               child: Text(t.inspectionModeExit),
             ),
           ),

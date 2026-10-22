@@ -2650,13 +2650,13 @@ abstract class AppL10n {
   /// No description provided for @proximityBody.
   ///
   /// In es, this message translates to:
-  /// **'Cuando esté activado, la app busca tu BMS cada medio minuto y se conecta sola en cuanto aparece. Pensado para dejarlo un tiempo mientras calibras una batería nueva, no para siempre: mientras está conectado la app oficial de tu BMS no puede entrar, y buscar consume algo de batería del teléfono.'**
+  /// **'Asocia una vez tu batería con Android para conectarte sin abrir la app, también después de reiniciar o quitarla de recientes. Activa además el inicio automático del viaje. Necesita Bluetooth, notificaciones y ubicación precisa con permiso «Permitir siempre» para registrar con la pantalla apagada.'**
   String get proximityBody;
 
   /// No description provided for @proximityLimit.
   ///
   /// In es, this message translates to:
-  /// **'Funciona con la app abierta o en segundo plano. Si Android mata el proceso, deja de buscar hasta que la vuelvas a abrir.'**
+  /// **'Mientras tu batería esté cerca se mantiene una notificación y la conexión Bluetooth; la app oficial del BMS no podrá conectarse al mismo tiempo. El GPS se prepara al conectar y se usa al detectar consumo. Si eliges «Forzar detención» en Android, abre la app de nuevo para reactivarla.'**
   String get proximityLimit;
 
   /// No description provided for @proximityRemembered.
@@ -2682,6 +2682,108 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'buscando'**
   String get proximityScanning;
+
+  /// No description provided for @handsFreeEnable.
+  ///
+  /// In es, this message translates to:
+  /// **'Conexión automática'**
+  String get handsFreeEnable;
+
+  /// No description provided for @handsFreeUnsupported.
+  ///
+  /// In es, this message translates to:
+  /// **'Este teléfono necesita Android 12 o posterior con detección de dispositivos asociados. La conexión manual sigue disponible.'**
+  String get handsFreeUnsupported;
+
+  /// No description provided for @handsFreeBluetoothPermission.
+  ///
+  /// In es, this message translates to:
+  /// **'Falta el permiso de dispositivos cercanos. Permítelo para detectar y conectar tu batería.'**
+  String get handsFreeBluetoothPermission;
+
+  /// No description provided for @handsFreeNotificationPermission.
+  ///
+  /// In es, this message translates to:
+  /// **'Permite las notificaciones para ver y mantener la conexión en segundo plano.'**
+  String get handsFreeNotificationPermission;
+
+  /// No description provided for @handsFreePrecisePermission.
+  ///
+  /// In es, this message translates to:
+  /// **'Permite la ubicación precisa para medir el recorrido.'**
+  String get handsFreePrecisePermission;
+
+  /// No description provided for @handsFreeBackgroundPermission.
+  ///
+  /// In es, this message translates to:
+  /// **'En los ajustes de Android, abre Permisos → Ubicación y elige «Permitir siempre». Después vuelve aquí y activa la conexión automática.'**
+  String get handsFreeBackgroundPermission;
+
+  /// No description provided for @handsFreeLocationOff.
+  ///
+  /// In es, this message translates to:
+  /// **'Activa la ubicación del teléfono para registrar el recorrido.'**
+  String get handsFreeLocationOff;
+
+  /// No description provided for @handsFreeAssociationRequired.
+  ///
+  /// In es, this message translates to:
+  /// **'Activa la opción y confirma tu batería en la ventana de Android. La batería debe estar encendida y libre de otras conexiones.'**
+  String get handsFreeAssociationRequired;
+
+  /// No description provided for @handsFreeCancelled.
+  ///
+  /// In es, this message translates to:
+  /// **'Asociación cancelada. Puedes intentarlo de nuevo o conectarte manualmente.'**
+  String get handsFreeCancelled;
+
+  /// No description provided for @handsFreeFinishTrip.
+  ///
+  /// In es, this message translates to:
+  /// **'Termina el viaje antes de configurar la asociación inicial de la batería.'**
+  String get handsFreeFinishTrip;
+
+  /// No description provided for @handsFreeRunning.
+  ///
+  /// In es, this message translates to:
+  /// **'Conexión en segundo plano activa. El viaje empezará al detectar movimiento y consumo.'**
+  String get handsFreeRunning;
+
+  /// No description provided for @handsFreeWaiting.
+  ///
+  /// In es, this message translates to:
+  /// **'Preparado. Android avisará cuando detecte tu batería.'**
+  String get handsFreeWaiting;
+
+  /// No description provided for @handsFreeDisabled.
+  ///
+  /// In es, this message translates to:
+  /// **'Desactivado. Puedes seguir conectándote manualmente.'**
+  String get handsFreeDisabled;
+
+  /// No description provided for @handsFreeFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo completar la configuración. Revisa los permisos y vuelve a intentarlo; la conexión manual sigue disponible.'**
+  String get handsFreeFailed;
+
+  /// No description provided for @handsFreeSettingUp.
+  ///
+  /// In es, this message translates to:
+  /// **'Configurando la conexión con Android…'**
+  String get handsFreeSettingUp;
+
+  /// No description provided for @handsFreeOpenSettings.
+  ///
+  /// In es, this message translates to:
+  /// **'Abrir ajustes de Android'**
+  String get handsFreeOpenSettings;
+
+  /// No description provided for @handsFreeRepair.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisar configuración'**
+  String get handsFreeRepair;
 
   /// No description provided for @capacityTitle.
   ///
@@ -4246,7 +4348,7 @@ abstract class AppL10n {
   /// No description provided for @autoTripHint.
   ///
   /// In es, this message translates to:
-  /// **'Abre el viaje cuando el pack consume y el GPS dice que te mueves, las dos cosas durante unos 20 segundos (si sales a paso de peatón, espera a que pases de 6 km/h), y lo cierra tras unos tres minutos quieto. Lo que recorras antes de que se abra no se graba. Si lo apagas, la app solo aprende tu autonomía de los viajes que empieces a mano, y los que se olvidan no son al azar: son los cortos y los que llevabas prisa.'**
+  /// **'Prepara el GPS al conectar. Abre el viaje tras unos 20 segundos de consumo y movimiento por encima de 6 km/h, conservando el recorrido observado durante esa confirmación. Lo cierra tras unos tres minutos quieto. Si el GPS tarda en obtener posición, el tramo sin señal no se puede recuperar. Para funcionar sin abrir la app, configura también «Conectar solo al acercarme».'**
   String get autoTripHint;
 
   /// No description provided for @autoTripStarted.

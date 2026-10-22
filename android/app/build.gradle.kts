@@ -72,6 +72,7 @@ android {
 }
 
 dependencies {
+    testImplementation("junit:junit:4.13.2")
     // The desugaring above needs its backport library. Version pinned to the
     // one flutter_local_notifications itself builds against.
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")

@@ -1538,11 +1538,11 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get proximityBody =>
-      'Cuando esté activado, la app busca tu BMS cada medio minuto y se conecta sola en cuanto aparece. Pensado para dejarlo un tiempo mientras calibras una batería nueva, no para siempre: mientras está conectado la app oficial de tu BMS no puede entrar, y buscar consume algo de batería del teléfono.';
+      'Asocia una vez tu batería con Android para conectarte sin abrir la app, también después de reiniciar o quitarla de recientes. Activa además el inicio automático del viaje. Necesita Bluetooth, notificaciones y ubicación precisa con permiso «Permitir siempre» para registrar con la pantalla apagada.';
 
   @override
   String get proximityLimit =>
-      'Funciona con la app abierta o en segundo plano. Si Android mata el proceso, deja de buscar hasta que la vuelvas a abrir.';
+      'Mientras tu batería esté cerca se mantiene una notificación y la conexión Bluetooth; la app oficial del BMS no podrá conectarse al mismo tiempo. El GPS se prepara al conectar y se usa al detectar consumo. Si eliges «Forzar detención» en Android, abre la app de nuevo para reactivarla.';
 
   @override
   String get proximityRemembered => 'Buscando';
@@ -1556,6 +1556,70 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get proximityScanning => 'buscando';
+
+  @override
+  String get handsFreeEnable => 'Conexión automática';
+
+  @override
+  String get handsFreeUnsupported =>
+      'Este teléfono necesita Android 12 o posterior con detección de dispositivos asociados. La conexión manual sigue disponible.';
+
+  @override
+  String get handsFreeBluetoothPermission =>
+      'Falta el permiso de dispositivos cercanos. Permítelo para detectar y conectar tu batería.';
+
+  @override
+  String get handsFreeNotificationPermission =>
+      'Permite las notificaciones para ver y mantener la conexión en segundo plano.';
+
+  @override
+  String get handsFreePrecisePermission =>
+      'Permite la ubicación precisa para medir el recorrido.';
+
+  @override
+  String get handsFreeBackgroundPermission =>
+      'En los ajustes de Android, abre Permisos → Ubicación y elige «Permitir siempre». Después vuelve aquí y activa la conexión automática.';
+
+  @override
+  String get handsFreeLocationOff =>
+      'Activa la ubicación del teléfono para registrar el recorrido.';
+
+  @override
+  String get handsFreeAssociationRequired =>
+      'Activa la opción y confirma tu batería en la ventana de Android. La batería debe estar encendida y libre de otras conexiones.';
+
+  @override
+  String get handsFreeCancelled =>
+      'Asociación cancelada. Puedes intentarlo de nuevo o conectarte manualmente.';
+
+  @override
+  String get handsFreeFinishTrip =>
+      'Termina el viaje antes de configurar la asociación inicial de la batería.';
+
+  @override
+  String get handsFreeRunning =>
+      'Conexión en segundo plano activa. El viaje empezará al detectar movimiento y consumo.';
+
+  @override
+  String get handsFreeWaiting =>
+      'Preparado. Android avisará cuando detecte tu batería.';
+
+  @override
+  String get handsFreeDisabled =>
+      'Desactivado. Puedes seguir conectándote manualmente.';
+
+  @override
+  String get handsFreeFailed =>
+      'No se pudo completar la configuración. Revisa los permisos y vuelve a intentarlo; la conexión manual sigue disponible.';
+
+  @override
+  String get handsFreeSettingUp => 'Configurando la conexión con Android…';
+
+  @override
+  String get handsFreeOpenSettings => 'Abrir ajustes de Android';
+
+  @override
+  String get handsFreeRepair => 'Revisar configuración';
 
   @override
   String get capacityTitle => 'Test de capacidad';
@@ -2461,7 +2525,7 @@ class AppL10nEs extends AppL10n {
 
   @override
   String get autoTripHint =>
-      'Abre el viaje cuando el pack consume y el GPS dice que te mueves, las dos cosas durante unos 20 segundos (si sales a paso de peatón, espera a que pases de 6 km/h), y lo cierra tras unos tres minutos quieto. Lo que recorras antes de que se abra no se graba. Si lo apagas, la app solo aprende tu autonomía de los viajes que empieces a mano, y los que se olvidan no son al azar: son los cortos y los que llevabas prisa.';
+      'Prepara el GPS al conectar. Abre el viaje tras unos 20 segundos de consumo y movimiento por encima de 6 km/h, conservando el recorrido observado durante esa confirmación. Lo cierra tras unos tres minutos quieto. Si el GPS tarda en obtener posición, el tramo sin señal no se puede recuperar. Para funcionar sin abrir la app, configura también «Conectar solo al acercarme».';
 
   @override
   String get autoTripStarted => 'Viaje iniciado solo';

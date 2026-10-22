@@ -54,6 +54,7 @@ import 'metrics/range_outlook.dart';
 import 'metrics/sampling.dart';
 import 'metrics/ride_alerts.dart';
 import 'metrics/trip_autostart.dart';
+import 'metrics/trip_preroll.dart';
 import 'metrics/trip_energy_repair.dart';
 import 'metrics/trip_recorder.dart';
 import 'metrics/snapshot_history.dart';
@@ -1018,6 +1019,7 @@ class BmsService {
     ridingGate.reset();
     _riding = false;
     tripAutoStart.reset();
+    _resetAutoTripCapture(primeAgain: true);
     // Without this, a ride's saved-summary text outlives the pack it was
     // measured on: it survived a switch to another pack, and it survived
     // leaving demo mode, showing one source's distance and consumption as if
@@ -1056,6 +1058,7 @@ class BmsService {
     bool inspecting = false,
     BmsBrand? brand,
   }) async {
+    final epoch = ++_connectEpoch;
     // One pack at a time, and the one before it is let go first. The BMS
     // accepts a single connection, so asking for a second while the first is
     // still open is a guaranteed failure; and everything decoded from the old
@@ -1063,8 +1066,10 @@ class BmsService {
     // reading and its protocol variant. That is what left the previous
     // battery's notification standing after a switch.
     if (activeDeviceId != null && activeDeviceId != deviceId) {
-      await disconnect();
+      await _disconnect(retireConnect: false);
     }
+    if (epoch != _connectEpoch) return;
+    _resetAutoTripCapture(primeAgain: true);
     // From here on, a link that goes down went down by itself.
     _disconnectRequested = false;
     _hasReadingThisLink = false;
@@ -1095,7 +1100,11 @@ class BmsService {
     // The rider may have let go of this pack, or picked another one, while
     // the stored row was being read. Connecting now would open a link
     // nobody wants, or the wrong one.
-    if (_disconnectRequested || _pendingDeviceId != deviceId) return;
+    if (epoch != _connectEpoch ||
+        _disconnectRequested ||
+        _pendingDeviceId != deviceId) {
+      return;
+    }
     // The rider's answer only counts as the rider's claim for a pack with no
     // stored brand. With a stored row it either repeats that row or
     // overrules it; it is used either way, but the silence notice then
@@ -1175,6 +1184,7 @@ class BmsService {
   }
 
   String? _pendingDeviceId;
+  int _connectEpoch = 0;
   String _pendingDeviceName = '';
 
   /// Promotes the connected device to a stored battery, on the first frame
@@ -1222,7 +1232,10 @@ class BmsService {
   /// talking to. Switching batteries then showed the previous one's reading on
   /// the new one's screens, kept the previous one's notification standing, and
   /// could decode the new pack with the old one's variant.
-  Future<void> disconnect() async {
+  Future<void> disconnect() => _disconnect();
+
+  Future<void> _disconnect({bool retireConnect = true}) async {
+    if (retireConnect) _connectEpoch++;
     // Asked for, so the link going down in a moment is not news.
     _disconnectRequested = true;
     _pendingDeviceId = null;
@@ -1888,6 +1901,9 @@ class BmsService {
     _lastSnapshot = snapshot;
     try {
       history.add(snapshot);
+      if (autoTripEnabled && !trip.isActive && !isDemo) {
+        _tripPreRoll.add(TripPreRollReading(snapshot));
+      }
       trip.addSnapshot(snapshot);
       repository?.addSnapshot(snapshot);
       _checkAlerts(snapshot);
@@ -2064,17 +2080,46 @@ class BmsService {
   /// Starts recording a ride. Returns a problem when location is unavailable,
   /// in which case nothing is recorded rather than a trip of zero kilometres
   /// being logged as if it were real.
-  Future<LocationProblem?> startTrip() async {
+  Future<LocationProblem?> startTrip() => _startTrip();
+
+  Future<LocationProblem?> _startTrip({TripPreRollCapture? preRoll}) async {
+    final device = activeDeviceId;
+    final connectionEpoch = _connectEpoch;
     // A stream the auto-start already has delivering fixes is kept, not
     // rebuilt. Rebuilding it meant the ride's first seconds waited for a
     // fresh fix, and with the phone in a pocket it was one more stream
     // opened from the background, which is the one Android may refuse.
-    final live = _location != null && _lastAutoSpeedKmh != null;
-    final problem = live ? null : await _ensureLocation();
+    final locationSince = _lastLocationFixAt ?? _locationStartedAt;
+    final live =
+        _location != null &&
+        !_locationStreamFailed &&
+        _locationOpening == null &&
+        locationSince != null &&
+        _now().difference(locationSince) < tripFixSilence;
+    final opening = live ? null : _ensureLocation();
+    final epoch = _locationEpoch;
+    final problem = opening == null ? null : await opening;
+    if (connectionEpoch != _connectEpoch ||
+        device != activeDeviceId ||
+        epoch != _locationEpoch) {
+      return LocationProblem.serviceDisabled;
+    }
     lastLocationProblem = problem;
     if (problem != null) return problem;
     _segments.reset();
-    trip.start();
+    final startedAt = preRoll?.startedAt ?? _now();
+    trip.start(at: startedAt, initialSnapshot: preRoll?.seed);
+    if (preRoll != null) {
+      for (final event in preRoll.events) {
+        switch (event) {
+          case TripPreRollReading(:final snapshot):
+            trip.addSnapshot(snapshot);
+          case TripPreRollFix(:final fix):
+            trip.addFix(fix);
+        }
+      }
+    }
+    _resetAutoTripCapture();
     // From here the loop is not allowed to stop trying. Off the bike, giving
     // up after six minutes is right: the screen says so and offers a retry.
     // With the phone in a pocket it meant the rest of the ride recorded
@@ -2087,10 +2132,7 @@ class BmsService {
     // The row is opened now rather than at the end, so readings taken during
     // the ride can be attributed to it and so a ride that ends badly still
     // leaves something behind.
-    _currentTripId = await repository?.beginTrip(
-      DateTime.now().toUtc(),
-      demo: isDemo,
-    );
+    _currentTripId = await repository?.beginTrip(startedAt, demo: isDemo);
     await _updateForegroundService();
     return null;
   }
@@ -2301,17 +2343,34 @@ class BmsService {
     }
     _locationStartedAt = _now();
 
+    notifications.locationActive = !isDemo;
     _fixSub = source.fixes.listen(
       (fix) {
         if (epoch != _locationEpoch || !identical(_location, source)) return;
-        _lastLocationFixAt = _now();
+        final age = _now().difference(fix.timestamp);
+        if (age > const Duration(seconds: 20) ||
+            age.isNegative ||
+            !fix.accuracyM.isFinite ||
+            fix.accuracyM > 30 ||
+            !fix.latitude.isFinite ||
+            !fix.longitude.isFinite ||
+            !fix.speedMs.isFinite ||
+            (_lastLocationFixAt != null &&
+                !fix.timestamp.isAfter(_lastLocationFixAt!))) {
+          return;
+        }
+        _lastLocationFixAt = fix.timestamp;
         _locationStreamFailed = false;
         // While a trip is open the recorder owns the fixes; before one, they
         // exist only so the auto-start detector has a speed to judge.
         if (trip.isRecording) {
           trip.addFix(fix);
         } else {
-          _lastAutoSpeedKmh = fix.speedKmh;
+          _rawAutoSpeedKmh = fix.speedKmh;
+          _autoSpeedAt = fix.timestamp;
+          if (autoTripEnabled && !trip.isActive && !isDemo) {
+            _tripPreRoll.add(TripPreRollFix(fix));
+          }
           final moving = fix.speedKmh >= tripAutoStart.minSpeedKmh;
           if (moving && !_noticedSpeed) {
             _noticedSpeed = true;
@@ -2345,9 +2404,11 @@ class BmsService {
       return;
     }
     _locationStreamFailed = true;
+    notifications.locationActive = false;
     _lastAutoSpeedKmh = null;
     _noticedSpeed = false;
     if (!trip.isActive) tripAutoStart.reset();
+    if (!trip.isActive) _tripPreRoll.clear();
     unawaited(
       repository?.note(
             LinkEventKind.locationStreamError,
@@ -2471,6 +2532,7 @@ class BmsService {
   }
 
   Future<void> _releaseLocation() async {
+    notifications.locationActive = false;
     final sub = _fixSub;
     final source = _location;
     _fixSub = null;
@@ -2480,8 +2542,9 @@ class BmsService {
     _locationStreamFailed = false;
     _lastAutoSpeedKmh = null;
     _noticedSpeed = false;
+    final stopping = source?.stop();
     await sub?.cancel();
-    await source?.stop();
+    await stopping;
   }
 
   /// How far it can go now, and how far a full pack is worth.
@@ -2630,6 +2693,10 @@ class BmsService {
   // which is the worst way for a logger to break.
 
   final LiveNotification notifications;
+
+  /// Reconciles the running notification after its platform backend changes,
+  /// keeping an open ride and the service's required location type intact.
+  Future<void> refreshForegroundRuntime() => _updateForegroundService();
   Timer? _notificationTimer;
 
   /// Wording for the notification, set by the UI so the analysis layer does not
@@ -3273,6 +3340,47 @@ class BmsService {
   // you were late.
 
   final TripAutoStart tripAutoStart = TripAutoStart();
+  final TripPreRoll _tripPreRoll = TripPreRoll();
+  static const autoTripPrimeFor = Duration(seconds: 45);
+  bool _gpsPrimeUsed = false;
+  DateTime? _gpsPrimeUntil;
+  Timer? _gpsPrimeTimer;
+
+  void _resetAutoTripCapture({bool primeAgain = false}) {
+    _tripPreRoll.clear();
+    tripAutoStart.reset();
+    _gpsPrimeTimer?.cancel();
+    _gpsPrimeTimer = null;
+    _gpsPrimeUntil = null;
+    if (primeAgain) _gpsPrimeUsed = false;
+  }
+
+  void _primeAutoTripGps() {
+    if (_gpsPrimeUsed) return;
+    _gpsPrimeUsed = true;
+    _gpsPrimeUntil = _now().add(autoTripPrimeFor);
+    _scheduleAutoGpsExpiry();
+  }
+
+  void _scheduleAutoGpsExpiry() {
+    if (trip.isActive || (_gpsPrimeTimer?.isActive ?? false)) return;
+    final now = _now();
+    final primeUntil = _gpsPrimeUntil;
+    if (primeUntil != null && !primeUntil.isAfter(now)) _gpsPrimeUntil = null;
+    var until = _gpsPrimeUntil;
+    final holdUntil = tripAutoStart.gpsHoldUntil;
+    if (holdUntil != null && (until == null || holdUntil.isAfter(until))) {
+      until = holdUntil;
+    }
+    if (until == null || !until.isAfter(now)) {
+      unawaited(_stopLocation());
+      return;
+    }
+    _gpsPrimeTimer = Timer(until.difference(now), () {
+      _gpsPrimeTimer = null;
+      _scheduleAutoGpsExpiry();
+    });
+  }
 
   /// Whether to open and close trips without being asked.
   bool get autoTripEnabled => _autoTripEnabled;
@@ -3286,6 +3394,8 @@ class BmsService {
   set autoTripEnabled(bool value) {
     if (_autoTripEnabled == value) return;
     _autoTripEnabled = value;
+    _resetAutoTripCapture(primeAgain: value);
+    if (!value && !trip.isActive) unawaited(_stopLocation());
     unawaited(_updateForegroundService());
   }
 
@@ -3374,8 +3484,11 @@ class BmsService {
     // Never against the simulated pack: a demo ride that opened itself would
     // be teaching the demo world things nobody asked for.
     if (!autoTripEnabled || isDemo || activeDevice == null) return;
+    final connectionEpoch = _connectEpoch;
+    if (!trip.isActive) _primeAutoTripGps();
 
     // Judged first, so the GPS decision below sees this reading's current.
+    final candidateBefore = tripAutoStart.candidateStartedAt;
     final action = tripAutoStart.evaluate(
       at: snapshot.timestamp,
       current: snapshot.current,
@@ -3386,6 +3499,9 @@ class BmsService {
       speedKmh: trip.isRecording ? trip.freshSpeedKmh : _lastAutoSpeedKmh,
       recording: trip.isRecording,
     );
+    final candidate = action == AutoTripAction.start
+        ? candidateBefore
+        : tripAutoStart.candidateStartedAt;
 
     // The radio is not on until the pack is drawing, which is what keeps this
     // from being a GPS listener running all day. Current is cheap to watch and
@@ -3393,7 +3509,7 @@ class BmsService {
     final arming = _armLocationForAutoTrip(snapshot);
     final epoch = _locationEpoch;
     await arming;
-    if (epoch != _locationEpoch) return;
+    if (connectionEpoch != _connectEpoch || epoch != _locationEpoch) return;
 
     // The source can fail while the asynchronous arming step is completing.
     // A decision made from its old speed must not open a track without GPS.
@@ -3404,7 +3520,10 @@ class BmsService {
             (_lastAutoSpeedKmh ?? 0) < tripAutoStart.minSpeedKmh)) {
       return;
     }
-    await _runAutoTripAction(action);
+    final capture = action == AutoTripAction.start && candidate != null
+        ? _tripPreRoll.capture(candidate, snapshot.timestamp)
+        : null;
+    await _runAutoTripAction(action, preRoll: capture);
   }
 
   /// Carries out what the detector decided, and tells [autoTripEvents].
@@ -3412,10 +3531,13 @@ class BmsService {
   /// Pulled out of [_updateAutoTrip] so [forceAutoTripStartForTest] can run
   /// this exact branch rather than a copy of it: a seam that duplicates the
   /// logic can pass while the real path is broken.
-  Future<void> _runAutoTripAction(AutoTripAction action) async {
+  Future<void> _runAutoTripAction(
+    AutoTripAction action, {
+    TripPreRollCapture? preRoll,
+  }) async {
     switch (action) {
       case AutoTripAction.start:
-        final problem = await startTrip();
+        final problem = await _startTrip(preRoll: preRoll);
         // No location, no ride: distance is the whole point, and a trip with
         // no track would poison the consumption figure with a divide by zero.
         // But saying nothing is worse than not recording: the rider goes on
@@ -3425,7 +3547,13 @@ class BmsService {
                 problem == null
                     ? LinkEventKind.autoTripStarted
                     : LinkEventKind.autoTripBlocked,
-                detail: problem?.name ?? '',
+                detail:
+                    problem?.name ??
+                    (preRoll == null
+                        ? ''
+                        : 'observed start ${preRoll.startedAt.toIso8601String()}, '
+                              'confirmed ${_now().toIso8601String()}, '
+                              '${preRoll.events.length} observed pre-roll events'),
                 deviceId: activeDeviceId,
               ) ??
               Future.value(),
@@ -3491,7 +3619,11 @@ class BmsService {
       _noticedCurrent = false;
     }
 
-    final wanted = tripAutoStart.wantsGps(snapshot.timestamp);
+    final primeUntil = _gpsPrimeUntil;
+    final wanted =
+        (primeUntil != null && _now().isBefore(primeUntil)) ||
+        tripAutoStart.wantsGps(snapshot.timestamp);
+    if (wanted) _scheduleAutoGpsExpiry();
     final refusedAt = _locationRefusedAt;
     final retrySoon =
         refusedAt != null &&
@@ -4112,6 +4244,7 @@ class BmsService {
   }
 
   Future<void> dispose() async {
+    _gpsPrimeTimer?.cancel();
     _notificationDisposed = true;
     _foregroundUpdateRequested = false;
     _silenceTimer?.cancel();

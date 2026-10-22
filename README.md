@@ -30,6 +30,18 @@ an OpenStreetMap map in the trip detail and coloured by speed or by the power
 the pack gave. The tiles are fetched only while that screen is open; offline,
 the route still draws on a plain background.
 
+**Hands-free connection (Android 12+).** Associate a previously read battery in
+Settings → Connect when I get close, grant precise location “Allow all the time”,
+and enable automatic trips. Android companion presence can start the shared
+runtime without opening the app, including after removing the UI from recents
+or rebooting. A quiet foreground notification remains while the battery is
+nearby; the GPS warms up for 45 seconds on connection and rests while idle.
+Automatic trips keep the observed route during the 20-second confirmation.
+Route before the first usable GPS fix cannot be reconstructed. Android's
+explicit Force stop requires opening the app again. Physical wake-up and BMS
+compatibility still need verification on each phone; see
+[the investigation](docs/investigations/2026-10-22-hands-free-android-research.md).
+
 **The numbers the vendor would rather not show.** Implied real capacity against
 what the pack was sold as. Honest full-equivalent cycles against the BMS's
 inflated counter. Amp-hours stranded by the weakest cell. Which cell keeps

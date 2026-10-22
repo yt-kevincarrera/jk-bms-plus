@@ -6,6 +6,9 @@ import '../l10n/app_localizations.dart';
 import 'app_settings.dart';
 import 'ble/bms_write_gate.dart';
 import 'ble/proximity_watcher.dart';
+import 'ble/proximity_connection.dart';
+import 'ble/hands_free_controller.dart';
+import 'platform/hands_free_platform.dart';
 import 'bms_service.dart';
 import 'metrics/charge_alerts.dart';
 import 'metrics/ride_alerts.dart';
@@ -40,12 +43,23 @@ class _JkBmsAppState extends State<JkBmsApp> {
   late final BmsService _service = BmsService();
   final LocaleController _locale = LocaleController();
   final BmsRepository _repository = BmsRepository();
+
   /// Keeps its scans out of the way of a link being set up or held: Android
   /// fails connects that a scan starts in the middle of.
   late final ProximityWatcher _proximity = ProximityWatcher(
     radioBusy: () => _service.radioBusy,
   );
   final AppSettings _settings = AppSettings();
+  late final ProximityConnection _proximityConnection = ProximityConnection(
+    watcher: _proximity,
+    service: _service,
+  );
+  late final HandsFreeController _handsFree = HandsFreeController(
+    platform: HandsFreePlatform.shared,
+    watcher: _proximity,
+    connection: _proximityConnection,
+    service: _service,
+  );
 
   /// What this phone has paid for. One instance, handed down through
   /// [LicenseScope]; loaded before the settings so a preference the licence
@@ -82,13 +96,20 @@ class _JkBmsAppState extends State<JkBmsApp> {
     // After the repository, so a restart that cleared a stuck stack is
     // written down as the remedy it was.
     unawaited(_service.loadLinkRecovery());
+    _service.appVisible =
+        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
     _lifecycle = AppLifecycleListener(
-      onStateChange: (state) =>
-          _service.appVisible = state == AppLifecycleState.resumed,
+      onStateChange: (state) {
+        _service.appVisible = state == AppLifecycleState.resumed;
+        if (_service.appVisible && _handsFree.ready) {
+          unawaited(_handsFree.refresh());
+          if (mounted) setState(() {});
+        }
+      },
     );
     _autoTripSub = _service.autoTripEvents.listen((action) {
       final text = _autoTripMessage?.call(action);
-      if (text == null) return;
+      if (text == null || !_service.appVisible) return;
       _messenger.currentState?.showSnackBar(SnackBar(content: Text(text)));
     });
     _service.notifications.ensureInitialised(
@@ -107,9 +128,15 @@ class _JkBmsAppState extends State<JkBmsApp> {
     // no radio involved and was showing figures the app already knew how to
     // mend. Finds nothing after the first pass.
     _repairOldRides();
-    _proximity.load();
-    _loadSettings();
+    unawaited(_initializeRuntime());
     _loadVersion();
+  }
+
+  Future<void> _initializeRuntime() async {
+    await _loadSettings();
+    if (!mounted) return;
+    await _handsFree.initialize();
+    if (mounted) setState(() {});
   }
 
   /// Measures again the rides recorded before the integration bug was fixed.
@@ -137,6 +164,8 @@ class _JkBmsAppState extends State<JkBmsApp> {
 
   @override
   void dispose() {
+    _handsFree.dispose();
+    unawaited(_proximityConnection.dispose());
     _service.dispose();
     _repository.dispose();
     _proximity.dispose();
@@ -395,7 +424,9 @@ class _JkBmsAppState extends State<JkBmsApp> {
               // because the channel's own name is shown in Android's settings
               // and should be in the app's language. Once, and only when the
               // rider has left the setting on.
-              if (!_alertChannelAsked && _settings.notifyAlerts) {
+              if (!_alertChannelAsked &&
+                  _settings.notifyAlerts &&
+                  _service.appVisible) {
                 _alertChannelAsked = true;
                 unawaited(
                   _service.prepareAlertNotifications(
@@ -411,6 +442,7 @@ class _JkBmsAppState extends State<JkBmsApp> {
                 proximity: _proximity,
                 settings: _settings,
                 updateService: _updates,
+                handsFree: _handsFree,
               );
             },
           ),

@@ -11,6 +11,8 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../app_settings.dart';
 import '../../ble/proximity_watcher.dart';
+import '../../ble/hands_free_controller.dart';
+import '../widgets/hands_free_card.dart';
 import '../../data/exporter.dart';
 import 'history_tab.dart';
 import '../../ble/simulator/simulated_pack.dart';
@@ -51,6 +53,7 @@ class SystemTab extends StatefulWidget {
     required this.proximity,
     required this.settings,
     required this.updateService,
+    this.handsFree,
     super.key,
   });
 
@@ -61,6 +64,7 @@ class SystemTab extends StatefulWidget {
   final ProximityWatcher proximity;
   final AppSettings settings;
   final UpdateService updateService;
+  final HandsFreeController? handsFree;
 
   @override
   State<SystemTab> createState() => _SystemTabState();
@@ -730,6 +734,9 @@ class _SystemTabState extends State<SystemTab> {
       t.antUnknownCode(code.toRadixString(16).padLeft(2, '0'));
 
   Widget _proximitySection(AppL10n t) {
+    if (widget.handsFree case final controller?) {
+      return HandsFreeCard(controller: controller);
+    }
     final watcher = widget.proximity;
     return Section(
       title: t.proximityTitle,
