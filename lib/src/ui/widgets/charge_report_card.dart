@@ -29,11 +29,11 @@ class ChargeReportCard extends StatelessWidget {
 
     return Section(
       title: t.chargeReportTitle,
-      accent: r.opensAtTop ? AppTheme.watch : AppTheme.good,
+      accent: r.opensAtTop ? context.colors.watch : context.colors.good,
       intro: t.chargeReportIntro,
       trailing: Text(
         _date(r.startedAt),
-        style: const TextStyle(fontSize: 11, color: AppTheme.textFaint),
+        style: TextStyle(fontSize: 11, color: context.colors.textFaint),
       ),
       children: [
         InfoRow(
@@ -55,13 +55,12 @@ class ChargeReportCard extends StatelessWidget {
           InfoRow(
             t.chargeWorstDelta,
             r.worstDeltaHigh.toStringAsFixed(3),
-            valueColor:
-                r.worstDeltaHigh > 0.05 ? AppTheme.watch : null,
+            valueColor: r.worstDeltaHigh > 0.05 ? context.colors.watch : null,
           ),
           InfoRow(
             t.chargeWeakCell,
             r.weakCellAtTop == 0 ? '--' : '${r.weakCellAtTop}',
-            valueColor: AppTheme.watch,
+            valueColor: context.colors.watch,
           ),
         ],
         InfoRow(
@@ -75,10 +74,10 @@ class ChargeReportCard extends StatelessWidget {
             padding: const EdgeInsets.only(top: 10),
             child: Text(
               t.chargeNeverReachedTop,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 height: 1.45,
-                color: AppTheme.textFaint,
+                color: context.colors.textFaint,
               ),
             ),
           ),
@@ -88,12 +87,12 @@ class ChargeReportCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Padding(
+                Padding(
                   padding: EdgeInsets.only(top: 2, right: 10),
                   child: Icon(
                     Icons.error_outline,
                     size: 16,
-                    color: AppTheme.watch,
+                    color: context.colors.watch,
                   ),
                 ),
                 Expanded(
@@ -103,10 +102,10 @@ class ChargeReportCard extends StatelessWidget {
                     // with the least room gets to the top first. This used
                     // to name the lowest cell as the one filling first.
                     t.chargeOpensAtTop(r.strongCellAtTop, r.weakCellAtTop),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12.5,
                       height: 1.45,
-                      color: AppTheme.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                 ),

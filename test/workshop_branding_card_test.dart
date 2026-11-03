@@ -86,7 +86,7 @@ void main() {
       () => Future<void>.delayed(const Duration(milliseconds: 20)),
     );
     await tester.pumpAndSettle();
-    expect(find.text(t.workshopTitle.toUpperCase()), findsOneWidget);
+    expect(find.text(t.workshopTitle), findsOneWidget);
 
     await tester.enterText(find.byType(TextField).first, 'Taller Voltio');
     await tester.tap(find.text(t.profileSave));

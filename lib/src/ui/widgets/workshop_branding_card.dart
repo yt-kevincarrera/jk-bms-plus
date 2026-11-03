@@ -145,7 +145,7 @@ class _WorkshopBrandingCardState extends State<WorkshopBrandingCard> {
             ),
           ),
           const SizedBox(height: 12),
-          Caption(t.workshopLogo, color: AppTheme.textFaint),
+          Caption(t.workshopLogo, color: context.colors.textFaint),
           const SizedBox(height: 6),
           Row(
             children: [
@@ -194,7 +194,7 @@ class _WorkshopBrandingCardState extends State<WorkshopBrandingCard> {
                 m,
                 style: TextStyle(
                   fontSize: 12,
-                  color: _failed ? AppTheme.watch : AppTheme.good,
+                  color: _failed ? context.colors.watch : context.colors.good,
                 ),
               ),
             ),

@@ -99,7 +99,9 @@ class _BackupCardState extends State<BackupCard> {
               style: TextStyle(
                 fontSize: 12,
                 height: 1.45,
-                color: packs == 0 ? AppTheme.textFaint : AppTheme.textSecondary,
+                color: packs == 0
+                    ? context.colors.textFaint
+                    : context.colors.textSecondary,
               ),
             ),
           ),
@@ -116,9 +118,9 @@ class _BackupCardState extends State<BackupCard> {
                 const SizedBox(width: 10),
                 Text(
                   t.backupWorking,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12.5,
-                    color: AppTheme.textFaint,
+                    color: context.colors.textFaint,
                   ),
                 ),
               ],
@@ -132,7 +134,7 @@ class _BackupCardState extends State<BackupCard> {
               style: TextStyle(
                 fontSize: 12,
                 height: 1.45,
-                color: _failed ? AppTheme.bad : AppTheme.good,
+                color: _failed ? context.colors.bad : context.colors.good,
               ),
             ),
           ),
@@ -244,8 +246,7 @@ class _BackupCardState extends State<BackupCard> {
       _failed = false;
     });
     try {
-      final result =
-          await BackupCodec(db).import(File(path), replace: replace);
+      final result = await BackupCodec(db).import(File(path), replace: replace);
       // Everything derived from history has to be rebuilt: the range estimate
       // is held in memory and would otherwise ignore every restored ride.
       await widget.service.relearnRangeFromTrips();
@@ -288,28 +289,28 @@ class _BackupCardState extends State<BackupCard> {
   /// silently destroys whatever the phone has been recording since the backup
   /// was taken.
   Future<bool?> _askReplace(AppL10n t) => showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(t.backupImportChoose),
-          content: Text(
-            t.backupReplaceWarning,
-            style: const TextStyle(fontSize: 13, height: 1.45),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(t.packsCancel),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text(t.backupImportMerge),
-            ),
-            FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: AppTheme.bad),
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text(t.backupImportReplace),
-            ),
-          ],
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(t.backupImportChoose),
+      content: Text(
+        t.backupReplaceWarning,
+        style: const TextStyle(fontSize: 13, height: 1.45),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(t.packsCancel),
         ),
-      );
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text(t.backupImportMerge),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: context.colors.bad),
+          onPressed: () => Navigator.of(context).pop(true),
+          child: Text(t.backupImportReplace),
+        ),
+      ],
+    ),
+  );
 }

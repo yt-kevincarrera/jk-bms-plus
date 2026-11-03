@@ -33,17 +33,17 @@ class LearningWhyCard extends StatelessWidget {
 
     return Section(
       title: t.learnWhyTitle,
-      accent: AppTheme.watch,
+      accent: context.colors.watch,
       children: [
         for (final line in lines)
           Padding(
             padding: const EdgeInsets.only(bottom: 6),
             child: Text(
               line,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12.5,
                 height: 1.45,
-                color: AppTheme.textSecondary,
+                color: context.colors.textSecondary,
               ),
             ),
           ),
@@ -55,20 +55,20 @@ class LearningWhyCard extends StatelessWidget {
             padding: const EdgeInsets.only(top: 2, bottom: 6),
             child: Text(
               t.learnWhySignWarning,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12.5,
                 height: 1.45,
-                color: AppTheme.watch,
+                color: context.colors.watch,
               ),
             ),
           ),
         if (report.blocker == LearningBlocker.ridesTooShort)
           Text(
             t.learnWhyNeedMore,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12.5,
               height: 1.45,
-              color: AppTheme.textFaint,
+              color: context.colors.textFaint,
             ),
           ),
         const SizedBox(height: 4),

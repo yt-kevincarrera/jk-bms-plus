@@ -141,10 +141,10 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
     final advice = _verdicts.evaluate(r);
     final headline = inspectionHeadline(t, light, r, verdicts: _verdicts);
     final tone = switch (light) {
-      InspectionLight.good => AppTheme.good,
-      InspectionLight.watch => AppTheme.watch,
-      InspectionLight.problem => AppTheme.bad,
-      InspectionLight.unmeasured => AppTheme.textFaint,
+      InspectionLight.good => context.colors.good,
+      InspectionLight.watch => context.colors.watch,
+      InspectionLight.problem => context.colors.bad,
+      InspectionLight.unmeasured => context.colors.textFaint,
     };
 
     return Scaffold(
@@ -157,7 +157,7 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
             // a real result. Said first and loudly, on every screen it is
             // shown on, so nobody reads a demo pack's figures as a battery.
             if (r.simulated == true)
-              inspectionSimulatedBanner(t.inspectionSimulatedBanner),
+              inspectionSimulatedBanner(context, t.inspectionSimulatedBanner),
             // --- The light ---
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 4),
@@ -168,7 +168,7 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
                     t.inspectionQuickTestLabel,
                     style: AppTheme.caption(
                       context,
-                    ).copyWith(color: AppTheme.textFaint),
+                    ).copyWith(color: context.colors.textFaint),
                   ),
                   const SizedBox(height: 10),
                   Row(
@@ -201,9 +201,9 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
                   const SizedBox(height: 10),
                   Text(
                     _headerLine(t, r),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: AppTheme.textFaint,
+                      color: context.colors.textFaint,
                       fontFeatures: AppTheme.tabular,
                     ),
                   ),
@@ -219,16 +219,16 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: AppTheme.surfaceRaised,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppTheme.watch),
+                    color: context.colors.surfaceRaised,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: context.colors.watch),
                   ),
                   child: Text(
                     inspectionUnmeasuredText(t, r, verdicts: _verdicts),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12.5,
                       height: 1.45,
-                      color: AppTheme.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                 ),
@@ -238,21 +238,21 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
               title: t.verdictTitle,
               showHonestyNote: false,
             ),
-            inspectionCaveatsSection(t, r),
+            inspectionCaveatsSection(context, t, r),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 4, 20, 6),
               child: Text(
                 inspectionFidelityText(t, light, r, verdicts: _verdicts),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   height: 1.45,
-                  color: AppTheme.textFaint,
+                  color: context.colors.textFaint,
                 ),
               ),
             ),
             _seriesSection(t),
-            inspectionCellsSection(t, r, verdicts: _verdicts),
-            inspectionReportedSection(t, r),
+            inspectionCellsSection(context, t, r, verdicts: _verdicts),
+            inspectionReportedSection(context, t, r),
             _sheetSection(t),
             Section(
               title: t.inspectionSaveTitle,
@@ -285,9 +285,9 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
                 ] else
                   Text(
                     t.inspectionSaved,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12.5,
-                      color: AppTheme.good,
+                      color: context.colors.good,
                     ),
                   ),
                 if (widget.savedId == null) ...[
@@ -305,10 +305,10 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
                   const SizedBox(height: 6),
                   Text(
                     t.inspectionRepeatHint,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11.5,
                       height: 1.45,
-                      color: AppTheme.textFaint,
+                      color: context.colors.textFaint,
                     ),
                   ),
                 ],
@@ -352,10 +352,10 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
         children: [
           Text(
             t.inspectionSeriesFirstRun,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12.5,
               height: 1.45,
-              color: AppTheme.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
           const SizedBox(height: 6),
@@ -429,10 +429,10 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
         const SizedBox(height: 8),
         Text(
           simulated ? t.certificateNoSimulated : _certificateCreditsLine(t, e),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11.5,
             height: 1.45,
-            color: AppTheme.textFaint,
+            color: context.colors.textFaint,
           ),
         ),
         const SizedBox(height: 4),
@@ -541,7 +541,7 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
         padding: const EdgeInsets.only(bottom: 8),
         child: Text(
           t.inspectionCreditsGone,
-          style: const TextStyle(fontSize: 12, color: AppTheme.watch),
+          style: TextStyle(fontSize: 12, color: context.colors.watch),
         ),
       );
     }
@@ -549,7 +549,7 @@ class _InspectionVerdictScreenState extends State<InspectionVerdictScreen> {
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         t.inspectionCreditsLeft('${e.inspectionCreditsLeft}'),
-        style: const TextStyle(fontSize: 12, color: AppTheme.textFaint),
+        style: TextStyle(fontSize: 12, color: context.colors.textFaint),
       ),
     );
   }

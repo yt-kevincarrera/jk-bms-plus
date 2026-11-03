@@ -1,166 +1,268 @@
 import 'package:flutter/material.dart';
 
-/// The app's palette and type.
-///
-/// An instrument cluster, not a settings screen. The ground is a cool near-black
-/// so the numbers carry, and the status language is deliberately three steps:
-/// blue means normal, amber means look at this, red means stop. Green is absent
-/// on purpose — "healthy" reads perfectly well as calm blue, and reserving
-/// colour for genuine warnings keeps a normal screen from shouting.
+/// A palette is owned by the theme, never global mutable state.
+@immutable
+class AppPalette extends ThemeExtension<AppPalette> {
+  const AppPalette({
+    required this.scheme,
+    required this.textFaint,
+    required this.cold,
+  });
+  final ColorScheme scheme;
+  final Color textFaint;
+  final Color cold;
+  Color get ink => scheme.surfaceContainerLowest;
+  Color get surface => scheme.surface;
+  Color get surfaceRaised => scheme.surfaceContainer;
+  Color get surfaceHigh => scheme.surfaceContainerHigh;
+  Color get hairline => scheme.outlineVariant;
+  Color get good => scheme.primary;
+  Color get goodDim => scheme.primaryContainer;
+  Color get cool => scheme.secondary;
+  Color get watch => scheme.tertiary;
+  Color get bad => scheme.error;
+  Color get textPrimary => scheme.onSurface;
+  Color get textSecondary => scheme.onSurfaceVariant;
+  @override
+  AppPalette copyWith({ColorScheme? scheme, Color? textFaint, Color? cold}) =>
+      AppPalette(
+        scheme: scheme ?? this.scheme,
+        textFaint: textFaint ?? this.textFaint,
+        cold: cold ?? this.cold,
+      );
+  @override
+  AppPalette lerp(covariant AppPalette? other, double t) => other == null
+      ? this
+      : AppPalette(
+          scheme: ColorScheme.lerp(scheme, other.scheme, t),
+          textFaint: Color.lerp(textFaint, other.textFaint, t)!,
+          cold: Color.lerp(cold, other.cold, t)!,
+        );
+}
+
+extension AppThemeContext on BuildContext {
+  AppPalette get colors =>
+      Theme.of(this).extension<AppPalette>() ??
+      AppTheme.palette(Theme.of(this).brightness);
+}
+
+/// Horizonte R: petroleum surfaces, ice-blue instruments and short corners.
 abstract final class AppTheme {
-  static const Color ink = Color(0xFF080A0F);
-  static const Color surface = Color(0xFF0E1219);
-  static const Color surfaceRaised = Color(0xFF151A23);
-  static const Color surfaceHigh = Color(0xFF1D2431);
-  static const Color hairline = Color(0xFF272F3D);
-
-  /// Normal. Also the app's brand accent.
-  static const Color good = Color(0xFF4C9AFF);
-  static const Color goodDim = Color(0xFF1F4E8C);
-
-  /// A second cool tone, for the lines that share a chart with [good] and for
-  /// the balancer, which is a thing happening rather than a thing wrong.
-  static const Color cool = Color(0xFF22D3EE);
-
-  /// Look at this.
-  static const Color watch = Color(0xFFF5A623);
-
-  /// Stop.
-  static const Color bad = Color(0xFFEF4444);
-
-  /// Cold, for sub-zero temperatures.
-  static const Color cold = Color(0xFF818CF8);
-
-  static const Color textPrimary = Color(0xFFE7EBF2);
-  static const Color textSecondary = Color(0xFF8B95A6);
-  static const Color textFaint = Color(0xFF5B6474);
-
-  /// Every number here is a measurement, and measurements should not jitter
-  /// sideways as their digits change.
+  // Stable defaults for pure classification functions and const arguments.
+  // Widgets resolve them against their own BuildContext.
+  static const ink = Color(0xFF09171F);
+  static const surface = Color(0xFF09171F);
+  static const surfaceRaised = Color(0xFF132C36);
+  static const surfaceHigh = Color(0xFF203E49);
+  static const hairline = Color(0xFF3B5D6B);
+  static const good = Color(0xFF82E4EE);
+  static const goodDim = Color(0xFF204B58);
+  static const cool = Color(0xFFB6D6FA);
+  static const watch = Color(0xFFFFD184);
+  static const bad = Color(0xFFFFABAB);
+  static const cold = Color(0xFFC4BDFF);
+  static const textPrimary = Color(0xFFEFF8FA);
+  static const textSecondary = Color(0xFFB6CBD3);
+  static const textFaint = Color(0xFFA3BCC6);
   static const List<FontFeature> tabular = [FontFeature.tabularFigures()];
 
-  static ThemeData build() {
-    const scheme = ColorScheme.dark(
-      primary: good,
-      onPrimary: ink,
-      primaryContainer: goodDim,
-      secondary: cool,
-      tertiary: watch,
-      onTertiary: ink,
-      tertiaryContainer: Color(0xFF3A2E14),
-      onTertiaryContainer: watch,
-      error: bad,
-      onError: ink,
-      surface: surface,
-      onSurface: textPrimary,
-      onSurfaceVariant: textSecondary,
-      surfaceContainerLowest: ink,
-      surfaceContainerLow: surface,
-      surfaceContainer: surfaceRaised,
-      surfaceContainerHigh: surfaceHigh,
-      surfaceContainerHighest: surfaceHigh,
-      outline: hairline,
-      outlineVariant: hairline,
+  static AppPalette palette(Brightness brightness) {
+    final dark = brightness == Brightness.dark;
+    final scheme = dark
+        ? const ColorScheme.dark(
+            primary: good,
+            onPrimary: ink,
+            primaryContainer: goodDim,
+            onPrimaryContainer: textPrimary,
+            secondary: cool,
+            onSecondary: ink,
+            tertiary: watch,
+            onTertiary: ink,
+            tertiaryContainer: Color(0xFF42351D),
+            onTertiaryContainer: watch,
+            error: bad,
+            onError: ink,
+            surface: surface,
+            onSurface: textPrimary,
+            onSurfaceVariant: textSecondary,
+            surfaceContainerLowest: ink,
+            surfaceContainerLow: surface,
+            surfaceContainer: surfaceRaised,
+            surfaceContainerHigh: surfaceHigh,
+            surfaceContainerHighest: surfaceHigh,
+            outline: Color(0xFF7695A3),
+            outlineVariant: hairline,
+          )
+        : const ColorScheme.light(
+            primary: Color(0xFF105C75),
+            onPrimary: Colors.white,
+            primaryContainer: Color(0xFFCDE4ED),
+            onPrimaryContainer: Color(0xFF14323F),
+            secondary: Color(0xFF355C90),
+            onSecondary: Colors.white,
+            tertiary: Color(0xFF865000),
+            onTertiary: Colors.white,
+            tertiaryContainer: Color(0xFFFFE8BF),
+            onTertiaryContainer: Color(0xFF704000),
+            error: Color(0xFFA22332),
+            onError: Colors.white,
+            surface: Color(0xFFEAF1F5),
+            onSurface: Color(0xFF14323F),
+            onSurfaceVariant: Color(0xFF4C6573),
+            surfaceContainerLowest: Color(0xFFEAF1F5),
+            surfaceContainerLow: Color(0xFFF3F7F9),
+            surfaceContainer: Colors.white,
+            surfaceContainerHigh: Color(0xFFD6E5ED),
+            surfaceContainerHighest: Color(0xFFD6E5ED),
+            outline: Color(0xFF6E8A99),
+            outlineVariant: Color(0xFFA3BDCB),
+          );
+    return AppPalette(
+      scheme: scheme,
+      textFaint: dark ? textFaint : const Color(0xFF4C6573),
+      cold: dark ? cold : const Color(0xFF6351A0),
     );
+  }
 
-    final base = ThemeData(colorScheme: scheme, useMaterial3: true);
+  static Color resolve(BuildContext context, Color color) {
+    final p = context.colors;
+    if (color == good) return p.good;
+    if (color == goodDim) return p.goodDim;
+    if (color == cool) return p.cool;
+    if (color == watch) return p.watch;
+    if (color == bad) return p.bad;
+    if (color == cold) return p.cold;
+    if (color == textPrimary) return p.textPrimary;
+    if (color == textSecondary) return p.textSecondary;
+    if (color == textFaint) return p.textFaint;
+    return color;
+  }
 
+  static ThemeData build({Brightness brightness = Brightness.dark}) {
+    final p = palette(brightness);
+    final base = ThemeData(colorScheme: p.scheme, useMaterial3: true);
+    const shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(Radius.circular(8)),
+    );
     return base.copyWith(
-      scaffoldBackgroundColor: surface,
-      appBarTheme: const AppBarTheme(
-        backgroundColor: surface,
+      extensions: [p],
+      scaffoldBackgroundColor: p.surface,
+      appBarTheme: AppBarTheme(
+        backgroundColor: p.surface,
+        foregroundColor: p.textPrimary,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
-          color: textPrimary,
+          color: p.textPrimary,
           fontSize: 20,
           fontWeight: FontWeight.w600,
-          letterSpacing: -0.2,
+          letterSpacing: -0.3,
         ),
       ),
       cardTheme: CardThemeData(
-        color: surfaceRaised,
+        color: p.surfaceRaised,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: hairline),
+          borderRadius: BorderRadius.circular(8),
+          side: BorderSide(color: p.hairline),
         ),
       ),
-      dividerTheme: const DividerThemeData(color: hairline, thickness: 1),
-      expansionTileTheme: const ExpansionTileThemeData(
-        iconColor: textSecondary,
-        collapsedIconColor: textSecondary,
-        textColor: textSecondary,
-        collapsedTextColor: textSecondary,
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: p.surface,
+        surfaceTintColor: Colors.transparent,
+        dragHandleColor: p.textSecondary,
+        showDragHandle: true,
+      ),
+      dividerTheme: DividerThemeData(color: p.hairline, thickness: 1),
+      expansionTileTheme: ExpansionTileThemeData(
+        iconColor: p.textSecondary,
+        collapsedIconColor: p.textSecondary,
+        textColor: p.textPrimary,
+        collapsedTextColor: p.textPrimary,
         tilePadding: EdgeInsets.zero,
-        childrenPadding: EdgeInsets.only(bottom: 8),
-        shape: Border(),
-        collapsedShape: Border(),
+        childrenPadding: const EdgeInsets.only(bottom: 8),
+        shape: const Border(),
+        collapsedShape: const Border(),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: ink,
+        backgroundColor: p.surface,
         surfaceTintColor: Colors.transparent,
-        indicatorColor: goodDim.withValues(alpha: 0.45),
+        indicatorColor: p.goodDim,
         elevation: 0,
-        height: 64,
-        labelTextStyle: const WidgetStatePropertyAll(
-          TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+        height: 72,
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (states) => TextStyle(
+            fontSize: 12,
+            fontWeight: states.contains(WidgetState.selected)
+                ? FontWeight.w600
+                : FontWeight.w500,
+            color: states.contains(WidgetState.selected)
+                ? p.good
+                : p.textSecondary,
+          ),
         ),
         iconTheme: WidgetStateProperty.resolveWith(
           (states) => IconThemeData(
             size: 22,
-            color: states.contains(WidgetState.selected) ? good : textFaint,
+            color: states.contains(WidgetState.selected)
+                ? p.good
+                : p.textSecondary,
           ),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: const Size.fromHeight(50),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          minimumSize: const Size.fromHeight(52),
+          shape: shape,
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           minimumSize: const Size.fromHeight(50),
-          side: const BorderSide(color: hairline),
-          foregroundColor: textPrimary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          side: BorderSide(color: p.hairline),
+          foregroundColor: p.textPrimary,
+          shape: shape,
         ),
       ),
-      listTileTheme: const ListTileThemeData(
-        iconColor: textSecondary,
-        textColor: textPrimary,
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: p.surfaceRaised,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      listTileTheme: ListTileThemeData(
+        iconColor: p.textSecondary,
+        textColor: p.textPrimary,
       ),
       textTheme: base.textTheme.apply(
-        bodyColor: textPrimary,
-        displayColor: textPrimary,
+        bodyColor: p.textPrimary,
+        displayColor: p.textPrimary,
       ),
     );
   }
 
-  /// Caption above a readout: small, wide-tracked, quiet.
-  static TextStyle caption(BuildContext context) => const TextStyle(
-        fontSize: 10.5,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 1.3,
-        color: textSecondary,
-      );
+  static TextStyle caption(BuildContext context) => TextStyle(
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0.25,
+    color: context.colors.textSecondary,
+  );
 
-  /// A measurement.
+  /// Instrument face only for measurements. Null colour inherits the theme.
   static TextStyle readout(double size, {Color? color}) => TextStyle(
-        fontSize: size,
-        height: 1.0,
-        fontWeight: FontWeight.w600,
-        letterSpacing: -1.0,
-        color: color ?? textPrimary,
-        fontFeatures: tabular,
-      );
+    fontFamily: 'BarlowCondensed',
+    fontStyle: FontStyle.italic,
+    fontSize: size,
+    height: 1.05,
+    fontWeight: FontWeight.w600,
+    letterSpacing: -0.7,
+    color: color,
+    fontFeatures: tabular,
+  );
 }

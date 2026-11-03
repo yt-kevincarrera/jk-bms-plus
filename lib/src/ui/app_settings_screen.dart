@@ -38,8 +38,9 @@ import 'widgets/workshop_branding_card.dart';
 /// So the subject becomes the heading and the situation becomes the label.
 /// Five headings instead of twelve rows, and the repetition disappears
 /// because the repeated half is said once, at the top.
-List<({String heading, List<({String name, String label})> items})>
-alertGroups(AppL10n t) => [
+List<({String heading, List<({String name, String label})> items})> alertGroups(
+  AppL10n t,
+) => [
   (
     heading: t.alertGroupSpread,
     items: [
@@ -68,10 +69,7 @@ alertGroups(AppL10n t) => [
   (
     heading: t.alertGroupChargeDone,
     items: [
-      (
-        name: ChargeAlert.targetReached.name,
-        label: t.alertTargetReachedShort,
-      ),
+      (name: ChargeAlert.targetReached.name, label: t.alertTargetReachedShort),
       (name: ChargeAlert.chargeComplete.name, label: t.chargeAlertComplete),
     ],
   ),
@@ -104,6 +102,8 @@ class AppSettingsScreen extends StatefulWidget {
     required this.localeController,
     required this.updateService,
     this.handsFree,
+    this.embedded = false,
+    this.onOpenSystem,
     super.key,
   });
 
@@ -112,6 +112,8 @@ class AppSettingsScreen extends StatefulWidget {
   final LocaleController localeController;
   final UpdateService updateService;
   final HandsFreeController? handsFree;
+  final bool embedded;
+  final VoidCallback? onOpenSystem;
 
   @override
   State<AppSettingsScreen> createState() => _AppSettingsScreenState();
@@ -155,11 +157,50 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
     );
 
     return Scaffold(
-      appBar: AppBar(title: Text(t.appSettingsTitle)),
+      appBar: widget.embedded ? null : AppBar(title: Text(t.appSettingsTitle)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.only(bottom: 28),
           children: [
+            Section(
+              title: t.appearanceTitle,
+              children: [
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final choice in AppAppearance.values)
+                      ChoiceChip(
+                        label: Text(switch (choice) {
+                          AppAppearance.system => t.appearanceSystem,
+                          AppAppearance.light => t.appearanceLight,
+                          AppAppearance.dark => t.appearanceDark,
+                        }),
+                        avatar: Icon(switch (choice) {
+                          AppAppearance.system =>
+                            Icons.brightness_auto_outlined,
+                          AppAppearance.light => Icons.light_mode_outlined,
+                          AppAppearance.dark => Icons.dark_mode_outlined,
+                        }, size: 18),
+                        selected: settings.appearance == choice,
+                        onSelected: (_) => settings.setAppearance(choice),
+                        materialTapTargetSize: MaterialTapTargetSize.padded,
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+            if (widget.onOpenSystem != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: ListTile(
+                  leading: const Icon(Icons.settings_input_component_outlined),
+                  title: Text(t.tabSystem),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: widget.onOpenSystem,
+                ),
+              ),
             UpdateCard(service: widget.updateService, settings: settings),
             const LicenseCard(),
             PacksCard(service: widget.service, handsFree: widget.handsFree),
@@ -235,10 +276,10 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                   ),
                   subtitle: Text(
                     t.autoTripHint,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11.5,
                       height: 1.4,
-                      color: AppTheme.textFaint,
+                      color: context.colors.textFaint,
                     ),
                   ),
                 ),
@@ -266,10 +307,10 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                   ),
                   subtitle: Text(
                     t.linkWatchHint,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11.5,
                       height: 1.4,
-                      color: AppTheme.textFaint,
+                      color: context.colors.textFaint,
                     ),
                   ),
                 ),
@@ -313,10 +354,10 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                       else
                         t.chargeWatchHint,
                     ].join('\n'),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11.5,
                       height: 1.4,
-                      color: AppTheme.textFaint,
+                      color: context.colors.textFaint,
                     ),
                   ),
                 ),
@@ -343,20 +384,20 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                       const SizedBox(height: 2),
                       Text(
                         t.screenAwakeHint,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11.5,
                           height: 1.4,
-                          color: AppTheme.textFaint,
+                          color: context.colors.textFaint,
                         ),
                       ),
                       if (settings.linkWatchEnabled) ...[
                         const SizedBox(height: 3),
                         Text(
                           t.screenAwakeReason,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11.5,
                             height: 1.4,
-                            color: AppTheme.good,
+                            color: context.colors.good,
                           ),
                         ),
                       ],
@@ -413,11 +454,11 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                     padding: const EdgeInsets.only(top: 10, bottom: 2),
                     child: Text(
                       group.heading.toUpperCase(),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.8,
-                        color: AppTheme.textFaint,
+                        color: context.colors.textFaint,
                       ),
                     ),
                   ),
@@ -433,8 +474,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                           ? null
                           : (on) async {
                               await settings.setAlertMuted(a.name, !on);
-                              widget.service.mutedAlerts =
-                                  settings.mutedAlerts;
+                              widget.service.mutedAlerts = settings.mutedAlerts;
                               if (mounted) setState(() {});
                             },
                       dense: true,
@@ -451,10 +491,10 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                           ? null
                           : Text(
                               _alertHint(t, a.name)!,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 11.5,
                                 height: 1.4,
-                                color: AppTheme.textFaint,
+                                color: context.colors.textFaint,
                               ),
                             ),
                     ),
@@ -560,10 +600,10 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                         0,
                       ),
                     ),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11.5,
                       height: 1.4,
-                      color: AppTheme.textFaint,
+                      color: context.colors.textFaint,
                     ),
                   ),
                 const SizedBox(height: 4),
@@ -606,10 +646,10 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                     padding: const EdgeInsets.only(top: 4, bottom: 8),
                     child: Text(
                       t.alertsNotifyDenied,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11.5,
                         height: 1.45,
-                        color: AppTheme.watch,
+                        color: context.colors.watch,
                       ),
                     ),
                   ),
@@ -617,10 +657,10 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                   padding: const EdgeInsets.only(top: 2, bottom: 6),
                   child: Text(
                     t.alertsNotifyOneConnection,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11.5,
                       height: 1.45,
-                      color: AppTheme.textFaint,
+                      color: context.colors.textFaint,
                     ),
                   ),
                 ),
@@ -631,37 +671,38 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
             // first; turning it off does not, because off is the safe way.
             // Not shown at all while the writes are not shipped: a setting
             // that can do nothing would be a promise the app does not keep.
-            if (bmsWritesShipped) Section(
-              title: t.settingsSectionBmsWrites,
-              accent: settings.allowBmsWrites ? AppTheme.watch : null,
-              children: [
-                SwitchListTile(
-                  key: const ValueKey('allow-bms-writes'),
-                  value: settings.allowBmsWrites,
-                  onChanged: (v) async {
-                    if (v && !await _confirmBmsWrites(t)) return;
-                    await settings.setAllowBmsWrites(v);
-                    widget.service.bmsWritesAllowed = v;
-                    if (mounted) setState(() {});
-                  },
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    t.bmsWritesTitle,
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                  subtitle: Text(
-                    t.bmsWritesHint,
-                    style: const TextStyle(
-                      fontSize: 11.5,
-                      height: 1.4,
-                      color: AppTheme.textFaint,
+            if (bmsWritesShipped)
+              Section(
+                title: t.settingsSectionBmsWrites,
+                accent: settings.allowBmsWrites ? context.colors.watch : null,
+                children: [
+                  SwitchListTile(
+                    key: const ValueKey('allow-bms-writes'),
+                    value: settings.allowBmsWrites,
+                    onChanged: (v) async {
+                      if (v && !await _confirmBmsWrites(t)) return;
+                      await settings.setAllowBmsWrites(v);
+                      widget.service.bmsWritesAllowed = v;
+                      if (mounted) setState(() {});
+                    },
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      t.bmsWritesTitle,
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    subtitle: Text(
+                      t.bmsWritesHint,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        height: 1.4,
+                        color: context.colors.textFaint,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 4),
-              ],
-            ),
+                  const SizedBox(height: 4),
+                ],
+              ),
             Section(
               title: t.settingsSectionApp,
               children: [
@@ -680,9 +721,9 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                   ),
                   subtitle: Text(
                     t.settingsHapticsHint,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11.5,
-                      color: AppTheme.textFaint,
+                      color: context.colors.textFaint,
                     ),
                   ),
                 ),
@@ -701,14 +742,14 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                   ),
                   subtitle: Text(
                     t.settingsRawFramesHint,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11.5,
-                      color: AppTheme.textFaint,
+                      color: context.colors.textFaint,
                     ),
                   ),
                 ),
                 const SizedBox(height: 10),
-                Caption(t.systemLanguageTitle, color: AppTheme.textFaint),
+                Caption(t.systemLanguageTitle, color: context.colors.textFaint),
                 const SizedBox(height: 6),
                 Wrap(
                   spacing: 8,
@@ -737,7 +778,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surfaceRaised,
+        backgroundColor: context.colors.surfaceRaised,
         title: Text(t.bmsWritesConfirmTitle),
         content: Text(
           t.bmsWritesConfirmBody,
@@ -751,7 +792,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           TextButton(
             key: const ValueKey('allow-bms-writes-confirm'),
             onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: AppTheme.watch),
+            style: TextButton.styleFrom(foregroundColor: context.colors.watch),
             child: Text(t.bmsWritesConfirmAction),
           ),
         ],
@@ -779,10 +820,10 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           Expanded(child: Text(label, style: const TextStyle(fontSize: 13.5))),
           Text(
             format(value),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13.5,
               fontFeatures: AppTheme.tabular,
-              color: AppTheme.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
         ],
@@ -792,10 +833,10 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           padding: const EdgeInsets.only(top: 2),
           child: Text(
             hint,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11.5,
               height: 1.4,
-              color: AppTheme.textFaint,
+              color: context.colors.textFaint,
             ),
           ),
         ),
@@ -830,7 +871,6 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
       alertLowChargeWarn: settings.alertLowChargeWarn,
     );
   }
-
 
   Widget _localeChip(String label, LanguageChoice choice) => ChoiceChip(
     label: Text(label),

@@ -53,11 +53,7 @@ class RideWindow {
     required DateTime now,
   }) {
     if (window == null) {
-      return RideWindow(
-        shown: startedAt.length,
-        hidden: 0,
-        cutoff: null,
-      );
+      return RideWindow(shown: startedAt.length, hidden: 0, cutoff: null);
     }
     final cutoff = now.subtract(window);
     final shown = startedAt.where((t) => t.isAfter(cutoff)).length;
@@ -162,9 +158,9 @@ class _PackTripsScreenState extends State<PackTripsScreen> {
                   child: Text(
                     t.offlineNoTrips,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12.5,
-                      color: AppTheme.textFaint,
+                      color: context.colors.textFaint,
                     ),
                   ),
                 ),
@@ -198,9 +194,9 @@ class _PackTripsScreenState extends State<PackTripsScreen> {
                     padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
                     child: Text(
                       t.tripSwipeHint,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11.5,
-                        color: AppTheme.textFaint,
+                        color: context.colors.textFaint,
                       ),
                     ),
                   ),

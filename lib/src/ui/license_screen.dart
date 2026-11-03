@@ -76,7 +76,7 @@ class _LicenseScreenState extends State<LicenseScreen> {
   // --- Status ---
 
   Widget _statusSection(AppL10n t, Entitlements e, DateTime now) {
-    final (label, color) = _statusLabel(t, e.status);
+    final (label, color) = _statusLabel(context, t, e.status);
     final body = switch (e.status) {
       LicenseStatus.free => t.licenseFreeBody,
       LicenseStatus.trial => t.licenseTrialLeft('${e.trialDaysLeft(now)}'),
@@ -105,10 +105,10 @@ class _LicenseScreenState extends State<LicenseScreen> {
       children: [
         Text(
           body,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12.5,
             height: 1.45,
-            color: AppTheme.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
         if (extras.isNotEmpty) ...[
@@ -116,10 +116,10 @@ class _LicenseScreenState extends State<LicenseScreen> {
           for (final x in extras)
             Text(
               x,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12.5,
                 height: 1.45,
-                color: AppTheme.textPrimary,
+                color: context.colors.textPrimary,
                 fontFeatures: AppTheme.tabular,
               ),
             ),
@@ -129,19 +129,22 @@ class _LicenseScreenState extends State<LicenseScreen> {
     );
   }
 
-  static (String, Color) _statusLabel(AppL10n t, LicenseStatus s) =>
-      switch (s) {
-        LicenseStatus.free => (t.licenseStatusFree, AppTheme.textSecondary),
-        LicenseStatus.trial => (t.licenseStatusTrial, AppTheme.cool),
-        LicenseStatus.pro => (t.licenseStatusPro, AppTheme.good),
-        LicenseStatus.workshop => (t.licenseStatusWorkshop, AppTheme.good),
-        LicenseStatus.workshopExpired => (
-          t.licenseStatusWorkshopExpired,
-          AppTheme.watch,
-        ),
-        LicenseStatus.admin ||
-        LicenseStatus.unrestricted => (t.licenseStatusAdmin, AppTheme.cool),
-      };
+  static (String, Color) _statusLabel(
+    BuildContext context,
+    AppL10n t,
+    LicenseStatus s,
+  ) => switch (s) {
+    LicenseStatus.free => (t.licenseStatusFree, context.colors.textSecondary),
+    LicenseStatus.trial => (t.licenseStatusTrial, context.colors.cool),
+    LicenseStatus.pro => (t.licenseStatusPro, context.colors.good),
+    LicenseStatus.workshop => (t.licenseStatusWorkshop, context.colors.good),
+    LicenseStatus.workshopExpired => (
+      t.licenseStatusWorkshopExpired,
+      context.colors.watch,
+    ),
+    LicenseStatus.admin ||
+    LicenseStatus.unrestricted => (t.licenseStatusAdmin, context.colors.cool),
+  };
 
   // --- Device code ---
 
@@ -214,10 +217,10 @@ class _LicenseScreenState extends State<LicenseScreen> {
         if (!can)
           Text(
             t.licenseNotConfigured,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               height: 1.45,
-              color: AppTheme.watch,
+              color: context.colors.watch,
             ),
           ),
         if (can) ...[
@@ -250,7 +253,7 @@ class _LicenseScreenState extends State<LicenseScreen> {
               style: TextStyle(
                 fontSize: 12,
                 height: 1.45,
-                color: _failed ? AppTheme.bad : AppTheme.good,
+                color: _failed ? context.colors.bad : context.colors.good,
               ),
             ),
           ),
@@ -312,9 +315,9 @@ class _LicenseScreenState extends State<LicenseScreen> {
                               child: Text(
                                 k.payload.label,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12.5,
-                                  color: AppTheme.textSecondary,
+                                  color: context.colors.textSecondary,
                                 ),
                               ),
                             ),
@@ -344,8 +347,8 @@ class _LicenseScreenState extends State<LicenseScreen> {
                           fontSize: 11.5,
                           height: 1.4,
                           color: k.payload.isExpiredAt(now)
-                              ? AppTheme.watch
-                              : AppTheme.textFaint,
+                              ? context.colors.watch
+                              : context.colors.textFaint,
                         ),
                       ),
                     ],
@@ -354,7 +357,7 @@ class _LicenseScreenState extends State<LicenseScreen> {
                 TextButton(
                   onPressed: () => _confirmRemove(t, controller, k.id),
                   style: TextButton.styleFrom(
-                    foregroundColor: AppTheme.textFaint,
+                    foregroundColor: context.colors.textFaint,
                     visualDensity: VisualDensity.compact,
                   ),
                   child: Text(
@@ -377,7 +380,7 @@ class _LicenseScreenState extends State<LicenseScreen> {
     final go = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surfaceRaised,
+        backgroundColor: context.colors.surfaceRaised,
         title: Text(t.licenseRemoveConfirmTitle),
         content: Text(
           t.licenseRemoveConfirmBody,
@@ -390,7 +393,7 @@ class _LicenseScreenState extends State<LicenseScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: AppTheme.bad),
+            style: TextButton.styleFrom(foregroundColor: context.colors.bad),
             child: Text(t.licenseRemoveKey),
           ),
         ],
@@ -424,7 +427,11 @@ class LicenseCard extends StatelessWidget {
     // A build with licensing switched off has nothing to say here.
     if (e.isUnrestricted) return const SizedBox.shrink();
     final now = DateTime.now().toUtc();
-    final (label, color) = _LicenseScreenState._statusLabel(t, e.status);
+    final (label, color) = _LicenseScreenState._statusLabel(
+      context,
+      t,
+      e.status,
+    );
     final line = switch (e.status) {
       LicenseStatus.trial => t.licenseTrialLeft('${e.trialDaysLeft(now)}'),
       LicenseStatus.free => t.licenseFreeBody,
@@ -446,10 +453,10 @@ class LicenseCard extends StatelessWidget {
       children: [
         Text(
           line,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             height: 1.45,
-            color: AppTheme.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
         const SizedBox(height: 8),

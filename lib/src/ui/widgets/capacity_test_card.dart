@@ -52,8 +52,9 @@ class _CapacityTestCardState extends State<CapacityTestCard> {
     final tests = await repo?.capacityTests(device);
     final deepest = repo == null
         ? null
-        : const DeepestDischargeFinder()
-            .find(await repo.allSnapshots(device, days: 180));
+        : const DeepestDischargeFinder().find(
+            await repo.allSnapshots(device, days: 180),
+          );
     if (mounted && tests != null) {
       setState(() {
         _history = tests;
@@ -70,16 +71,16 @@ class _CapacityTestCardState extends State<CapacityTestCard> {
 
     return Section(
       title: t.capacityTitle,
-      accent: runner.isRunning ? AppTheme.cool : AppTheme.good,
+      accent: runner.isRunning ? context.colors.cool : context.colors.good,
       intro: t.capacityIntro,
       trailing: runner.isRunning
-          ? Pill(t.capacityRunning, color: AppTheme.cool)
+          ? Pill(t.capacityRunning, color: context.colors.cool)
           : null,
       children: [
         if (runner.isRunning) ..._running(t, runner) else ..._idle(t),
         if (completed.isNotEmpty) ...[
           const SizedBox(height: 6),
-          Caption(t.capacityHistory, color: AppTheme.textFaint),
+          Caption(t.capacityHistory, color: context.colors.textFaint),
           const SizedBox(height: 6),
           for (final test in completed.take(5)) ...[
             InfoRow(
@@ -124,10 +125,10 @@ class _CapacityTestCardState extends State<CapacityTestCard> {
                   t.capacityGapWarning(
                     (test.gapSeconds / 60).round().toString(),
                   ),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11.5,
                     height: 1.4,
-                    color: AppTheme.watch,
+                    color: context.colors.watch,
                   ),
                 ),
               ),
@@ -137,10 +138,10 @@ class _CapacityTestCardState extends State<CapacityTestCard> {
               padding: const EdgeInsets.only(top: 6),
               child: Text(
                 t.capacityUntrustedNote,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11.5,
                   height: 1.4,
-                  color: AppTheme.textFaint,
+                  color: context.colors.textFaint,
                 ),
               ),
             ),
@@ -151,80 +152,81 @@ class _CapacityTestCardState extends State<CapacityTestCard> {
   }
 
   List<Widget> _running(AppL10n t, CapacityTestRunner runner) => [
-        InfoRow(
-          t.capacityDrawn,
-          '${runner.measuredAh.toStringAsFixed(2)} Ah  ·  '
-          '${runner.measuredWh.toStringAsFixed(0)} Wh',
-        ),
-        InfoRow(
-          t.capacityProgress,
-          '${(runner.progress * 100).toStringAsFixed(0)} %',
-        ),
-        InfoRow(
-          t.capacityStartedAt,
-          runner.startedAt == null ? '--' : _date(runner.startedAt!),
-          last: !runner.chargedDuringRun &&
-              runner.gapSeconds <= CapacityTestTrust.maxGapSeconds,
-        ),
-        if (runner.gapSeconds > CapacityTestTrust.maxGapSeconds)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              t.capacityGapWarning((runner.gapSeconds / 60).round().toString()),
-              style: const TextStyle(
-                fontSize: 12,
-                height: 1.45,
-                color: AppTheme.watch,
-              ),
-            ),
-          ),
-        if (runner.chargedDuringRun)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              t.capacityCharged,
-              style: const TextStyle(
-                fontSize: 12,
-                height: 1.45,
-                color: AppTheme.watch,
-              ),
-            ),
-          ),
-        const SizedBox(height: 12),
-        Text(
-          t.capacityStopEarlyHint,
-          style: const TextStyle(
-            fontSize: 11.5,
-            height: 1.4,
-            color: AppTheme.textFaint,
+    InfoRow(
+      t.capacityDrawn,
+      '${runner.measuredAh.toStringAsFixed(2)} Ah  ·  '
+      '${runner.measuredWh.toStringAsFixed(0)} Wh',
+    ),
+    InfoRow(
+      t.capacityProgress,
+      '${(runner.progress * 100).toStringAsFixed(0)} %',
+    ),
+    InfoRow(
+      t.capacityStartedAt,
+      runner.startedAt == null ? '--' : _date(runner.startedAt!),
+      last:
+          !runner.chargedDuringRun &&
+          runner.gapSeconds <= CapacityTestTrust.maxGapSeconds,
+    ),
+    if (runner.gapSeconds > CapacityTestTrust.maxGapSeconds)
+      Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Text(
+          t.capacityGapWarning((runner.gapSeconds / 60).round().toString()),
+          style: TextStyle(
+            fontSize: 12,
+            height: 1.45,
+            color: context.colors.watch,
           ),
         ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 6,
-          children: [
-            OutlinedButton.icon(
-              onPressed: () async {
-                await widget.service.stopCapacityTestEarly();
-                if (mounted) setState(() {});
-                await _load();
-              },
-              icon: const Icon(Icons.flag_outlined, size: 18),
-              label: Text(t.capacityStopEarly),
-            ),
-            OutlinedButton.icon(
-              onPressed: () async {
-                await widget.service.abortCapacityTest();
-                if (mounted) setState(() {});
-                await _load();
-              },
-              icon: const Icon(Icons.stop, size: 18),
-              label: Text(t.capacityAbort),
-            ),
-          ],
+      ),
+    if (runner.chargedDuringRun)
+      Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Text(
+          t.capacityCharged,
+          style: TextStyle(
+            fontSize: 12,
+            height: 1.45,
+            color: context.colors.watch,
+          ),
         ),
-      ];
+      ),
+    const SizedBox(height: 12),
+    Text(
+      t.capacityStopEarlyHint,
+      style: TextStyle(
+        fontSize: 11.5,
+        height: 1.4,
+        color: context.colors.textFaint,
+      ),
+    ),
+    const SizedBox(height: 8),
+    Wrap(
+      spacing: 8,
+      runSpacing: 6,
+      children: [
+        OutlinedButton.icon(
+          onPressed: () async {
+            await widget.service.stopCapacityTestEarly();
+            if (mounted) setState(() {});
+            await _load();
+          },
+          icon: const Icon(Icons.flag_outlined, size: 18),
+          label: Text(t.capacityStopEarly),
+        ),
+        OutlinedButton.icon(
+          onPressed: () async {
+            await widget.service.abortCapacityTest();
+            if (mounted) setState(() {});
+            await _load();
+          },
+          icon: const Icon(Icons.stop, size: 18),
+          label: Text(t.capacityAbort),
+        ),
+      ],
+    ),
+  ];
 
   List<Widget> _idle(AppL10n t) {
     final blocked = widget.service.capacityTestBlockedBy;
@@ -246,10 +248,10 @@ class _CapacityTestCardState extends State<CapacityTestCard> {
                     _deepest!.startSoc.toStringAsFixed(0),
                     _deepest!.endSoc.toStringAsFixed(0),
                   ),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11.5,
               height: 1.4,
-              color: AppTheme.textFaint,
+              color: context.colors.textFaint,
             ),
           ),
         ),
@@ -257,10 +259,10 @@ class _CapacityTestCardState extends State<CapacityTestCard> {
         padding: const EdgeInsets.only(bottom: 10),
         child: Text(
           t.capacityAutoNote,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             height: 1.45,
-            color: AppTheme.textFaint,
+            color: context.colors.textFaint,
           ),
         ),
       ),
@@ -271,7 +273,9 @@ class _CapacityTestCardState extends State<CapacityTestCard> {
           style: TextStyle(
             fontSize: 12,
             height: 1.45,
-            color: blocked == null ? AppTheme.textFaint : AppTheme.watch,
+            color: blocked == null
+                ? context.colors.textFaint
+                : context.colors.watch,
           ),
         ),
       ),
@@ -299,10 +303,10 @@ class _CapacityTestCardState extends State<CapacityTestCard> {
         test.catalogueAh == device.catalogueCapacityAh;
   }
 
-  static Color? _resultTone(double fraction) {
-    if (fraction < 0.8) return AppTheme.bad;
-    if (fraction < 0.92) return AppTheme.watch;
-    return AppTheme.good;
+  Color? _resultTone(double fraction) {
+    if (fraction < 0.8) return context.colors.bad;
+    if (fraction < 0.92) return context.colors.watch;
+    return context.colors.good;
   }
 
   static String _date(DateTime utc) {

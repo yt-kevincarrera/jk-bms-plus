@@ -172,10 +172,10 @@ class _InspectionScreenState extends State<InspectionScreen> {
                     const SizedBox(height: 10),
                     Text(
                       _stepBody(t, prompt.step),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         height: 1.45,
-                        color: AppTheme.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                     ),
                     const Spacer(),
@@ -189,10 +189,10 @@ class _InspectionScreenState extends State<InspectionScreen> {
                         t.inspectionStepSkipHint(
                           '${(th.stepTimeoutSeconds - prompt.elapsedInStep.inSeconds).clamp(0, th.stepTimeoutSeconds)}',
                         ),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11.5,
                           height: 1.4,
-                          color: AppTheme.textFaint,
+                          color: context.colors.textFaint,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -212,18 +212,18 @@ class _InspectionScreenState extends State<InspectionScreen> {
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const SizedBox(
+        SizedBox(
           width: 20,
           height: 20,
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            color: AppTheme.goodDim,
+            color: context.colors.goodDim,
           ),
         ),
         const SizedBox(height: 14),
         Text(
           t.inspectionWaitingReadings,
-          style: const TextStyle(color: AppTheme.textSecondary),
+          style: TextStyle(color: context.colors.textSecondary),
         ),
       ],
     ),
@@ -245,10 +245,10 @@ class _InspectionScreenState extends State<InspectionScreen> {
               height: 4,
               decoration: BoxDecoration(
                 color: s.index < step.index
-                    ? AppTheme.good
+                    ? context.colors.good
                     : s == step
-                    ? AppTheme.cool
-                    : AppTheme.hairline,
+                    ? context.colors.cool
+                    : context.colors.hairline,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -271,13 +271,13 @@ class _InspectionScreenState extends State<InspectionScreen> {
               // too small, with no idea what would have been big enough, is
               // what left a rider revving on a stand for two minutes.
               : t.inspectionLoadTooLow(amps, p.neededAmps.toStringAsFixed(1)));
-    final tone = p.loadDetected ? AppTheme.good : AppTheme.watch;
+    final tone = p.loadDetected ? context.colors.good : context.colors.watch;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceRaised,
-        borderRadius: BorderRadius.circular(16),
+        color: context.colors.surfaceRaised,
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: tone.withValues(alpha: 0.5)),
       ),
       child: Row(
@@ -298,11 +298,11 @@ class _InspectionScreenState extends State<InspectionScreen> {
                   children: [
                     Text(amps, style: AppTheme.readout(40, color: tone)),
                     const SizedBox(width: 4),
-                    const Text(
+                    Text(
                       'A',
                       style: TextStyle(
                         fontSize: 15,
-                        color: AppTheme.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                     ),
                   ],
@@ -333,18 +333,20 @@ class _InspectionScreenState extends State<InspectionScreen> {
           child: LinearProgressIndicator(
             value: p.progress,
             minHeight: 6,
-            backgroundColor: AppTheme.hairline,
-            color: p.loadDetected ? AppTheme.good : AppTheme.textFaint,
+            backgroundColor: context.colors.hairline,
+            color: p.loadDetected
+                ? context.colors.good
+                : context.colors.textFaint,
           ),
         ),
       ),
       const SizedBox(width: 12),
       Text(
         t.inspectionSecondsLeft('${p.secondsLeft}'),
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 13,
           fontFeatures: AppTheme.tabular,
-          color: AppTheme.textSecondary,
+          color: context.colors.textSecondary,
         ),
       ),
     ],

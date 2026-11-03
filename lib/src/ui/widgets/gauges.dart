@@ -43,7 +43,11 @@ class SocGauge extends StatelessWidget {
       width: size,
       height: size * 0.78,
       child: CustomPaint(
-        painter: _ArcPainter(fraction: (soc / 100).clamp(0.0, 1.0), color: color),
+        painter: _ArcPainter(
+          fraction: (soc / 100).clamp(0.0, 1.0),
+          color: AppTheme.resolve(context, color),
+          track: context.colors.surfaceHigh,
+        ),
         child: Padding(
           padding: EdgeInsets.only(top: size * 0.20),
           child: Column(
@@ -51,20 +55,20 @@ class SocGauge extends StatelessWidget {
             children: [
               Text(
                 centreValue,
-                style: AppTheme.readout(size * 0.30, color: AppTheme.textPrimary),
+                style: AppTheme.readout(
+                  size * 0.30,
+                  color: context.colors.textPrimary,
+                ),
               ),
               const SizedBox(height: 4),
-              Text(
-                centreLabel.toUpperCase(),
-                style: AppTheme.caption(context),
-              ),
+              Text(centreLabel.toUpperCase(), style: AppTheme.caption(context)),
               if (subtitle != null) ...[
                 const SizedBox(height: 6),
                 Text(
                   subtitle!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11.5,
-                    color: AppTheme.textFaint,
+                    color: context.colors.textFaint,
                   ),
                 ),
               ],
@@ -73,10 +77,10 @@ class SocGauge extends StatelessWidget {
                 Text(
                   note!,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 10.5,
+                  style: TextStyle(
+                    fontSize: 12,
                     height: 1.25,
-                    color: AppTheme.watch,
+                    color: context.colors.watch,
                   ),
                 ),
               ],
@@ -89,10 +93,15 @@ class SocGauge extends StatelessWidget {
 }
 
 class _ArcPainter extends CustomPainter {
-  _ArcPainter({required this.fraction, required this.color});
+  _ArcPainter({
+    required this.fraction,
+    required this.color,
+    required this.track,
+  });
 
   final double fraction;
   final Color color;
+  final Color track;
 
   /// Leaves a gap at the bottom so the arc reads as a dial, not a ring.
   static const double _startAngle = math.pi * 0.78;
@@ -112,7 +121,7 @@ class _ArcPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke
       ..strokeCap = StrokeCap.round
-      ..color = AppTheme.surfaceHigh;
+      ..color = this.track;
 
     final fill = Paint()
       ..style = PaintingStyle.stroke
@@ -128,7 +137,7 @@ class _ArcPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_ArcPainter old) =>
-      old.fraction != fraction || old.color != color;
+      old.fraction != fraction || old.color != color || old.track != track;
 }
 
 /// A compact line of recent values, for showing shape rather than magnitude.
@@ -270,6 +279,7 @@ class CellTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final color = AppTheme.resolve(context, this.color);
     final fraction = (deviation / fullScale).clamp(-1.0, 1.0).toDouble();
 
     return Container(
@@ -278,15 +288,15 @@ class CellTile extends StatelessWidget {
         // A cell being balanced is a thing happening, not a thing wrong, so it
         // gets its own tint rather than borrowing the warning colours.
         color: balancing
-            ? AppTheme.cool.withValues(alpha: 0.13)
-            : AppTheme.surfaceRaised,
-        borderRadius: BorderRadius.circular(11),
+            ? context.colors.cool.withValues(alpha: 0.13)
+            : context.colors.surfaceRaised,
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(
           color: balancing
-              ? AppTheme.cool.withValues(alpha: 0.7)
+              ? context.colors.cool.withValues(alpha: 0.7)
               : isExtreme
-                  ? color.withValues(alpha: 0.6)
-                  : AppTheme.hairline,
+              ? color.withValues(alpha: 0.6)
+              : context.colors.hairline,
           width: balancing || isExtreme ? 1.4 : 1,
         ),
       ),
@@ -298,10 +308,10 @@ class CellTile extends StatelessWidget {
             children: [
               Text(
                 '$index',
-                style: const TextStyle(
-                  fontSize: 10.5,
+                style: TextStyle(
+                  fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.textFaint,
+                  color: context.colors.textFaint,
                   fontFeatures: AppTheme.tabular,
                 ),
               ),
@@ -309,15 +319,11 @@ class CellTile extends StatelessWidget {
               if (balancing)
                 Container(
                   padding: const EdgeInsets.all(2),
-                  decoration: const BoxDecoration(
-                    color: AppTheme.cool,
+                  decoration: BoxDecoration(
+                    color: context.colors.cool,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.bolt,
-                    size: 9,
-                    color: AppTheme.ink,
-                  ),
+                  child: Icon(Icons.bolt, size: 9, color: context.colors.ink),
                 ),
             ],
           ),
@@ -337,7 +343,12 @@ class CellTile extends StatelessWidget {
           SizedBox(
             height: 4,
             child: CustomPaint(
-              painter: _DeviationBar(fraction: fraction, color: color),
+              painter: _DeviationBar(
+                fraction: fraction,
+                color: color,
+                track: context.colors.surfaceHigh,
+                midpoint: context.colors.textFaint,
+              ),
               size: Size.infinite,
             ),
           ),
@@ -345,9 +356,9 @@ class CellTile extends StatelessWidget {
             const SizedBox(height: 5),
             Text(
               '${(resistance! * 1000).toStringAsFixed(1)} mΩ',
-              style: const TextStyle(
-                fontSize: 9.5,
-                color: AppTheme.textFaint,
+              style: TextStyle(
+                fontSize: 11,
+                color: context.colors.textFaint,
                 fontFeatures: AppTheme.tabular,
               ),
             ),
@@ -359,17 +370,24 @@ class CellTile extends StatelessWidget {
 }
 
 class _DeviationBar extends CustomPainter {
-  _DeviationBar({required this.fraction, required this.color});
+  _DeviationBar({
+    required this.fraction,
+    required this.color,
+    required this.track,
+    required this.midpoint,
+  });
 
   final double fraction;
   final Color color;
+  final Color track;
+  final Color midpoint;
 
   @override
   void paint(Canvas canvas, Size size) {
     final radius = Radius.circular(size.height / 2);
     canvas.drawRRect(
       RRect.fromRectAndRadius(Offset.zero & size, radius),
-      Paint()..color = AppTheme.surfaceHigh,
+      Paint()..color = track,
     );
 
     final centre = size.width / 2;
@@ -385,11 +403,14 @@ class _DeviationBar extends CustomPainter {
     }
     canvas.drawRect(
       Rect.fromLTWH(centre - 0.5, 0, 1, size.height),
-      Paint()..color = AppTheme.textFaint.withValues(alpha: 0.5),
+      Paint()..color = midpoint.withValues(alpha: 0.5),
     );
   }
 
   @override
   bool shouldRepaint(_DeviationBar old) =>
-      old.fraction != fraction || old.color != color;
+      old.fraction != fraction ||
+      old.color != color ||
+      old.track != track ||
+      old.midpoint != midpoint;
 }

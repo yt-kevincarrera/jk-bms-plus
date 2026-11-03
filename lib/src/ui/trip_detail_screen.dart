@@ -16,6 +16,7 @@ import 'widgets/common.dart';
 import 'widgets/energy_source_label.dart';
 import 'widgets/representative_question.dart';
 import 'widgets/trip_grade_rows.dart';
+import 'widgets/instruments.dart';
 import 'widgets/trip_learned_section.dart';
 import 'widgets/trip_map.dart';
 import 'widgets/trip_summary_view.dart';
@@ -150,9 +151,9 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
               child: Text(
                 _date(trip.startedAt),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
-                  color: AppTheme.textSecondary,
+                  color: context.colors.textSecondary,
                 ),
               ),
             ),
@@ -164,28 +165,15 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
               onChanged: widget.onChanged,
               t: t,
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: MetricTile(
-                      label: t.tripDistance,
-                      value: trip.distanceKm.toStringAsFixed(2),
-                      unit: 'km',
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: MetricTile(
-                      label: t.tripConsumption,
-                      value: whPerKm?.toStringAsFixed(0) ?? '--',
-                      unit: 'Wh/km',
-                      footnote: measured ? null : t.tripNotMeasured,
-                    ),
-                  ),
-                ],
-              ),
+            TripInstruments(
+              distanceLabel: t.tripDistance,
+              distance: trip.distanceKm.toStringAsFixed(2),
+              consumptionLabel: t.tripConsumption,
+              consumption: whPerKm?.toStringAsFixed(0) ?? '--',
+            ),
+            Section(
+              title: t.tripTerrain,
+              children: [TripGradeRows(points: _points, t: t, asTiles: true)],
             ),
             // Where the ride went, from the same track the profile and the
             // GPX export read. Draws nothing for a ride with no fixes.
@@ -243,7 +231,6 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                       ? '--'
                       : '${(trip.distanceKm / (trip.movingSeconds / 3600)).toStringAsFixed(0)} km/h',
                 ),
-                TripGradeRows(points: _points, t: t, last: true),
               ],
             ),
             Section(
@@ -256,6 +243,22 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                       : t.tripNotMeasured,
                   dim: !measured,
                   hint: measured ? null : t.tripEnergyUnmeasuredWhy,
+                ),
+                InfoRow(
+                  t.tripEnergyIn,
+                  measured
+                      ? '${trip.energyInWh.toStringAsFixed(1)} Wh'
+                      : t.tripNotMeasured,
+                ),
+                InfoRow(
+                  t.tripEnergyNet,
+                  measured
+                      ? '${(trip.energyOutWh - trip.energyInWh).toStringAsFixed(1)} Wh'
+                      : t.tripNotMeasured,
+                ),
+                InfoRow(
+                  t.tripPackVoltage,
+                  '${trip.minPackVoltage.isFinite && trip.minPackVoltage > 0 ? trip.minPackVoltage.toStringAsFixed(1) : '--'} / ${trip.maxPackVoltage.isFinite && trip.maxPackVoltage > 0 ? trip.maxPackVoltage.toStringAsFixed(1) : '--'} V',
                 ),
                 if (energySourceLabel(t, trip.energySource) case final how?)
                   InfoRow(t.tripEnergySourceLabel, how),
@@ -294,9 +297,10 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                 ),
                 InfoRow(
                   t.tripMaxDelta,
-                  trip.maxDeltaVolts.toStringAsFixed(3),
-                  valueColor:
-                      trip.maxDeltaVolts > 0.10 ? AppTheme.watch : null,
+                  '${trip.maxDeltaVolts.toStringAsFixed(3)} V',
+                  valueColor: trip.maxDeltaVolts > 0.10
+                      ? context.colors.watch
+                      : null,
                   last: true,
                 ),
               ],
@@ -425,7 +429,7 @@ class _ProfileSection extends StatelessWidget {
         if (points == null) {
           return Section(
             title: t.historyProfile,
-            children: const [
+            children: [
               SizedBox(
                 height: 120,
                 child: Center(
@@ -434,7 +438,7 @@ class _ProfileSection extends StatelessWidget {
                     height: 18,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: AppTheme.goodDim,
+                      color: context.colors.goodDim,
                     ),
                   ),
                 ),
@@ -445,9 +449,7 @@ class _ProfileSection extends StatelessWidget {
         if (points.length < 3) {
           return Section(
             title: t.historyProfile,
-            children: [
-              InfoRow(t.historyNoPoints, '', dim: true, last: true),
-            ],
+            children: [InfoRow(t.historyNoPoints, '', dim: true, last: true)],
           );
         }
 
@@ -455,16 +457,22 @@ class _ProfileSection extends StatelessWidget {
           title: t.historyProfile,
           trailing: Text(
             t.historyPoints(points.length),
-            style: const TextStyle(fontSize: 11, color: AppTheme.textFaint),
+            style: TextStyle(fontSize: 11, color: context.colors.textFaint),
           ),
           children: [
             SizedBox(height: 170, child: _ProfileChart(points: points)),
             const SizedBox(height: 12),
             Row(
               children: [
-                _Legend(colour: AppTheme.good, label: t.historyLegendSpeed),
+                _Legend(
+                  colour: context.colors.good,
+                  label: t.historyLegendSpeed,
+                ),
                 const SizedBox(width: 16),
-                _Legend(colour: AppTheme.cool, label: t.historyLegendAltitude),
+                _Legend(
+                  colour: context.colors.cool,
+                  label: t.historyLegendAltitude,
+                ),
               ],
             ),
             const SizedBox(height: 10),
@@ -520,7 +528,7 @@ class _ProfileChart extends StatelessWidget {
               reservedSize: 20,
               getTitlesWidget: (value, meta) => Text(
                 '${value.toStringAsFixed(0)}m',
-                style: const TextStyle(fontSize: 10, color: AppTheme.textFaint),
+                style: TextStyle(fontSize: 10, color: context.colors.textFaint),
               ),
             ),
           ),
@@ -530,7 +538,7 @@ class _ProfileChart extends StatelessWidget {
               reservedSize: 30,
               getTitlesWidget: (value, meta) => Text(
                 value.toStringAsFixed(0),
-                style: const TextStyle(fontSize: 10, color: AppTheme.textFaint),
+                style: TextStyle(fontSize: 10, color: context.colors.textFaint),
               ),
             ),
           ),
@@ -542,18 +550,18 @@ class _ProfileChart extends StatelessWidget {
             spots: altitudeSpots,
             isCurved: true,
             barWidth: 1.4,
-            color: AppTheme.cool.withValues(alpha: 0.8),
+            color: context.colors.cool.withValues(alpha: 0.8),
             dotData: const FlDotData(show: false),
             belowBarData: BarAreaData(
               show: true,
-              color: AppTheme.cool.withValues(alpha: 0.10),
+              color: context.colors.cool.withValues(alpha: 0.10),
             ),
           ),
           LineChartBarData(
             spots: speedSpots,
             isCurved: true,
             barWidth: 2.2,
-            color: AppTheme.good,
+            color: context.colors.good,
             dotData: const FlDotData(show: false),
           ),
         ],
@@ -570,21 +578,21 @@ class _Legend extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 14,
-            height: 3,
-            decoration: BoxDecoration(
-              color: colour,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
-          ),
-        ],
-      );
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Container(
+        width: 14,
+        height: 3,
+        decoration: BoxDecoration(
+          color: colour,
+          borderRadius: BorderRadius.circular(2),
+        ),
+      ),
+      const SizedBox(width: 6),
+      Text(
+        label,
+        style: TextStyle(fontSize: 11, color: context.colors.textSecondary),
+      ),
+    ],
+  );
 }

@@ -149,7 +149,7 @@ class _TripMapState extends State<TripMap> {
             height: widget.height,
             child: FlutterMap(
               options: MapOptions(
-                backgroundColor: AppTheme.surfaceHigh,
+                backgroundColor: context.colors.surfaceHigh,
                 initialCameraFit: CameraFit.bounds(
                   bounds: LatLngBounds.fromPoints([
                     for (final p in points) LatLng(p.latitude, p.longitude),
@@ -174,7 +174,9 @@ class _TripMapState extends State<TripMap> {
                     for (final r in runs)
                       Polyline(
                         points: r.points,
-                        color: tripMapPalette[r.bin],
+                        color: AppTheme.resolve(context, tripMapPalette[r.bin]),
+                        borderColor: const Color(0xFF14323F),
+                        borderStrokeWidth: 1.5,
                         strokeWidth: 4,
                       ),
                   ],
@@ -187,7 +189,7 @@ class _TripMapState extends State<TripMap> {
                       height: 26,
                       child: _Pin(
                         icon: Icons.play_arrow_rounded,
-                        color: AppTheme.good,
+                        color: context.colors.good,
                         label: t.tripMapStart,
                       ),
                     ),
@@ -197,7 +199,7 @@ class _TripMapState extends State<TripMap> {
                       height: 26,
                       child: _Pin(
                         icon: Icons.flag_rounded,
-                        color: AppTheme.textPrimary,
+                        color: context.colors.textPrimary,
                         label: t.tripMapEnd,
                       ),
                     ),
@@ -236,20 +238,24 @@ class _TripMapState extends State<TripMap> {
               children: [
                 Text(
                   '${lo.toStringAsFixed(0)} $unit',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
-                    color: AppTheme.textFaint,
+                    color: context.colors.textFaint,
                   ),
                 ),
                 const SizedBox(width: 4),
                 for (final c in tripMapPalette)
-                  Container(width: 10, height: 6, color: c),
+                  Container(
+                    width: 10,
+                    height: 6,
+                    color: AppTheme.resolve(context, c),
+                  ),
                 const SizedBox(width: 4),
                 Text(
                   '${hi.toStringAsFixed(0)} $unit',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
-                    color: AppTheme.textFaint,
+                    color: context.colors.textFaint,
                   ),
                 ),
               ],
@@ -261,10 +267,10 @@ class _TripMapState extends State<TripMap> {
             padding: const EdgeInsets.only(top: 6),
             child: Text(
               t.tripMapPowerHint,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 height: 1.4,
-                color: AppTheme.textFaint,
+                color: context.colors.textFaint,
               ),
             ),
           ),
@@ -285,7 +291,7 @@ class _Pin extends StatelessWidget {
     label: label,
     child: DecoratedBox(
       decoration: BoxDecoration(
-        color: AppTheme.ink,
+        color: context.colors.ink,
         shape: BoxShape.circle,
         border: Border.all(color: color, width: 2),
       ),

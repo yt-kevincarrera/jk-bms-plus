@@ -40,12 +40,12 @@ class InspectionsListScreen extends StatelessWidget {
       appBar: AppBar(title: Text(t.inspectionsTitle)),
       body: SafeArea(
         child: repo == null
-            ? _empty(t)
+            ? _empty(context, t)
             : StreamBuilder<List<Inspection>>(
                 stream: repo.watchInspections(),
                 builder: (context, snapshot) {
                   final rows = snapshot.data ?? const <Inspection>[];
-                  if (rows.isEmpty) return _empty(t);
+                  if (rows.isEmpty) return _empty(context, t);
                   // Which run of that pack each row is. The list is newest
                   // first and a pack can appear several times; the number is
                   // what tells a second opinion from a first look.
@@ -57,10 +57,10 @@ class InspectionsListScreen extends StatelessWidget {
                         padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
                         child: Text(
                           t.inspectionsIntro,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12.5,
                             height: 1.45,
-                            color: AppTheme.textSecondary,
+                            color: context.colors.textSecondary,
                           ),
                         ),
                       ),
@@ -75,25 +75,25 @@ class InspectionsListScreen extends StatelessWidget {
     );
   }
 
-  Widget _empty(AppL10n t) => Center(
+  Widget _empty(BuildContext context, AppL10n t) => Center(
     child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.fact_check_outlined,
             size: 40,
-            color: AppTheme.textFaint,
+            color: context.colors.textFaint,
           ),
           const SizedBox(height: 16),
           Text(
             t.inspectionsEmpty,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               height: 1.45,
-              color: AppTheme.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
           const SizedBox(height: 20),
@@ -119,9 +119,9 @@ class InspectionsListScreen extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: AppTheme.surfaceRaised,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppTheme.hairline),
+            color: context.colors.surfaceRaised,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: context.colors.hairline),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -133,15 +133,15 @@ class InspectionsListScreen extends StatelessWidget {
               const SizedBox(height: 6),
               SelectableText(
                 code,
-                style: AppTheme.readout(20, color: AppTheme.textPrimary),
+                style: AppTheme.readout(20, color: context.colors.textPrimary),
               ),
               const SizedBox(height: 6),
               Text(
                 t.certificateLocalIssuerHint,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11.5,
                   height: 1.45,
-                  color: AppTheme.textFaint,
+                  color: context.colors.textFaint,
                 ),
               ),
             ],
@@ -159,10 +159,10 @@ class InspectionsListScreen extends StatelessWidget {
   ) {
     final light = lightOf(row);
     final tone = switch (light) {
-      InspectionLight.problem => AppTheme.bad,
-      InspectionLight.watch => AppTheme.watch,
-      InspectionLight.good => AppTheme.good,
-      InspectionLight.unmeasured => AppTheme.textFaint,
+      InspectionLight.problem => context.colors.bad,
+      InspectionLight.watch => context.colors.watch,
+      InspectionLight.good => context.colors.good,
+      InspectionLight.unmeasured => context.colors.textFaint,
     };
     final name = row.bmsName.isEmpty ? row.bmsId : row.bmsName;
     return Padding(
@@ -174,10 +174,10 @@ class InspectionsListScreen extends StatelessWidget {
           alignment: Alignment.centerRight,
           padding: const EdgeInsets.only(right: 20),
           decoration: BoxDecoration(
-            color: AppTheme.bad.withValues(alpha: 0.18),
-            borderRadius: BorderRadius.circular(14),
+            color: context.colors.bad.withValues(alpha: 0.18),
+            borderRadius: BorderRadius.circular(8),
           ),
-          child: const Icon(Icons.delete_outline, color: AppTheme.bad),
+          child: Icon(Icons.delete_outline, color: context.colors.bad),
         ),
         confirmDismiss: (_) => _confirmDelete(context, t),
         onDismissed: (_) async {
@@ -188,13 +188,13 @@ class InspectionsListScreen extends StatelessWidget {
           ).showSnackBar(SnackBar(content: Text(t.inspectionDeleted)));
         },
         child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(8),
           onTap: () => _open(context, row, run?.$2),
           child: Container(
             decoration: BoxDecoration(
-              color: AppTheme.surfaceRaised,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppTheme.hairline),
+              color: context.colors.surfaceRaised,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: context.colors.hairline),
             ),
             padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
             child: Row(
@@ -229,9 +229,9 @@ class InspectionsListScreen extends StatelessWidget {
                         ].join('  ·  '),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11.5,
-                          color: AppTheme.textFaint,
+                          color: context.colors.textFaint,
                         ),
                       ),
                     ],
@@ -329,7 +329,7 @@ class InspectionsListScreen extends StatelessWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surfaceRaised,
+        backgroundColor: context.colors.surfaceRaised,
         title: Text(t.inspectionDeleteConfirmTitle),
         content: Text(
           t.inspectionDeleteConfirmBody,
@@ -342,7 +342,7 @@ class InspectionsListScreen extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: AppTheme.bad),
+            style: TextButton.styleFrom(foregroundColor: context.colors.bad),
             child: Text(t.inspectionDeleteConfirm),
           ),
         ],

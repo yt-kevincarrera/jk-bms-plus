@@ -76,7 +76,7 @@ void main() {
       expect(find.text(text), findsOneWidget);
     }
 
-    await see(t.antStatusTitle.toUpperCase());
+    await see(t.antStatusTitle);
     await see(t.antBatteryType);
     await see(t.antBatteryTypeName('ternary'));
     await see(t.antTotalCharged);

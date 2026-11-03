@@ -70,19 +70,19 @@ class _FaultHistoryScreenState extends State<FaultHistoryScreen> {
       children: [
         Text(
           widget.packName,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
+            color: context.colors.textPrimary,
           ),
         ),
         const SizedBox(height: 6),
         Text(
           empty ? t.faultHistoryEmpty : t.faultHistoryIntro,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12.5,
             height: 1.45,
-            color: AppTheme.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
       ],
@@ -93,10 +93,10 @@ class _FaultHistoryScreenState extends State<FaultHistoryScreen> {
     padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
     child: Text(
       t.faultHistoryThinned,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 11,
         height: 1.4,
-        color: AppTheme.textFaint,
+        color: context.colors.textFaint,
       ),
     ),
   );
@@ -106,10 +106,10 @@ class _FaultHistoryScreenState extends State<FaultHistoryScreen> {
     final name = w == null ? t.faultUnknownBit(e.bit) : warningLabel(t, w);
     return Section(
       title: name,
-      accent: w?.isFault == false ? AppTheme.watch : AppTheme.bad,
+      accent: w?.isFault == false ? context.colors.watch : context.colors.bad,
       trailing: e.ongoing
-          ? Pill(t.faultOngoing, color: AppTheme.bad)
-          : Pill(_length(t, e), color: AppTheme.textSecondary),
+          ? Pill(t.faultOngoing, color: context.colors.bad)
+          : Pill(_length(t, e), color: context.colors.textSecondary),
       children: [
         InfoRow(t.faultStarted, _dateTime(e.start)),
         InfoRow(
@@ -118,7 +118,7 @@ class _FaultHistoryScreenState extends State<FaultHistoryScreen> {
           // The link was out for long enough that the fault may have begun
           // earlier, ended later, or come and gone unseen.
           hint: e.unobservedGap ? t.faultNoData : null,
-          valueColor: e.unobservedGap ? AppTheme.watch : null,
+          valueColor: e.unobservedGap ? context.colors.watch : null,
         ),
         InfoRow(t.faultReadings, '${e.readings}'),
         InfoRow(

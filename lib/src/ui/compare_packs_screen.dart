@@ -72,43 +72,43 @@ class _ComparePacksScreenState extends State<ComparePacksScreen> {
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : _packs.length < 2
-                ? Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Center(
-                      child: Text(
-                        t.compareNeedsTwo,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          height: 1.5,
-                          color: AppTheme.textFaint,
-                        ),
+            ? Padding(
+                padding: const EdgeInsets.all(24),
+                child: Center(
+                  child: Text(
+                    t.compareNeedsTwo,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.5,
+                      color: context.colors.textFaint,
+                    ),
+                  ),
+                ),
+              )
+            : ListView(
+                padding: const EdgeInsets.only(bottom: 28),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                    child: Text(
+                      t.compareIntro,
+                      style: TextStyle(
+                        fontSize: 12,
+                        height: 1.45,
+                        color: context.colors.textFaint,
                       ),
                     ),
-                  )
-                : ListView(
-                    padding: const EdgeInsets.only(bottom: 28),
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                        child: Text(
-                          t.compareIntro,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            height: 1.45,
-                            color: AppTheme.textFaint,
-                          ),
-                        ),
-                      ),
-                      // Horizontal scroll rather than shrinking the type: with
-                      // three packs the columns would be unreadable, and a
-                      // health figure nobody can read is not a health figure.
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: _table(t),
-                      ),
-                    ],
                   ),
+                  // Horizontal scroll rather than shrinking the type: with
+                  // three packs the columns would be unreadable, and a
+                  // health figure nobody can read is not a health figure.
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: _table(t),
+                  ),
+                ],
+              ),
       ),
     );
   }
@@ -120,9 +120,8 @@ class _ComparePacksScreenState extends State<ComparePacksScreen> {
         (p) => p.healthPercent == null
             ? null
             : '${p.healthPercent!.toStringAsFixed(0)} %',
-        tone: (p) => p.healthPercent == null
-            ? null
-            : _healthTone(p.healthPercent!),
+        tone: (p) =>
+            p.healthPercent == null ? null : _healthTone(p.healthPercent!),
         best: (p) => p.healthPercent,
         higherIsBetter: true,
       ),
@@ -156,15 +155,11 @@ class _ComparePacksScreenState extends State<ComparePacksScreen> {
         best: (p) => p.honestCycles,
         higherIsBetter: false,
       ),
-      _Row(
-        t.offlineCycles,
-        (p) => p.reportedCycles?.toStringAsFixed(0),
-      ),
+      _Row(t.offlineCycles, (p) => p.reportedCycles?.toStringAsFixed(0)),
       _Row(
         t.compareConsumption,
-        (p) => p.whPerKm == null
-            ? null
-            : '${p.whPerKm!.toStringAsFixed(1)} Wh/km',
+        (p) =>
+            p.whPerKm == null ? null : '${p.whPerKm!.toStringAsFixed(1)} Wh/km',
         best: (p) => p.whPerKm,
         higherIsBetter: false,
       ),
@@ -208,7 +203,7 @@ class _ComparePacksScreenState extends State<ComparePacksScreen> {
           const SizedBox(height: 8),
           for (final row in rows) ...[
             _buildRow(row, labelWidth, colWidth),
-            const Divider(height: 14, color: AppTheme.hairline),
+            Divider(height: 14, color: context.colors.hairline),
           ],
         ],
       ),
@@ -237,7 +232,7 @@ class _ComparePacksScreenState extends State<ComparePacksScreen> {
           width: labelWidth,
           child: Text(
             row.label,
-            style: const TextStyle(fontSize: 12.5, color: AppTheme.textFaint),
+            style: TextStyle(fontSize: 12.5, color: context.colors.textFaint),
           ),
         ),
         for (final p in _packs)
@@ -246,7 +241,8 @@ class _ComparePacksScreenState extends State<ComparePacksScreen> {
             child: Builder(
               builder: (context) {
                 final text = row.value(p);
-                final isBest = bestValue != null &&
+                final isBest =
+                    bestValue != null &&
                     row.best != null &&
                     row.best!(p) == bestValue;
                 return Text(
@@ -254,10 +250,10 @@ class _ComparePacksScreenState extends State<ComparePacksScreen> {
                   style: TextStyle(
                     fontSize: 13.5,
                     color: text == null
-                        ? AppTheme.textFaint
+                        ? context.colors.textFaint
                         : isBest
-                            ? AppTheme.good
-                            : row.tone?.call(p),
+                        ? context.colors.good
+                        : row.tone?.call(p),
                     fontWeight: isBest ? FontWeight.w600 : null,
                   ),
                 );
@@ -268,10 +264,10 @@ class _ComparePacksScreenState extends State<ComparePacksScreen> {
     );
   }
 
-  static Color _healthTone(double percent) {
-    if (percent >= 92) return AppTheme.good;
-    if (percent >= 80) return AppTheme.watch;
-    return AppTheme.bad;
+  Color _healthTone(double percent) {
+    if (percent >= 92) return context.colors.good;
+    if (percent >= 80) return context.colors.watch;
+    return context.colors.bad;
   }
 }
 

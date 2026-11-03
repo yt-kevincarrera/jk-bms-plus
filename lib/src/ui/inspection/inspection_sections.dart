@@ -16,21 +16,25 @@ import 'inspection_texts.dart';
 /// result, so the promise holds.
 
 /// What the test could not see.
-Widget inspectionCaveatsSection(AppL10n t, InspectionResult r) {
+Widget inspectionCaveatsSection(
+  BuildContext context,
+  AppL10n t,
+  InspectionResult r,
+) {
   if (r.caveats.isEmpty) return const SizedBox.shrink();
   return Section(
     title: t.inspectionCaveatsTitle,
-    accent: AppTheme.watch,
+    accent: context.colors.watch,
     children: [
       for (final c in r.caveats)
         Padding(
           padding: const EdgeInsets.only(bottom: 6),
           child: Text(
             inspectionCaveatText(t, c),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12.5,
               height: 1.45,
-              color: AppTheme.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
         ),
@@ -41,6 +45,7 @@ Widget inspectionCaveatsSection(AppL10n t, InspectionResult r) {
 
 /// One row per cell: rest, the excursion under load, resistance, recovery.
 Widget inspectionCellsSection(
+  BuildContext context,
   AppL10n t,
   InspectionResult r, {
   InspectionVerdicts verdicts = const InspectionVerdicts(),
@@ -48,18 +53,18 @@ Widget inspectionCellsSection(
   if (r.cells.isEmpty) return const SizedBox.shrink();
   final worstSag = r.worstSag?.index;
   final slow = r.slowestRecovery;
-  const label = TextStyle(fontSize: 10.5, color: AppTheme.textFaint);
-  const cell = TextStyle(
+  final label = TextStyle(fontSize: 10.5, color: context.colors.textFaint);
+  final cell = TextStyle(
     fontSize: 12,
     fontFeatures: AppTheme.tabular,
-    color: AppTheme.textSecondary,
+    color: context.colors.textSecondary,
   );
   return Section(
     title: t.inspectionCellsTitle,
     children: [
       Row(
         children: [
-          const SizedBox(width: 30, child: Text('#', style: label)),
+          SizedBox(width: 30, child: Text('#', style: label)),
           Expanded(child: Text(t.inspectionCellHeaderRest, style: label)),
           // Under a charger the cells rose. "Sag" over a column of rises is
           // a heading that says the opposite of the numbers under it.
@@ -87,8 +92,8 @@ Widget inspectionCellsSection(
                   '${c.index}',
                   style: cell.copyWith(
                     color: c.index == worstSag && r.worstSagExcess != null
-                        ? AppTheme.watch
-                        : AppTheme.textPrimary,
+                        ? context.colors.watch
+                        : context.colors.textPrimary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -106,7 +111,7 @@ Widget inspectionCellsSection(
                         c.index == worstSag &&
                             (r.worstExcessOhms ?? 0) >=
                                 verdicts.thresholds.sagWatchOhms
-                        ? AppTheme.watch
+                        ? context.colors.watch
                         : null,
                   ),
                 ),
@@ -124,7 +129,7 @@ Widget inspectionCellsSection(
                   inspectionRecoveryCell(t, c, digits: 0),
                   style: cell.copyWith(
                     color: slow != null && slow.index == c.index && !c.recovered
-                        ? AppTheme.watch
+                        ? context.colors.watch
                         : null,
                   ),
                 ),
@@ -138,12 +143,16 @@ Widget inspectionCellsSection(
 }
 
 /// What the BMS says about itself, marked as editable.
-Widget inspectionReportedSection(AppL10n t, InspectionResult r) {
+Widget inspectionReportedSection(
+  BuildContext context,
+  AppL10n t,
+  InspectionResult r,
+) {
   final rep = r.reported;
   return Section(
     title: t.inspectionReportedTitle,
     intro: t.inspectionReportedHint,
-    accent: AppTheme.textFaint,
+    accent: context.colors.textFaint,
     children: [
       if (rep.model.isNotEmpty) InfoRow(t.inspectionReportedModel, rep.model),
       if (rep.serialNumber.isNotEmpty)
@@ -177,27 +186,27 @@ Widget inspectionReportedSection(AppL10n t, InspectionResult r) {
 
 /// The loud line a run against the app's own simulator carries everywhere
 /// it is shown. A rehearsal produces a perfectly ordinary looking result.
-Widget inspectionSimulatedBanner(String text) => Padding(
+Widget inspectionSimulatedBanner(BuildContext context, String text) => Padding(
   padding: const EdgeInsets.fromLTRB(20, 10, 20, 4),
   child: Container(
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
-      color: AppTheme.bad.withValues(alpha: 0.12),
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: AppTheme.bad),
+      color: context.colors.bad.withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: context.colors.bad),
     ),
     child: Row(
       children: [
-        const Icon(Icons.science_outlined, color: AppTheme.bad),
+        Icon(Icons.science_outlined, color: context.colors.bad),
         const SizedBox(width: 10),
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               height: 1.4,
               fontWeight: FontWeight.w700,
-              color: AppTheme.bad,
+              color: context.colors.bad,
             ),
           ),
         ),

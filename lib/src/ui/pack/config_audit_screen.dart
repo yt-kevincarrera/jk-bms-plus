@@ -83,13 +83,13 @@ class _ConfigAuditScreenState extends State<ConfigAuditScreen> {
       appBar: AppBar(title: Text(t.configAuditTitle)),
       body: SafeArea(
         child: _loading
-            ? const Center(
+            ? Center(
                 child: SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: AppTheme.goodDim,
+                    color: context.colors.goodDim,
                   ),
                 ),
               )
@@ -108,10 +108,10 @@ class _ConfigAuditScreenState extends State<ConfigAuditScreen> {
       child: Text(
         t.configAuditNoSettings,
         textAlign: TextAlign.center,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 13.5,
           height: 1.5,
-          color: AppTheme.textSecondary,
+          color: context.colors.textSecondary,
         ),
       ),
     ),
@@ -126,10 +126,10 @@ class _ConfigAuditScreenState extends State<ConfigAuditScreen> {
       child: Text(
         widget.service.antLegacy ? t.antSettingsLegacy : t.antSettingsPending,
         textAlign: TextAlign.center,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 13.5,
           height: 1.5,
-          color: AppTheme.textSecondary,
+          color: context.colors.textSecondary,
         ),
       ),
     ),
@@ -151,10 +151,10 @@ class _ConfigAuditScreenState extends State<ConfigAuditScreen> {
           padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
           child: Text(
             t.configAuditIntro,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12.5,
               height: 1.45,
-              color: AppTheme.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
         ),
@@ -196,10 +196,10 @@ class _ConfigAuditScreenState extends State<ConfigAuditScreen> {
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
           child: Text(
             t.configAuditReadOnly,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11.5,
               height: 1.5,
-              color: AppTheme.textFaint,
+              color: context.colors.textFaint,
             ),
           ),
         ),

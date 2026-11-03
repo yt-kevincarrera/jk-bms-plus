@@ -233,12 +233,18 @@ class _JkBmsAppState extends State<JkBmsApp> {
     return LicenseScope(
       controller: _license,
       child: ListenableBuilder(
-        listenable: _locale,
+        listenable: Listenable.merge([_locale, _settings]),
         builder: (context, _) => MaterialApp(
           title: 'JK BMS +',
           debugShowCheckedModeBanner: false,
           scaffoldMessengerKey: _messenger,
-          theme: AppTheme.build(),
+          theme: AppTheme.build(brightness: Brightness.light),
+          darkTheme: AppTheme.build(),
+          themeMode: switch (_settings.appearance) {
+            AppAppearance.system => ThemeMode.system,
+            AppAppearance.light => ThemeMode.light,
+            AppAppearance.dark => ThemeMode.dark,
+          },
           // Spanish unless the rider says otherwise. `locale: null` hands the
           // choice back to the phone.
           locale: _locale.locale,

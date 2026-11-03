@@ -21,6 +21,7 @@ import '../../metrics/ride_alerts.dart';
 import '../../metrics/trip_recorder.dart';
 import '../trip_screen.dart';
 import '../widgets/gauges.dart';
+import '../widgets/instruments.dart';
 
 /// The riding screen. One glance should answer two questions: can I keep going,
 /// and is anything wrong.
@@ -123,31 +124,31 @@ class _NowTabState extends State<NowTab> {
       Text(
         why,
         textAlign: TextAlign.center,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 12.5,
           height: 1.4,
-          color: AppTheme.textSecondary,
+          color: context.colors.textSecondary,
         ),
       ),
       const SizedBox(height: 12),
       SelectableText(
         evidence,
         textAlign: TextAlign.center,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 10.5,
           height: 1.35,
           fontFamily: 'monospace',
-          color: AppTheme.textFaint,
+          color: context.colors.textFaint,
         ),
       ),
       if (notices.isNotEmpty) ...[
         const SizedBox(height: 14),
         Text(
           t.systemNotices.toUpperCase(),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 10.5,
             letterSpacing: 0.8,
-            color: AppTheme.textFaint,
+            color: context.colors.textFaint,
           ),
         ),
         const SizedBox(height: 6),
@@ -157,10 +158,10 @@ class _NowTabState extends State<NowTab> {
             child: SelectableText(
               n,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 height: 1.35,
-                color: AppTheme.textFaint,
+                color: context.colors.textFaint,
               ),
             ),
           ),
@@ -188,7 +189,6 @@ class _NowTabState extends State<NowTab> {
 
     final service = widget.service;
     final history = service.history;
-    final health = packHealthOf(s, chemistry: service.cutoffChemistry);
     final power = history.smoothedPower;
     final current = history.smoothedCurrent;
     final estimator = service.rangeEstimator;
@@ -226,79 +226,52 @@ class _NowTabState extends State<NowTab> {
           badge: s.balancerActive
               // Named, not just "working": on its own in the band a bare
               // state word says nothing about what is doing it.
-              ? Pill(t.balancerBadge, color: AppTheme.cool, icon: Icons.bolt)
+              ? Pill(
+                  t.balancerBadge,
+                  color: context.colors.cool,
+                  icon: Icons.bolt,
+                )
               : null,
         ),
         _AlertBanner(service: service, settings: widget.settings),
         // While charging, how long until it is full. Range is the wrong
         // question with a charger plugged in, and "how long do I wait" is the
         // only one anybody is actually asking.
-        if (s.isCharging) _chargeEta(t, s, service),
-        if (s.isCharging || s.chargerPlugged == true) _chargerState(t, s),
+        if (s.isCharging) _chargeEta(context, t, s, service),
+        if (s.isCharging || s.chargerPlugged == true)
+          _chargerState(context, t, s),
         _TripStrip(service: service, settings: widget.settings),
         const SizedBox(height: 6),
-        Row(
-          children: [
-            Expanded(
-              child: Center(
-                child: SocGauge(
-                  soc: s.soc,
-                  color: health.color,
-                  centreLabel: t.soc,
-                  centreValue: '${s.soc.toStringAsFixed(0)}%',
-                  subtitle: '${s.remainingCapacityAh.toStringAsFixed(1)} Ah',
-                  note: switch (drift) {
-                    SocDrift.aheadOfCells => t.socNoteAhead,
-                    SocDrift.behindCells => t.socNoteBehind,
-                    SocDrift.none => null,
-                  },
-                  size: 166,
-                ),
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Readout(
-                      label: t.range,
-                      value: outlook.nowKm?.toStringAsFixed(0) ?? '--',
-                      unit: 'km',
-                      size: 44,
-                      footnote: outlook.hasLearned
-                          ? t.rangeBand(
-                              low.toStringAsFixed(0),
-                              high.toStringAsFixed(0),
-                            )
-                          : t.rangeNoneLearned,
-                    ),
-                    const SizedBox(height: 10),
-                    // The separate question, answered separately. One of these
-                    // changes when you charge and the other does not, and
-                    // showing only the first invited it to be read as what the
-                    // bike does.
-                    _FullPackRange(outlook: outlook, t: t),
-                    const SizedBox(height: 12),
-                    Pill(
-                      estimator.hasLearned
-                          ? '${estimator.whPerKm.toStringAsFixed(0)} Wh/km'
-                          : t.rangeLearning,
-                      color: estimator.hasLearned
-                          ? AppTheme.good
-                          : AppTheme.textFaint,
-                      icon: estimator.hasLearned
-                          ? Icons.route_outlined
-                          : Icons.hourglass_bottom,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+        RangeInstrument(
+          rangeLabel: t.rangeCurrent,
+          rangeValue: outlook.nowKm?.toStringAsFixed(0) ?? '--',
+          soc: s.soc,
+          socLabel: t.soc,
+          band: outlook.hasLearned
+              ? t.rangeBand(low.toStringAsFixed(0), high.toStringAsFixed(0))
+              : t.rangeNoneLearned,
+          capacity: '${s.remainingCapacityAh.toStringAsFixed(1)} Ah',
+          note: switch (drift) {
+            SocDrift.aheadOfCells => t.socNoteAhead,
+            SocDrift.behindCells => t.socNoteBehind,
+            SocDrift.none => null,
+          },
         ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
+          child: _FullPackRange(outlook: outlook, t: t),
+        ),
+        if (estimator.hasLearned)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 8, 18, 0),
+            child: Text(
+              '${estimator.whPerKm.toStringAsFixed(0)} Wh/km',
+              style: TextStyle(
+                fontSize: 13,
+                color: context.colors.textSecondary,
+              ),
+            ),
+          ),
         const SizedBox(height: 18),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -311,7 +284,7 @@ class _NowTabState extends State<NowTab> {
                       ? power.toStringAsFixed(0)
                       : (power / 1000).toStringAsFixed(2),
                   unit: power.abs() < 999 ? 'W' : 'kW',
-                  color: power.abs() > 5 ? AppTheme.cool : null,
+                  color: power.abs() > 5 ? context.colors.cool : null,
                 ),
               ),
               const SizedBox(width: 10),
@@ -362,14 +335,14 @@ class _NowTabState extends State<NowTab> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Caption(t.power, color: AppTheme.textFaint),
+                Caption(t.power, color: context.colors.textFaint),
                 const SizedBox(height: 8),
                 Sparkline(
                   values: [
                     for (final x in history.recent(const Duration(minutes: 5)))
                       x.power,
                   ],
-                  color: AppTheme.cool,
+                  color: context.colors.cool,
                 ),
               ],
             ),
@@ -450,8 +423,8 @@ class _NowTabState extends State<NowTab> {
   }
 
   Color? _deltaColour(double delta) {
-    if (delta > 0.10) return AppTheme.bad;
-    if (delta > 0.04) return AppTheme.watch;
+    if (delta > 0.10) return context.colors.bad;
+    if (delta > 0.04) return context.colors.watch;
     return null;
   }
 }
@@ -510,22 +483,24 @@ class _TripStripState extends State<_TripStrip> {
     final trip = widget.service.trip;
     final active = trip.isActive;
     final tone = switch (trip.state) {
-      TripState.recording => AppTheme.good,
-      TripState.paused => AppTheme.watch,
-      TripState.idle => AppTheme.textSecondary,
+      TripState.recording => context.colors.good,
+      TripState.paused => context.colors.watch,
+      TripState.idle => context.colors.textSecondary,
     };
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       child: InkWell(
         onTap: _open,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(8),
         child: Container(
           decoration: BoxDecoration(
-            color: AppTheme.surfaceRaised,
-            borderRadius: BorderRadius.circular(14),
+            color: context.colors.surfaceRaised,
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: active ? tone.withValues(alpha: 0.45) : AppTheme.hairline,
+              color: active
+                  ? tone.withValues(alpha: 0.45)
+                  : context.colors.hairline,
             ),
           ),
           padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
@@ -545,10 +520,10 @@ class _TripStripState extends State<_TripStrip> {
                     children: [
                       Text(
                         t.tripOpen,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: AppTheme.textPrimary,
+                          color: context.colors.textPrimary,
                         ),
                       ),
                       if (widget.service.autoTripWaitingForGps)
@@ -562,8 +537,8 @@ class _TripStripState extends State<_TripStrip> {
                               fontSize: 12,
                               height: 1.4,
                               color: widget.service.autoTripGpsStalled
-                                  ? AppTheme.watch
-                                  : AppTheme.textSecondary,
+                                  ? context.colors.watch
+                                  : context.colors.textSecondary,
                             ),
                           ),
                         ),
@@ -575,16 +550,19 @@ class _TripStripState extends State<_TripStrip> {
                   child: Row(
                     children: [
                       _mini(
+                        context,
                         '${trip.distanceKm.toStringAsFixed(1)} km',
                         t.tripDistance,
                       ),
                       const SizedBox(width: 18),
                       _mini(
+                        context,
                         '${trip.speedKmh.toStringAsFixed(0)} km/h',
                         t.tripSpeed,
                       ),
                       const SizedBox(width: 18),
                       _mini(
+                        context,
                         trip.whPerKm == null
                             ? '--'
                             : '${trip.whPerKm!.toStringAsFixed(0)} Wh/km',
@@ -594,10 +572,10 @@ class _TripStripState extends State<_TripStrip> {
                   ),
                 ),
               ],
-              const Icon(
+              Icon(
                 Icons.chevron_right,
                 size: 18,
-                color: AppTheme.textFaint,
+                color: context.colors.textFaint,
               ),
             ],
           ),
@@ -606,7 +584,7 @@ class _TripStripState extends State<_TripStrip> {
     );
   }
 
-  Widget _mini(String value, String label) => Column(
+  Widget _mini(BuildContext context, String value, String label) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     mainAxisSize: MainAxisSize.min,
     children: [
@@ -621,7 +599,7 @@ class _TripStripState extends State<_TripStrip> {
       const SizedBox(height: 1),
       Text(
         label,
-        style: const TextStyle(fontSize: 10, color: AppTheme.textFaint),
+        style: TextStyle(fontSize: 10, color: context.colors.textFaint),
       ),
     ],
   );
@@ -650,10 +628,10 @@ class _FullPackRange extends StatelessWidget {
         outlook.fullNeedsChemistry
             ? t.rangeFullNeedsChemistry
             : t.rangeFullUnknown,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 11,
           height: 1.35,
-          color: AppTheme.textFaint,
+          color: context.colors.textFaint,
         ),
       );
     }
@@ -665,11 +643,11 @@ class _FullPackRange extends StatelessWidget {
       children: [
         Text(
           t.rangeFull,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 10.5,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.6,
-            color: AppTheme.textFaint,
+            color: context.colors.textFaint,
           ),
         ),
         const SizedBox(height: 1),
@@ -679,9 +657,9 @@ class _FullPackRange extends StatelessWidget {
           children: [
             Text(full.toStringAsFixed(0), style: AppTheme.readout(22)),
             const SizedBox(width: 3),
-            const Text(
+            Text(
               'km',
-              style: TextStyle(fontSize: 11, color: AppTheme.textFaint),
+              style: TextStyle(fontSize: 11, color: context.colors.textFaint),
             ),
           ],
         ),
@@ -691,7 +669,7 @@ class _FullPackRange extends StatelessWidget {
               band.$1.toStringAsFixed(0),
               band.$2.toStringAsFixed(0),
             ),
-            style: const TextStyle(fontSize: 10, color: AppTheme.textFaint),
+            style: TextStyle(fontSize: 10, color: context.colors.textFaint),
           ),
         Text(
           outlook.fullFromMeasuredCapacity
@@ -703,8 +681,8 @@ class _FullPackRange extends StatelessWidget {
             fontSize: 10,
             height: 1.3,
             color: outlook.fullFromMeasuredCapacity
-                ? AppTheme.good
-                : AppTheme.textFaint,
+                ? context.colors.good
+                : context.colors.textFaint,
           ),
         ),
       ],
@@ -715,7 +693,12 @@ class _FullPackRange extends StatelessWidget {
 /// Time until the pack is full, from what is going in right now — or, when
 /// the BMS's charge counter has run ahead of the cells, the admission that
 /// there is no honest number to give.
-Widget _chargeEta(AppL10n t, BmsSnapshot s, BmsService service) {
+Widget _chargeEta(
+  BuildContext context,
+  AppL10n t,
+  BmsSnapshot s,
+  BmsService service,
+) {
   // Remaining over charge, which reads back the capacity the BMS is
   // configured with. That cancellation makes it useless as a measurement of
   // the cells and exactly right here: the question is how many amp-hours are
@@ -781,14 +764,14 @@ Widget _chargeEta(AppL10n t, BmsSnapshot s, BmsService service) {
     padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
     child: Container(
       decoration: BoxDecoration(
-        color: AppTheme.surfaceRaised,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.hairline),
+        color: context.colors.surfaceRaised,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: context.colors.hairline),
       ),
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
       child: Row(
         children: [
-          const Icon(Icons.bolt, size: 18, color: AppTheme.cool),
+          Icon(Icons.bolt, size: 18, color: context.colors.cool),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -797,26 +780,26 @@ Widget _chargeEta(AppL10n t, BmsSnapshot s, BmsService service) {
                 Text(
                   // Always "about": see [ChargeEta.rounded].
                   hasTime ? '${t.etaFull} $label' : label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.cool,
+                    color: context.colors.cool,
                   ),
                 ),
                 if (eta.socLooksOptimistic)
                   Text(
                     t.etaCounterAhead,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11.5,
-                      color: AppTheme.textFaint,
+                      color: context.colors.textFaint,
                     ),
                   )
                 else if (eta.isTapering && hasTime)
                   Text(
                     t.etaTapering,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11.5,
-                      color: AppTheme.textFaint,
+                      color: context.colors.textFaint,
                     ),
                   ),
               ],
@@ -832,7 +815,7 @@ Widget _chargeEta(AppL10n t, BmsSnapshot s, BmsService service) {
 /// the phase it reports. Decoded from every reading and never shown, while
 /// the one screen a rider watches during a charge guessed at both from the
 /// current alone. Said as the BMS's, and left out where it reports neither.
-Widget _chargerState(AppL10n t, BmsSnapshot s) {
+Widget _chargerState(BuildContext context, AppL10n t, BmsSnapshot s) {
   final parts = [
     if (s.chargerPlugged case final plugged?)
       plugged ? t.nowChargerSeen : t.nowChargerNotSeen,
@@ -844,10 +827,10 @@ Widget _chargerState(AppL10n t, BmsSnapshot s) {
     padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
     child: Text(
       '${t.nowChargerByBms}: ${parts.join('  ·  ')}',
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 12,
         height: 1.4,
-        color: AppTheme.textSecondary,
+        color: context.colors.textSecondary,
       ),
     ),
   );
@@ -971,14 +954,14 @@ class _AlertBannerState extends State<_AlertBanner> {
     if (alert == null) return const SizedBox.shrink();
 
     final t = AppL10n.of(context);
-    final tone = alert.critical ? AppTheme.bad : AppTheme.watch;
+    final tone = alert.critical ? context.colors.bad : context.colors.watch;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       child: Container(
         decoration: BoxDecoration(
           color: tone.withValues(alpha: 0.16),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(color: tone),
         ),
         padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),

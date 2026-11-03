@@ -12,16 +12,16 @@ enum PackHealth { good, watch, bad }
 
 extension PackHealthColors on PackHealth {
   Color get color => switch (this) {
-        PackHealth.good => AppTheme.good,
-        PackHealth.watch => AppTheme.watch,
-        PackHealth.bad => AppTheme.bad,
-      };
+    PackHealth.good => AppTheme.good,
+    PackHealth.watch => AppTheme.watch,
+    PackHealth.bad => AppTheme.bad,
+  };
 
   IconData get icon => switch (this) {
-        PackHealth.good => Icons.check_circle_outline,
-        PackHealth.watch => Icons.error_outline,
-        PackHealth.bad => Icons.warning_amber_rounded,
-      };
+    PackHealth.good => Icons.check_circle_outline,
+    PackHealth.watch => Icons.error_outline,
+    PackHealth.bad => Icons.warning_amber_rounded,
+  };
 }
 
 /// A caption above a measurement.
@@ -33,11 +33,11 @@ class Caption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Text(
-        text.toUpperCase(),
-        style: AppTheme.caption(context).copyWith(color: color),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      );
+    text,
+    style: AppTheme.caption(
+      context,
+    ).copyWith(color: color == null ? null : AppTheme.resolve(context, color!)),
+  );
 }
 
 /// The main instrument: caption, big number, unit.
@@ -69,22 +69,26 @@ class Readout extends StatelessWidget {
       children: [
         Caption(label),
         const SizedBox(height: 6),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          mainAxisSize: MainAxisSize.min,
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.end,
+          spacing: 4,
           children: [
-            Text(value, style: AppTheme.readout(size, color: color)),
+            Text(
+              value,
+              style: AppTheme.readout(
+                size,
+                color: color == null ? null : AppTheme.resolve(context, color!),
+              ),
+            ),
             if (unit != null) ...[
-              const SizedBox(width: 3),
               Padding(
                 padding: EdgeInsets.only(bottom: size * 0.08),
                 child: Text(
                   unit!,
                   style: TextStyle(
-                    fontSize: math.max(11, size * 0.32),
+                    fontSize: math.max(12, size * 0.32),
                     fontWeight: FontWeight.w500,
-                    color: AppTheme.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 ),
               ),
@@ -95,7 +99,7 @@ class Readout extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             footnote!,
-            style: const TextStyle(fontSize: 11, color: AppTheme.textFaint),
+            style: TextStyle(fontSize: 12, color: context.colors.textFaint),
           ),
         ],
       ],
@@ -111,6 +115,7 @@ class MetricTile extends StatelessWidget {
     this.unit,
     this.color,
     this.footnote,
+    this.size = 28,
     super.key,
   });
 
@@ -119,22 +124,23 @@ class MetricTile extends StatelessWidget {
   final String? unit;
   final Color? color;
   final String? footnote;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 12, 13),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceRaised,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.hairline),
+        color: context.colors.surfaceRaised,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: context.colors.hairline),
       ),
       child: Readout(
         label: label,
         value: value,
         unit: unit,
         color: color,
-        size: 26,
+        size: size,
         footnote: footnote,
       ),
     );
@@ -168,8 +174,10 @@ class InfoRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: last
           ? null
-          : const BoxDecoration(
-              border: Border(bottom: BorderSide(color: AppTheme.hairline)),
+          : BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: context.colors.hairline),
+              ),
             ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -181,9 +189,9 @@ class InfoRow extends StatelessWidget {
                 flex: 5,
                 child: Text(
                   label,
-                  style: const TextStyle(
-                    fontSize: 13.5,
-                    color: AppTheme.textSecondary,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: context.colors.textSecondary,
                   ),
                 ),
               ),
@@ -197,8 +205,13 @@ class InfoRow extends StatelessWidget {
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     fontFeatures: AppTheme.tabular,
-                    color: valueColor ??
-                        (dim ? AppTheme.textFaint : AppTheme.textPrimary),
+                    color:
+                        (valueColor == null
+                            ? null
+                            : AppTheme.resolve(context, valueColor!)) ??
+                        (dim
+                            ? context.colors.textFaint
+                            : context.colors.textPrimary),
                   ),
                 ),
               ),
@@ -208,10 +221,10 @@ class InfoRow extends StatelessWidget {
             const SizedBox(height: 5),
             Text(
               hint!,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11.5,
                 height: 1.35,
-                color: AppTheme.textFaint,
+                color: context.colors.textFaint,
               ),
             ),
           ],
@@ -244,9 +257,9 @@ class Section extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Container(
         decoration: BoxDecoration(
-          color: AppTheme.surfaceRaised,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppTheme.hairline),
+          color: context.colors.surfaceRaised,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: context.colors.hairline),
         ),
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
         child: Column(
@@ -254,7 +267,9 @@ class Section extends StatelessWidget {
           children: [
             Row(
               children: [
-                Expanded(child: Caption(title, color: accent ?? AppTheme.good)),
+                Expanded(
+                  child: Caption(title, color: accent ?? context.colors.good),
+                ),
                 ?trailing,
               ],
             ),
@@ -262,10 +277,10 @@ class Section extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 intro!,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12.5,
                   height: 1.4,
-                  color: AppTheme.textSecondary,
+                  color: context.colors.textSecondary,
                 ),
               ),
             ],
@@ -298,13 +313,13 @@ class StatusBand extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colour = health.color;
+    final colour = AppTheme.resolve(context, health.color);
     final band = Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       decoration: BoxDecoration(
         color: colour.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: colour.withValues(alpha: 0.45)),
       ),
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -340,7 +355,7 @@ class StatusBand extends StatelessWidget {
     return GestureDetector(
       onTap: () => showModalBottomSheet<void>(
         context: context,
-        backgroundColor: AppTheme.surfaceRaised,
+        backgroundColor: context.colors.surfaceRaised,
         showDragHandle: true,
         builder: (_) => SafeArea(
           child: Padding(
@@ -368,10 +383,10 @@ class StatusBand extends StatelessWidget {
                 const SizedBox(height: 14),
                 Text(
                   explanation!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     height: 1.5,
-                    color: AppTheme.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 ),
               ],
@@ -394,6 +409,7 @@ class Pill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final color = AppTheme.resolve(context, this.color);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
       decoration: BoxDecoration(
@@ -444,19 +460,19 @@ class WaitingForData extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(
+            SizedBox(
               width: 20,
               height: 20,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: AppTheme.goodDim,
+                color: context.colors.good,
               ),
             ),
             const SizedBox(height: 18),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppTheme.textSecondary),
+              style: TextStyle(color: context.colors.textSecondary),
             ),
             ...children,
           ],
@@ -637,16 +653,18 @@ class StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tone = color ?? AppTheme.textPrimary;
+    final tone = color == null
+        ? context.colors.textPrimary
+        : AppTheme.resolve(context, color!);
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 11, 10, 12),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceRaised,
-        borderRadius: BorderRadius.circular(13),
+        color: context.colors.surfaceRaised,
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: emphasis && color != null
               ? tone.withValues(alpha: 0.45)
-              : AppTheme.hairline,
+              : context.colors.hairline,
         ),
       ),
       child: Column(
@@ -669,10 +687,10 @@ class StatCard extends StatelessWidget {
                 const SizedBox(width: 3),
                 Text(
                   unit!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
-                    color: AppTheme.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 ),
               ],
@@ -682,10 +700,10 @@ class StatCard extends StatelessWidget {
           Text(
             label,
             maxLines: 2,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               height: 1.25,
-              color: AppTheme.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
           if (footnote != null)
@@ -695,10 +713,10 @@ class StatCard extends StatelessWidget {
                 footnote!,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 10,
                   height: 1.2,
-                  color: AppTheme.textFaint,
+                  color: context.colors.textFaint,
                 ),
               ),
             ),
@@ -724,9 +742,9 @@ class Explainer extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
       child: Container(
         decoration: BoxDecoration(
-          color: AppTheme.surfaceRaised,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppTheme.hairline),
+          color: context.colors.surfaceRaised,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: context.colors.hairline),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Theme(
@@ -734,18 +752,18 @@ class Explainer extends StatelessWidget {
           child: ExpansionTile(
             title: Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.help_outline,
                   size: 15,
-                  color: AppTheme.textSecondary,
+                  color: context.colors.textSecondary,
                 ),
                 const SizedBox(width: 8),
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: AppTheme.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 ),
               ],
@@ -756,10 +774,10 @@ class Explainer extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Text(
                     p,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12.5,
                       height: 1.45,
-                      color: AppTheme.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                 ),

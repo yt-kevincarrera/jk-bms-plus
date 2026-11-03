@@ -138,7 +138,7 @@ class _HealthTabState extends State<HealthTab> {
     // "quite worn" in red off a number nobody measured.
     final tone = lost != null
         ? _healthTone(healthPercent!)
-        : AppTheme.textFaint;
+        : context.colors.textFaint;
     // The figure beside the gauge: measured when there is a test, otherwise
     // the configured capacity read back off the counter, and labelled so.
     final measuredNow = degradation?.current?.ah;
@@ -146,50 +146,42 @@ class _HealthTabState extends State<HealthTab> {
     return ListView(
       padding: const EdgeInsets.only(top: 4, bottom: 28),
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Center(
-                child: SocGauge(
-                  soc: (healthPercent ?? 0).clamp(0.0, 100.0),
-                  color: tone,
-                  centreLabel: t.healthGaugeLabel,
-                  centreValue: healthPercent == null
-                      ? '--'
-                      : '${healthPercent.toStringAsFixed(0)}%',
-                  subtitle: lost != null
-                      ? t.healthGaugeMeasured
-                      : healthPercent == null
-                      ? t.notReported
-                      : t.healthGaugeReported,
-                  size: 166,
-                ),
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(right: 16),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth < 360 ||
+                MediaQuery.textScalerOf(context).scale(16) > 23) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
                   children: [
+                    Readout(
+                      label: t.healthGaugeLabel,
+                      value: healthPercent?.toStringAsFixed(0) ?? '--',
+                      unit: '%',
+                      size: 64,
+                      color: tone,
+                      footnote: lost != null
+                          ? t.healthGaugeMeasured
+                          : healthPercent == null
+                          ? t.notReported
+                          : t.healthGaugeReported,
+                    ),
+                    const SizedBox(height: 8),
                     Text(
                       lost != null
                           ? _verdict(t, healthPercent!)
                           : t.healthVerdictReported,
                       style: TextStyle(
-                        fontSize: 15.5,
-                        height: 1.3,
-                        fontWeight: FontWeight.w600,
                         color: tone,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    // The real amperage, against the best this pack has
-                    // actually held. Not against the advert, which is a
-                    // different question answered further down.
+                    const SizedBox(height: 16),
                     Readout(
-                      label: measuredNow == null && report.impliedCapacityAh != null
+                      label:
+                          measuredNow == null &&
+                              report.impliedCapacityAh != null
                           ? t.degConfiguredTitle
                           : t.degNowTitle,
                       value:
@@ -202,11 +194,76 @@ class _HealthTabState extends State<HealthTab> {
                           ? null
                           : '/ ${degradation!.baseline!.ah.toStringAsFixed(1)} Ah',
                     ),
+                    const SizedBox(height: 12),
                   ],
                 ),
-              ),
-            ),
-          ],
+              );
+            }
+            return Row(
+              children: [
+                Expanded(
+                  child: Center(
+                    child: SocGauge(
+                      soc: (healthPercent ?? 0).clamp(0.0, 100.0),
+                      color: tone,
+                      centreLabel: t.healthGaugeLabel,
+                      centreValue: healthPercent == null
+                          ? '--'
+                          : '${healthPercent.toStringAsFixed(0)}%',
+                      subtitle: lost != null
+                          ? t.healthGaugeMeasured
+                          : healthPercent == null
+                          ? t.notReported
+                          : t.healthGaugeReported,
+                      size: 166,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          lost != null
+                              ? _verdict(t, healthPercent!)
+                              : t.healthVerdictReported,
+                          style: TextStyle(
+                            fontSize: 15.5,
+                            height: 1.3,
+                            fontWeight: FontWeight.w600,
+                            color: tone,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        // The real amperage, against the best this pack has
+                        // actually held. Not against the advert, which is a
+                        // different question answered further down.
+                        Readout(
+                          label:
+                              measuredNow == null &&
+                                  report.impliedCapacityAh != null
+                              ? t.degConfiguredTitle
+                              : t.degNowTitle,
+                          value:
+                              measuredNow?.toStringAsFixed(1) ??
+                              report.impliedCapacityAh?.toStringAsFixed(1) ??
+                              '--',
+                          unit: 'Ah',
+                          size: 30,
+                          footnote: degradation?.baseline == null
+                              ? null
+                              : '/ ${degradation!.baseline!.ah.toStringAsFixed(1)} Ah',
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
         // Two questions, kept apart on purpose. What the pack has lost is
         // wear. What it came up short of the advert is a fact about a
@@ -257,10 +314,10 @@ class _HealthTabState extends State<HealthTab> {
                           (short * 100).toStringAsFixed(0),
                         ),
                       },
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         height: 1.45,
-                        color: AppTheme.textFaint,
+                        color: context.colors.textFaint,
                       ),
                     ),
                   ),
@@ -287,52 +344,62 @@ class _HealthTabState extends State<HealthTab> {
           // Four across two rows rather than nine across three. Three of the
           // nine said nothing a rider could act on, and with four left a
           // three-wide grid strands one card alone on the second row.
-          child: GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-            childAspectRatio: 2.6,
-            children: [
-              // "Frente al anuncio" used to lead this grid. It is gone, and
-              // nothing was lost: the degradation section above already says
-              // the same thing in a sentence that explains it -- sold as 45,
-              // best it has held is 40, and that is not wear. A stat card
-              // repeating the percentage was a duplicate of a better line.
-              //
-              // "Contador infla" is gone too, folded into the cycle count
-              // below. As a bare multiplier it read 0.53, 0.91, 0.83, 0.70 and
-              // 0.96 on consecutive days of a real pack: integer rounding
-              // against three counted cycles, every value under 1, on a card
-              // whose name claimed the opposite.
-              StatCard(
-                label: t.healthCardCycles,
-                value: report.equivalentFullCycles.toStringAsFixed(1),
-                footnote: report.bmsCycleCountWorthQuoting == null
-                    ? null
-                    : t.healthCardCyclesBms(
-                        '${report.bmsCycleCountWorthQuoting}',
-                      ),
-              ),
-              StatCard(
-                label: t.healthCardUsable,
-                value: usableWh.toStringAsFixed(0),
-                unit: 'Wh',
-              ),
-              StatCard(
-                label: t.healthCardConsumption,
-                value: estimator.whPerKm.toStringAsFixed(0),
-                unit: 'Wh/km',
-                color: estimator.hasLearned ? null : AppTheme.textFaint,
-              ),
-              StatCard(
-                label: t.healthCardLearnedKm,
-                value: estimator.learnedKm.toStringAsFixed(0),
-                unit: 'km',
-                color: estimator.learnedKm == 0 ? AppTheme.textFaint : null,
-              ),
-            ],
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final columns = MediaQuery.textScalerOf(context).scale(16) > 23
+                  ? 1
+                  : 2;
+              final width =
+                  (constraints.maxWidth - 8 * (columns - 1)) / columns;
+              final cards = <Widget>[
+                // "Frente al anuncio" used to lead this grid. It is gone, and
+                // nothing was lost: the degradation section above already says
+                // the same thing in a sentence that explains it -- sold as 45,
+                // best it has held is 40, and that is not wear. A stat card
+                // repeating the percentage was a duplicate of a better line.
+                //
+                // "Contador infla" is gone too, folded into the cycle count
+                // below. As a bare multiplier it read 0.53, 0.91, 0.83, 0.70 and
+                // 0.96 on consecutive days of a real pack: integer rounding
+                // against three counted cycles, every value under 1, on a card
+                // whose name claimed the opposite.
+                StatCard(
+                  label: t.healthCardCycles,
+                  value: report.equivalentFullCycles.toStringAsFixed(1),
+                  footnote: report.bmsCycleCountWorthQuoting == null
+                      ? null
+                      : t.healthCardCyclesBms(
+                          '${report.bmsCycleCountWorthQuoting}',
+                        ),
+                ),
+                StatCard(
+                  label: t.healthCardUsable,
+                  value: usableWh.toStringAsFixed(0),
+                  unit: 'Wh',
+                ),
+                StatCard(
+                  label: t.healthCardConsumption,
+                  value: estimator.whPerKm.toStringAsFixed(0),
+                  unit: 'Wh/km',
+                  color: estimator.hasLearned ? null : context.colors.textFaint,
+                ),
+                StatCard(
+                  label: t.healthCardLearnedKm,
+                  value: estimator.learnedKm.toStringAsFixed(0),
+                  unit: 'km',
+                  color: estimator.learnedKm == 0
+                      ? context.colors.textFaint
+                      : null,
+                ),
+              ];
+              return Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final card in cards) SizedBox(width: width, child: card),
+                ],
+              );
+            },
           ),
         ),
         const SizedBox(height: 4),
@@ -423,11 +490,10 @@ class _HealthTabState extends State<HealthTab> {
   }
 
   Color _healthTone(double percent) {
-    if (percent >= 92) return AppTheme.good;
-    if (percent >= 80) return AppTheme.watch;
-    return AppTheme.bad;
+    if (percent >= 92) return context.colors.good;
+    if (percent >= 80) return context.colors.watch;
+    return context.colors.bad;
   }
-
 }
 
 /// Everything about the cell that decides when the pack stops.
@@ -495,14 +561,16 @@ class _WeakCellSection extends StatelessWidget {
           strandedFraction == null
               ? '--'
               : '${(strandedFraction * 100).toStringAsFixed(1)} %'
-                  '${strandedWh == null ? "" : "  ·  ${strandedWh.toStringAsFixed(0)} Wh"}',
+                    '${strandedWh == null ? "" : "  ·  ${strandedWh.toStringAsFixed(0)} Wh"}',
           dim: strandedFraction == null,
           hint: strandedFraction == null
               ? t.healthWeakCellStrandsNeedsRest
               : (ageMinutes ?? 0) >= 5
               ? t.healthWeakCellStrandsAge('$ageMinutes')
               : null,
-          valueColor: (strandedFraction ?? 0) > 0.05 ? AppTheme.watch : null,
+          valueColor: (strandedFraction ?? 0) > 0.05
+              ? context.colors.watch
+              : null,
         ),
         InfoRow(
           t.healthWeakCellResistance,
@@ -512,7 +580,7 @@ class _WeakCellSection extends StatelessWidget {
           // cell's own resistance, which it is not.
           hint: anyPair ? t.healthWeakCellResistanceHint : null,
           dim: rise == null,
-          valueColor: rise == null ? null : AppTheme.watch,
+          valueColor: rise == null ? null : context.colors.watch,
           last: true,
         ),
       ],

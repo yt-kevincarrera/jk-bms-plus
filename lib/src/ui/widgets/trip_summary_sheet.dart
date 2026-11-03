@@ -9,6 +9,8 @@ import 'representative_question.dart';
 import 'trip_grade_rows.dart';
 import 'trip_learned_section.dart';
 import 'trip_summary_view.dart';
+import 'instruments.dart';
+import 'energy_source_label.dart';
 
 /// Opens the end-of-ride summary.
 ///
@@ -22,7 +24,7 @@ Future<void> showTripSummarySheet({
   required AppL10n t,
 }) => showModalBottomSheet<void>(
   context: context,
-  backgroundColor: AppTheme.surface,
+  backgroundColor: context.colors.surface,
   isScrollControlled: true,
   showDragHandle: true,
   builder: (_) => TripSummarySheet(view: view, service: service, t: t),
@@ -76,39 +78,19 @@ class _TripSummarySheetState extends State<TripSummarySheet> {
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
             child: Text(
               t.tripSummaryTitle,
-              style: const TextStyle(
-                fontSize: 19,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w600),
             ),
           ),
-          RepresentativeQuestion(
-            view: view,
-            service: service,
-            learned: () => LearnedRange.ofService(service),
-            t: t,
+          TripInstruments(
+            distanceLabel: t.tripDistance,
+            distance: view.distanceKm.toStringAsFixed(2),
+            consumptionLabel: t.tripConsumption,
+            consumption: view.whPerKm?.toStringAsFixed(0) ?? '--',
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: MetricTile(
-                    label: t.tripDistance,
-                    value: view.distanceKm.toStringAsFixed(2),
-                    unit: 'km',
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: MetricTile(
-                    label: t.tripConsumption,
-                    value: view.whPerKm?.toStringAsFixed(0) ?? '--',
-                    unit: 'Wh/km',
-                  ),
-                ),
-              ],
-            ),
+          // finishTrip writes the track before opening this summary.
+          Section(
+            title: t.tripTerrain,
+            children: [TripGradeRows(points: _points, t: t, asTiles: true)],
           ),
           Section(
             title: t.tripTitle,
@@ -127,9 +109,6 @@ class _TripSummarySheetState extends State<TripSummarySheet> {
                 t.tripAvgSpeed,
                 '${view.averageSpeedKmh.toStringAsFixed(0)} km/h',
               ),
-              // The track is on disk by the time this sheet opens: finishTrip
-              // writes the points before anything shows a summary.
-              TripGradeRows(points: _points, t: t, last: true),
             ],
           ),
           Section(
@@ -143,10 +122,25 @@ class _TripSummarySheetState extends State<TripSummarySheet> {
                 dim: !view.energyMeasured,
                 hint: view.energyMeasured ? null : t.tripEnergyUnmeasuredWhy,
               ),
+              if (energySourceLabel(t, view.energySource) case final source?)
+                InfoRow(t.tripEnergySourceLabel, source),
               InfoRow(
-                t.tripSocUsed,
-                '${view.socUsed.toStringAsFixed(0)} %',
+                t.tripEnergyIn,
+                view.energyMeasured
+                    ? '${view.energyInWh.toStringAsFixed(1)} Wh'
+                    : t.tripNotMeasured,
               ),
+              InfoRow(
+                t.tripEnergyNet,
+                view.energyMeasured
+                    ? '${(view.energyOutWh - view.energyInWh).toStringAsFixed(1)} Wh'
+                    : t.tripNotMeasured,
+              ),
+              InfoRow(
+                t.tripPackVoltage,
+                '${_voltage(view.minPackVoltage)} / ${_voltage(view.maxPackVoltage)} V',
+              ),
+              InfoRow(t.tripSocUsed, '${view.socUsed.toStringAsFixed(0)} %'),
               InfoRow(
                 t.tripSocPerKm,
                 view.socPerKm == null
@@ -174,10 +168,16 @@ class _TripSummarySheetState extends State<TripSummarySheet> {
               ),
               InfoRow(
                 t.tripMaxDelta,
-                view.maxDeltaVolts.toStringAsFixed(3),
+                '${view.maxDeltaVolts.toStringAsFixed(3)} V',
                 last: true,
               ),
             ],
+          ),
+          RepresentativeQuestion(
+            view: view,
+            service: service,
+            learned: () => LearnedRange.ofService(service),
+            t: t,
           ),
           TripLearnedSection(
             conclusions: view.conclusions,
@@ -192,10 +192,10 @@ class _TripSummarySheetState extends State<TripSummarySheet> {
             padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
             child: Text(
               t.tripNotSaved,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11.5,
                 height: 1.45,
-                color: AppTheme.textFaint,
+                color: context.colors.textFaint,
               ),
             ),
           ),
@@ -211,14 +211,17 @@ class _TripSummarySheetState extends State<TripSummarySheet> {
     );
   }
 
+  static String _voltage(double value) =>
+      value.isFinite && value > 0 ? value.toStringAsFixed(1) : '--';
+
   static String _long(Duration d) {
     final h = d.inHours;
     final m = d.inMinutes % 60;
     final s = d.inSeconds % 60;
-    if (h > 0) return '$h h $m min';
+    if (h > 0) return '$h h $m min $s s';
     // Minutes alone would round a 52 s leg and a 55 s wait both to "1 min",
     // which makes the two lines look like they disagree with each other.
     if (d.inMinutes < 10) return '$m:${s.toString().padLeft(2, '0')}';
-    return '$m min';
+    return '$m min $s s';
   }
 }

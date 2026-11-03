@@ -60,11 +60,11 @@ class _PacksCardState extends State<PacksCard> {
           t.packsCurrent,
           active == null ? t.packsNone : _label(active),
           dim: active == null,
-          valueColor: active == null ? null : AppTheme.good,
+          valueColor: active == null ? null : context.colors.good,
         ),
         if (_devices.isNotEmpty) ...[
           const SizedBox(height: 8),
-          Caption(t.packsKnown, color: AppTheme.textFaint),
+          Caption(t.packsKnown, color: context.colors.textFaint),
           const SizedBox(height: 4),
           for (final d in _devices) _deviceRow(t, d, d.id == active?.id),
         ],
@@ -88,105 +88,101 @@ class _PacksCardState extends State<PacksCard> {
   }
 
   Widget _deviceRow(AppL10n t, Device d, bool isActive) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Row(
-          children: [
-            Icon(
-              d.demo ? Icons.science_outlined : Icons.battery_full,
-              size: 17,
-              color: isActive ? AppTheme.good : AppTheme.textFaint,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _label(d),
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      color: isActive ? AppTheme.good : null,
-                    ),
-                  ),
-                  Text(
-                    '${d.catalogueCapacityAh?.toStringAsFixed(0) ?? t.catalogueUnset} Ah  ·  '
-                    '${t.packsLastSeen(_date(d.lastSeenAt))}',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AppTheme.textFaint,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            IconButton(
-              onPressed: _busy ? null : () => _rename(t, d),
-              icon: const Icon(Icons.edit_outlined, size: 18),
-              tooltip: t.packsRename,
-              visualDensity: VisualDensity.compact,
-            ),
-            IconButton(
-              onPressed: _busy ? null : () => _confirmDelete(t, d),
-              icon: const Icon(Icons.delete_outline, size: 18),
-              color: AppTheme.bad,
-              tooltip: t.packsDelete,
-              visualDensity: VisualDensity.compact,
-            ),
-          ],
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Row(
+      children: [
+        Icon(
+          d.demo ? Icons.science_outlined : Icons.battery_full,
+          size: 17,
+          color: isActive ? context.colors.good : context.colors.textFaint,
         ),
-      );
-
-  List<Widget> _orphanBlock(AppL10n t, Device? active) => [
-        const SizedBox(height: 10),
-        Caption(t.orphansTitle, color: AppTheme.watch),
-        const SizedBox(height: 4),
-        Text(
-          t.orphansBody('$_orphans'),
-          style: const TextStyle(
-            fontSize: 11.5,
-            height: 1.45,
-            color: AppTheme.textFaint,
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _label(d),
+                style: TextStyle(
+                  fontSize: 13.5,
+                  color: isActive ? context.colors.good : null,
+                ),
+              ),
+              Text(
+                '${d.catalogueCapacityAh?.toStringAsFixed(0) ?? t.catalogueUnset} Ah  ·  '
+                '${t.packsLastSeen(_date(d.lastSeenAt))}',
+                style: TextStyle(fontSize: 11, color: context.colors.textFaint),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 10,
-          children: [
-            // Only offered with a pack connected: attaching history to nothing
-            // is what created this situation in the first place.
-            OutlinedButton(
-              onPressed: active == null || _busy
-                  ? null
-                  : () async {
-                      setState(() => _busy = true);
-                      await widget.service.repository
-                          ?.adoptOrphans(active.id);
-                      await widget.service.relearnRangeFromTrips();
-                      if (mounted) setState(() => _busy = false);
-                      await _load();
-                    },
-              child: Text(t.orphansAdopt),
-            ),
-            TextButton(
-              onPressed: _busy
-                  ? null
-                  : () async {
-                      // Asked first: this deletes the rows for good, and a
-                      // red text button is one stray tap away.
-                      if (!await _confirmDiscard(t)) return;
-                      setState(() => _busy = true);
-                      await widget.service.repository?.discardOrphans();
-                      if (mounted) setState(() => _busy = false);
-                      await _load();
-                    },
-              child: Text(
-                t.orphansDiscard,
-                style: const TextStyle(color: AppTheme.bad),
-              ),
-            ),
-          ],
+        IconButton(
+          onPressed: _busy ? null : () => _rename(t, d),
+          icon: const Icon(Icons.edit_outlined, size: 18),
+          tooltip: t.packsRename,
+          visualDensity: VisualDensity.compact,
         ),
-      ];
+        IconButton(
+          onPressed: _busy ? null : () => _confirmDelete(t, d),
+          icon: const Icon(Icons.delete_outline, size: 18),
+          color: context.colors.bad,
+          tooltip: t.packsDelete,
+          visualDensity: VisualDensity.compact,
+        ),
+      ],
+    ),
+  );
+
+  List<Widget> _orphanBlock(AppL10n t, Device? active) => [
+    const SizedBox(height: 10),
+    Caption(t.orphansTitle, color: context.colors.watch),
+    const SizedBox(height: 4),
+    Text(
+      t.orphansBody('$_orphans'),
+      style: TextStyle(
+        fontSize: 11.5,
+        height: 1.45,
+        color: context.colors.textFaint,
+      ),
+    ),
+    const SizedBox(height: 8),
+    Wrap(
+      spacing: 10,
+      children: [
+        // Only offered with a pack connected: attaching history to nothing
+        // is what created this situation in the first place.
+        OutlinedButton(
+          onPressed: active == null || _busy
+              ? null
+              : () async {
+                  setState(() => _busy = true);
+                  await widget.service.repository?.adoptOrphans(active.id);
+                  await widget.service.relearnRangeFromTrips();
+                  if (mounted) setState(() => _busy = false);
+                  await _load();
+                },
+          child: Text(t.orphansAdopt),
+        ),
+        TextButton(
+          onPressed: _busy
+              ? null
+              : () async {
+                  // Asked first: this deletes the rows for good, and a
+                  // red text button is one stray tap away.
+                  if (!await _confirmDiscard(t)) return;
+                  setState(() => _busy = true);
+                  await widget.service.repository?.discardOrphans();
+                  if (mounted) setState(() => _busy = false);
+                  await _load();
+                },
+          child: Text(
+            t.orphansDiscard,
+            style: TextStyle(color: context.colors.bad),
+          ),
+        ),
+      ],
+    ),
+  ];
 
   Future<bool> _confirmDiscard(AppL10n t) async {
     final ok = await showDialog<bool>(
@@ -204,7 +200,7 @@ class _PacksCardState extends State<PacksCard> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: AppTheme.bad),
+            style: TextButton.styleFrom(foregroundColor: context.colors.bad),
             child: Text(t.orphansDiscard),
           ),
         ],
@@ -258,7 +254,7 @@ class _PacksCardState extends State<PacksCard> {
             child: Text(t.packsCancel),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppTheme.bad),
+            style: FilledButton.styleFrom(backgroundColor: context.colors.bad),
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(t.packsDelete),
           ),

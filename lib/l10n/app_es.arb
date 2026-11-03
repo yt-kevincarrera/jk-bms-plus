@@ -1607,7 +1607,7 @@
   "autoTripRecoveringGps": "Inicio automático: el GPS no entrega posiciones. Se reintentará mientras la moto esté en marcha.",
   "rangeFullFromAdvert": "Sale de la capacidad que pusiste tú, no de una medida.",
   "rangeFullFromMeasured": "Sale de una descarga completa medida en esta batería, de celdas arriba a celda en el corte.",
-  "rangeNoneLearned": "Todavía no ha aprendido nada, así que no hay distancia que valga la pena decir, a ninguna carga.",
+  "rangeNoneLearned": "Registra viajes para estimar la autonomía.",
   "offlineRangeAtLastSeen": "Con la carga de la última lectura",
   "offlineHealthNeedsTests": "Hacen falta dos descargas completas para poder medir desgaste. Una da una capacidad; hacen falta dos para ver una caída.",
   "@offlineHealthOneTest": {
@@ -3927,5 +3927,14 @@
   "tripMapBySpeed": "Velocidad",
   "tripMapByPower": "Potencia",
   "tripMapPowerHint": "Lo que daba la batería en cada punto: su voltaje por su corriente, tal como los mandó el BMS junto a cada posición. No es consumo por kilómetro, que en cada parada se dispara aunque no se gaste nada.",
-  "tripMapOffline": "El mapa de fondo se pide a OpenStreetMap por internet al abrir esta pantalla, así que sus servidores ven por qué zona fue el viaje (no el viaje en sí). Sin conexión, el recorrido se dibuja igual sobre fondo liso."
+  "tripMapOffline": "El mapa de fondo se pide a OpenStreetMap por internet al abrir esta pantalla, así que sus servidores ven por qué zona fue el viaje (no el viaje en sí). Sin conexión, el recorrido se dibuja igual sobre fondo liso.",
+  "appearanceTitle": "Apariencia",
+  "appearanceSystem": "Sistema",
+  "appearanceLight": "Claro",
+  "appearanceDark": "Oscuro",
+  "tabBattery": "Batería",
+  "rangeCurrent": "Autonomía actual estimada",
+  "tripTerrain": "Terreno",
+  "tripEnergyNet": "Energía neta",
+  "tripPackVoltage": "Voltaje mínimo / máximo"
 }

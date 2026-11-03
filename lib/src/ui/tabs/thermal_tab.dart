@@ -32,7 +32,8 @@ class ThermalTab extends StatelessWidget {
     final mirror = s.mosfetMirrorSlot;
     // With no battery probe anywhere in the window, the chart plots the
     // MOSFET and says so, rather than drawing a flat line at nothing.
-    final mosfetOnly = recent.every((r) => r.hottestBatteryTemp == null) &&
+    final mosfetOnly =
+        recent.every((r) => r.hottestBatteryTemp == null) &&
         recent.any((r) => r.mosfetTemp != null);
 
     return ListView(
@@ -57,7 +58,7 @@ class ThermalTab extends StatelessWidget {
                     label: t.thermalProbe(probe.index + 1),
                     value: probe.celsius.toStringAsFixed(1),
                     unit: '°C',
-                    color: _tempColour(probe.celsius),
+                    color: _tempColour(context, probe.celsius),
                   ),
                 ),
               if (s.mosfetTemp != null)
@@ -67,7 +68,7 @@ class ThermalTab extends StatelessWidget {
                     label: t.thermalMosfet,
                     value: s.mosfetTemp!.toStringAsFixed(1),
                     unit: '°C',
-                    color: _tempColour(s.mosfetTemp!),
+                    color: _tempColour(context, s.mosfetTemp!),
                   ),
                 ),
             ],
@@ -77,7 +78,7 @@ class ThermalTab extends StatelessWidget {
           title: t.thermalLastMinutes(_window.inMinutes),
           trailing: Text(
             t.thermalSamples(recent.length),
-            style: const TextStyle(fontSize: 11, color: AppTheme.textFaint),
+            style: TextStyle(fontSize: 11, color: context.colors.textFaint),
           ),
           children: [
             SizedBox(
@@ -86,25 +87,29 @@ class ThermalTab extends StatelessWidget {
                   ? Center(
                       child: Text(
                         t.thermalCollecting,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12.5,
-                          color: AppTheme.textFaint,
+                          color: context.colors.textFaint,
                         ),
                       ),
                     )
                   : _TempCurrentChart(samples: recent, mosfetOnly: mosfetOnly),
             ),
             const SizedBox(height: 12),
-            Row(
+            Wrap(
+              spacing: 16,
+              runSpacing: 8,
               children: [
                 _Legend(
-                  colour: AppTheme.good,
+                  colour: context.colors.good,
                   label: mosfetOnly
                       ? t.thermalLegendMosfet
                       : t.thermalLegendHottest,
                 ),
-                const SizedBox(width: 16),
-                _Legend(colour: AppTheme.cool, label: t.thermalLegendCurrent),
+                _Legend(
+                  colour: context.colors.cool,
+                  label: t.thermalLegendCurrent,
+                ),
               ],
             ),
             const SizedBox(height: 10),
@@ -124,11 +129,7 @@ class ThermalTab extends StatelessWidget {
             ),
             if (s.absentTemperatureProbes.isNotEmpty)
               for (final i in s.absentTemperatureProbes)
-                InfoRow(
-                  t.thermalProbe(i + 1),
-                  t.thermalProbeAbsent,
-                  dim: true,
-                ),
+                InfoRow(t.thermalProbe(i + 1), t.thermalProbeAbsent, dim: true),
             if (mirror != null)
               InfoRow(
                 t.thermalProbe(mirror + 1),
@@ -173,11 +174,11 @@ class ThermalTab extends StatelessWidget {
     );
   }
 
-  Color _tempColour(double c) {
-    if (c > 55) return AppTheme.bad;
-    if (c > 45) return AppTheme.watch;
-    if (c < 0) return AppTheme.cold;
-    return AppTheme.good;
+  Color _tempColour(BuildContext context, double c) {
+    if (c > 55) return context.colors.bad;
+    if (c > 45) return context.colors.watch;
+    if (c < 0) return context.colors.cold;
+    return context.colors.good;
   }
 }
 
@@ -248,7 +249,7 @@ class _TempCurrentChart extends StatelessWidget {
                 inSeconds
                     ? '${(value * 60).toStringAsFixed(0)}s'
                     : '${value.toStringAsFixed(0)}m',
-                style: const TextStyle(fontSize: 10, color: AppTheme.textFaint),
+                style: TextStyle(fontSize: 10, color: context.colors.textFaint),
               ),
             ),
           ),
@@ -259,7 +260,7 @@ class _TempCurrentChart extends StatelessWidget {
               reservedSize: 28,
               getTitlesWidget: (value, meta) => Text(
                 value.toStringAsFixed(0),
-                style: const TextStyle(fontSize: 10, color: AppTheme.textFaint),
+                style: TextStyle(fontSize: 10, color: context.colors.textFaint),
               ),
             ),
           ),
@@ -271,14 +272,14 @@ class _TempCurrentChart extends StatelessWidget {
             spots: scaledCurrent,
             isCurved: true,
             barWidth: 1.4,
-            color: AppTheme.cool.withValues(alpha: 0.8),
+            color: context.colors.cool.withValues(alpha: 0.8),
             dotData: const FlDotData(show: false),
           ),
           LineChartBarData(
             spots: tempSpots,
             isCurved: true,
             barWidth: 2.4,
-            color: AppTheme.good,
+            color: context.colors.good,
             dotData: const FlDotData(show: false),
           ),
         ],
@@ -294,22 +295,22 @@ class _Legend extends StatelessWidget {
   final String label;
 
   @override
-  Widget build(BuildContext context) => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 14,
-            height: 3,
-            decoration: BoxDecoration(
-              color: colour,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
-          ),
-        ],
-      );
+  Widget build(BuildContext context) => Wrap(
+    crossAxisAlignment: WrapCrossAlignment.center,
+    spacing: 6,
+    children: [
+      Container(
+        width: 14,
+        height: 3,
+        decoration: BoxDecoration(
+          color: colour,
+          borderRadius: BorderRadius.circular(2),
+        ),
+      ),
+      Text(
+        label,
+        style: TextStyle(fontSize: 11, color: context.colors.textSecondary),
+      ),
+    ],
+  );
 }

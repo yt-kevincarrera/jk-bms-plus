@@ -21,6 +21,7 @@ class TripGradeRows extends StatelessWidget {
     required this.points,
     required this.t,
     this.last = false,
+    this.asTiles = false,
     super.key,
   });
 
@@ -30,16 +31,17 @@ class TripGradeRows extends StatelessWidget {
 
   /// Whether these are the closing rows of their section.
   final bool last;
+  final bool asTiles;
 
   @override
   Widget build(BuildContext context) {
     final future = points;
-    if (future == null) return _rows(null);
+    if (future == null) return _rows(context, null);
     return FutureBuilder<List<TripPoint>>(
       future: future,
       builder: (context, snapshot) {
         final track = snapshot.data;
-        if (track == null) return _rows(null);
+        if (track == null) return _rows(context, null);
         // Counted the recorder's way, so the three add up to the distance
         // tile above them.
         final profile = profileOfTrack([
@@ -52,7 +54,7 @@ class TripGradeRows extends StatelessWidget {
               speedKmh: p.speedKmh,
             ),
         ]);
-        return _rows(profile.hasAnything ? profile : null);
+        return _rows(context, profile.hasAnything ? profile : null);
       },
     );
   }
@@ -61,9 +63,49 @@ class TripGradeRows extends StatelessWidget {
   /// to split or the ride was too short to bother. Three zeroes would read as
   /// a bug, and drawing nothing at all would leave whatever row sits above
   /// these as the unclosed end of its section.
-  Widget _rows(GradeProfile? profile) {
+  Widget _rows(BuildContext context, GradeProfile? profile) {
     String km(double? v) => v == null ? '--' : '${v.toStringAsFixed(1)} km';
     final dim = profile == null;
+    if (asTiles) {
+      final items = [
+        MetricTile(
+          label: '↑ ${t.tripUphill}',
+          value: profile?.uphillKm.toStringAsFixed(1) ?? '--',
+          unit: 'km',
+        ),
+        MetricTile(
+          label: '→ ${t.tripFlat}',
+          value: profile?.flatKm.toStringAsFixed(1) ?? '--',
+          unit: 'km',
+        ),
+        MetricTile(
+          label: '↓ ${t.tripDownhill}',
+          value: profile?.downhillKm.toStringAsFixed(1) ?? '--',
+          unit: 'km',
+        ),
+      ];
+      return MediaQuery.textScalerOf(context).scale(16) > 23
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                items[0],
+                const SizedBox(height: 8),
+                items[1],
+                const SizedBox(height: 8),
+                items[2],
+              ],
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: items[0]),
+                const SizedBox(width: 6),
+                Expanded(child: items[1]),
+                const SizedBox(width: 6),
+                Expanded(child: items[2]),
+              ],
+            );
+    }
     return Column(
       children: [
         InfoRow(t.tripUphill, km(profile?.uphillKm), dim: dim),
