@@ -6,6 +6,7 @@ import 'package:jk_bms/src/protocol/jk_frame.dart';
 import 'package:jk_bms/src/protocol/jk_parser.dart';
 import 'package:jk_bms/src/protocol/protocol_variant.dart';
 import 'package:jk_bms/src/ui/tabs/thermal_tab.dart';
+import 'package:jk_bms/src/ui/widgets/common.dart';
 
 import 'fixtures/real_kevinjk_frames.dart';
 import 'support/fakes.dart';
@@ -15,8 +16,9 @@ void main() {
   // fifth slot that repeats the MOSFET. The tab used to show a "Probe 5"
   // tile carrying the MOSFET's number next to the MOSFET's own tile, and
   // count "3 / 5" probes on a pack with two.
-  testWidgets('shows two probes and the MOSFET once, on the real pack',
-      (tester) async {
+  testWidgets('shows two probes and the MOSFET once, on the real pack', (
+    tester,
+  ) async {
     final snapshot = const JkParser().parseCellInfo(
       JkFrame(bytes: kevinJkCellInfo[2], receivedAt: DateTime.utc(2026, 9, 1)),
       JkProtocolVariant.jk02_32s,
@@ -49,9 +51,15 @@ void main() {
     await tester.pump();
 
     // One tile per battery probe, and one for the MOSFET.
-    expect(find.text('SONDA 1'), findsOneWidget);
-    expect(find.text('SONDA 2'), findsOneWidget);
-    expect(find.text('SONDA 5'), findsNothing);
+    expect(find.text('Sonda 1'), findsOneWidget);
+    expect(find.text('Sonda 2'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(MetricTile),
+        matching: find.text('Sonda 5'),
+      ),
+      findsNothing,
+    );
     expect(find.text('34.2'), findsOneWidget);
     // 36.0 is the MOSFET. It appears once, on its own tile.
     expect(find.text('36.0'), findsOneWidget);
