@@ -91,10 +91,10 @@ class _AutoTripPocketNoteState extends State<AutoTripPocketNote>
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
-    const style = TextStyle(
+    final style = TextStyle(
       fontSize: 11.5,
       height: 1.4,
-      color: AppTheme.textFaint,
+      color: context.colors.textFaint,
     );
     final p = _permission;
     final lines = <Widget>[];

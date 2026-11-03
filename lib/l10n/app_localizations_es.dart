@@ -2851,8 +2851,7 @@ class AppL10nEs extends AppL10n {
       'Sale de una descarga completa medida en esta batería, de celdas arriba a celda en el corte.';
 
   @override
-  String get rangeNoneLearned =>
-      'Todavía no ha aprendido nada, así que no hay distancia que valga la pena decir, a ninguna carga.';
+  String get rangeNoneLearned => 'Registra viajes para estimar la autonomía.';
 
   @override
   String get offlineRangeAtLastSeen => 'Con la carga de la última lectura';
@@ -6074,4 +6073,31 @@ class AppL10nEs extends AppL10n {
   @override
   String get tripMapOffline =>
       'El mapa de fondo se pide a OpenStreetMap por internet al abrir esta pantalla, así que sus servidores ven por qué zona fue el viaje (no el viaje en sí). Sin conexión, el recorrido se dibuja igual sobre fondo liso.';
+
+  @override
+  String get appearanceTitle => 'Apariencia';
+
+  @override
+  String get appearanceSystem => 'Sistema';
+
+  @override
+  String get appearanceLight => 'Claro';
+
+  @override
+  String get appearanceDark => 'Oscuro';
+
+  @override
+  String get tabBattery => 'Batería';
+
+  @override
+  String get rangeCurrent => 'Autonomía actual estimada';
+
+  @override
+  String get tripTerrain => 'Terreno';
+
+  @override
+  String get tripEnergyNet => 'Energía neta';
+
+  @override
+  String get tripPackVoltage => 'Voltaje mínimo / máximo';
 }

@@ -13,8 +13,7 @@ import 'trip_summary_view.dart';
 /// and so the three places that show the question cannot disagree about when
 /// it appears.
 bool shouldAskAbout({required double shiftFraction, required bool? answered}) =>
-    answered == null &&
-    shiftFraction > RangeEstimator.askThresholdFraction;
+    answered == null && shiftFraction > RangeEstimator.askThresholdFraction;
 
 /// Whether the rider may set this ride's answer at all.
 ///
@@ -160,8 +159,7 @@ class RepresentativeQuestion extends StatefulWidget {
   final AppL10n t;
 
   @override
-  State<RepresentativeQuestion> createState() =>
-      _RepresentativeQuestionState();
+  State<RepresentativeQuestion> createState() => _RepresentativeQuestionState();
 }
 
 class _RepresentativeQuestionState extends State<RepresentativeQuestion> {
@@ -271,19 +269,24 @@ class _RepresentativeQuestionState extends State<RepresentativeQuestion> {
       final afterWh = after.toStringAsFixed(1);
       body = higher
           ? t.representativeAskBodyUpNoKm(rideWh, percentStr, beforeWh, afterWh)
-          : t.representativeAskBodyDownNoKm(rideWh, percentStr, beforeWh, afterWh);
+          : t.representativeAskBodyDownNoKm(
+              rideWh,
+              percentStr,
+              beforeWh,
+              afterWh,
+            );
     }
 
     return Section(
       title: t.representativeAsk,
-      accent: AppTheme.watch,
+      accent: context.colors.watch,
       children: [
         Text(
           body,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12.5,
             height: 1.45,
-            color: AppTheme.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
         const SizedBox(height: 4),

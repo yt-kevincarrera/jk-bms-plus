@@ -50,7 +50,7 @@ class PackProfileSheet extends StatefulWidget {
       await showModalBottomSheet<bool>(
         context: context,
         isScrollControlled: true,
-        backgroundColor: AppTheme.surface,
+        backgroundColor: context.colors.surface,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
@@ -125,7 +125,7 @@ class _PackProfileSheetState extends State<PackProfileSheet> {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppTheme.hairline,
+                  color: context.colors.hairline,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -138,10 +138,10 @@ class _PackProfileSheetState extends State<PackProfileSheet> {
             const SizedBox(height: 6),
             Text(
               t.profileIntro,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12.5,
                 height: 1.45,
-                color: AppTheme.textSecondary,
+                color: context.colors.textSecondary,
               ),
             ),
             const SizedBox(height: 18),
@@ -195,20 +195,20 @@ class _PackProfileSheetState extends State<PackProfileSheet> {
               const SizedBox(height: 8),
               Text(
                 _suggestionLine(t),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11.5,
                   height: 1.4,
-                  color: AppTheme.textFaint,
+                  color: context.colors.textFaint,
                 ),
               ),
             ],
             const SizedBox(height: 8),
             Text(
               t.profileChemistryWhy,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11.5,
                 height: 1.4,
-                color: AppTheme.textFaint,
+                color: context.colors.textFaint,
               ),
             ),
             const SizedBox(height: 16),
@@ -261,10 +261,10 @@ class _PackProfileSheetState extends State<PackProfileSheet> {
                               true)
                       ? t.profileCaptureBaselineHintNoSettings
                       : t.profileCaptureBaselineHint,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11.5,
                     height: 1.4,
-                    color: AppTheme.textFaint,
+                    color: context.colors.textFaint,
                   ),
                 ),
               ),

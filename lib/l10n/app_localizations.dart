@@ -4876,7 +4876,7 @@ abstract class AppL10n {
   /// No description provided for @rangeNoneLearned.
   ///
   /// In es, this message translates to:
-  /// **'Todavía no ha aprendido nada, así que no hay distancia que valga la pena decir, a ninguna carga.'**
+  /// **'Registra viajes para estimar la autonomía.'**
   String get rangeNoneLearned;
 
   /// No description provided for @offlineRangeAtLastSeen.
@@ -10043,6 +10043,60 @@ abstract class AppL10n {
   /// In es, this message translates to:
   /// **'El mapa de fondo se pide a OpenStreetMap por internet al abrir esta pantalla, así que sus servidores ven por qué zona fue el viaje (no el viaje en sí). Sin conexión, el recorrido se dibuja igual sobre fondo liso.'**
   String get tripMapOffline;
+
+  /// No description provided for @appearanceTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Apariencia'**
+  String get appearanceTitle;
+
+  /// No description provided for @appearanceSystem.
+  ///
+  /// In es, this message translates to:
+  /// **'Sistema'**
+  String get appearanceSystem;
+
+  /// No description provided for @appearanceLight.
+  ///
+  /// In es, this message translates to:
+  /// **'Claro'**
+  String get appearanceLight;
+
+  /// No description provided for @appearanceDark.
+  ///
+  /// In es, this message translates to:
+  /// **'Oscuro'**
+  String get appearanceDark;
+
+  /// No description provided for @tabBattery.
+  ///
+  /// In es, this message translates to:
+  /// **'Batería'**
+  String get tabBattery;
+
+  /// No description provided for @rangeCurrent.
+  ///
+  /// In es, this message translates to:
+  /// **'Autonomía actual estimada'**
+  String get rangeCurrent;
+
+  /// No description provided for @tripTerrain.
+  ///
+  /// In es, this message translates to:
+  /// **'Terreno'**
+  String get tripTerrain;
+
+  /// No description provided for @tripEnergyNet.
+  ///
+  /// In es, this message translates to:
+  /// **'Energía neta'**
+  String get tripEnergyNet;
+
+  /// No description provided for @tripPackVoltage.
+  ///
+  /// In es, this message translates to:
+  /// **'Voltaje mínimo / máximo'**
+  String get tripPackVoltage;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

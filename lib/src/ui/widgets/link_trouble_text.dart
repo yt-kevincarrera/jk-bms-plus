@@ -51,7 +51,7 @@ class _LinkTroubleTextState extends State<LinkTroubleText> {
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
-    final colour = widget.color ?? AppTheme.bad;
+    final colour = widget.color ?? context.colors.bad;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -69,16 +69,16 @@ class _LinkTroubleTextState extends State<LinkTroubleText> {
               children: [
                 Text(
                   t.linkDetails,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.textFaint,
+                    color: context.colors.textFaint,
                   ),
                 ),
                 Icon(
                   _open ? Icons.expand_less : Icons.expand_more,
                   size: 15,
-                  color: AppTheme.textFaint,
+                  color: context.colors.textFaint,
                 ),
               ],
             ),
@@ -88,11 +88,11 @@ class _LinkTroubleTextState extends State<LinkTroubleText> {
               padding: const EdgeInsets.only(top: 2),
               child: SelectableText(
                 widget.detail,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 10.5,
                   height: 1.35,
                   fontFamily: 'monospace',
-                  color: AppTheme.textFaint,
+                  color: context.colors.textFaint,
                 ),
               ),
             ),

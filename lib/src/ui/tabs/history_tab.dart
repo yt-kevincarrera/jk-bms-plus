@@ -33,13 +33,15 @@ class HistoryTab extends StatelessWidget {
     final repository = service.repository;
 
     final device = service.activeDeviceId;
-    if (repository == null || device == null) return _empty(t, service);
+    if (repository == null || device == null) {
+      return _empty(context, t, service);
+    }
 
     return StreamBuilder<List<Trip>>(
       stream: repository.watchTrips(device),
       builder: (context, snapshot) {
         final trips = snapshot.data ?? const <Trip>[];
-        if (trips.isEmpty) return _empty(t, service);
+        if (trips.isEmpty) return _empty(context, t, service);
 
         // The free tier keeps a day. The rows are all still stored -- nothing
         // is thrown away, and the estimator still learns from every ride --
@@ -153,9 +155,9 @@ class HistoryTab extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
               child: Text(
                 t.tripSwipeHint,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11.5,
-                  color: AppTheme.textFaint,
+                  color: context.colors.textFaint,
                 ),
               ),
             ),
@@ -165,39 +167,42 @@ class HistoryTab extends StatelessWidget {
     );
   }
 
-  Widget _empty(AppL10n t, BmsService service) => ListView(
-    padding: const EdgeInsets.only(top: 8),
-    children: [
-      _StartTripButton(service: service, settings: settings),
-      const SizedBox(height: 40),
-      const Icon(Icons.timeline, size: 40, color: AppTheme.textFaint),
-      const SizedBox(height: 18),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          children: [
-            Text(
-              t.historyEmpty,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+  Widget _empty(BuildContext context, AppL10n t, BmsService service) =>
+      ListView(
+        padding: const EdgeInsets.only(top: 8),
+        children: [
+          _StartTripButton(service: service, settings: settings),
+          const SizedBox(height: 40),
+          Icon(Icons.timeline, size: 40, color: context.colors.textFaint),
+          const SizedBox(height: 18),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Column(
+              children: [
+                Text(
+                  t.historyEmpty,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  t.historyEmptyHint,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    height: 1.45,
+                    color: context.colors.textSecondary,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 10),
-            Text(
-              t.historyEmptyHint,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 12.5,
-                height: 1.45,
-                color: AppTheme.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    ],
-  );
+          ),
+        ],
+      );
 }
-
 
 /// Starting a ride from the list of rides is where a hand goes looking for it.
 class _StartTripButton extends StatefulWidget {
@@ -246,7 +251,6 @@ class _StartTripButtonState extends State<_StartTripButton> {
   }
 }
 
-
 /// What the database is costing, and why it is worth it.
 class StorageSection extends StatelessWidget {
   const StorageSection({required this.repository, required this.t, super.key});
@@ -262,7 +266,7 @@ class StorageSection extends StatelessWidget {
         final stats = snapshot.data;
         return Section(
           title: t.historyStorage,
-          accent: AppTheme.textFaint,
+          accent: context.colors.textFaint,
           children: [
             InfoRow(
               t.historyStorageSnapshots,

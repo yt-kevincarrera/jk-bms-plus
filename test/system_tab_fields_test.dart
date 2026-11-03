@@ -73,21 +73,21 @@ void main() {
     }
 
     final t = AppL10nEs();
-    await see(t.bmsStateTitle.toUpperCase());
+    await see(t.bmsStateTitle);
     await see(t.bmsStateRuntime);
     await see(t.bmsStateEnabledCells);
     // Twenty cells enabled on the real pack, and the mask shown beside it.
     expect(find.textContaining('20  ·  0x'), findsOneWidget);
     await see(t.bmsStateCycleCapacity);
-    await see(t.settingsGroupCell.toUpperCase());
+    await see(t.settingsGroupCell);
     await see(t.settingSmartSleep);
-    await see(t.settingsGroupCurrent.toUpperCase());
+    await see(t.settingsGroupCurrent);
     await see(t.settingChargeOcpDelay);
     await see(t.settingScpDelay);
-    await see(t.settingsGroupTemperature.toUpperCase());
+    await see(t.settingsGroupTemperature);
     await see(t.settingMosfetOtpRecovery);
-    await see(t.settingsGroupBalance.toUpperCase());
-    await see(t.settingsGroupOther.toUpperCase());
+    await see(t.settingsGroupBalance);
+    await see(t.settingsGroupOther);
     await see(t.settingRequestFloat);
     await see(t.settingWireResistances);
     // The switches by name, with Sí/No: never the English words.

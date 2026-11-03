@@ -98,13 +98,13 @@ class _TrendsScreenState extends State<TrendsScreen> {
         child: ProGate(
           feature: Feature.degradation,
           child: _loading
-              ? const Center(
+              ? Center(
                   child: SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: AppTheme.goodDim,
+                      color: context.colors.goodDim,
                     ),
                   ),
                 )
@@ -115,10 +115,10 @@ class _TrendsScreenState extends State<TrendsScreen> {
                       padding: const EdgeInsets.fromLTRB(20, 4, 20, 14),
                       child: Text(
                         t.trendsIntro,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12.5,
                           height: 1.5,
-                          color: AppTheme.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                       ),
                     ),
@@ -127,10 +127,10 @@ class _TrendsScreenState extends State<TrendsScreen> {
                         padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
                         child: Text(
                           t.maintSince(_day(since)),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11.5,
                             height: 1.4,
-                            color: AppTheme.watch,
+                            color: context.colors.watch,
                           ),
                         ),
                       ),
@@ -292,10 +292,10 @@ class _TrendsScreenState extends State<TrendsScreen> {
           padding: const EdgeInsets.only(bottom: 4),
           child: Text(
             t.trendsAxisCharge,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               height: 1.4,
-              color: AppTheme.textFaint,
+              color: context.colors.textFaint,
             ),
           ),
         ),
@@ -317,9 +317,9 @@ class _TrendsScreenState extends State<TrendsScreen> {
                     reservedSize: 20,
                     getTitlesWidget: (v, m) => Text(
                       '${v.toStringAsFixed(0)}%',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 10,
-                        color: AppTheme.textFaint,
+                        color: context.colors.textFaint,
                       ),
                     ),
                   ),
@@ -330,9 +330,9 @@ class _TrendsScreenState extends State<TrendsScreen> {
                     reservedSize: 40,
                     getTitlesWidget: (v, m) => Text(
                       v.toStringAsFixed(2),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 10,
-                        color: AppTheme.textFaint,
+                        color: context.colors.textFaint,
                       ),
                     ),
                   ),
@@ -348,7 +348,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
                     ],
                     isCurved: false,
                     barWidth: 2,
-                    color: AppTheme.good,
+                    color: context.colors.good,
                     dotData: const FlDotData(show: false),
                   ),
                 if (loaded.length > 1)
@@ -358,7 +358,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
                     ],
                     isCurved: false,
                     barWidth: 2,
-                    color: AppTheme.watch,
+                    color: context.colors.watch,
                     dotData: const FlDotData(show: false),
                   ),
               ],
@@ -368,9 +368,9 @@ class _TrendsScreenState extends State<TrendsScreen> {
         const SizedBox(height: 12),
         Row(
           children: [
-            _Legend(colour: AppTheme.good, label: t.trendsLegendResting),
+            _Legend(colour: context.colors.good, label: t.trendsLegendResting),
             const SizedBox(width: 16),
-            _Legend(colour: AppTheme.watch, label: t.trendsLegendLoaded),
+            _Legend(colour: context.colors.watch, label: t.trendsLegendLoaded),
           ],
         ),
         const SizedBox(height: 10),
@@ -448,7 +448,7 @@ class _TrendSection extends StatelessWidget {
       intro: hint,
       trailing: Text(
         t.trendsSpan(spanDays),
-        style: const TextStyle(fontSize: 11, color: AppTheme.textFaint),
+        style: TextStyle(fontSize: 11, color: context.colors.textFaint),
       ),
       children: [
         if (axisNote != null)
@@ -456,10 +456,10 @@ class _TrendSection extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 4),
             child: Text(
               axisNote!,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 height: 1.4,
-                color: AppTheme.textFaint,
+                color: context.colors.textFaint,
               ),
             ),
           ),
@@ -470,10 +470,10 @@ class _TrendSection extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 6),
             child: Text(
               t.trendsMaintMarks,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 height: 1.4,
-                color: AppTheme.textFaint,
+                color: context.colors.textFaint,
               ),
             ),
           ),
@@ -482,10 +482,10 @@ class _TrendSection extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 6),
             child: Text(
               hollowNote!,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 height: 1.4,
-                color: AppTheme.textFaint,
+                color: context.colors.textFaint,
               ),
             ),
           ),
@@ -503,10 +503,12 @@ class _TrendSection extends StatelessWidget {
                     reservedSize: 20,
                     interval: spanDays <= 0 ? 1 : spanDays / 3,
                     getTitlesWidget: (v, m) => Text(
-                      _day(firstDate!.add(Duration(minutes: (v * 1440).round()))),
-                      style: const TextStyle(
+                      _day(
+                        firstDate!.add(Duration(minutes: (v * 1440).round())),
+                      ),
+                      style: TextStyle(
                         fontSize: 10,
-                        color: AppTheme.textFaint,
+                        color: context.colors.textFaint,
                       ),
                     ),
                   ),
@@ -517,9 +519,9 @@ class _TrendSection extends StatelessWidget {
                     reservedSize: 38,
                     getTitlesWidget: (v, m) => Text(
                       v.toStringAsFixed(1),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 10,
-                        color: AppTheme.textFaint,
+                        color: context.colors.textFaint,
                       ),
                     ),
                   ),
@@ -533,7 +535,7 @@ class _TrendSection extends StatelessWidget {
                   for (final m in markers)
                     VerticalLine(
                       x: m.x,
-                      color: AppTheme.watch.withValues(alpha: 0.55),
+                      color: context.colors.watch.withValues(alpha: 0.55),
                       strokeWidth: 1.5,
                       dashArray: const [4, 3],
                     ),
@@ -548,11 +550,11 @@ class _TrendSection extends StatelessWidget {
                     // a shape nothing measured.
                     isCurved: false,
                     barWidth: 2.2,
-                    color: AppTheme.good,
+                    color: context.colors.good,
                     dotData: const FlDotData(show: true),
                     belowBarData: BarAreaData(
                       show: true,
-                      color: AppTheme.good.withValues(alpha: 0.08),
+                      color: context.colors.good.withValues(alpha: 0.08),
                     ),
                   ),
                 if (hollowSpots.isNotEmpty)
@@ -565,9 +567,9 @@ class _TrendSection extends StatelessWidget {
                       getDotPainter: (spot, percent, bar, index) =>
                           FlDotCirclePainter(
                             radius: 3.5,
-                            color: AppTheme.surface,
+                            color: context.colors.surface,
                             strokeWidth: 1.6,
-                            strokeColor: AppTheme.good,
+                            strokeColor: context.colors.good,
                           ),
                     ),
                   ),
@@ -580,7 +582,7 @@ class _TrendSection extends StatelessWidget {
           InfoRow(
             unit,
             trendLabel!,
-            valueColor: trendIsBad ? AppTheme.watch : AppTheme.good,
+            valueColor: trendIsBad ? context.colors.watch : context.colors.good,
             last: true,
           ),
         ],
@@ -611,7 +613,7 @@ class _Legend extends StatelessWidget {
       const SizedBox(width: 6),
       Text(
         label,
-        style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
+        style: TextStyle(fontSize: 11, color: context.colors.textSecondary),
       ),
     ],
   );

@@ -344,7 +344,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
     final go = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        icon: const Icon(Icons.system_update_alt, color: AppTheme.cool),
+        icon: Icon(Icons.system_update_alt, color: context.colors.cool),
         title: Text(t.updateBannerTitle(version)),
         content: SingleChildScrollView(
           child: Column(
@@ -362,10 +362,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
                 const SizedBox(height: 12),
                 Text(
                   notes,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     height: 1.45,
-                    color: AppTheme.textFaint,
+                    color: context.colors.textFaint,
                   ),
                 ),
               ],
@@ -490,14 +490,14 @@ class _ConnectScreenState extends State<ConnectScreen> {
       dense: true,
       visualDensity: VisualDensity.compact,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-      leading: const Icon(Icons.history, size: 20, color: AppTheme.textFaint),
+      leading: Icon(Icons.history, size: 20, color: context.colors.textFaint),
       title: Text(
         t.storedTitle,
-        style: const TextStyle(fontSize: 13.5, color: AppTheme.textSecondary),
+        style: TextStyle(fontSize: 13.5, color: context.colors.textSecondary),
       ),
       trailing: Text(
         t.storedCount('${_stored.length}'),
-        style: const TextStyle(fontSize: 12, color: AppTheme.textFaint),
+        style: TextStyle(fontSize: 12, color: context.colors.textFaint),
       ),
       onTap: () => _openStoredSheet(t),
     );
@@ -525,10 +525,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   t.storedManageHint,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11.5,
                     height: 1.4,
-                    color: AppTheme.textFaint,
+                    color: context.colors.textFaint,
                   ),
                 ),
               ),
@@ -542,7 +542,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
                       leading: Icon(
                         d.demo ? Icons.science_outlined : Icons.battery_full,
                         size: 20,
-                        color: AppTheme.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                       title: Row(
                         children: [
@@ -559,7 +559,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
                                 BmsBrand.fromStored(stored) == BmsBrand.ant
                                     ? t.brandAnt
                                     : t.brandJk,
-                                color: AppTheme.textFaint,
+                                color: context.colors.textFaint,
                               ),
                             ),
                         ],
@@ -618,10 +618,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
               onTap: () => Navigator.of(context).pop('rename'),
             ),
             ListTile(
-              leading: const Icon(Icons.delete_outline, color: AppTheme.bad),
+              leading: Icon(Icons.delete_outline, color: context.colors.bad),
               title: Text(
                 t.packsDelete,
-                style: const TextStyle(color: AppTheme.bad),
+                style: TextStyle(color: context.colors.bad),
               ),
               onTap: () => Navigator.of(context).pop('delete'),
             ),
@@ -675,7 +675,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
             child: Text(t.packsCancel),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppTheme.bad),
+            style: FilledButton.styleFrom(backgroundColor: context.colors.bad),
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(t.packsDelete),
           ),
@@ -893,19 +893,19 @@ class _ConnectScreenState extends State<ConnectScreen> {
               children: [
                 Text(
                   t.connectOtherDevices.toUpperCase(),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     letterSpacing: 0.8,
-                    color: AppTheme.textFaint,
+                    color: context.colors.textFaint,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   t.connectOtherDevicesHint,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11.5,
                     height: 1.4,
-                    color: AppTheme.textFaint,
+                    color: context.colors.textFaint,
                   ),
                 ),
               ],
@@ -951,10 +951,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
             ? Icons.battery_charging_full
             : Icons.bluetooth,
         color: isConnected
-            ? AppTheme.good
+            ? context.colors.good
             : likely
-            ? AppTheme.good
-            : AppTheme.textFaint,
+            ? context.colors.good
+            : context.colors.textFaint,
       ),
       title: Row(
         children: [
@@ -962,7 +962,9 @@ class _ConnectScreenState extends State<ConnectScreen> {
             child: Text(
               d.name.isEmpty ? d.id : d.name,
               style: TextStyle(
-                color: likely || isConnected ? null : AppTheme.textSecondary,
+                color: likely || isConnected
+                    ? null
+                    : context.colors.textSecondary,
               ),
             ),
           ),
@@ -972,7 +974,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
           if (_brandLabel(t, d) case final label?)
             Padding(
               padding: const EdgeInsets.only(left: 6),
-              child: Pill(label, color: AppTheme.textFaint),
+              child: Pill(label, color: context.colors.textFaint),
             ),
         ],
       ),
@@ -981,16 +983,16 @@ class _ConnectScreenState extends State<ConnectScreen> {
         style: TextStyle(
           fontSize: 11.5,
           color: isConnected
-              ? AppTheme.good
+              ? context.colors.good
               : cooling != null || _guard.saturated
-              ? AppTheme.watch
+              ? context.colors.watch
               : null,
         ),
       ),
       trailing: isConnected
-          ? Pill(t.tilePillOpen, color: AppTheme.good)
+          ? Pill(t.tilePillOpen, color: context.colors.good)
           : cooling != null
-          ? Pill('${cooling.inSeconds} s', color: AppTheme.watch)
+          ? Pill('${cooling.inSeconds} s', color: context.colors.watch)
           : Pill('${d.rssi}', color: _rssiColour(d.rssi)),
       // Still tappable while cooling or saturated: the tap is refused with a
       // sentence saying why, which teaches more than a dead tile.
@@ -1010,14 +1012,14 @@ class _ConnectScreenState extends State<ConnectScreen> {
     final name = device.name.isEmpty ? device.id : device.name;
     final soc = _liveSnapshot?.soc;
     final reading = widget.service.hasCurrentReadings;
-    final statusColor = reading ? AppTheme.good : AppTheme.watch;
+    final statusColor = reading ? context.colors.good : context.colors.watch;
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 14, 16, 2),
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
       decoration: BoxDecoration(
         color: statusColor.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: statusColor.withValues(alpha: 0.35)),
       ),
       child: Column(
@@ -1037,16 +1039,16 @@ class _ConnectScreenState extends State<ConnectScreen> {
                 ),
               ),
               if (soc != null && reading)
-                Pill('${soc.toStringAsFixed(0)} %', color: AppTheme.good),
+                Pill('${soc.toStringAsFixed(0)} %', color: context.colors.good),
             ],
           ),
           const SizedBox(height: 2),
           Text(
             reading ? t.connectedCardNote : t.connectedCardNoReadings,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11.5,
               height: 1.35,
-              color: AppTheme.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
           const SizedBox(height: 6),
@@ -1063,7 +1065,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
                 icon: const Icon(Icons.link_off, size: 17),
                 label: Text(t.connectedCardRelease),
                 style: TextButton.styleFrom(
-                  foregroundColor: AppTheme.textSecondary,
+                  foregroundColor: context.colors.textSecondary,
                 ),
               ),
             ],
@@ -1244,10 +1246,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
               alignment: Alignment.centerLeft,
               child: Text(
                 t.brandAskBody,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12.5,
                   height: 1.4,
-                  color: AppTheme.textSecondary,
+                  color: context.colors.textSecondary,
                 ),
               ),
             ),
@@ -1645,7 +1647,9 @@ class _ConnectScreenState extends State<ConnectScreen> {
                 child: LinkTroubleText(
                   message: _message!,
                   detail: _messageDetail,
-                  color: _busyMessage ? AppTheme.watch : AppTheme.bad,
+                  color: _busyMessage
+                      ? context.colors.watch
+                      : context.colors.bad,
                 ),
               ),
             // Always, not only when the scan came up empty. A battery you have
@@ -1659,12 +1663,12 @@ class _ConnectScreenState extends State<ConnectScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           if (_scanning) ...[
-                            const SizedBox(
+                            SizedBox(
                               width: 18,
                               height: 18,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: AppTheme.goodDim,
+                                color: context.colors.goodDim,
                               ),
                             ),
                             const SizedBox(height: 14),
@@ -1675,8 +1679,8 @@ class _ConnectScreenState extends State<ConnectScreen> {
                                 : _searched
                                 ? t.connectScanFinished
                                 : t.connectNoDevices,
-                            style: const TextStyle(
-                              color: AppTheme.textSecondary,
+                            style: TextStyle(
+                              color: context.colors.textSecondary,
                             ),
                           ),
                           // Only once the search has actually ended. While it is
@@ -1688,9 +1692,9 @@ class _ConnectScreenState extends State<ConnectScreen> {
                               padding: const EdgeInsets.only(top: 8),
                               child: Text(
                                 t.connectSeenCount('${_devices.length}'),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
-                                  color: AppTheme.textFaint,
+                                  color: context.colors.textFaint,
                                 ),
                               ),
                             ),
@@ -1700,10 +1704,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
                               padding: const EdgeInsets.fromLTRB(24, 14, 24, 0),
                               child: Text(
                                 t.connectNothingFoundHelp,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12.5,
                                   height: 1.5,
-                                  color: AppTheme.textFaint,
+                                  color: context.colors.textFaint,
                                 ),
                               ),
                             ),
@@ -1742,7 +1746,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
                   TextButton(
                     onPressed: _connecting ? null : _startDemo,
                     style: TextButton.styleFrom(
-                      foregroundColor: AppTheme.textFaint,
+                      foregroundColor: context.colors.textFaint,
                       textStyle: const TextStyle(fontSize: 12.5),
                     ),
                     child: Text(
@@ -1756,7 +1760,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
                     TextButton(
                       onPressed: _connecting ? null : _enterInspection,
                       style: TextButton.styleFrom(
-                        foregroundColor: AppTheme.textFaint,
+                        foregroundColor: context.colors.textFaint,
                         textStyle: const TextStyle(fontSize: 12.5),
                       ),
                       child: Text(t.inspectionEntry),
@@ -1774,27 +1778,27 @@ class _ConnectScreenState extends State<ConnectScreen> {
     padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
     child: Container(
       decoration: BoxDecoration(
-        color: AppTheme.surfaceRaised,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.hairline),
+        color: context.colors.surfaceRaised,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: context.colors.hairline),
       ),
       padding: const EdgeInsets.all(14),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
+          Icon(
             Icons.info_outline,
             size: 17,
-            color: AppTheme.textSecondary,
+            color: context.colors.textSecondary,
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               t.connectOneConnectionWarning,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12.5,
                 height: 1.4,
-                color: AppTheme.textSecondary,
+                color: context.colors.textSecondary,
               ),
             ),
           ),
@@ -1810,9 +1814,9 @@ class _ConnectScreenState extends State<ConnectScreen> {
     padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
     child: Container(
       decoration: BoxDecoration(
-        color: AppTheme.cool.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.cool.withValues(alpha: 0.55)),
+        color: context.colors.cool.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: context.colors.cool.withValues(alpha: 0.55)),
       ),
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 6),
       child: Column(
@@ -1820,18 +1824,18 @@ class _ConnectScreenState extends State<ConnectScreen> {
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.fact_check_outlined,
                 size: 18,
-                color: AppTheme.cool,
+                color: context.colors.cool,
               ),
               const SizedBox(width: 8),
               Text(
                 t.inspectionModeTitle,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.cool,
+                  color: context.colors.cool,
                 ),
               ),
             ],
@@ -1839,10 +1843,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
           const SizedBox(height: 6),
           Text(
             t.inspectionModeBanner,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12.5,
               height: 1.4,
-              color: AppTheme.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
           Align(
@@ -1863,8 +1867,8 @@ class _ConnectScreenState extends State<ConnectScreen> {
   );
 
   Color _rssiColour(int rssi) {
-    if (rssi > -60) return AppTheme.good;
-    if (rssi > -80) return AppTheme.watch;
-    return AppTheme.bad;
+    if (rssi > -60) return context.colors.good;
+    if (rssi > -80) return context.colors.watch;
+    return context.colors.bad;
   }
 }

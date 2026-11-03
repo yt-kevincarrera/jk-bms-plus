@@ -210,15 +210,15 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
           children: [
             Container(
               width: double.infinity,
-              color: AppTheme.surfaceRaised,
+              color: context.colors.surfaceRaised,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Text(
                 t.offlineBanner,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11.5,
                   height: 1.4,
-                  color: AppTheme.textFaint,
+                  color: context.colors.textFaint,
                 ),
               ),
             ),
@@ -296,10 +296,10 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Text(
                 t.offlineNoData,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12.5,
                   height: 1.45,
-                  color: AppTheme.textFaint,
+                  color: context.colors.textFaint,
                 ),
               ),
             )
@@ -317,7 +317,7 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
             InfoRow(
               t.cellDelta,
               '${last.deltaVolts.toStringAsFixed(3)} V',
-              valueColor: last.deltaVolts > 0.04 ? AppTheme.watch : null,
+              valueColor: last.deltaVolts > 0.04 ? context.colors.watch : null,
             ),
           ],
           InfoRow(
@@ -327,7 +327,7 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
                 : '${widget.device.catalogueCapacityAh!.toStringAsFixed(0)} Ah',
             dim: widget.device.catalogueCapacityAh == null,
             valueColor: widget.device.catalogueCapacityAh == null
-                ? AppTheme.watch
+                ? context.colors.watch
                 : null,
             last: true,
           ),
@@ -393,7 +393,7 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
             InfoRow(
               t.offlineBestMeasured,
               '${bestMeasured.toStringAsFixed(1)} Ah',
-              valueColor: AppTheme.good,
+              valueColor: context.colors.good,
             ),
           InfoRow(
             t.offlineHistorySince,
@@ -436,7 +436,7 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
                 : '${_outlook.fullKm!.toStringAsFixed(0)} km',
             dim: _outlook.fullKm == null,
             valueColor: _outlook.fullFromMeasuredCapacity
-                ? AppTheme.good
+                ? context.colors.good
                 : null,
           ),
           InfoRow(
@@ -457,10 +457,10 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
               padding: const EdgeInsets.only(top: 4),
               child: Text(
                 t.offlineRangeStale(_ago(t, last.timestamp)),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
                   height: 1.35,
-                  color: AppTheme.textFaint,
+                  color: context.colors.textFaint,
                 ),
               ),
             ),
@@ -473,10 +473,10 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
                     : _outlook.fullFromBmsConfig
                     ? t.rangeFullFromBms
                     : t.rangeFullFromAdvert,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
                   height: 1.35,
-                  color: AppTheme.textFaint,
+                  color: context.colors.textFaint,
                 ),
               ),
             ),
@@ -485,16 +485,16 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
               padding: const EdgeInsets.only(top: 4),
               child: Text(
                 t.rangeFullNeedsChemistry,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
                   height: 1.35,
-                  color: AppTheme.textFaint,
+                  color: context.colors.textFaint,
                 ),
               ),
             ),
           if (completed.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Caption(t.capacityHistory, color: AppTheme.textFaint),
+            Caption(t.capacityHistory, color: context.colors.textFaint),
             const SizedBox(height: 4),
             for (final test in completed.take(5))
               InfoRow(
@@ -713,10 +713,10 @@ class _OfflinePackScreenState extends State<OfflinePackScreen> {
     return _date(utc);
   }
 
-  static Color _healthTone(double percent) {
-    if (percent >= 92) return AppTheme.good;
-    if (percent >= 80) return AppTheme.watch;
-    return AppTheme.bad;
+  Color _healthTone(double percent) {
+    if (percent >= 92) return context.colors.good;
+    if (percent >= 80) return context.colors.watch;
+    return context.colors.bad;
   }
 
   static String _date(DateTime utc) {

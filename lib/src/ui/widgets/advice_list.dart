@@ -54,18 +54,18 @@ class AdviceList extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.check_circle_outline,
                 size: 17,
-                color: AppTheme.good,
+                color: context.colors.good,
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   t.adviceNone,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: AppTheme.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 ),
               ),
@@ -109,10 +109,10 @@ class AdviceList extends StatelessWidget {
             padding: const EdgeInsets.only(top: 2, bottom: 6),
             child: Text(
               t.adviceHonestyNote,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 height: 1.4,
-                color: AppTheme.textFaint,
+                color: context.colors.textFaint,
               ),
             ),
           ),
@@ -157,7 +157,7 @@ class _SubjectCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tone = AdviceList.accentFor(card.level);
+    final tone = AppTheme.resolve(context, AdviceList.accentFor(card.level));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -165,13 +165,15 @@ class _SubjectCard extends StatelessWidget {
           children: [
             Container(width: 3, height: 12, color: tone),
             const SizedBox(width: 8),
-            Text(
-              subjectName(t, card.subject).toUpperCase(),
-              style: const TextStyle(
-                fontSize: 10.5,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.8,
-                color: AppTheme.textFaint,
+            Expanded(
+              child: Text(
+                subjectName(t, card.subject),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.25,
+                  color: context.colors.textFaint,
+                ),
               ),
             ),
           ],
@@ -211,17 +213,21 @@ class _SummaryLine extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
+        Padding(
           padding: EdgeInsets.only(top: 1, right: 8),
-          child: Icon(Icons.done_all, size: 14, color: AppTheme.textFaint),
+          child: Icon(
+            Icons.done_all,
+            size: 14,
+            color: context.colors.textFaint,
+          ),
         ),
         Expanded(
           child: Text(
             parts.join(' '),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11.5,
               height: 1.45,
-              color: AppTheme.textFaint,
+              color: context.colors.textFaint,
             ),
           ),
         ),
@@ -247,11 +253,11 @@ class _Caveats extends StatelessWidget {
     children: [
       Text(
         t.adviceCaveatsTitle.toUpperCase(),
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 10.5,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.8,
-          color: AppTheme.textFaint,
+          color: context.colors.textFaint,
         ),
       ),
       const SizedBox(height: 6),
@@ -260,10 +266,10 @@ class _Caveats extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 6),
           child: Text(
             adviceBody(t, item),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11.5,
               height: 1.45,
-              color: AppTheme.textFaint,
+              color: context.colors.textFaint,
             ),
           ),
         ),
@@ -288,7 +294,7 @@ class _AdviceItemState extends State<AdviceItem> {
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final advice = widget.advice;
-    final tone = AdviceList.accentFor(advice.level);
+    final tone = AppTheme.resolve(context, AdviceList.accentFor(advice.level));
     final hasWhy = advice.evidence.isNotEmpty;
 
     return InkWell(
@@ -316,21 +322,21 @@ class _AdviceItemState extends State<AdviceItem> {
                 const SizedBox(height: 4),
                 Text(
                   adviceBody(t, advice),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12.5,
                     height: 1.45,
-                    color: AppTheme.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 ),
                 if (hasWhy) ...[
                   const SizedBox(height: 4),
                   Text(
                     _open ? t.adviceWhyHide : t.adviceWhy,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.6,
-                      color: AppTheme.textFaint,
+                      color: context.colors.textFaint,
                     ),
                   ),
                 ],
@@ -378,10 +384,10 @@ class _EvidenceRow extends StatelessWidget {
             flex: 5,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11.5,
                 height: 1.35,
-                color: AppTheme.textFaint,
+                color: context.colors.textFaint,
               ),
             ),
           ),
@@ -391,12 +397,12 @@ class _EvidenceRow extends StatelessWidget {
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11.5,
                 height: 1.35,
                 fontWeight: FontWeight.w600,
                 fontFeatures: AppTheme.tabular,
-                color: AppTheme.textSecondary,
+                color: context.colors.textSecondary,
               ),
             ),
           ),

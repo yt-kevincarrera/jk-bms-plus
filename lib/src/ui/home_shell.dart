@@ -15,12 +15,12 @@ import '../model/bms_snapshot.dart';
 import 'pack/pack_profile_sheet.dart';
 import '../pack/chemistry.dart';
 import 'locale_controller.dart';
-import 'tabs/cells_tab.dart';
+import 'tabs/battery_tab.dart';
+import 'app_settings_screen.dart';
 import 'tabs/health_tab.dart';
 import 'tabs/history_tab.dart';
 import 'tabs/now_tab.dart';
 import 'tabs/system_tab.dart';
-import 'tabs/thermal_tab.dart';
 import 'theme.dart';
 import 'widgets/link_trouble_text.dart';
 import '../update/update_service.dart';
@@ -211,9 +211,30 @@ class _HomeShellState extends State<HomeShell> {
     final t = AppL10n.of(context);
     final service = widget.service;
 
+    final labels = [
+      t.tabNow,
+      t.tabBattery,
+      t.tabHistory,
+      t.tabHealth,
+      t.appSettingsTitle,
+    ];
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.deviceName),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.deviceName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                color: context.colors.textSecondary,
+              ),
+            ),
+            Text(labels[_index]),
+          ],
+        ),
         bottom: _appBarBottom(t, service),
       ),
       body: SafeArea(
@@ -225,19 +246,17 @@ class _HomeShellState extends State<HomeShell> {
               snapshot: _snapshot,
               settings: widget.settings,
             ),
-            CellsTab(service: service, snapshot: _snapshot),
-            ThermalTab(service: service, snapshot: _snapshot),
-            HealthTab(service: service, snapshot: _snapshot),
+            BatteryTab(service: service, snapshot: _snapshot),
             HistoryTab(service: service, settings: widget.settings),
-            SystemTab(
+            HealthTab(service: service, snapshot: _snapshot),
+            AppSettingsScreen(
               service: service,
-              snapshot: _snapshot,
-              link: _link,
-              localeController: widget.localeController,
-              proximity: widget.proximity,
               settings: widget.settings,
+              localeController: widget.localeController,
               updateService: widget.updateService,
               handsFree: widget.handsFree,
+              embedded: true,
+              onOpenSystem: () => _openSystem(t),
             ),
           ],
         ),
@@ -252,14 +271,14 @@ class _HomeShellState extends State<HomeShell> {
             label: t.tabNow,
           ),
           NavigationDestination(
-            icon: const Icon(Icons.grid_view_outlined),
-            selectedIcon: const Icon(Icons.grid_view),
-            label: t.tabCells,
+            icon: const Icon(Icons.battery_std_outlined),
+            selectedIcon: const Icon(Icons.battery_full),
+            label: t.tabBattery,
           ),
           NavigationDestination(
-            icon: const Icon(Icons.thermostat_outlined),
-            selectedIcon: const Icon(Icons.thermostat),
-            label: t.tabThermal,
+            icon: const Icon(Icons.route_outlined),
+            selectedIcon: const Icon(Icons.route),
+            label: t.tabHistory,
           ),
           NavigationDestination(
             icon: const Icon(Icons.monitor_heart_outlined),
@@ -267,16 +286,42 @@ class _HomeShellState extends State<HomeShell> {
             label: t.tabHealth,
           ),
           NavigationDestination(
-            icon: const Icon(Icons.timeline_outlined),
-            selectedIcon: const Icon(Icons.timeline),
-            label: t.tabHistory,
-          ),
-          NavigationDestination(
             icon: const Icon(Icons.tune_outlined),
             selectedIcon: const Icon(Icons.tune),
-            label: t.tabSystem,
+            label: t.appSettingsTitle,
           ),
         ],
+      ),
+    );
+  }
+
+  void _openSystem(AppL10n t) {
+    final service = widget.service;
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => Scaffold(
+          appBar: AppBar(title: Text(t.tabSystem)),
+          body: SafeArea(
+            child: StreamBuilder<BleLinkState>(
+              stream: service.linkState,
+              initialData: service.lastLinkState,
+              builder: (context, link) => StreamBuilder<BmsSnapshot>(
+                stream: service.snapshots,
+                initialData: service.lastSnapshot,
+                builder: (context, reading) => SystemTab(
+                  service: service,
+                  snapshot: reading.data,
+                  link: link.data!,
+                  localeController: widget.localeController,
+                  proximity: widget.proximity,
+                  settings: widget.settings,
+                  updateService: widget.updateService,
+                  handsFree: widget.handsFree,
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -371,7 +416,7 @@ class _LinkBanner extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      color: AppTheme.watch.withValues(alpha: 0.16),
+      color: context.colors.watch.withValues(alpha: 0.16),
       padding: const EdgeInsets.fromLTRB(16, 6, 16, 7),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -384,10 +429,10 @@ class _LinkBanner extends StatelessWidget {
               // A spinner claims something is happening. Once the loop has
               // stopped, nothing is.
               child: gaveUp
-                  ? const Icon(Icons.link_off, size: 12, color: AppTheme.watch)
-                  : const CircularProgressIndicator(
+                  ? Icon(Icons.link_off, size: 12, color: context.colors.watch)
+                  : CircularProgressIndicator(
                       strokeWidth: 1.8,
-                      color: AppTheme.watch,
+                      color: context.colors.watch,
                     ),
             ),
           ),
@@ -400,10 +445,10 @@ class _LinkBanner extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
-                        color: AppTheme.watch,
+                        color: context.colors.watch,
                       ),
                     ),
                     if (age.isNotEmpty) ...[
@@ -411,9 +456,9 @@ class _LinkBanner extends StatelessWidget {
                       Expanded(
                         child: Text(
                           age,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 10.5,
-                            color: AppTheme.textFaint,
+                            color: context.colors.textFaint,
                           ),
                         ),
                       ),
@@ -425,10 +470,10 @@ class _LinkBanner extends StatelessWidget {
                   why,
                   maxLines: gaveUp ? 3 : 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10.5,
                     height: 1.3,
-                    color: AppTheme.textFaint,
+                    color: context.colors.textFaint,
                   ),
                 ),
                 if (gaveUp)
@@ -440,7 +485,7 @@ class _LinkBanner extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        foregroundColor: AppTheme.watch,
+                        foregroundColor: context.colors.watch,
                       ),
                       child: Text(
                         t.linkRetryNow,
@@ -469,16 +514,16 @@ class _DemoBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      color: AppTheme.cool.withValues(alpha: 0.16),
+      color: context.colors.cool.withValues(alpha: 0.16),
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Text(
         text,
         textAlign: TextAlign.center,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 10.5,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.8,
-          color: AppTheme.cool,
+          color: context.colors.cool,
         ),
       ),
     );

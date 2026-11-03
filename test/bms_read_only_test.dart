@@ -89,7 +89,7 @@ void main() {
       expect(find.text(text), findsOneWidget);
     }
 
-    await see(t.systemSettingsTitle.toUpperCase());
+    await see(t.systemSettingsTitle);
     expect(t.systemSettingsTitle, contains('solo lectura'));
     for (final label in [
       t.configBalancerSwitch,
@@ -144,7 +144,7 @@ void main() {
       expect(find.byKey(const ValueKey('allow-bms-writes')), findsNothing);
       expect(find.text(t.bmsWritesTitle), findsNothing);
       expect(find.text(t.settingsSectionBmsWrites), findsNothing);
-      expect(find.text(t.settingsSectionBmsWrites.toUpperCase()), findsNothing);
+      expect(find.text(t.settingsSectionBmsWrites), findsNothing);
       await tester.drag(list, const Offset(0, -400));
       await tester.pump();
     }

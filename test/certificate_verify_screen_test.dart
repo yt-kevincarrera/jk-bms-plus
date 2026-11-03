@@ -97,7 +97,7 @@ void main() {
     );
     expect(find.text('Batería'), findsOneWidget);
     await tester.scrollUntilVisible(
-      find.text('CELDA POR CELDA'),
+      find.text('Celda por celda'),
       300,
       scrollable: list,
     );

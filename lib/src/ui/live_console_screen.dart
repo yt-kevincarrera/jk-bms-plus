@@ -114,9 +114,7 @@ class _LiveConsoleScreenState extends State<LiveConsoleScreen> {
         _append('device info', v.toJson());
       }),
     );
-    _subs.add(
-      s.settings.listen((v) => _append('settings', v.toJson())),
-    );
+    _subs.add(s.settings.listen((v) => _append('settings', v.toJson())));
     _subs.add(
       s.snapshots.listen((v) {
         setState(() {
@@ -126,16 +124,17 @@ class _LiveConsoleScreenState extends State<LiveConsoleScreen> {
         _append('cell info', v.toJson());
       }),
     );
-    _subs.add(
-      s.problems.listen((v) => _appendLine('!! $v')),
-    );
-    _subs.add(
-      s.linkErrors.listen((v) => _appendLine('!! ${v.message}')),
-    );
+    _subs.add(s.problems.listen((v) => _appendLine('!! $v')));
+    _subs.add(s.linkErrors.listen((v) => _appendLine('!! ${v.message}')));
     _subs.add(
       s.traffic.stream.listen(
-        (e) => _push(_bytes, _bytesPending, _maxByteLines, formatTrafficEntry(e),
-            visible: _view == _ConsoleView.bytes),
+        (e) => _push(
+          _bytes,
+          _bytesPending,
+          _maxByteLines,
+          formatTrafficEntry(e),
+          visible: _view == _ConsoleView.bytes,
+        ),
       ),
     );
   }
@@ -170,12 +169,12 @@ class _LiveConsoleScreenState extends State<LiveConsoleScreen> {
   }
 
   void _appendLine(String line) => _push(
-        _log,
-        _logPending,
-        _maxLogLines,
-        line,
-        visible: _view == _ConsoleView.decoded,
-      );
+    _log,
+    _logPending,
+    _maxLogLines,
+    line,
+    visible: _view == _ConsoleView.decoded,
+  );
 
   void _push(
     List<String> shown,
@@ -235,8 +234,10 @@ class _LiveConsoleScreenState extends State<LiveConsoleScreen> {
   String _report(AppL10n t) {
     final s = widget.service;
     final out = StringBuffer()
-      ..writeln('${t.consoleReportTitle} · ${widget.deviceName} · '
-          '${DateTime.now().toIso8601String()}')
+      ..writeln(
+        '${t.consoleReportTitle} · ${widget.deviceName} · '
+        '${DateTime.now().toIso8601String()}',
+      )
       ..writeln()
       ..writeln('== ${t.consoleThisConnection} ==')
       ..writeln(
@@ -252,7 +253,8 @@ class _LiveConsoleScreenState extends State<LiveConsoleScreen> {
           antInfoFrames: s.antInfoFrames,
           antRejectedFrames: s.antRejectedFrames,
           lastDecodeError: s.lastDecodeError,
-          jkCounters: 'device info ${s.deviceInfoFrames} · '
+          jkCounters:
+              'device info ${s.deviceInfoFrames} · '
               'cell info ${s.cellInfoFrames} · '
               'held back ${s.heldBackFrames} · '
               'undecodable ${s.decodeFailures} · '
@@ -554,7 +556,8 @@ class _StatusStrip extends StatelessWidget {
               const SizedBox(width: 6),
               Text(link.name, style: theme.textTheme.labelLarge),
               const Spacer(),
-              if (mtu != null) Text('MTU $mtu', style: theme.textTheme.labelSmall),
+              if (mtu != null)
+                Text('MTU $mtu', style: theme.textTheme.labelSmall),
             ],
           ),
           if (s != null) ...[
@@ -585,17 +588,17 @@ class _StatusStrip extends StatelessWidget {
   }
 
   IconData get _linkIcon => switch (link) {
-        BleLinkState.connected => Icons.bluetooth_connected,
-        BleLinkState.failed => Icons.bluetooth_disabled,
-        BleLinkState.reconnecting => Icons.bluetooth_searching,
-        _ => Icons.bluetooth,
-      };
+    BleLinkState.connected => Icons.bluetooth_connected,
+    BleLinkState.failed => Icons.bluetooth_disabled,
+    BleLinkState.reconnecting => Icons.bluetooth_searching,
+    _ => Icons.bluetooth,
+  };
 
   Color _linkColor(ThemeData theme) => switch (link) {
-        BleLinkState.connected => theme.colorScheme.primary,
-        BleLinkState.failed => theme.colorScheme.error,
-        _ => theme.colorScheme.onSurfaceVariant,
-      };
+    BleLinkState.connected => theme.colorScheme.primary,
+    BleLinkState.failed => theme.colorScheme.error,
+    _ => theme.colorScheme.onSurfaceVariant,
+  };
 }
 
 class _Stat extends StatelessWidget {

@@ -118,10 +118,10 @@ class _LinkEventsScreenState extends State<LinkEventsScreen> {
                     padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
                     child: Text(
                       t.linkEventsIntro,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         height: 1.4,
-                        color: AppTheme.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                     ),
                   ),
@@ -131,10 +131,10 @@ class _LinkEventsScreenState extends State<LinkEventsScreen> {
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
                       child: Text(
                         t.linkEventsThisPackHint,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           height: 1.4,
-                          color: AppTheme.textFaint,
+                          color: context.colors.textFaint,
                         ),
                       ),
                     ),
@@ -142,9 +142,9 @@ class _LinkEventsScreenState extends State<LinkEventsScreen> {
                     padding: const EdgeInsets.fromLTRB(16, 2, 16, 6),
                     child: Text(
                       t.linkEventsCount(shown.length),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
-                        color: AppTheme.textFaint,
+                        color: context.colors.textFaint,
                       ),
                     ),
                   ),
@@ -155,7 +155,7 @@ class _LinkEventsScreenState extends State<LinkEventsScreen> {
                             padding: const EdgeInsets.all(20),
                             child: Text(
                               t.linkEventsEmpty,
-                              style: const TextStyle(color: AppTheme.textFaint),
+                              style: TextStyle(color: context.colors.textFaint),
                             ),
                           )
                         : ListView.builder(
@@ -209,8 +209,8 @@ class _LinkEventsScreenState extends State<LinkEventsScreen> {
     final open = _open.contains(e.id);
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppTheme.hairline)),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: context.colors.hairline)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,10 +230,10 @@ class _LinkEventsScreenState extends State<LinkEventsScreen> {
               const SizedBox(width: 8),
               Text(
                 _stamp(e.at),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
                   fontFeatures: AppTheme.tabular,
-                  color: AppTheme.textFaint,
+                  color: context.colors.textFaint,
                 ),
               ),
             ],
@@ -241,16 +241,16 @@ class _LinkEventsScreenState extends State<LinkEventsScreen> {
           const SizedBox(height: 2),
           Text(
             _pack(t, e.deviceId),
-            style: const TextStyle(fontSize: 11, color: AppTheme.textFaint),
+            style: TextStyle(fontSize: 11, color: context.colors.textFaint),
           ),
           if (split.text.isNotEmpty) ...[
             const SizedBox(height: 4),
             SelectableText(
               split.text,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 height: 1.35,
-                color: AppTheme.textSecondary,
+                color: context.colors.textSecondary,
               ),
             ),
           ],

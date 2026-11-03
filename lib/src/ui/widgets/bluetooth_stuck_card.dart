@@ -29,16 +29,16 @@ class BluetoothStuckCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
-    const body = TextStyle(
+    final body = TextStyle(
       fontSize: 12.5,
       height: 1.4,
-      color: AppTheme.textSecondary,
+      color: context.colors.textSecondary,
     );
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.watch.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.watch.withValues(alpha: 0.45)),
+        color: context.colors.watch.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: context.colors.watch.withValues(alpha: 0.45)),
       ),
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       child: Column(
@@ -46,19 +46,19 @@ class BluetoothStuckCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.bluetooth_disabled,
                 size: 18,
-                color: AppTheme.watch,
+                color: context.colors.watch,
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   t.stuckTitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.watch,
+                    color: context.colors.watch,
                   ),
                 ),
               ),
@@ -85,11 +85,11 @@ class BluetoothStuckCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             t.stuckAskWhichStep,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               height: 1.4,
               fontStyle: FontStyle.italic,
-              color: AppTheme.textFaint,
+              color: context.colors.textFaint,
             ),
           ),
         ],
@@ -114,11 +114,11 @@ class _Step extends StatelessWidget {
           width: 22,
           child: Text(
             '$number.',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12.5,
               height: 1.4,
               fontWeight: FontWeight.w600,
-              color: AppTheme.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
         ),

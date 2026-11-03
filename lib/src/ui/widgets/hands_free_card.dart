@@ -74,7 +74,7 @@ class HandsFreeCard extends StatelessWidget {
                         ? Icons.bluetooth_connected
                         : Icons.info_outline,
                     size: 20,
-                    color: AppTheme.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 const SizedBox(width: 10),
                 Expanded(

@@ -2840,8 +2840,7 @@ class AppL10nEn extends AppL10n {
       'From a full discharge measured on this pack, cells at the top to a cell at the cutoff.';
 
   @override
-  String get rangeNoneLearned =>
-      'Nothing learned yet, so no distance is worth quoting at any charge.';
+  String get rangeNoneLearned => 'Record rides to estimate range.';
 
   @override
   String get offlineRangeAtLastSeen => 'At the charge in the last reading';
@@ -6042,4 +6041,31 @@ class AppL10nEn extends AppL10n {
   @override
   String get tripMapOffline =>
       'The background map is fetched from OpenStreetMap over the internet when this screen opens, so their servers see which area the ride was in (not the ride itself). Offline, the route still draws on a plain background.';
+
+  @override
+  String get appearanceTitle => 'Appearance';
+
+  @override
+  String get appearanceSystem => 'System';
+
+  @override
+  String get appearanceLight => 'Light';
+
+  @override
+  String get appearanceDark => 'Dark';
+
+  @override
+  String get tabBattery => 'Battery';
+
+  @override
+  String get rangeCurrent => 'Estimated remaining range';
+
+  @override
+  String get tripTerrain => 'Terrain';
+
+  @override
+  String get tripEnergyNet => 'Net energy';
+
+  @override
+  String get tripPackVoltage => 'Minimum / maximum voltage';
 }

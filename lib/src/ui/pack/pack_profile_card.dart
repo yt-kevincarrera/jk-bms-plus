@@ -114,7 +114,7 @@ class _PackProfileCardState extends State<PackProfileCard> {
               ? t.profileBaselineMissing
               : _date(baseline.capturedAt),
           dim: baseline == null,
-          valueColor: baseline == null ? null : AppTheme.good,
+          valueColor: baseline == null ? null : context.colors.good,
           hint: _note.isEmpty ? null : _note,
           last: comparison == null,
         ),
@@ -205,7 +205,7 @@ class _PackProfileCardState extends State<PackProfileCard> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: AppTheme.bad),
+            style: TextButton.styleFrom(foregroundColor: context.colors.bad),
             child: Text(t.profileBaselineRedoConfirm),
           ),
         ],
@@ -236,7 +236,7 @@ class _PackProfileCardState extends State<PackProfileCard> {
       const SizedBox(height: 10),
       Caption(
         t.profileSinceDayOne(_date(c.baseline.capturedAt)),
-        color: AppTheme.textFaint,
+        color: context.colors.textFaint,
       ),
       const SizedBox(height: 6),
       if (!c.comparable)
@@ -244,10 +244,10 @@ class _PackProfileCardState extends State<PackProfileCard> {
           padding: const EdgeInsets.only(bottom: 8),
           child: Text(
             t.profileNotComparable,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11.5,
               height: 1.4,
-              color: AppTheme.watch,
+              color: context.colors.watch,
             ),
           ),
         ),
@@ -256,8 +256,8 @@ class _PackProfileCardState extends State<PackProfileCard> {
         '${c.thenDeltaVolts.toStringAsFixed(3)} → '
         '${c.nowDeltaVolts.toStringAsFixed(3)} V',
         valueColor: c.deltaChange > 0.010
-            ? AppTheme.watch
-            : (c.deltaChange < -0.010 ? AppTheme.good : null),
+            ? context.colors.watch
+            : (c.deltaChange < -0.010 ? context.colors.good : null),
       ),
       if (worst != null)
         InfoRow(
@@ -266,7 +266,7 @@ class _PackProfileCardState extends State<PackProfileCard> {
             '${worst.index}',
             (worst.driftVolts * 1000).toStringAsFixed(0),
           ),
-          valueColor: AppTheme.watch,
+          valueColor: context.colors.watch,
         )
       // Said rather than left out: at two different charge levels a cell's
       // place against the average moves on its own, and silence here would
@@ -292,7 +292,7 @@ class _PackProfileCardState extends State<PackProfileCard> {
             ? t.profileConfigUnchanged
             : t.profileConfigChangedCount('${changed.length}'),
         dim: changed.isEmpty,
-        valueColor: changed.isEmpty ? null : AppTheme.watch,
+        valueColor: changed.isEmpty ? null : context.colors.watch,
         hint: changed.isEmpty
             ? null
             : changed.map((e) => _changeLine(t, e)).join('\n'),

@@ -25,8 +25,9 @@ class UpdateCard extends StatefulWidget {
 }
 
 class _UpdateCardState extends State<UpdateCard> {
-  late final TextEditingController _token =
-      TextEditingController(text: widget.settings.updateToken);
+  late final TextEditingController _token = TextEditingController(
+    text: widget.settings.updateToken,
+  );
   bool _tokenSaved = false;
   bool _needsPermission = false;
 
@@ -72,9 +73,11 @@ class _UpdateCardState extends State<UpdateCard> {
     return Section(
       title: t.updateTitle,
       intro: t.updateIntro,
-      accent: check?.hasUpdate ?? false ? AppTheme.cool : AppTheme.textFaint,
+      accent: check?.hasUpdate ?? false
+          ? context.colors.cool
+          : context.colors.textFaint,
       trailing: check?.hasUpdate ?? false
-          ? Pill(check!.release!.tag, color: AppTheme.cool)
+          ? Pill(check!.release!.tag, color: context.colors.cool)
           : null,
       children: [
         InfoRow(
@@ -89,7 +92,7 @@ class _UpdateCardState extends State<UpdateCard> {
           InfoRow(
             t.updatePublished,
             check!.release!.version.toString(),
-            valueColor: check.hasUpdate ? AppTheme.cool : null,
+            valueColor: check.hasUpdate ? context.colors.cool : null,
             hint: check.release!.publishedAt == null
                 ? null
                 : t.updateReleasedOn(_date(check.release!.publishedAt!)),
@@ -104,7 +107,7 @@ class _UpdateCardState extends State<UpdateCard> {
   List<Widget> _body(AppL10n t, UpdateService s, UpdateCheck? check) {
     switch (s.phase) {
       case UpdatePhase.checking:
-        return [_note(t.updateChecking, AppTheme.textFaint)];
+        return [_note(t.updateChecking, context.colors.textFaint)];
 
       case UpdatePhase.downloading:
         final p = s.progress;
@@ -112,21 +115,21 @@ class _UpdateCardState extends State<UpdateCard> {
         return [
           LinearProgressIndicator(
             value: fraction,
-            backgroundColor: AppTheme.textFaint.withValues(alpha: 0.2),
-            color: AppTheme.cool,
+            backgroundColor: context.colors.textFaint.withValues(alpha: 0.2),
+            color: context.colors.cool,
           ),
           const SizedBox(height: 8),
           _note(
             t.updateDownloading(
               fraction == null ? '--' : (fraction * 100).toStringAsFixed(0),
             ),
-            AppTheme.textFaint,
+            context.colors.textFaint,
           ),
         ];
 
       case UpdatePhase.readyToInstall:
         return [
-          _note(t.updateReady, AppTheme.cool),
+          _note(t.updateReady, context.colors.cool),
           const SizedBox(height: 10),
           FilledButton.icon(
             // No cleanup here. Handing over the intent is not the same as the
@@ -143,7 +146,7 @@ class _UpdateCardState extends State<UpdateCard> {
 
       case UpdatePhase.failed:
         return [
-          _note(t.updateFailed(s.error ?? '?'), AppTheme.bad),
+          _note(t.updateFailed(s.error ?? '?'), context.colors.bad),
           const SizedBox(height: 10),
           _checkButton(t, s),
         ];
@@ -158,136 +161,134 @@ class _UpdateCardState extends State<UpdateCard> {
 
     return switch (check.status) {
       UpdateStatus.upToDate => [
-          _note(t.updateUpToDate, AppTheme.textFaint),
-          const SizedBox(height: 10),
-          _checkButton(t, s),
-        ],
+        _note(t.updateUpToDate, context.colors.textFaint),
+        const SizedBox(height: 10),
+        _checkButton(t, s),
+      ],
       UpdateStatus.available => [
-          _note(
-            t.updateAvailable(
-              check.release!.version.toString(),
-              check.asset!.sizeMb.toStringAsFixed(1),
-            ),
-            AppTheme.cool,
+        _note(
+          t.updateAvailable(
+            check.release!.version.toString(),
+            check.asset!.sizeMb.toStringAsFixed(1),
           ),
+          context.colors.cool,
+        ),
+        const SizedBox(height: 2),
+        Text(
+          check.asset!.name,
+          style: TextStyle(
+            fontSize: 11,
+            height: 1.4,
+            color: context.colors.textFaint,
+            fontFeatures: [FontFeature.tabularFigures()],
+          ),
+        ),
+        if (check.release!.notes.trim().isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Caption(t.updateNotes, color: context.colors.textFaint),
           const SizedBox(height: 2),
           Text(
-            check.asset!.name,
-            style: const TextStyle(
-              fontSize: 11,
-              height: 1.4,
-              color: AppTheme.textFaint,
-              fontFeatures: [FontFeature.tabularFigures()],
+            check.release!.notes.trim(),
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.45,
+              color: context.colors.textFaint,
             ),
-          ),
-          if (check.release!.notes.trim().isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Caption(t.updateNotes, color: AppTheme.textFaint),
-            const SizedBox(height: 2),
-            Text(
-              check.release!.notes.trim(),
-              style: const TextStyle(
-                fontSize: 12,
-                height: 1.45,
-                color: AppTheme.textFaint,
-              ),
-            ),
-          ],
-          if (_needsPermission) ...[
-            const SizedBox(height: 8),
-            _note(t.updateNeedsPermission, AppTheme.watch),
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
-              onPressed: s.openInstallSettings,
-              icon: const Icon(Icons.settings, size: 18),
-              label: Text(t.updateOpenPermission),
-            ),
-          ],
-          const SizedBox(height: 10),
-          FilledButton.icon(
-            onPressed: _download,
-            icon: const Icon(Icons.download, size: 19),
-            label: Text(t.updateDownload),
           ),
         ],
+        if (_needsPermission) ...[
+          const SizedBox(height: 8),
+          _note(t.updateNeedsPermission, context.colors.watch),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: s.openInstallSettings,
+            icon: const Icon(Icons.settings, size: 18),
+            label: Text(t.updateOpenPermission),
+          ),
+        ],
+        const SizedBox(height: 10),
+        FilledButton.icon(
+          onPressed: _download,
+          icon: const Icon(Icons.download, size: 19),
+          label: Text(t.updateDownload),
+        ),
+      ],
       UpdateStatus.noAssetForDevice => [
-          _note(
-            t.updateNoAsset(check.release!.version.toString()),
-            AppTheme.watch,
-          ),
-          const SizedBox(height: 10),
-          _checkButton(t, s),
-        ],
+        _note(
+          t.updateNoAsset(check.release!.version.toString()),
+          context.colors.watch,
+        ),
+        const SizedBox(height: 10),
+        _checkButton(t, s),
+      ],
       UpdateStatus.needsToken => [
-          _note(t.updateNeedsToken, AppTheme.watch),
-          const SizedBox(height: 10),
-          ..._tokenField(t),
-          const SizedBox(height: 10),
-          _checkButton(t, s),
-        ],
+        _note(t.updateNeedsToken, context.colors.watch),
+        const SizedBox(height: 10),
+        ..._tokenField(t),
+        const SizedBox(height: 10),
+        _checkButton(t, s),
+      ],
       UpdateStatus.failed => [
-          _note(t.updateFailed(check.error ?? '?'), AppTheme.bad),
-          const SizedBox(height: 10),
-          _checkButton(t, s),
-        ],
+        _note(t.updateFailed(check.error ?? '?'), context.colors.bad),
+        const SizedBox(height: 10),
+        _checkButton(t, s),
+      ],
     };
   }
 
   List<Widget> _tokenField(AppL10n t) => [
-        TextField(
-          controller: _token,
-          obscureText: true,
-          autocorrect: false,
-          enableSuggestions: false,
-          style: const TextStyle(fontSize: 13),
-          decoration: InputDecoration(
-            labelText: t.updateTokenLabel,
-            labelStyle: const TextStyle(fontSize: 13),
-            isDense: true,
-            border: const OutlineInputBorder(),
+    TextField(
+      controller: _token,
+      obscureText: true,
+      autocorrect: false,
+      enableSuggestions: false,
+      style: const TextStyle(fontSize: 13),
+      decoration: InputDecoration(
+        labelText: t.updateTokenLabel,
+        labelStyle: const TextStyle(fontSize: 13),
+        isDense: true,
+        border: const OutlineInputBorder(),
+      ),
+    ),
+    const SizedBox(height: 4),
+    Text(
+      t.updateTokenHint,
+      style: TextStyle(
+        fontSize: 11,
+        height: 1.4,
+        color: context.colors.textFaint,
+      ),
+    ),
+    const SizedBox(height: 8),
+    Row(
+      children: [
+        OutlinedButton(
+          onPressed: () async {
+            await widget.settings.setUpdateToken(_token.text);
+            widget.service.token = widget.settings.updateToken;
+            if (mounted) setState(() => _tokenSaved = true);
+          },
+          child: Text(t.updateTokenSave),
+        ),
+        if (_tokenSaved) ...[
+          const SizedBox(width: 10),
+          Text(
+            t.updateTokenSaved,
+            style: TextStyle(fontSize: 11.5, color: context.colors.cool),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          t.updateTokenHint,
-          style: const TextStyle(
-            fontSize: 11,
-            height: 1.4,
-            color: AppTheme.textFaint,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            OutlinedButton(
-              onPressed: () async {
-                await widget.settings.setUpdateToken(_token.text);
-                widget.service.token = widget.settings.updateToken;
-                if (mounted) setState(() => _tokenSaved = true);
-              },
-              child: Text(t.updateTokenSave),
-            ),
-            if (_tokenSaved) ...[
-              const SizedBox(width: 10),
-              Text(
-                t.updateTokenSaved,
-                style: const TextStyle(fontSize: 11.5, color: AppTheme.cool),
-              ),
-            ],
-          ],
-        ),
-      ];
+        ],
+      ],
+    ),
+  ];
 
   Widget _checkButton(AppL10n t, UpdateService s) => FilledButton.icon(
-        onPressed: s.busy ? null : _check,
-        icon: const Icon(Icons.refresh, size: 19),
-        label: Text(t.updateCheck),
-      );
+    onPressed: s.busy ? null : _check,
+    icon: const Icon(Icons.refresh, size: 19),
+    label: Text(t.updateCheck),
+  );
 
-  Widget _note(String text, Color colour) => Text(
-        text,
-        style: TextStyle(fontSize: 12, height: 1.45, color: colour),
-      );
+  Widget _note(String text, Color colour) =>
+      Text(text, style: TextStyle(fontSize: 12, height: 1.45, color: colour));
 
   static String _date(DateTime utc) {
     final d = utc.toLocal();

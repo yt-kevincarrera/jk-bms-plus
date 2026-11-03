@@ -58,15 +58,15 @@ class ProLockedCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
             children: [
-              const Icon(Icons.lock_outline, size: 16, color: AppTheme.watch),
+              Icon(Icons.lock_outline, size: 16, color: context.colors.watch),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   body,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     height: 1.4,
-                    color: AppTheme.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 ),
               ),
@@ -80,22 +80,22 @@ class ProLockedCard extends StatelessWidget {
 
     return Section(
       title: t.proGateTitle,
-      accent: AppTheme.watch,
+      accent: context.colors.watch,
       trailing: const ProBadge(),
       children: [
         Text(
           body,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12.5,
             height: 1.45,
-            color: AppTheme.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
         if (trialOver) ...[
           const SizedBox(height: 4),
           Text(
             t.proGateTrialEnded,
-            style: const TextStyle(fontSize: 11.5, color: AppTheme.textFaint),
+            style: TextStyle(fontSize: 11.5, color: context.colors.textFaint),
           ),
         ],
         const SizedBox(height: 10),
@@ -116,7 +116,7 @@ class ProBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      Pill(AppL10n.of(context).proBadge, color: AppTheme.watch);
+      Pill(AppL10n.of(context).proBadge, color: context.colors.watch);
 }
 
 /// The wording for each gated thing, in one place.

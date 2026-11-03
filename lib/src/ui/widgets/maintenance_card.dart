@@ -44,8 +44,10 @@ class _MaintenanceCardState extends State<MaintenanceCard> {
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
-    final lastCell =
-        MaintenanceLog.lastOf(_events, MaintenanceKind.cellReplaced);
+    final lastCell = MaintenanceLog.lastOf(
+      _events,
+      MaintenanceKind.cellReplaced,
+    );
 
     return Section(
       title: t.maintTitle,
@@ -62,10 +64,10 @@ class _MaintenanceCardState extends State<MaintenanceCard> {
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
               t.maintSince(_date(lastCell.at)),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11.5,
                 height: 1.4,
-                color: AppTheme.watch,
+                color: context.colors.watch,
               ),
             ),
           ),
@@ -74,10 +76,7 @@ class _MaintenanceCardState extends State<MaintenanceCard> {
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Text(
               t.maintNone,
-              style: const TextStyle(
-                fontSize: 12.5,
-                color: AppTheme.textFaint,
-              ),
+              style: TextStyle(fontSize: 12.5, color: context.colors.textFaint),
             ),
           )
         else
@@ -99,10 +98,10 @@ class _MaintenanceCardState extends State<MaintenanceCard> {
                         if (e.note.isNotEmpty)
                           Text(
                             e.note,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11.5,
                               height: 1.4,
-                              color: AppTheme.textFaint,
+                              color: context.colors.textFaint,
                             ),
                           ),
                       ],
@@ -111,7 +110,7 @@ class _MaintenanceCardState extends State<MaintenanceCard> {
                   IconButton(
                     onPressed: () => _delete(e),
                     icon: const Icon(Icons.delete_outline, size: 18),
-                    color: AppTheme.textFaint,
+                    color: context.colors.textFaint,
                     visualDensity: VisualDensity.compact,
                     tooltip: t.maintDelete,
                   ),
@@ -150,7 +149,7 @@ class _MaintenanceCardState extends State<MaintenanceCard> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: AppTheme.bad),
+            style: TextButton.styleFrom(foregroundColor: context.colors.bad),
             child: Text(t.maintDelete),
           ),
         ],
@@ -257,13 +256,13 @@ class _MaintenanceCardState extends State<MaintenanceCard> {
   }
 
   String _kindLabel(AppL10n t, MaintenanceKind k) => switch (k) {
-        MaintenanceKind.cellReplaced => t.maintKindCellReplaced,
-        MaintenanceKind.manualBalance => t.maintKindManualBalance,
-        MaintenanceKind.connectionsServiced => t.maintKindConnections,
-        MaintenanceKind.chargerChanged => t.maintKindCharger,
-        MaintenanceKind.bmsSettingsChanged => t.maintKindBmsSettings,
-        MaintenanceKind.other => t.maintKindOther,
-      };
+    MaintenanceKind.cellReplaced => t.maintKindCellReplaced,
+    MaintenanceKind.manualBalance => t.maintKindManualBalance,
+    MaintenanceKind.connectionsServiced => t.maintKindConnections,
+    MaintenanceKind.chargerChanged => t.maintKindCharger,
+    MaintenanceKind.bmsSettingsChanged => t.maintKindBmsSettings,
+    MaintenanceKind.other => t.maintKindOther,
+  };
 
   static String _date(DateTime utc) {
     final d = utc.toLocal();

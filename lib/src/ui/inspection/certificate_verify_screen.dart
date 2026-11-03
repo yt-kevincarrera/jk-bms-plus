@@ -97,10 +97,10 @@ class _CertificateVerifyScreenState extends State<CertificateVerifyScreen> {
           children: [
             Text(
               t.certificateVerifyIntro,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12.5,
                 height: 1.45,
-                color: AppTheme.textSecondary,
+                color: context.colors.textSecondary,
               ),
             ),
             const SizedBox(height: 14),
@@ -126,23 +126,23 @@ class _CertificateVerifyScreenState extends State<CertificateVerifyScreen> {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: AppTheme.bad.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
+                  color: context.colors.bad.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: AppTheme.bad.withValues(alpha: 0.5),
+                    color: context.colors.bad.withValues(alpha: 0.5),
                   ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.gpp_bad_outlined, color: AppTheme.bad),
+                    Icon(Icons.gpp_bad_outlined, color: context.colors.bad),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         _problem!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           height: 1.4,
-                          color: AppTheme.bad,
+                          color: context.colors.bad,
                         ),
                       ),
                     ),
@@ -165,18 +165,18 @@ class _CertificateVerifyScreenState extends State<CertificateVerifyScreen> {
     const verdicts = InspectionVerdicts();
     final light = verdicts.light(r);
     final tone = switch (light) {
-      InspectionLight.problem => AppTheme.bad,
-      InspectionLight.watch => AppTheme.watch,
-      InspectionLight.good => AppTheme.good,
+      InspectionLight.problem => context.colors.bad,
+      InspectionLight.watch => context.colors.watch,
+      InspectionLight.good => context.colors.good,
       // The test never ran. Neither reassuring nor alarming, and it must not
       // be dressed as either on a certificate somebody is being shown.
-      InspectionLight.unmeasured => AppTheme.textFaint,
+      InspectionLight.unmeasured => context.colors.textFaint,
     };
     final fromHere = _localIssuer != null && _localIssuer == cert.issuer;
-    const body = TextStyle(
+    final body = TextStyle(
       fontSize: 12.5,
       height: 1.45,
-      color: AppTheme.textSecondary,
+      color: context.colors.textSecondary,
     );
     final sag = r.medianHeavySagVolts;
     final ir = r.medianResistanceOhms;
@@ -186,24 +186,24 @@ class _CertificateVerifyScreenState extends State<CertificateVerifyScreen> {
       Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppTheme.good.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.good.withValues(alpha: 0.5)),
+          color: context.colors.good.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: context.colors.good.withValues(alpha: 0.5)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                const Icon(Icons.verified_outlined, color: AppTheme.good),
+                Icon(Icons.verified_outlined, color: context.colors.good),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     t.certificateValid(cert.issuer),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       height: 1.4,
-                      color: AppTheme.good,
+                      color: context.colors.good,
                     ),
                   ),
                 ),
@@ -214,13 +214,13 @@ class _CertificateVerifyScreenState extends State<CertificateVerifyScreen> {
             // is the biggest thing on the card.
             SelectableText(
               cert.issuer,
-              style: AppTheme.readout(22, color: AppTheme.textPrimary),
+              style: AppTheme.readout(22, color: context.colors.textPrimary),
             ),
             if (fromHere) ...[
               const SizedBox(height: 4),
               Text(
                 t.certificateIssuedHere,
-                style: const TextStyle(fontSize: 12.5, color: AppTheme.watch),
+                style: TextStyle(fontSize: 12.5, color: context.colors.watch),
               ),
             ],
             const SizedBox(height: 8),
@@ -229,7 +229,7 @@ class _CertificateVerifyScreenState extends State<CertificateVerifyScreen> {
         ),
       ),
       if (r.simulated == true)
-        inspectionSimulatedBanner(t.certificateSimulated)
+        inspectionSimulatedBanner(context, t.certificateSimulated)
       else if (r.simulated == null)
         Padding(
           padding: const EdgeInsets.only(top: 10),
@@ -327,9 +327,9 @@ class _CertificateVerifyScreenState extends State<CertificateVerifyScreen> {
         title: t.verdictTitle,
         showHonestyNote: false,
       ),
-      inspectionCaveatsSection(t, r),
-      inspectionCellsSection(t, r, verdicts: verdicts),
-      inspectionReportedSection(t, r),
+      inspectionCaveatsSection(context, t, r),
+      inspectionCellsSection(context, t, r, verdicts: verdicts),
+      inspectionReportedSection(context, t, r),
       if (cert.content.note.isNotEmpty)
         Section(
           title: t.reportSectionNote,
@@ -359,10 +359,10 @@ class _CertificateVerifyScreenState extends State<CertificateVerifyScreen> {
         padding: const EdgeInsets.only(top: 8),
         child: Text(
           t.reportCertificateExplain,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11.5,
             height: 1.45,
-            color: AppTheme.textFaint,
+            color: context.colors.textFaint,
           ),
         ),
       ),

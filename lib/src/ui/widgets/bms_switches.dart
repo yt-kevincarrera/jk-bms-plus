@@ -55,7 +55,7 @@ class _BmsSwitchesGroupState extends State<BmsSwitchesGroup> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surfaceRaised,
+        backgroundColor: context.colors.surfaceRaised,
         title: Text(t.bmsSwitchConfirmTitle(action)),
         content: Text(
           t.bmsSwitchConfirmBody(action),
@@ -69,7 +69,7 @@ class _BmsSwitchesGroupState extends State<BmsSwitchesGroup> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: danger
-                ? TextButton.styleFrom(foregroundColor: AppTheme.bad)
+                ? TextButton.styleFrom(foregroundColor: context.colors.bad)
                 : null,
             child: Text(t.bmsSwitchConfirmAction),
           ),
@@ -118,7 +118,10 @@ class _BmsSwitchesGroupState extends State<BmsSwitchesGroup> {
           children: [
             Padding(
               padding: const EdgeInsets.only(top: 4, bottom: 2),
-              child: Caption(t.settingSwitches, color: AppTheme.textFaint),
+              child: Caption(
+                t.settingSwitches,
+                color: context.colors.textFaint,
+              ),
             ),
             for (final target in BmsSwitch.values)
               SwitchListTile(
@@ -136,9 +139,9 @@ class _BmsSwitchesGroupState extends State<BmsSwitchesGroup> {
                 subtitle: _pending == target
                     ? Text(
                         t.bmsSwitchSending,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11.5,
-                          color: AppTheme.watch,
+                          color: context.colors.watch,
                         ),
                       )
                     : null,
@@ -147,10 +150,10 @@ class _BmsSwitchesGroupState extends State<BmsSwitchesGroup> {
               padding: const EdgeInsets.only(bottom: 6),
               child: Text(
                 allowed ? t.bmsSwitchesHint : t.bmsSwitchesLocked,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11.5,
                   height: 1.4,
-                  color: AppTheme.textFaint,
+                  color: context.colors.textFaint,
                 ),
               ),
             ),

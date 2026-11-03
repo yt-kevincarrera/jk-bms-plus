@@ -1512,7 +1512,7 @@
   "autoTripRecoveringGps": "Automatic trips: GPS is not delivering positions. It will be retried while the bike is working.",
   "rangeFullFromAdvert": "From the capacity you entered, not a measured one.",
   "rangeFullFromMeasured": "From a full discharge measured on this pack, cells at the top to a cell at the cutoff.",
-  "rangeNoneLearned": "Nothing learned yet, so no distance is worth quoting at any charge.",
+  "rangeNoneLearned": "Record rides to estimate range.",
   "offlineRangeAtLastSeen": "At the charge in the last reading",
   "offlineHealthNeedsTests": "Needs two full discharges before wear can be measured at all. One gives a capacity; it takes two to show a decline.",
   "offlineHealthOneTest": "One measurement so far: {ah} Ah. A second one, months from now, is what turns it into wear.",
@@ -3597,5 +3597,14 @@
   "tripMapBySpeed": "Speed",
   "tripMapByPower": "Power",
   "tripMapPowerHint": "What the battery was giving at each point: its voltage times its current, as the BMS sent them beside each position. Not consumption per kilometre, which shoots up at every stop even when nothing is spent.",
-  "tripMapOffline": "The background map is fetched from OpenStreetMap over the internet when this screen opens, so their servers see which area the ride was in (not the ride itself). Offline, the route still draws on a plain background."
+  "tripMapOffline": "The background map is fetched from OpenStreetMap over the internet when this screen opens, so their servers see which area the ride was in (not the ride itself). Offline, the route still draws on a plain background.",
+  "appearanceTitle": "Appearance",
+  "appearanceSystem": "System",
+  "appearanceLight": "Light",
+  "appearanceDark": "Dark",
+  "tabBattery": "Battery",
+  "rangeCurrent": "Estimated remaining range",
+  "tripTerrain": "Terrain",
+  "tripEnergyNet": "Net energy",
+  "tripPackVoltage": "Minimum / maximum voltage"
 }

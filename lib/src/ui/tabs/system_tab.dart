@@ -140,70 +140,70 @@ class _SystemTabState extends State<SystemTab> {
               last: info == null,
             ),
             ...info == null
-              ? [
-                  InfoRow(
-                    t.systemDeviceTitle,
-                    t.systemDeviceInfoMissing,
-                    dim: true,
-                    last: true,
-                  ),
-                ]
-              : [
-                  InfoRow(t.systemModel, info.model),
-                  InfoRow(t.systemHardware, info.hardwareVersion),
-                  InfoRow(t.systemSoftware, info.softwareVersion),
-                  InfoRow(
-                    t.systemSerial,
-                    info.serialNumber.isEmpty
-                        ? t.notReported
-                        : info.serialNumber,
-                    dim: info.serialNumber.isEmpty,
-                    // JK is the only brand that hands out a device passcode,
-                    // a power-on count and an uptime, so this is the last row
-                    // for anything else.
-                    last: info.jk == null,
-                  ),
-                  // Everything below only JK reports: manufacturing date,
-                  // power-on count, uptime and the device's own passcode.
-                  // Hidden rather than shown blank for a brand that has none.
-                  if (info.jk case final jk?) ...[
+                ? [
                     InfoRow(
-                      t.systemManufactured,
-                      jk.manufacturingDate.isEmpty
-                          ? t.notReported
-                          : jk.manufacturingDate,
-                      dim: jk.manufacturingDate.isEmpty,
-                    ),
-                    InfoRow(t.systemPowerOnCount, '${jk.powerOnCount}'),
-                    InfoRow(t.systemUptime, _duration(jk.uptimeSeconds)),
-                    InfoRow(
-                      t.systemPasscode,
-                      jk.devicePasscode.isEmpty
-                          ? t.systemPasscodeEmpty
-                          : jk.devicePasscode,
-                      dim: jk.devicePasscode.isEmpty,
-                      valueColor: jk.devicePasscode.isEmpty
-                          ? null
-                          : AppTheme.watch,
-                      hint: t.systemPasscodeHint,
-                    ),
-                    // The settings passcode travels in the same frame, in
-                    // the same clear text. It was decoded and never shown,
-                    // which only meant the rider could not see what any
-                    // Bluetooth client nearby can.
-                    InfoRow(
-                      t.systemSetupPasscode,
-                      jk.setupPasscode.isEmpty
-                          ? t.systemPasscodeEmpty
-                          : jk.setupPasscode,
-                      dim: jk.setupPasscode.isEmpty,
-                      valueColor: jk.setupPasscode.isEmpty
-                          ? null
-                          : AppTheme.watch,
+                      t.systemDeviceTitle,
+                      t.systemDeviceInfoMissing,
+                      dim: true,
                       last: true,
                     ),
+                  ]
+                : [
+                    InfoRow(t.systemModel, info.model),
+                    InfoRow(t.systemHardware, info.hardwareVersion),
+                    InfoRow(t.systemSoftware, info.softwareVersion),
+                    InfoRow(
+                      t.systemSerial,
+                      info.serialNumber.isEmpty
+                          ? t.notReported
+                          : info.serialNumber,
+                      dim: info.serialNumber.isEmpty,
+                      // JK is the only brand that hands out a device passcode,
+                      // a power-on count and an uptime, so this is the last row
+                      // for anything else.
+                      last: info.jk == null,
+                    ),
+                    // Everything below only JK reports: manufacturing date,
+                    // power-on count, uptime and the device's own passcode.
+                    // Hidden rather than shown blank for a brand that has none.
+                    if (info.jk case final jk?) ...[
+                      InfoRow(
+                        t.systemManufactured,
+                        jk.manufacturingDate.isEmpty
+                            ? t.notReported
+                            : jk.manufacturingDate,
+                        dim: jk.manufacturingDate.isEmpty,
+                      ),
+                      InfoRow(t.systemPowerOnCount, '${jk.powerOnCount}'),
+                      InfoRow(t.systemUptime, _duration(jk.uptimeSeconds)),
+                      InfoRow(
+                        t.systemPasscode,
+                        jk.devicePasscode.isEmpty
+                            ? t.systemPasscodeEmpty
+                            : jk.devicePasscode,
+                        dim: jk.devicePasscode.isEmpty,
+                        valueColor: jk.devicePasscode.isEmpty
+                            ? null
+                            : context.colors.watch,
+                        hint: t.systemPasscodeHint,
+                      ),
+                      // The settings passcode travels in the same frame, in
+                      // the same clear text. It was decoded and never shown,
+                      // which only meant the rider could not see what any
+                      // Bluetooth client nearby can.
+                      InfoRow(
+                        t.systemSetupPasscode,
+                        jk.setupPasscode.isEmpty
+                            ? t.systemPasscodeEmpty
+                            : jk.setupPasscode,
+                        dim: jk.setupPasscode.isEmpty,
+                        valueColor: jk.setupPasscode.isEmpty
+                            ? null
+                            : context.colors.watch,
+                        last: true,
+                      ),
+                    ],
                   ],
-                ],
           ],
         ),
         // Variant detection is a JK concept: ANT has no framing to guess.
@@ -214,8 +214,8 @@ class _SystemTabState extends State<SystemTab> {
           trailing: Pill(
             _linkLabel(t, widget.link),
             color: widget.link == BleLinkState.connected
-                ? AppTheme.good
-                : AppTheme.watch,
+                ? context.colors.good
+                : context.colors.watch,
           ),
           children: [
             InfoRow(
@@ -235,7 +235,9 @@ class _SystemTabState extends State<SystemTab> {
             InfoRow(
               t.systemFramesBadChecksum,
               '${stats?.badChecksum ?? 0}',
-              valueColor: (stats?.badChecksum ?? 0) > 0 ? AppTheme.watch : null,
+              valueColor: (stats?.badChecksum ?? 0) > 0
+                  ? context.colors.watch
+                  : null,
             ),
             InfoRow(
               t.systemFramesUnsupported,
@@ -253,7 +255,9 @@ class _SystemTabState extends State<SystemTab> {
             InfoRow(
               t.systemDrops,
               '${service.linkHealth.drops}',
-              valueColor: service.linkHealth.drops > 5 ? AppTheme.watch : null,
+              valueColor: service.linkHealth.drops > 5
+                  ? context.colors.watch
+                  : null,
             ),
             InfoRow(
               t.systemTimeDisconnected,
@@ -281,17 +285,17 @@ class _SystemTabState extends State<SystemTab> {
         if (_problems.isNotEmpty)
           Section(
             title: t.systemNotices,
-            accent: AppTheme.watch,
+            accent: context.colors.watch,
             children: [
               for (final p in _problems)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: Text(
                     p,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       height: 1.4,
-                      color: AppTheme.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                 ),
@@ -356,10 +360,10 @@ class _SystemTabState extends State<SystemTab> {
           padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
           child: Text(
             t.systemReadOnlyNote,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11.5,
               height: 1.4,
-              color: AppTheme.textFaint,
+              color: context.colors.textFaint,
             ),
           ),
         ),
@@ -377,7 +381,7 @@ class _SystemTabState extends State<SystemTab> {
     final service = widget.service;
     return Section(
       title: t.demoTitle,
-      accent: AppTheme.cool,
+      accent: context.colors.cool,
       intro: service.brand == BmsBrand.ant
           ? t.demoExplanationAnt
           : t.demoExplanation,
@@ -392,14 +396,14 @@ class _SystemTabState extends State<SystemTab> {
             dense: true,
             visualDensity: VisualDensity.compact,
             contentPadding: EdgeInsets.zero,
-            activeColor: AppTheme.cool,
+            activeColor: context.colors.cool,
             title: Text(
               _scenarioLabel(t, scenario),
               style: const TextStyle(fontSize: 14),
             ),
             subtitle: Text(
               _scenarioDescription(t, scenario),
-              style: const TextStyle(fontSize: 11.5, color: AppTheme.textFaint),
+              style: TextStyle(fontSize: 11.5, color: context.colors.textFaint),
             ),
           ),
         const SizedBox(height: 10),
@@ -407,7 +411,7 @@ class _SystemTabState extends State<SystemTab> {
         // waiting for it. Demo mode exists so the screens can be judged with
         // no hardware, and a capacity test that needs a real afternoon of
         // discharge defeats that entirely.
-        Caption(t.demoSetCharge, color: AppTheme.textFaint),
+        Caption(t.demoSetCharge, color: context.colors.textFaint),
         const SizedBox(height: 6),
         Wrap(
           spacing: 8,
@@ -462,8 +466,10 @@ class _SystemTabState extends State<SystemTab> {
         InfoRow(
           t.systemVariantInUse,
           service.variant?.name ?? t.systemVariantUndecided,
-          valueColor: service.variant == null ? AppTheme.watch : null,
-          hint: info?.jk == null ? null : _variantReason(t, info!.jk!.detection),
+          valueColor: service.variant == null ? context.colors.watch : null,
+          hint: info?.jk == null
+              ? null
+              : _variantReason(t, info!.jk!.detection),
         ),
         if (service.variantProved)
           Padding(
@@ -472,10 +478,10 @@ class _SystemTabState extends State<SystemTab> {
               service.variantCorrections > 0
                   ? t.systemVariantCorrected
                   : t.systemVariantProved,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11.5,
                 height: 1.4,
-                color: AppTheme.good,
+                color: context.colors.good,
               ),
             ),
           ),
@@ -483,10 +489,10 @@ class _SystemTabState extends State<SystemTab> {
           padding: const EdgeInsets.only(top: 4, bottom: 10),
           child: Text(
             t.systemVariantWarning,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11.5,
               height: 1.4,
-              color: AppTheme.textFaint,
+              color: context.colors.textFaint,
             ),
           ),
         ),
@@ -536,8 +542,7 @@ class _SystemTabState extends State<SystemTab> {
         ),
       InfoRow(
         t.antChargeMosfet,
-        st.legacy &&
-                !antLegacyCodeKnown(st.chargeMosfetCode, charge: true)
+        st.legacy && !antLegacyCodeKnown(st.chargeMosfetCode, charge: true)
             ? _unknownCode(t, st.chargeMosfetCode)
             : _antCode(
                 t,
@@ -548,8 +553,7 @@ class _SystemTabState extends State<SystemTab> {
       ),
       InfoRow(
         t.antDischargeMosfet,
-        st.legacy &&
-                !antLegacyCodeKnown(st.dischargeMosfetCode, charge: false)
+        st.legacy && !antLegacyCodeKnown(st.dischargeMosfetCode, charge: false)
             ? _unknownCode(t, st.dischargeMosfetCode)
             : _antCode(
                 t,
@@ -573,14 +577,10 @@ class _SystemTabState extends State<SystemTab> {
           last: st.batteryTypeCode == null && st.totalChargedAh == null,
         ),
       if (st.batteryTypeCode case final code?)
-        InfoRow(
-          t.antBatteryType,
-          switch (antBatteryTypeOf(code)) {
-            final type? => t.antBatteryTypeName(type.name),
-            null => t.antUnknownCode(code.toRadixString(16).padLeft(4, '0')),
-          },
-          last: st.totalChargedAh == null,
-        ),
+        InfoRow(t.antBatteryType, switch (antBatteryTypeOf(code)) {
+          final type? => t.antBatteryTypeName(type.name),
+          null => t.antUnknownCode(code.toRadixString(16).padLeft(4, '0')),
+        }, last: st.totalChargedAh == null),
       // The board's own lifetime counters: everything it has seen, rides
       // this app never watched included, so they are labelled as the BMS's.
       if (st.totalChargedAh case final charged?) ...[
@@ -593,10 +593,7 @@ class _SystemTabState extends State<SystemTab> {
           t.antTotalDischarged,
           '${(st.totalDischargedAh ?? 0).toStringAsFixed(1)} Ah',
         ),
-        InfoRow(
-          t.antChargingTime,
-          _duration(st.totalChargingSeconds ?? 0),
-        ),
+        InfoRow(t.antChargingTime, _duration(st.totalChargingSeconds ?? 0)),
         InfoRow(
           t.antDischargingTime,
           _duration(st.totalDischargingSeconds ?? 0),
@@ -637,11 +634,7 @@ class _SystemTabState extends State<SystemTab> {
       ];
       return [
         for (var i = 0; i < present.length; i++)
-          InfoRow(
-            present[i].$1,
-            present[i].$2,
-            last: i == present.length - 1,
-          ),
+          InfoRow(present[i].$1, present[i].$2, last: i == present.length - 1),
       ];
     }
 
@@ -709,10 +702,10 @@ class _SystemTabState extends State<SystemTab> {
           padding: const EdgeInsets.only(top: 8, bottom: 4),
           child: Text(
             t.antSettingsNote,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11.5,
               height: 1.4,
-              color: AppTheme.textFaint,
+              color: context.colors.textFaint,
             ),
           ),
         ),
@@ -740,7 +733,9 @@ class _SystemTabState extends State<SystemTab> {
     final watcher = widget.proximity;
     return Section(
       title: t.proximityTitle,
-      accent: watcher.isEnabled ? AppTheme.good : AppTheme.textFaint,
+      accent: watcher.isEnabled
+          ? context.colors.good
+          : context.colors.textFaint,
       intro: t.proximityBody,
       trailing: Switch(
         value: watcher.isEnabled,
@@ -816,9 +811,9 @@ class _SystemTabState extends State<SystemTab> {
               : '${catalogue.toStringAsFixed(1)} Ah',
           dim: catalogue == null,
           valueColor: catalogue == null
-              ? AppTheme.watch
+              ? context.colors.watch
               : fromBms
-              ? AppTheme.cool
+              ? context.colors.cool
               : null,
           hint: device == null
               ? t.settingsCatalogueHint
@@ -831,10 +826,10 @@ class _SystemTabState extends State<SystemTab> {
             padding: const EdgeInsets.only(top: 2, bottom: 6),
             child: Text(
               t.catalogueUnsetHint,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11.5,
                 height: 1.45,
-                color: AppTheme.watch,
+                color: context.colors.watch,
               ),
             ),
           ),
@@ -844,7 +839,7 @@ class _SystemTabState extends State<SystemTab> {
           InfoRow(
             t.settingsBmsConfigured,
             '${configured.toStringAsFixed(1)} Ah',
-            valueColor: mismatch ? AppTheme.watch : null,
+            valueColor: mismatch ? context.colors.watch : null,
           ),
         if (mismatch)
           Padding(
@@ -854,10 +849,10 @@ class _SystemTabState extends State<SystemTab> {
                 configured.toStringAsFixed(1),
                 catalogue.toStringAsFixed(1),
               ),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11.5,
                 height: 1.45,
-                color: AppTheme.watch,
+                color: context.colors.watch,
               ),
             ),
           ),
@@ -869,10 +864,10 @@ class _SystemTabState extends State<SystemTab> {
             padding: const EdgeInsets.only(top: 2, bottom: 6),
             child: Text(
               t.catalogueFromBmsHint,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11.5,
                 height: 1.45,
-                color: AppTheme.textFaint,
+                color: context.colors.textFaint,
               ),
             ),
           ),
@@ -982,7 +977,7 @@ class _SystemTabState extends State<SystemTab> {
           padding: const EdgeInsets.only(top: 8, bottom: 4),
           child: Text(
             t.exportRange,
-            style: const TextStyle(fontSize: 12, color: AppTheme.textFaint),
+            style: TextStyle(fontSize: 12, color: context.colors.textFaint),
           ),
         ),
         Wrap(
@@ -1003,25 +998,23 @@ class _SystemTabState extends State<SystemTab> {
           ],
         ),
         TextButton.icon(
-          onPressed: () => run(
-            () => exporter.exportReadings(device, since: _exportRange),
-          ),
+          onPressed: () =>
+              run(() => exporter.exportReadings(device, since: _exportRange)),
           icon: const Icon(Icons.show_chart, size: 18),
           label: Text(t.exportReadings),
         ),
         TextButton.icon(
-          onPressed: () => run(
-            () => exporter.exportRawFrames(device, since: _exportRange),
-          ),
+          onPressed: () =>
+              run(() => exporter.exportRawFrames(device, since: _exportRange)),
           icon: const Icon(Icons.data_object, size: 18),
           label: Text(t.exportFrames),
         ),
         Text(
           t.exportRangeNote,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11,
             height: 1.4,
-            color: AppTheme.textFaint,
+            color: context.colors.textFaint,
           ),
         ),
         const SizedBox(height: 6),
@@ -1180,7 +1173,7 @@ class _SystemTabState extends State<SystemTab> {
   List<Widget> _settingsGroup(String title, List<Widget> rows) => [
     Padding(
       padding: const EdgeInsets.only(top: 12, bottom: 2),
-      child: Caption(title, color: AppTheme.textFaint),
+      child: Caption(title, color: context.colors.textFaint),
     ),
     ...rows,
   ];

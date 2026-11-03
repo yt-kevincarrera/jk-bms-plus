@@ -64,10 +64,10 @@ class TripCard extends StatelessWidget {
           alignment: Alignment.centerRight,
           padding: const EdgeInsets.only(right: 20),
           decoration: BoxDecoration(
-            color: AppTheme.bad.withValues(alpha: 0.18),
-            borderRadius: BorderRadius.circular(14),
+            color: context.colors.bad.withValues(alpha: 0.18),
+            borderRadius: BorderRadius.circular(8),
           ),
-          child: const Icon(Icons.delete_outline, color: AppTheme.bad),
+          child: Icon(Icons.delete_outline, color: context.colors.bad),
         ),
         // Confirm before deleting: a trip carries its whole track, and a swipe
         // is easy to do by accident on a phone in a jacket pocket.
@@ -84,7 +84,7 @@ class TripCard extends StatelessWidget {
           ).showSnackBar(SnackBar(content: Text(t.historyDeleted)));
         },
         child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(8),
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute<void>(
               builder: (_) => TripDetailScreen(
@@ -98,9 +98,9 @@ class TripCard extends StatelessWidget {
           ),
           child: Container(
             decoration: BoxDecoration(
-              color: AppTheme.surfaceRaised,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppTheme.hairline),
+              color: context.colors.surfaceRaised,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: context.colors.hairline),
             ),
             padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
             child: Row(
@@ -111,9 +111,9 @@ class TripCard extends StatelessWidget {
                     children: [
                       Text(
                         _date(trip.startedAt),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppTheme.textFaint,
+                          color: context.colors.textFaint,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -126,20 +126,20 @@ class TripCard extends StatelessWidget {
                             style: AppTheme.readout(24),
                           ),
                           const SizedBox(width: 3),
-                          const Text(
+                          Text(
                             'km',
                             style: TextStyle(
                               fontSize: 12,
-                              color: AppTheme.textSecondary,
+                              color: context.colors.textSecondary,
                             ),
                           ),
                           const SizedBox(width: 14),
                           if (!measured)
                             Text(
                               t.tripNotMeasured,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 13,
-                                color: AppTheme.textFaint,
+                                color: context.colors.textFaint,
                               ),
                             )
                           else ...[
@@ -150,11 +150,11 @@ class TripCard extends StatelessWidget {
                               style: AppTheme.readout(24),
                             ),
                             const SizedBox(width: 3),
-                            const Text(
+                            Text(
                               'Wh/km',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: AppTheme.textSecondary,
+                                color: context.colors.textSecondary,
                               ),
                             ),
                           ],
@@ -170,19 +170,19 @@ class TripCard extends StatelessWidget {
                         // that cannot afford to read a thousand points per row
                         // to fill in one line of small print.
                         '${trip.maxSpeedKmh.toStringAsFixed(0)} km/h  ·  $soc',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11.5,
-                          color: AppTheme.textSecondary,
+                          color: context.colors.textSecondary,
                           fontFeatures: AppTheme.tabular,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const Icon(
+                Icon(
                   Icons.chevron_right,
                   size: 18,
-                  color: AppTheme.textFaint,
+                  color: context.colors.textFaint,
                 ),
               ],
             ),
@@ -196,7 +196,7 @@ class TripCard extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surfaceRaised,
+        backgroundColor: context.colors.surfaceRaised,
         title: Text(t.tripDeleteConfirmTitle),
         content: Text(
           t.tripDeleteConfirmBody,
@@ -209,7 +209,7 @@ class TripCard extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: AppTheme.bad),
+            style: TextButton.styleFrom(foregroundColor: context.colors.bad),
             child: Text(t.tripDeleteConfirm),
           ),
         ],
@@ -234,6 +234,7 @@ class TripCard extends StatelessWidget {
     return h > 0 ? '${h}h ${m}min' : '${m}min';
   }
 }
+
 /// The line where the free history ends.
 class OlderRidesLocked extends StatelessWidget {
   const OlderRidesLocked({required this.count, super.key});
@@ -244,26 +245,26 @@ class OlderRidesLocked extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     return InkWell(
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(8),
       onTap: () => openLicenseScreen(context),
       child: Container(
         decoration: BoxDecoration(
-          color: AppTheme.surfaceRaised,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppTheme.hairline),
+          color: context.colors.surfaceRaised,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: context.colors.hairline),
         ),
         padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
         child: Row(
           children: [
-            const Icon(Icons.lock_outline, size: 18, color: AppTheme.watch),
+            Icon(Icons.lock_outline, size: 18, color: context.colors.watch),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 t.historyOlderLocked('$count'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12.5,
                   height: 1.4,
-                  color: AppTheme.textSecondary,
+                  color: context.colors.textSecondary,
                 ),
               ),
             ),

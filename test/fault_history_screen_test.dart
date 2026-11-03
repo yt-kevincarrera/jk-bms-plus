@@ -66,7 +66,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text(t.faultHistoryTitle), findsOneWidget);
-    expect(find.text('CELDA POR DEBAJO DEL MÍNIMO'), findsOneWidget);
+    expect(find.text('Celda por debajo del mínimo'), findsOneWidget);
     expect(find.text('6 s'), findsOneWidget);
     expect(find.text('7'), findsOneWidget);
     expect(find.text('-38.5 A  ·  11 %'), findsOneWidget);
@@ -126,7 +126,7 @@ void main() {
       await tester.runAsync(() => Future<void>.delayed(Duration.zero));
       await tester.pumpAndSettle();
       expect(find.byType(FaultHistoryScreen), findsOneWidget);
-      expect(find.text('CELDA POR DEBAJO DEL MÍNIMO'), findsOneWidget);
+      expect(find.text('Celda por debajo del mínimo'), findsOneWidget);
       service.dispose();
     },
   );

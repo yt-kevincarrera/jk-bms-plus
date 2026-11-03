@@ -205,7 +205,7 @@ class _CellHistoryScreenState extends State<CellHistoryScreen> {
           title: _rangeTitle(t),
           trailing: Text(
             t.cellHistoryPoints(h.points.length),
-            style: const TextStyle(fontSize: 11, color: AppTheme.textFaint),
+            style: TextStyle(fontSize: 11, color: context.colors.textFaint),
           ),
           children: [
             if (_range != CellHistoryRange.trip &&
@@ -215,10 +215,10 @@ class _CellHistoryScreenState extends State<CellHistoryScreen> {
                 padding: const EdgeInsets.only(bottom: 6),
                 child: Text(
                   t.cellHistoryAnchor(_dateTime(_newest!)),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     height: 1.4,
-                    color: AppTheme.textFaint,
+                    color: context.colors.textFaint,
                   ),
                 ),
               ),
@@ -240,7 +240,7 @@ class _CellHistoryScreenState extends State<CellHistoryScreen> {
             const SizedBox(height: 10),
             Text(
               _deviation ? t.cellHistoryAxisDeviation : t.cellHistoryAxisVolts,
-              style: const TextStyle(fontSize: 11, color: AppTheme.textFaint),
+              style: TextStyle(fontSize: 11, color: context.colors.textFaint),
             ),
             const SizedBox(height: 4),
             SizedBox(
@@ -258,27 +258,30 @@ class _CellHistoryScreenState extends State<CellHistoryScreen> {
             const SizedBox(height: 12),
             if (ext.lowest != null)
               _Legend(
-                colour: AppTheme.watch,
+                colour: context.colors.watch,
                 label: t.cellHistoryLowest(ext.lowest!),
               ),
             if (ext.highest != null && ext.highest != ext.lowest) ...[
               const SizedBox(height: 4),
               _Legend(
-                colour: AppTheme.cool,
+                colour: context.colors.cool,
                 label: t.cellHistoryHighest(ext.highest!),
               ),
             ],
             if (_picked case final p?) ...[
               const SizedBox(height: 4),
               _Legend(
-                colour: AppTheme.textPrimary,
+                colour: context.colors.textPrimary,
                 label: t.cellHistoryPicked(p),
               ),
             ],
             const SizedBox(height: 4),
-            _Legend(colour: AppTheme.textFaint, label: t.cellHistoryOthers),
+            _Legend(
+              colour: context.colors.textFaint,
+              label: t.cellHistoryOthers,
+            ),
             const SizedBox(height: 12),
-            Caption(t.cellHistoryPickCell, color: AppTheme.textFaint),
+            Caption(t.cellHistoryPickCell, color: context.colors.textFaint),
             const SizedBox(height: 6),
             Wrap(
               spacing: 6,
@@ -296,10 +299,10 @@ class _CellHistoryScreenState extends State<CellHistoryScreen> {
             const SizedBox(height: 12),
             Text(
               t.cellHistoryNote(_bucketLabel(bucket)),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 height: 1.4,
-                color: AppTheme.textFaint,
+                color: context.colors.textFaint,
               ),
             ),
             const SizedBox(height: 8),
@@ -377,10 +380,12 @@ class _CellChart extends StatelessWidget {
       // The rest first, faint, so the ones that matter are drawn on top.
       for (var c = 1; c <= history.cellCount; c++)
         if (c != lowest && c != highest && c != picked)
-          line(c, AppTheme.textFaint.withValues(alpha: 0.45), 1),
-      if (highest case final c? when c != picked) line(c, AppTheme.cool, 2.2),
-      if (lowest case final c? when c != picked) line(c, AppTheme.watch, 2.2),
-      if (picked case final c?) line(c, AppTheme.textPrimary, 2.4),
+          line(c, context.colors.textFaint.withValues(alpha: 0.45), 1),
+      if (highest case final c? when c != picked)
+        line(c, context.colors.cool, 2.2),
+      if (lowest case final c? when c != picked)
+        line(c, context.colors.watch, 2.2),
+      if (picked case final c?) line(c, context.colors.textPrimary, 2.4),
     ];
 
     final spanMinutes = to.difference(from).inMinutes.toDouble();
@@ -408,9 +413,9 @@ class _CellChart extends StatelessWidget {
                   longSpan
                       ? '${at.day}/${at.month}'
                       : '${two(at.hour)}:${two(at.minute)}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10,
-                    color: AppTheme.textFaint,
+                    color: context.colors.textFaint,
                   ),
                 );
               },
@@ -422,7 +427,7 @@ class _CellChart extends StatelessWidget {
               reservedSize: 42,
               getTitlesWidget: (v, m) => Text(
                 deviation ? v.toStringAsFixed(0) : v.toStringAsFixed(2),
-                style: const TextStyle(fontSize: 10, color: AppTheme.textFaint),
+                style: TextStyle(fontSize: 10, color: context.colors.textFaint),
               ),
             ),
           ),
@@ -456,7 +461,7 @@ class _Legend extends StatelessWidget {
       Expanded(
         child: Text(
           label,
-          style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
+          style: TextStyle(fontSize: 11, color: context.colors.textSecondary),
         ),
       ),
     ],

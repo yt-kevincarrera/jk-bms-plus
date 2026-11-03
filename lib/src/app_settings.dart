@@ -26,7 +26,20 @@ enum ScreenAwake {
   );
 }
 
+enum AppAppearance {
+  system,
+  light,
+  dark;
+
+  static AppAppearance parse(String? name) => AppAppearance.values.firstWhere(
+    (value) => value.name == name,
+    orElse: () => AppAppearance.system,
+  );
+}
+
 class AppSettings extends ChangeNotifier {
+  static const _appearanceKey = 'app_appearance';
+  AppAppearance appearance = AppAppearance.system;
   static const _hapticKey = 'haptic_alerts';
   static const _rawFramesKey = 'record_raw_frames';
   static const _updateTokenKey = 'github_update_token';
@@ -160,6 +173,7 @@ class AppSettings extends ChangeNotifier {
   Future<void> load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      appearance = AppAppearance.parse(prefs.getString(_appearanceKey));
       hapticAlerts = prefs.getBool(_hapticKey) ?? true;
       recordRawFrames = prefs.getBool(_rawFramesKey) ?? true;
       updateToken = prefs.getString(_updateTokenKey) ?? '';
@@ -190,6 +204,17 @@ class AppSettings extends ChangeNotifier {
       notifyListeners();
     } on Exception catch (_) {
       // Defaults are usable; a broken preference store is not worth failing on.
+    }
+  }
+
+  Future<void> setAppearance(AppAppearance value) async {
+    appearance = value;
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_appearanceKey, value.name);
+    } on Exception catch (_) {
+      // The choice still applies to this session when storage is unavailable.
     }
   }
 
@@ -331,6 +356,7 @@ class AppSettings extends ChangeNotifier {
   /// nor the update check's bookkeeping, which belongs to this install, nor
   /// the licence, which is bound to this phone and kept elsewhere.
   Map<String, Object?> toBackup() => {
+    'appearance': appearance.name,
     'hapticAlerts': hapticAlerts,
     'recordRawFrames': recordRawFrames,
     'chargeTargetSoc': chargeTargetSoc,
@@ -351,6 +377,11 @@ class AppSettings extends ChangeNotifier {
     bool? flag(String k) => m[k] is bool ? m[k] as bool : null;
     double? number(String k) => m[k] is num ? (m[k] as num).toDouble() : null;
 
+    if (m['appearance'] is String &&
+        AppAppearance.values.any((value) => value.name == m['appearance'])) {
+      await setAppearance(AppAppearance.parse(m['appearance'] as String));
+    }
+
     if (flag('hapticAlerts') case final v?) await setHapticAlerts(v);
     if (flag('recordRawFrames') case final v?) await setRecordRawFrames(v);
     if (m.containsKey('chargeTargetSoc')) {
@@ -363,7 +394,10 @@ class AppSettings extends ChangeNotifier {
     if (flag('chargeWatchEnabled') case final v?) await setChargeWatch(v);
     final muted = m['mutedAlerts'];
     if (muted is List) {
-      final wanted = {for (final x in muted) if (x is String) x};
+      final wanted = {
+        for (final x in muted)
+          if (x is String) x,
+      };
       for (final name in {...mutedAlerts, ...wanted}) {
         await setAlertMuted(name, wanted.contains(name));
       }

@@ -56,7 +56,7 @@ class CellsTab extends StatelessWidget {
                   label: t.cellDelta,
                   value: s.deltaCellVoltage.toStringAsFixed(3),
                   unit: 'V',
-                  color: _colourFor(s.deltaCellVoltage / 2),
+                  color: _colourFor(context, s.deltaCellVoltage / 2),
                 ),
               ),
               const SizedBox(width: 10),
@@ -76,8 +76,9 @@ class CellsTab extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _extremeLine(
+                context,
                 Icons.arrow_downward,
-                AppTheme.watch,
+                context.colors.watch,
                 t.cellsLowest(
                   s.minCellIndex,
                   s.minCellVoltage.toStringAsFixed(3),
@@ -85,8 +86,9 @@ class CellsTab extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               _extremeLine(
+                context,
                 Icons.arrow_upward,
-                AppTheme.cool,
+                context.colors.cool,
                 t.cellsHighest(
                   s.maxCellIndex,
                   s.maxCellVoltage.toStringAsFixed(3),
@@ -97,27 +99,35 @@ class CellsTab extends StatelessWidget {
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          child: GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 4,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8,
-              childAspectRatio: 1.05,
-            ),
-            itemCount: s.cellVoltages.length,
-            itemBuilder: (context, i) => CellTile(
-              index: i + 1,
-              voltage: s.cellVoltages[i],
-              deviation: s.cellVoltages[i] - avg,
-              color: _cellColour(s, i + 1, s.cellVoltages[i] - avg),
-              balancing: i < balancing.length && balancing[i],
-              isExtreme: i + 1 == s.minCellIndex || i + 1 == s.maxCellIndex,
-              resistance:
-                  s.cellResistances != null && i < s.cellResistances!.length
-                  ? s.cellResistances![i]
-                  : null,
+          child: LayoutBuilder(
+            builder: (context, constraints) => GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount:
+                    (constraints.maxWidth /
+                            (MediaQuery.textScalerOf(context).scale(16) > 23
+                                ? 150
+                                : 84))
+                        .floor()
+                        .clamp(1, 6),
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 8,
+                mainAxisExtent: MediaQuery.textScalerOf(context).scale(54) + 38,
+              ),
+              itemCount: s.cellVoltages.length,
+              itemBuilder: (context, i) => CellTile(
+                index: i + 1,
+                voltage: s.cellVoltages[i],
+                deviation: s.cellVoltages[i] - avg,
+                color: _cellColour(context, s, i + 1, s.cellVoltages[i] - avg),
+                balancing: i < balancing.length && balancing[i],
+                isExtreme: i + 1 == s.minCellIndex || i + 1 == s.maxCellIndex,
+                resistance:
+                    s.cellResistances != null && i < s.cellResistances!.length
+                    ? s.cellResistances![i]
+                    : null,
+              ),
             ),
           ),
         ),
@@ -130,10 +140,10 @@ class CellsTab extends StatelessWidget {
             hasResistances
                 ? '${t.cellsDeviationHint} ${t.cellsResistanceNote}'
                 : t.cellsDeviationHint,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11.5,
               height: 1.4,
-              color: AppTheme.textFaint,
+              color: context.colors.textFaint,
             ),
           ),
         ),
@@ -171,10 +181,10 @@ class CellsTab extends StatelessWidget {
                 ? t.balancerStoppedByHeat
                 : t.balancerIdle,
             color: s.balancerActive
-                ? AppTheme.cool
+                ? context.colors.cool
                 : stoppedByHeat
-                ? AppTheme.bad
-                : AppTheme.textFaint,
+                ? context.colors.bad
+                : context.colors.textFaint,
             icon: s.balancerActive ? Icons.bolt : null,
           ),
           // Said of a JK, which is an active balancer. An ANT's balancer can
@@ -189,13 +199,13 @@ class CellsTab extends StatelessWidget {
                     : t.antUnknownCode(
                         ant.balancerCode.toRadixString(16).padLeft(2, '0'),
                       ),
-                valueColor: stoppedByHeat ? AppTheme.bad : null,
+                valueColor: stoppedByHeat ? context.colors.bad : null,
               ),
             if (s.balanceCurrent != null)
               InfoRow(
                 t.balanceCurrent,
                 '${s.balanceCurrent!.toStringAsFixed(3)} A',
-                valueColor: s.balancerActive ? AppTheme.cool : null,
+                valueColor: s.balancerActive ? context.colors.cool : null,
               ),
             if (s.balancingAction != null)
               InfoRow(t.balanceDirection, switch (s.balancingAction!) {
@@ -246,7 +256,7 @@ class CellsTab extends StatelessWidget {
                       : '0x${s.wireResistanceWarningMask!.toRadixString(16)}',
                   valueColor: s.wireResistanceWarningMask == 0
                       ? null
-                      : AppTheme.watch,
+                      : context.colors.watch,
                   last: true,
                 ),
             ],
@@ -255,16 +265,23 @@ class CellsTab extends StatelessWidget {
     );
   }
 
-  Widget _extremeLine(IconData icon, Color colour, String text) => Row(
+  Widget _extremeLine(
+    BuildContext context,
+    IconData icon,
+    Color colour,
+    String text,
+  ) => Row(
     children: [
       Icon(icon, size: 13, color: colour),
       const SizedBox(width: 6),
-      Text(
-        text,
-        style: const TextStyle(
-          fontSize: 12.5,
-          color: AppTheme.textSecondary,
-          fontFeatures: AppTheme.tabular,
+      Expanded(
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: 12.5,
+            color: context.colors.textSecondary,
+            fontFeatures: AppTheme.tabular,
+          ),
         ),
       ),
     ],
@@ -272,11 +289,11 @@ class CellsTab extends StatelessWidget {
 
   /// Colour for the delta readout, where any value is a magnitude rather than a
   /// direction.
-  Color _colourFor(double deviation) {
+  Color _colourFor(BuildContext context, double deviation) {
     final d = deviation.abs();
-    if (d > _badDeviation) return AppTheme.bad;
-    if (d > _watchDeviation) return AppTheme.watch;
-    return AppTheme.good;
+    if (d > _badDeviation) return context.colors.bad;
+    if (d > _watchDeviation) return context.colors.watch;
+    return context.colors.good;
   }
 
   /// Colour for one cell in the grid.
@@ -285,12 +302,17 @@ class CellsTab extends StatelessWidget {
   /// stands out. Only the two that matter get a tone — the lowest in amber,
   /// because that is the cell that decides when the pack cuts off, and the
   /// highest in cyan — plus anything genuinely out of range in red.
-  Color _cellColour(BmsSnapshot s, int oneBased, double deviation) {
-    if (deviation.abs() > _badDeviation) return AppTheme.bad;
-    if (oneBased == s.minCellIndex) return AppTheme.watch;
-    if (oneBased == s.maxCellIndex) return AppTheme.cool;
-    if (deviation.abs() > _watchDeviation) return AppTheme.watch;
-    return AppTheme.textPrimary;
+  Color _cellColour(
+    BuildContext context,
+    BmsSnapshot s,
+    int oneBased,
+    double deviation,
+  ) {
+    if (deviation.abs() > _badDeviation) return context.colors.bad;
+    if (oneBased == s.minCellIndex) return context.colors.watch;
+    if (oneBased == s.maxCellIndex) return context.colors.cool;
+    if (deviation.abs() > _watchDeviation) return context.colors.watch;
+    return context.colors.textPrimary;
   }
 }
 

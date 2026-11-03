@@ -12,6 +12,7 @@ import 'theme.dart';
 import 'widgets/common.dart';
 import 'widgets/trip_summary_sheet.dart';
 import 'widgets/trip_summary_view.dart';
+import 'widgets/instruments.dart';
 
 /// Trip mode: the speedometer half of the app.
 ///
@@ -20,11 +21,7 @@ import 'widgets/trip_summary_view.dart';
 /// new battery actually has, which is what this ride cost and whether the pack
 /// held up — so this screen shows both at once.
 class TripScreen extends StatefulWidget {
-  const TripScreen({
-    required this.service,
-    required this.settings,
-    super.key,
-  });
+  const TripScreen({required this.service, required this.settings, super.key});
 
   final BmsService service;
   final AppSettings settings;
@@ -107,11 +104,11 @@ class _TripScreenState extends State<TripScreen> {
       : t.tripReadingAgeMinutes('${age.inMinutes}');
 
   String _problemText(AppL10n t, LocationProblem p) => switch (p) {
-        LocationProblem.serviceDisabled => t.locationDisabled,
-        LocationProblem.permissionDenied => t.locationDenied,
-        LocationProblem.permanentlyDenied => t.locationDeniedForever,
-        LocationProblem.approximateOnly => t.locationApproximateOnly,
-      };
+    LocationProblem.serviceDisabled => t.locationDisabled,
+    LocationProblem.permissionDenied => t.locationDenied,
+    LocationProblem.permanentlyDenied => t.locationDeniedForever,
+    LocationProblem.approximateOnly => t.locationApproximateOnly,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -132,10 +129,7 @@ class _TripScreenState extends State<TripScreen> {
 
     // Riding is the case this screen exists for, so the awake setting is
     // honoured here too rather than only on the live tab.
-    ScreenAwakeKeeper.apply(
-      widget.settings.screenAwake,
-      riding: trip.isActive,
-    );
+    ScreenAwakeKeeper.apply(widget.settings.screenAwake, riding: trip.isActive);
 
     return Scaffold(
       appBar: AppBar(
@@ -151,9 +145,9 @@ class _TripScreenState extends State<TripScreen> {
                   TripState.idle => t.tripIdle,
                 },
                 color: switch (trip.state) {
-                  TripState.recording => AppTheme.good,
-                  TripState.paused => AppTheme.watch,
-                  TripState.idle => AppTheme.textFaint,
+                  TripState.recording => context.colors.good,
+                  TripState.paused => context.colors.watch,
+                  TripState.idle => context.colors.textFaint,
                 },
                 icon: trip.isRecording ? Icons.fiber_manual_record : null,
               ),
@@ -176,10 +170,10 @@ class _TripScreenState extends State<TripScreen> {
                       padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                       child: Text(
                         t.tripNoGpsFixes,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           height: 1.4,
-                          color: AppTheme.bad,
+                          color: context.colors.bad,
                         ),
                       ),
                     ),
@@ -188,10 +182,10 @@ class _TripScreenState extends State<TripScreen> {
                       padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                       child: Text(
                         _problem!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           height: 1.4,
-                          color: AppTheme.watch,
+                          color: context.colors.watch,
                         ),
                       ),
                     ),
@@ -201,8 +195,10 @@ class _TripScreenState extends State<TripScreen> {
                       children: [
                         Text(
                           speed == null ? '--' : speed.toStringAsFixed(0),
-                          style: AppTheme.readout(96).copyWith(
-                            color: speed == null ? AppTheme.textFaint : null,
+                          style: AppTheme.readout(124).copyWith(
+                            color: speed == null
+                                ? context.colors.textFaint
+                                : null,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -210,6 +206,14 @@ class _TripScreenState extends State<TripScreen> {
                       ],
                     ),
                   ),
+                  if (snapshot != null)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
+                      child: ChargeSegments(
+                        soc: snapshot.soc,
+                        label: withAge(t.soc),
+                      ),
+                    ),
                   const SizedBox(height: 22),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -229,7 +233,7 @@ class _TripScreenState extends State<TripScreen> {
                             value: trip.whPerKm?.toStringAsFixed(0) ?? '--',
                             unit: 'Wh/km',
                             color: trip.whPerKm == null
-                                ? AppTheme.textFaint
+                                ? context.colors.textFaint
                                 : null,
                           ),
                         ),
@@ -304,17 +308,6 @@ class _TripScreenState extends State<TripScreen> {
                       ),
                     ],
                   ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
-                    child: Text(
-                      t.tripHowItLearns,
-                      style: const TextStyle(
-                        fontSize: 11.5,
-                        height: 1.45,
-                        color: AppTheme.textFaint,
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -330,48 +323,48 @@ class _TripScreenState extends State<TripScreen> {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
       child: switch (trip.state) {
         TripState.idle => FilledButton.icon(
-            onPressed: _start,
-            icon: const Icon(Icons.play_arrow, size: 20),
-            label: Text(t.tripStart),
-          ),
+          onPressed: _start,
+          icon: const Icon(Icons.play_arrow, size: 20),
+          label: Text(t.tripStart),
+        ),
         TripState.recording => Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => setState(widget.service.pauseTrip),
-                  icon: const Icon(Icons.pause, size: 20),
-                  label: Text(t.tripPause),
-                ),
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => setState(widget.service.pauseTrip),
+                icon: const Icon(Icons.pause, size: 20),
+                label: Text(t.tripPause),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: _stop,
-                  icon: const Icon(Icons.stop, size: 20),
-                  label: Text(t.tripStop),
-                ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: _stop,
+                icon: const Icon(Icons.stop, size: 20),
+                label: Text(t.tripStop),
               ),
-            ],
-          ),
+            ),
+          ],
+        ),
         TripState.paused => Row(
-            children: [
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: _resume,
-                  icon: const Icon(Icons.play_arrow, size: 20),
-                  label: Text(t.tripResume),
-                ),
+          children: [
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: _resume,
+                icon: const Icon(Icons.play_arrow, size: 20),
+                label: Text(t.tripResume),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _stop,
-                  icon: const Icon(Icons.stop, size: 20),
-                  label: Text(t.tripStop),
-                ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _stop,
+                icon: const Icon(Icons.stop, size: 20),
+                label: Text(t.tripStop),
               ),
-            ],
-          ),
+            ),
+          ],
+        ),
       },
     );
   }

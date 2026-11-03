@@ -49,7 +49,7 @@ class TripLearnedSection extends StatelessWidget {
 
     return Section(
       title: t.tripLearnedTitle,
-      accent: AppTheme.cool,
+      accent: context.colors.cool,
       intro: _headline(c),
       children: [
         if (whPerKm != null) ...[
@@ -57,10 +57,7 @@ class TripLearnedSection extends StatelessWidget {
             t.tripLearnedRange,
             '${c.rangeKmAtEnd.toStringAsFixed(0)} km',
           ),
-          InfoRow(
-            t.tripLearnedTotalKm,
-            '${c.learnedKm.toStringAsFixed(1)} km',
-          ),
+          InfoRow(t.tripLearnedTotalKm, '${c.learnedKm.toStringAsFixed(1)} km'),
           InfoRow(
             t.tripLearnedConfidence,
             switch (c.confidence) {
@@ -69,9 +66,9 @@ class TripLearnedSection extends StatelessWidget {
               RangeConfidence.high => t.rangeConfidenceHigh,
             },
             valueColor: switch (c.confidence) {
-              RangeConfidence.low => AppTheme.textFaint,
-              RangeConfidence.medium => AppTheme.watch,
-              RangeConfidence.high => AppTheme.good,
+              RangeConfidence.low => context.colors.textFaint,
+              RangeConfidence.medium => context.colors.watch,
+              RangeConfidence.high => context.colors.good,
             },
             last: tips.isEmpty,
           ),
@@ -82,21 +79,21 @@ class TripLearnedSection extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Padding(
+                Padding(
                   padding: EdgeInsets.only(top: 2, right: 10),
                   child: Icon(
                     Icons.lightbulb_outline,
                     size: 15,
-                    color: AppTheme.cool,
+                    color: context.colors.cool,
                   ),
                 ),
                 Expanded(
                   child: Text(
                     tip,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12.5,
                       height: 1.45,
-                      color: AppTheme.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                 ),
