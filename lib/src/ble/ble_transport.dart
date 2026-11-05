@@ -191,7 +191,9 @@ class BleTransport implements BmsLink {
     this.muteRetryDelay = const Duration(seconds: 3),
     this.attachTimeout = const Duration(seconds: 25),
     ConnectRecovery? recovery,
-  }) : _script = LinkScript.jk(tickEvery: pollInterval),
+    DateTime Function()? clock,
+  }) : _now = clock ?? DateTime.now,
+       _script = LinkScript.jk(tickEvery: pollInterval),
        recovery =
            recovery ??
            ConnectRecovery(
@@ -199,7 +201,10 @@ class BleTransport implements BmsLink {
              memory: PrefsRecoveryMemory(),
              bootTime: readBootTime,
              normalTimeout: connectTimeout,
+             now: clock,
            );
+
+  final DateTime Function() _now;
 
   /// What runs before each attempt, and the record of how each one went. See
   /// [ConnectRecovery] for the morning that made it necessary.
@@ -249,7 +254,7 @@ class BleTransport implements BmsLink {
     // minute ago and has not come back says a minute rather than nothing.
     timeDisconnected: _droppedAt == null
         ? timeDisconnected
-        : timeDisconnected + DateTime.now().difference(_droppedAt!),
+        : timeDisconnected + _now().difference(_droppedAt!),
     nudges: nudges,
   );
 
@@ -733,12 +738,16 @@ class BleTransport implements BmsLink {
       // A successful subscription alone does not mean we can ask the pack
       // anything. Failed opening writes must release and retry this attempt,
       // without briefly announcing a connection that cannot fetch readings.
-      _connectedAt = DateTime.now();
+      _connectedAt = _now();
       _setState(BleLinkState.connected);
-      recovery.connected(attempt);
+      if (_lastReadingAt == null) {
+        recovery.awaitingReadings(attempt);
+      } else {
+        recovery.connected(attempt);
+      }
       final since = _droppedAt;
       if (since != null) {
-        timeDisconnected += DateTime.now().difference(since);
+        timeDisconnected += _now().difference(since);
         _droppedAt = null;
       }
 
@@ -1005,7 +1014,7 @@ class BleTransport implements BmsLink {
     _lastFrameAt = null;
     _lastReadingAt = null;
     _connectedAt = null;
-    _droppedAt ??= DateTime.now();
+    _droppedAt ??= _now();
     _pollTimer?.cancel();
     _notifySub?.cancel();
     _notifySub = null;
@@ -1081,13 +1090,20 @@ class BleTransport implements BmsLink {
   /// The decoder assembled a frame out of this link's bytes. See [BmsLink].
   @override
   void frameAccepted({bool deviceInfo = false}) {
-    _lastFrameAt = DateTime.now();
+    _lastFrameAt = _now();
     if (deviceInfo) _deviceInfoSeen = true;
   }
 
   @override
   void readingAccepted() {
-    _lastReadingAt = DateTime.now();
+    final firstReading = _lastReadingAt == null;
+    _lastReadingAt = _now();
+    final attempt = _attempt;
+    if (firstReading &&
+        _currentState == BleLinkState.connected &&
+        attempt != null) {
+      recovery.connected(attempt);
+    }
     // Only useful battery data disproves the failure. Device info or a
     // checksum-valid frame the parser cannot read must not forgive retries.
     _backoff.recordSuccess();
@@ -1111,7 +1127,7 @@ class BleTransport implements BmsLink {
 
     // Said before it is done, so the screen can name the reason while the
     // link is being re-established rather than showing a bare "lost".
-    final now = DateTime.now();
+    final now = _now();
     final since = _lastReadingAt ?? _connectedAt ?? now;
     final nextStep = _backoff.hasGivenUp
         ? 'automatic retries stopped'
@@ -1125,6 +1141,8 @@ class BleTransport implements BmsLink {
         'decoded battery reading, $_bytesThisLink byte(s) arrived on this link, '
         '$_nudgesThisLink nudge(s) unanswered, MTU ${negotiatedMtu ?? '?'}; '
         'letting go; $nextStep';
+    final attempt = _attempt;
+    if (attempt != null) recovery.failed(attempt, detail, timedOut: true);
     _errorController.add(
       BleLinkError(
         detail,
@@ -1177,7 +1195,7 @@ class BleTransport implements BmsLink {
   Future<void> _onTick() async {
     _tick++;
     final action = _script.tick(
-      now: DateTime.now(),
+      now: _now(),
       lastFrameAt: _lastFrameAt,
       lastReadingAt: _lastReadingAt,
       expectsReadings: true,

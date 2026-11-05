@@ -169,8 +169,8 @@ enum AttemptOutcome {
   /// deadline.
   timedOut,
 
-  /// Came up and went away again within the hold time. The MTU refusal on a
-  /// link that was already gone is one of these.
+  /// Went away before useful readings and the hold time confirmed success.
+  /// The MTU refusal on a link that was already gone is one of these.
   droppedAfterConnect,
 
   /// Let go of on purpose before it finished: the rider disconnected, or
@@ -388,7 +388,7 @@ class ConnectRecovery {
   /// them. The next attempt on one of these releases first.
   final Set<String> _suspectStranded = {};
 
-  /// The attempt waiting out [holdFor] before it counts as connected.
+  /// The attempt waiting for useful readings and [holdFor] before success.
   PreparedAttempt? _holding;
   Timer? _holdTimer;
 
@@ -551,15 +551,23 @@ class ConnectRecovery {
   /// The plugin's connect returned: the link is up, for now.
   void linkUp(PreparedAttempt a) => a.linkUpAt ??= _now();
 
-  /// The attempt reached `connected`. It is written down once it has stayed
-  /// up for [holdFor], or as a drop if it does not.
-  void connected(PreparedAttempt a) {
+  /// GATT is ready but useful battery data has not arrived yet. A drop still
+  /// belongs to this attempt; staying connected alone cannot clear failures.
+  void awaitingReadings(PreparedAttempt a) {
     if (a.finished) return;
-    final up = a.linkUpAt ??= _now();
     _holdTimer?.cancel();
+    _holdTimer = null;
     final previous = _holding;
     if (previous != null && !identical(previous, a)) cancelled(previous);
     _holding = a;
+  }
+
+  /// A usable reading arrived. Record success after the link has also stayed
+  /// up for [holdFor], or record a drop if it goes away before then.
+  void connected(PreparedAttempt a) {
+    if (a.finished) return;
+    awaitingReadings(a);
+    final up = a.linkUpAt ??= _now();
     var left = holdFor - _now().difference(up);
     if (left.isNegative) left = Duration.zero;
     _holdTimer = Timer(left, () {
@@ -594,8 +602,8 @@ class ConnectRecovery {
     );
   }
 
-  /// The link went down. Only news when an attempt is still inside its hold
-  /// time; a link that dropped after that is a drop, not a failed attempt.
+  /// The link went down while awaiting useful readings or the hold time.
+  /// A link that already confirmed success is a drop, not a failed attempt.
   void dropped() {
     final a = _holding;
     if (a == null) return;
