@@ -14,8 +14,7 @@ enum FirstContactOutcome {
   /// frame. The pack is talking; the app does not understand it.
   talkingButUndecoded,
 
-  /// The link came up and nothing at all arrived. The pack is connected and
-  /// mute, which on a JK BMS means someone else has its attention.
+  /// The link came up but nothing arrived before the attempt ended.
   connectedButSilent,
 }
 
@@ -32,16 +31,17 @@ enum FirstContactOutcome {
 /// lets a rider pick the variant by hand was behind the door that verdict kept
 /// shut.
 ///
-/// So the clock does not start on the connection until the connection exists,
-/// device info counts as proof, and silence is told apart from noise that does
-/// not decode. Pure so it can be tested without a radio: the caller feeds it
-/// events and asks [judge] with the time.
+/// Each connection gets time for the transport's mute-link recovery (20 seconds
+/// plus its five-second poll), without a verdict cutting off negotiation on
+/// the next link. The whole attempt has a fixed deadline so repeated drops
+/// cannot leave the screen waiting forever. Device info counts as proof, and
+/// silence is told apart from bytes that do not decode.
 class FirstContact {
   FirstContact({
     required this.startedAt,
     required this.bytesBefore,
-    this.linkBudget = const Duration(seconds: 25),
-    this.silenceBudget = const Duration(seconds: 12),
+    this.linkBudget = const Duration(seconds: 75),
+    this.silenceBudget = const Duration(seconds: 30),
   });
 
   /// When the rider tapped.
@@ -51,30 +51,34 @@ class FirstContact {
   /// connection are not mistaken for this pack talking.
   final int bytesBefore;
 
-  /// How long the link gets to come up. Covers a failed eight-second attempt,
-  /// the transport's 400 ms pause, and a second attempt that succeeds.
+  /// The fixed budget for the entire attempt, including preparation,
+  /// negotiation and recovery. Reconnecting never restarts it.
   final Duration linkBudget;
 
-  /// How long a connected pack gets to say something. Matches the service's
-  /// own silence watchdog, so the two never disagree about what "quiet" is.
+  /// How long each connected link gets to say something. Longer than the
+  /// transport's mute timeout plus its poll interval, so recovery can run.
   final Duration silenceBudget;
 
   DateTime? _connectedAt;
+  DateTime? _firstConnectedAt;
   late int _bytesNow = bytesBefore;
   bool _proven = false;
 
   /// The last thing the link said about itself, for the evidence line.
   BleLinkState? lastState;
 
-  /// When the link first reached `connected`, null before that.
+  /// When the current link reached `connected`, null before the first link.
   DateTime? get connectedAt => _connectedAt;
 
   /// Bytes that arrived during this attempt.
   int get bytesHeard => _bytesNow - bytesBefore;
 
   void onLinkState(BleLinkState state, DateTime now) {
+    if (state == BleLinkState.connected && lastState != state) {
+      _connectedAt = now;
+      _firstConnectedAt ??= now;
+    }
     lastState = state;
-    if (state == BleLinkState.connected) _connectedAt ??= now;
   }
 
   /// The decoder's running total, as reported by its stats stream.
@@ -89,12 +93,14 @@ class FirstContact {
   FirstContactOutcome? judge(DateTime now) {
     if (_proven) return FirstContactOutcome.proven;
     final connectedAt = _connectedAt;
+    final expired = now.difference(startedAt) >= linkBudget;
     if (connectedAt == null) {
-      return now.difference(startedAt) >= linkBudget
-          ? FirstContactOutcome.linkNeverCameUp
-          : null;
+      return expired ? FirstContactOutcome.linkNeverCameUp : null;
     }
-    if (now.difference(connectedAt) < silenceBudget) return null;
+    if (!expired) {
+      if (lastState != BleLinkState.connected) return null;
+      if (now.difference(connectedAt) < silenceBudget) return null;
+    }
     return bytesHeard > 0
         ? FirstContactOutcome.talkingButUndecoded
         : FirstContactOutcome.connectedButSilent;
@@ -116,8 +122,14 @@ class FirstContact {
       final last = lastState;
       if (last != null) parts.add('last state ${last.name}');
     } else {
-      parts.add('link up ${_secs(connectedAt.difference(startedAt))} after tap');
-      parts.add('connected ${_secs(now.difference(connectedAt))}');
+      parts.add(
+        'link up ${_secs(_firstConnectedAt!.difference(startedAt))} after tap',
+      );
+      if (lastState == BleLinkState.connected) {
+        parts.add('connected ${_secs(now.difference(connectedAt))}');
+      } else if (lastState case final state?) {
+        parts.add('last state ${state.name}');
+      }
     }
     parts.add('$bytesHeard bytes received');
     return parts.join(' · ');

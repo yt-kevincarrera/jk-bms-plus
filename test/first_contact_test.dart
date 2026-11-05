@@ -32,11 +32,8 @@ void main() {
       c.onLinkState(BleLinkState.connecting, tap);
       c.onLinkState(BleLinkState.failed, tap.add(s(8)));
       c.onLinkState(BleLinkState.connecting, tap.add(s(9)));
-      expect(c.judge(tap.add(s(24))), isNull);
-      expect(
-        c.judge(tap.add(s(25))),
-        FirstContactOutcome.linkNeverCameUp,
-      );
+      expect(c.judge(tap.add(s(74))), isNull);
+      expect(c.judge(tap.add(s(75))), FirstContactOutcome.linkNeverCameUp);
     });
   });
 
@@ -58,7 +55,7 @@ void main() {
       final c = fresh();
       c.onLinkState(BleLinkState.connected, tap.add(s(2)));
       c.onDecoded();
-      expect(c.judge(tap.add(s(60))), FirstContactOutcome.proven);
+      expect(c.judge(tap.add(s(90))), FirstContactOutcome.proven);
     });
   });
 
@@ -66,11 +63,9 @@ void main() {
     test('connected and mute for the silence budget', () {
       final c = fresh();
       c.onLinkState(BleLinkState.connected, tap.add(s(5)));
-      expect(c.judge(tap.add(s(16))), isNull);
-      expect(
-        c.judge(tap.add(s(17))),
-        FirstContactOutcome.connectedButSilent,
-      );
+      expect(c.judge(tap.add(s(17))), isNull);
+      expect(c.judge(tap.add(s(34))), isNull);
+      expect(c.judge(tap.add(s(35))), FirstContactOutcome.connectedButSilent);
     });
 
     test('bytes that never decode are a different failure', () {
@@ -78,10 +73,7 @@ void main() {
       c.onLinkState(BleLinkState.connected, tap.add(s(5)));
       c.onBytesTotal(1240);
       expect(c.bytesHeard, 240);
-      expect(
-        c.judge(tap.add(s(17))),
-        FirstContactOutcome.talkingButUndecoded,
-      );
+      expect(c.judge(tap.add(s(35))), FirstContactOutcome.talkingButUndecoded);
     });
 
     test('bytes from before this attempt do not count', () {
@@ -91,10 +83,7 @@ void main() {
       c.onLinkState(BleLinkState.connected, tap.add(s(5)));
       c.onBytesTotal(1000);
       expect(c.bytesHeard, 0);
-      expect(
-        c.judge(tap.add(s(17))),
-        FirstContactOutcome.connectedButSilent,
-      );
+      expect(c.judge(tap.add(s(35))), FirstContactOutcome.connectedButSilent);
     });
 
     test('the evidence line says what was seen, not what was concluded', () {
@@ -121,16 +110,46 @@ void main() {
       expect(noisy.evidence(tap.add(s(16))), contains('300 bytes'));
     });
 
-    test('a drop after connecting does not restart the silence clock', () {
+    test('a new link gets its own silence budget', () {
       final c = fresh();
       c.onLinkState(BleLinkState.connected, tap.add(s(5)));
       c.onLinkState(BleLinkState.reconnecting, tap.add(s(9)));
       c.onLinkState(BleLinkState.connected, tap.add(s(12)));
-      expect(c.connectedAt, tap.add(s(5)));
-      expect(
-        c.judge(tap.add(s(17))),
-        FirstContactOutcome.connectedButSilent,
-      );
+      expect(c.connectedAt, tap.add(s(12)));
+      expect(c.judge(tap.add(s(35))), isNull);
+      expect(c.judge(tap.add(s(42))), FirstContactOutcome.connectedButSilent);
     });
+
+    test('does not cut off a retry that is still negotiating', () {
+      final c = fresh();
+      c.onLinkState(BleLinkState.connected, tap.add(s(5)));
+      c.onLinkState(BleLinkState.reconnecting, tap.add(s(20)));
+      c.onLinkState(BleLinkState.negotiating, tap.add(s(34)));
+      expect(c.judge(tap.add(s(35))), isNull);
+      c.onDecoded();
+      expect(c.judge(tap.add(s(36))), FirstContactOutcome.proven);
+    });
+
+    test('repeated drops cannot extend the total attempt past 75 seconds', () {
+      final c = fresh();
+      c.onLinkState(BleLinkState.connected, tap.add(s(5)));
+      for (final second in [20, 40, 60]) {
+        c.onLinkState(BleLinkState.reconnecting, tap.add(s(second)));
+        c.onLinkState(BleLinkState.connected, tap.add(s(second + 1)));
+      }
+      expect(c.judge(tap.add(s(74))), isNull);
+      expect(c.judge(tap.add(s(75))), FirstContactOutcome.connectedButSilent);
+    });
+
+    test(
+      'duplicate connected events do not extend the current link budget',
+      () {
+        final c = fresh();
+        c.onLinkState(BleLinkState.connected, tap.add(s(5)));
+        c.onLinkState(BleLinkState.connected, tap.add(s(20)));
+        expect(c.connectedAt, tap.add(s(5)));
+        expect(c.judge(tap.add(s(35))), FirstContactOutcome.connectedButSilent);
+      },
+    );
   });
 }
