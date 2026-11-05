@@ -10,6 +10,7 @@ import '../../metrics/pack_health_report.dart';
 import '../../model/bms_snapshot.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/cockpit.dart';
 import '../../metrics/advice_engine.dart';
 import '../../metrics/advice_grouping.dart';
 import '../../pack/pack_baseline.dart';
@@ -18,7 +19,6 @@ import '../widgets/advice_list.dart';
 import '../widgets/pro_gate.dart';
 import '../widgets/capacity_test_card.dart';
 import '../widgets/charge_report_card.dart';
-import '../widgets/gauges.dart';
 
 /// The uncomfortable numbers, at a glance.
 ///
@@ -146,124 +146,74 @@ class _HealthTabState extends State<HealthTab> {
     return ListView(
       padding: const EdgeInsets.only(top: 4, bottom: 28),
       children: [
-        LayoutBuilder(
-          builder: (context, constraints) {
-            if (constraints.maxWidth < 360 ||
-                MediaQuery.textScalerOf(context).scale(16) > 23) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          child: CockpitPanel(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final health = Readout(
+                  label: t.healthGaugeLabel,
+                  value: healthPercent?.toStringAsFixed(0) ?? '--',
+                  unit: '%',
+                  size: 84,
+                  color: tone,
+                  footnote: lost != null
+                      ? t.healthGaugeMeasured
+                      : healthPercent == null
+                      ? t.notReported
+                      : t.healthGaugeReported,
+                );
+                final capacity = Readout(
+                  label: measuredNow == null && report.impliedCapacityAh != null
+                      ? t.degConfiguredTitle
+                      : t.degNowTitle,
+                  value:
+                      measuredNow?.toStringAsFixed(1) ??
+                      report.impliedCapacityAh?.toStringAsFixed(1) ??
+                      '--',
+                  unit: 'Ah',
+                  size: 34,
+                  footnote: degradation?.baseline == null
+                      ? null
+                      : '/ ${degradation!.baseline!.ah.toStringAsFixed(1)} Ah',
+                );
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Readout(
-                      label: t.healthGaugeLabel,
-                      value: healthPercent?.toStringAsFixed(0) ?? '--',
-                      unit: '%',
-                      size: 64,
-                      color: tone,
-                      footnote: lost != null
-                          ? t.healthGaugeMeasured
-                          : healthPercent == null
-                          ? t.notReported
-                          : t.healthGaugeReported,
+                    const Align(
+                      alignment: Alignment.centerRight,
+                      child: SportSignature(),
                     ),
-                    const SizedBox(height: 8),
+                    if (MediaQuery.textScalerOf(context).scale(16) > 23 ||
+                        constraints.maxWidth < 280) ...[
+                      health,
+                      const SizedBox(height: 18),
+                      capacity,
+                    ] else
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(flex: 3, child: health),
+                          const SizedBox(width: 18),
+                          Expanded(flex: 2, child: capacity),
+                        ],
+                      ),
+                    const SizedBox(height: 14),
                     Text(
                       lost != null
                           ? _verdict(t, healthPercent!)
                           : t.healthVerdictReported,
                       style: TextStyle(
                         color: tone,
+                        fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Readout(
-                      label:
-                          measuredNow == null &&
-                              report.impliedCapacityAh != null
-                          ? t.degConfiguredTitle
-                          : t.degNowTitle,
-                      value:
-                          measuredNow?.toStringAsFixed(1) ??
-                          report.impliedCapacityAh?.toStringAsFixed(1) ??
-                          '--',
-                      unit: 'Ah',
-                      size: 30,
-                      footnote: degradation?.baseline == null
-                          ? null
-                          : '/ ${degradation!.baseline!.ah.toStringAsFixed(1)} Ah',
-                    ),
-                    const SizedBox(height: 12),
                   ],
-                ),
-              );
-            }
-            return Row(
-              children: [
-                Expanded(
-                  child: Center(
-                    child: SocGauge(
-                      soc: (healthPercent ?? 0).clamp(0.0, 100.0),
-                      color: tone,
-                      centreLabel: t.healthGaugeLabel,
-                      centreValue: healthPercent == null
-                          ? '--'
-                          : '${healthPercent.toStringAsFixed(0)}%',
-                      subtitle: lost != null
-                          ? t.healthGaugeMeasured
-                          : healthPercent == null
-                          ? t.notReported
-                          : t.healthGaugeReported,
-                      size: 166,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          lost != null
-                              ? _verdict(t, healthPercent!)
-                              : t.healthVerdictReported,
-                          style: TextStyle(
-                            fontSize: 15.5,
-                            height: 1.3,
-                            fontWeight: FontWeight.w600,
-                            color: tone,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        // The real amperage, against the best this pack has
-                        // actually held. Not against the advert, which is a
-                        // different question answered further down.
-                        Readout(
-                          label:
-                              measuredNow == null &&
-                                  report.impliedCapacityAh != null
-                              ? t.degConfiguredTitle
-                              : t.degNowTitle,
-                          value:
-                              measuredNow?.toStringAsFixed(1) ??
-                              report.impliedCapacityAh?.toStringAsFixed(1) ??
-                              '--',
-                          unit: 'Ah',
-                          size: 30,
-                          footnote: degradation?.baseline == null
-                              ? null
-                              : '/ ${degradation!.baseline!.ah.toStringAsFixed(1)} Ah',
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
+                );
+              },
+            ),
+          ),
         ),
         // Two questions, kept apart on purpose. What the pack has lost is
         // wear. What it came up short of the advert is a fact about a
@@ -274,6 +224,7 @@ class _HealthTabState extends State<HealthTab> {
             child: Section(
               title: t.degLost,
               intro: t.degLostWhy,
+              introAsHelp: true,
               children: [
                 InfoRow(
                   t.degLost,
@@ -554,6 +505,7 @@ class _WeakCellSection extends StatelessWidget {
     return Section(
       title: t.healthWeakCell,
       intro: t.healthWeakCellWhy,
+      introAsHelp: true,
       children: [
         InfoRow(t.healthWeakCellWhich, '${report.weakestCellIndex}'),
         InfoRow(

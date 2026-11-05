@@ -10,6 +10,7 @@ import '../../protocol/bms_brand.dart';
 import '../cell_history_screen.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/cockpit.dart';
 import '../widgets/gauges.dart';
 
 /// Every cell at once, coloured by how far it sits from the pack average.
@@ -47,33 +48,21 @@ class CellsTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.only(bottom: 28),
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          child: Row(
-            children: [
-              Expanded(
-                child: MetricTile(
-                  label: t.cellDelta,
-                  value: s.deltaCellVoltage.toStringAsFixed(3),
-                  unit: 'V',
-                  color: _colourFor(context, s.deltaCellVoltage / 2),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: MetricTile(
-                  label: t.average,
-                  value: avg.toStringAsFixed(3),
-                  unit: 'V',
-                ),
-              ),
-            ],
-          ),
+        TelemetryStrip(
+          size: 38,
+          items: [
+            TelemetryDatum(
+              t.cellDelta,
+              s.deltaCellVoltage.toStringAsFixed(3),
+              unit: 'V',
+              color: _colourFor(context, s.deltaCellVoltage / 2),
+            ),
+            TelemetryDatum(t.average, avg.toStringAsFixed(3), unit: 'V'),
+          ],
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
+          padding: const EdgeInsets.symmetric(horizontal: 18),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _extremeLine(
                 context,
@@ -84,7 +73,6 @@ class CellsTab extends StatelessWidget {
                   s.minCellVoltage.toStringAsFixed(3),
                 ),
               ),
-              const SizedBox(height: 4),
               _extremeLine(
                 context,
                 Icons.arrow_upward,
@@ -113,7 +101,11 @@ class CellsTab extends StatelessWidget {
                         .clamp(1, 6),
                 mainAxisSpacing: 8,
                 crossAxisSpacing: 8,
-                mainAxisExtent: MediaQuery.textScalerOf(context).scale(54) + 38,
+                mainAxisExtent:
+                    MediaQuery.textScalerOf(
+                      context,
+                    ).scale(hasResistances ? 60 : 44) +
+                    28,
               ),
               itemCount: s.cellVoltages.length,
               itemBuilder: (context, i) => CellTile(

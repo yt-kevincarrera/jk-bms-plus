@@ -17,6 +17,7 @@ import '../bms_code_labels.dart';
 import '../theme.dart';
 import '../warning_labels.dart';
 import '../widgets/common.dart';
+import '../widgets/cockpit.dart';
 import '../../metrics/ride_alerts.dart';
 import '../../metrics/trip_recorder.dart';
 import '../trip_screen.dart';
@@ -234,13 +235,6 @@ class _NowTabState extends State<NowTab> {
               : null,
         ),
         _AlertBanner(service: service, settings: widget.settings),
-        // While charging, how long until it is full. Range is the wrong
-        // question with a charger plugged in, and "how long do I wait" is the
-        // only one anybody is actually asking.
-        if (s.isCharging) _chargeEta(context, t, s, service),
-        if (s.isCharging || s.chargerPlugged == true)
-          _chargerState(context, t, s),
-        _TripStrip(service: service, settings: widget.settings),
         const SizedBox(height: 6),
         RangeInstrument(
           rangeLabel: t.rangeCurrent,
@@ -257,6 +251,12 @@ class _NowTabState extends State<NowTab> {
             SocDrift.none => null,
           },
         ),
+        // While charging, how long until it is full. Range is the wrong
+        // question with a charger plugged in, and "how long do I wait" is the
+        // only one anybody is actually asking.
+        if (s.isCharging) _chargeEta(context, t, s, service),
+        if (s.isCharging || s.chargerPlugged == true)
+          _chargerState(context, t, s),
         Padding(
           padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
           child: _FullPackRange(outlook: outlook, t: t),
@@ -272,61 +272,50 @@ class _NowTabState extends State<NowTab> {
               ),
             ),
           ),
-        const SizedBox(height: 18),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              Expanded(
-                child: MetricTile(
-                  label: t.power,
-                  value: power.abs() < 999
-                      ? power.toStringAsFixed(0)
-                      : (power / 1000).toStringAsFixed(2),
-                  unit: power.abs() < 999 ? 'W' : 'kW',
-                  color: power.abs() > 5 ? context.colors.cool : null,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: MetricTile(
-                  label: t.current,
-                  value: current.toStringAsFixed(1),
-                  unit: 'A',
-                  footnote: s.isCharging
-                      ? t.charging
-                      : s.isDischarging
-                      ? t.discharging
-                      : t.resting,
-                ),
-              ),
-            ],
-          ),
+        TelemetryStrip(
+          items: [
+            TelemetryDatum(
+              t.power,
+              power.abs() < 999
+                  ? power.toStringAsFixed(0)
+                  : (power / 1000).toStringAsFixed(2),
+              unit: power.abs() < 999 ? 'W' : 'kW',
+              color: power.abs() > 5 ? context.colors.cool : null,
+            ),
+            TelemetryDatum(
+              t.packTemperature,
+              s.hottestBatteryTemp?.toStringAsFixed(0) ?? '--',
+              unit: '°C',
+            ),
+            TelemetryDatum(
+              t.packVoltage,
+              s.packVoltage.toStringAsFixed(1),
+              unit: 'V',
+            ),
+          ],
         ),
-        const SizedBox(height: 10),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              Expanded(
-                child: MetricTile(
-                  label: t.packVoltage,
-                  value: s.packVoltage.toStringAsFixed(1),
-                  unit: 'V',
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: MetricTile(
-                  label: t.cellDelta,
-                  value: s.deltaCellVoltage.toStringAsFixed(3),
-                  unit: 'V',
-                  color: _deltaColour(s.deltaCellVoltage),
-                  footnote: 'min ${s.minCellIndex} · max ${s.maxCellIndex}',
-                ),
-              ),
-            ],
-          ),
+        _TripStrip(service: service, settings: widget.settings),
+        TelemetryStrip(
+          size: 28,
+          items: [
+            TelemetryDatum(
+              t.current,
+              current.toStringAsFixed(1),
+              unit: 'A',
+              note: s.isCharging
+                  ? t.charging
+                  : s.isDischarging
+                  ? t.discharging
+                  : t.resting,
+            ),
+            TelemetryDatum(
+              t.cellDelta,
+              s.deltaCellVoltage.toStringAsFixed(3),
+              unit: 'V',
+              color: _deltaColour(s.deltaCellVoltage),
+              note: 'min ${s.minCellIndex} · max ${s.maxCellIndex}',
+            ),
+          ],
         ),
         if (history.length > 3) ...[
           const SizedBox(height: 16),
@@ -482,6 +471,7 @@ class _TripStripState extends State<_TripStrip> {
     final t = AppL10n.of(context);
     final trip = widget.service.trip;
     final active = trip.isActive;
+    final primary = !active && !widget.service.autoTripWaitingForGps;
     final tone = switch (trip.state) {
       TripState.recording => context.colors.good,
       TripState.paused => context.colors.watch,
@@ -494,8 +484,9 @@ class _TripStripState extends State<_TripStrip> {
         onTap: _open,
         borderRadius: BorderRadius.circular(8),
         child: Container(
+          constraints: const BoxConstraints(minHeight: 56),
           decoration: BoxDecoration(
-            color: context.colors.surfaceRaised,
+            color: primary ? context.colors.good : context.colors.surfaceRaised,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: active
@@ -509,7 +500,7 @@ class _TripStripState extends State<_TripStrip> {
               Icon(
                 active ? Icons.fiber_manual_record : Icons.route_outlined,
                 size: 16,
-                color: tone,
+                color: primary ? context.colors.ink : tone,
               ),
               const SizedBox(width: 10),
               if (!active)
@@ -523,7 +514,9 @@ class _TripStripState extends State<_TripStrip> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: context.colors.textPrimary,
+                          color: primary
+                              ? context.colors.ink
+                              : context.colors.textPrimary,
                         ),
                       ),
                       if (widget.service.autoTripWaitingForGps)
@@ -547,20 +540,20 @@ class _TripStripState extends State<_TripStrip> {
                 )
               else ...[
                 Expanded(
-                  child: Row(
+                  child: Wrap(
+                    spacing: 18,
+                    runSpacing: 10,
                     children: [
                       _mini(
                         context,
                         '${trip.distanceKm.toStringAsFixed(1)} km',
                         t.tripDistance,
                       ),
-                      const SizedBox(width: 18),
                       _mini(
                         context,
                         '${trip.speedKmh.toStringAsFixed(0)} km/h',
                         t.tripSpeed,
                       ),
-                      const SizedBox(width: 18),
                       _mini(
                         context,
                         trip.whPerKm == null
@@ -575,7 +568,7 @@ class _TripStripState extends State<_TripStrip> {
               Icon(
                 Icons.chevron_right,
                 size: 18,
-                color: context.colors.textFaint,
+                color: primary ? context.colors.ink : context.colors.textFaint,
               ),
             ],
           ),

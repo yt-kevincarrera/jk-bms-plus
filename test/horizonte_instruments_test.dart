@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jk_bms/src/ui/theme.dart';
 import 'package:jk_bms/src/ui/widgets/instruments.dart';
+import 'package:jk_bms/src/ui/widgets/cockpit.dart';
 
 double contrast(Color a, Color b) {
   final first = a.computeLuminance(), second = b.computeLuminance();
@@ -78,10 +80,52 @@ void main() {
         expect(tester.takeException(), isNull);
         expect(find.text('58'), findsOneWidget);
         expect(find.text('12,80'), findsOneWidget);
+        final distance = tester.renderObject<RenderParagraph>(
+          find.text('12,80'),
+        );
+        expect(
+          distance.getBoxesForSelection(
+            const TextSelection(baseOffset: 0, extentOffset: 5),
+          ),
+          hasLength(1),
+          reason: 'A distance must remain one complete reading',
+        );
         expect(find.text('--'), findsOneWidget);
       },
     );
   }
+
+  testWidgets(
+    'large speed readings stay whole at 320 dp and 200 percent text',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.build(),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: TextScaler.linear(2)),
+            child: child!,
+          ),
+          home: const Scaffold(
+            body: SingleChildScrollView(child: RidingSpeedometer(value: '135')),
+          ),
+        ),
+      );
+      final speed = tester.renderObject<RenderParagraph>(find.text('135'));
+      expect(
+        speed.getBoxesForSelection(
+          const TextSelection(baseOffset: 0, extentOffset: 3),
+        ),
+        hasLength(1),
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('separate theme contexts cannot change each other', (
     tester,

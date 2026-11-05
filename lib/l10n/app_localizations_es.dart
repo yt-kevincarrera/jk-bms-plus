@@ -1169,6 +1169,15 @@ class AppL10nEs extends AppL10n {
   String get tripEnergyIn => 'Recuperada';
 
   @override
+  String get packTemperature => 'Temperatura';
+
+  @override
+  String get tripChargeStart => 'Al salir';
+
+  @override
+  String get tripChargeEnd => 'Al llegar';
+
+  @override
   String get tripSocUsed => 'Carga gastada';
 
   @override

@@ -10,6 +10,7 @@ import '../metrics/trip_recorder.dart';
 import '../platform/screen_awake.dart';
 import 'theme.dart';
 import 'widgets/common.dart';
+import 'widgets/cockpit.dart';
 import 'widgets/trip_summary_sheet.dart';
 import 'widgets/trip_summary_view.dart';
 import 'widgets/instruments.dart';
@@ -189,87 +190,82 @@ class _TripScreenState extends State<TripScreen> {
                         ),
                       ),
                     ),
-                  const SizedBox(height: 18),
-                  Center(
-                    child: Column(
-                      children: [
-                        Text(
-                          speed == null ? '--' : speed.toStringAsFixed(0),
-                          style: AppTheme.readout(124).copyWith(
-                            color: speed == null
-                                ? context.colors.textFaint
-                                : null,
+                  RidingSpeedometer(
+                    value: speed?.toStringAsFixed(0) ?? '--',
+                    available: speed != null,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: CockpitPanel(
+                      padding: EdgeInsets.zero,
+                      child: TelemetryStrip(
+                        size: 44,
+                        items: [
+                          TelemetryDatum(
+                            t.tripDistance,
+                            trip.distanceKm.toStringAsFixed(2),
+                            unit: 'km',
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        Caption('km/h'),
-                      ],
+                          TelemetryDatum(
+                            t.tripMoving,
+                            _clock(trip.movingDuration),
+                            note:
+                                '${t.tripElapsed}: ${_clock(trip.totalDuration)}',
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  if (snapshot != null)
+                  if (snapshot != null) ...[
+                    TelemetryStrip(
+                      size: 32,
+                      items: [
+                        TelemetryDatum(
+                          t.rangeCurrent,
+                          widget.service.rangeOutlook.nowKm?.toStringAsFixed(
+                                0,
+                              ) ??
+                              '--',
+                          unit: 'km',
+                          note: stale ? _ago(t, age) : null,
+                        ),
+                        TelemetryDatum(
+                          withAge(t.soc),
+                          snapshot.soc.toStringAsFixed(0),
+                          unit: '%',
+                          color: stale
+                              ? context.colors.textFaint
+                              : context.colors.good,
+                        ),
+                      ],
+                    ),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
                       child: ChargeSegments(
                         soc: snapshot.soc,
                         label: withAge(t.soc),
                       ),
                     ),
-                  const SizedBox(height: 22),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: MetricTile(
-                            label: t.tripDistance,
-                            value: trip.distanceKm.toStringAsFixed(2),
-                            unit: 'km',
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: MetricTile(
-                            label: t.tripConsumption,
-                            value: trip.whPerKm?.toStringAsFixed(0) ?? '--',
-                            unit: 'Wh/km',
-                            color: trip.whPerKm == null
-                                ? context.colors.textFaint
-                                : null,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: MetricTile(
-                            label: t.tripMaxSpeed,
-                            value: trip.maxSpeedKmh.toStringAsFixed(0),
-                            unit: 'km/h',
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: MetricTile(
-                            label: t.tripAvgSpeed,
-                            value: trip.averageSpeedKmh.toStringAsFixed(0),
-                            unit: 'km/h',
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: MetricTile(
-                            label: t.tripMoving,
-                            value: _clock(trip.movingDuration),
-                            footnote: _clock(trip.totalDuration),
-                          ),
-                        ),
-                      ],
-                    ),
+                  ],
+                  TelemetryStrip(
+                    size: 30,
+                    items: [
+                      TelemetryDatum(
+                        t.tripConsumption,
+                        trip.whPerKm?.toStringAsFixed(0) ?? '--',
+                        unit: 'Wh/km',
+                      ),
+                      TelemetryDatum(
+                        t.tripMaxSpeed,
+                        trip.maxSpeedKmh.toStringAsFixed(0),
+                        unit: 'km/h',
+                      ),
+                      TelemetryDatum(
+                        t.tripAvgSpeed,
+                        trip.averageSpeedKmh.toStringAsFixed(0),
+                        unit: 'km/h',
+                      ),
+                    ],
                   ),
                   Section(
                     title: t.tripPackDuring,
@@ -319,53 +315,56 @@ class _TripScreenState extends State<TripScreen> {
   }
 
   Widget _controls(AppL10n t, TripRecorder trip) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-      child: switch (trip.state) {
-        TripState.idle => FilledButton.icon(
+    final actions = switch (trip.state) {
+      TripState.idle => <Widget>[
+        FilledButton.icon(
           onPressed: _start,
           icon: const Icon(Icons.play_arrow, size: 20),
           label: Text(t.tripStart),
         ),
-        TripState.recording => Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () => setState(widget.service.pauseTrip),
-                icon: const Icon(Icons.pause, size: 20),
-                label: Text(t.tripPause),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: FilledButton.icon(
-                onPressed: _stop,
-                icon: const Icon(Icons.stop, size: 20),
-                label: Text(t.tripStop),
-              ),
-            ),
-          ],
+      ],
+      TripState.recording => <Widget>[
+        OutlinedButton.icon(
+          onPressed: () => setState(widget.service.pauseTrip),
+          icon: const Icon(Icons.pause, size: 20),
+          label: Text(t.tripPause),
         ),
-        TripState.paused => Row(
-          children: [
-            Expanded(
-              child: FilledButton.icon(
-                onPressed: _resume,
-                icon: const Icon(Icons.play_arrow, size: 20),
-                label: Text(t.tripResume),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: _stop,
-                icon: const Icon(Icons.stop, size: 20),
-                label: Text(t.tripStop),
-              ),
-            ),
-          ],
+        FilledButton.icon(
+          onPressed: _stop,
+          icon: const Icon(Icons.stop, size: 20),
+          label: Text(t.tripStop),
         ),
-      },
+      ],
+      TripState.paused => <Widget>[
+        FilledButton.icon(
+          onPressed: _resume,
+          icon: const Icon(Icons.play_arrow, size: 20),
+          label: Text(t.tripResume),
+        ),
+        OutlinedButton.icon(
+          onPressed: _stop,
+          icon: const Icon(Icons.stop, size: 20),
+          label: Text(t.tripStop),
+        ),
+      ],
+    };
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      child: actions.length == 1
+          ? actions.first
+          : MediaQuery.textScalerOf(context).scale(16) > 23
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [actions[0], const SizedBox(height: 8), actions[1]],
+            )
+          : Row(
+              children: [
+                Expanded(child: actions[0]),
+                const SizedBox(width: 10),
+                Expanded(child: actions[1]),
+              ],
+            ),
     );
   }
 

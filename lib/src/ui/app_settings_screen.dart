@@ -150,628 +150,712 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
-    final settings = widget.settings;
-    final canWatchCharge = LicenseScope.allows(
-      context,
-      Feature.backgroundAlerts,
-    );
-
     return Scaffold(
       appBar: widget.embedded ? null : AppBar(title: Text(t.appSettingsTitle)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.only(bottom: 28),
-          children: [
-            Section(
-              title: t.appearanceTitle,
+          children: _overview(context),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _allSettings(BuildContext context) {
+    final t = AppL10n.of(context);
+    final settings = widget.settings;
+    final canWatchCharge = LicenseScope.allows(
+      context,
+      Feature.backgroundAlerts,
+    );
+    return [
+      Section(
+        key: const ValueKey('settings-appearance'),
+        title: t.appearanceTitle,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final choice in AppAppearance.values)
+                ChoiceChip(
+                  label: Text(switch (choice) {
+                    AppAppearance.system => t.appearanceSystem,
+                    AppAppearance.light => t.appearanceLight,
+                    AppAppearance.dark => t.appearanceDark,
+                  }),
+                  avatar: Icon(switch (choice) {
+                    AppAppearance.system => Icons.brightness_auto_outlined,
+                    AppAppearance.light => Icons.light_mode_outlined,
+                    AppAppearance.dark => Icons.dark_mode_outlined,
+                  }, size: 18),
+                  selected: settings.appearance == choice,
+                  onSelected: (_) => settings.setAppearance(choice),
+                  materialTapTargetSize: MaterialTapTargetSize.padded,
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+      if (widget.onOpenSystem != null)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: ListTile(
+            leading: const Icon(Icons.settings_input_component_outlined),
+            title: Text(t.tabSystem),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: widget.onOpenSystem,
+          ),
+        ),
+      UpdateCard(service: widget.updateService, settings: settings),
+      const LicenseCard(),
+      PacksCard(service: widget.service, handsFree: widget.handsFree),
+      if (widget.handsFree case final controller?)
+        HandsFreeCard(controller: controller),
+      Section(
+        key: const ValueKey('settings-inspections'),
+        title: t.inspectionsTitle,
+        intro: t.inspectionsIntro,
+        children: [
+          OutlinedButton.icon(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => InspectionsListScreen(service: widget.service),
+              ),
+            ),
+            icon: const Icon(Icons.fact_check_outlined, size: 18),
+            label: Text(t.inspectionsOpen),
+          ),
+          const SizedBox(height: 8),
+          // The buyer's half: check a certificate somebody else's phone
+          // produced, with no keys and no network.
+          OutlinedButton.icon(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const CertificateVerifyScreen(),
+              ),
+            ),
+            icon: const Icon(Icons.verified_outlined, size: 18),
+            label: Text(t.certificateVerifyOpen),
+          ),
+          const SizedBox(height: 6),
+        ],
+      ),
+      // Next to the inspections because that is who prints them: a
+      // workshop handing a customer, or a buyer, a sheet with its own
+      // name at the top.
+      const ProGate(
+        feature: Feature.workshopExtras,
+        child: WorkshopBrandingCard(),
+      ),
+      ProGate(
+        feature: Feature.backupExportImport,
+        child: BackupCard(
+          service: widget.service,
+          settings: widget.settings,
+          onSettingsRestored: () {
+            _pushThresholds();
+            if (mounted) setState(() {});
+          },
+        ),
+      ),
+      // Rides had ended up inside the charging section, along with the
+      // link and the screen. Four of that section's five controls had
+      // nothing to do with charging: it had quietly become the place new
+      // settings went, which is how a rider stops being able to find
+      // anything.
+      Section(
+        key: const ValueKey('settings-rides'),
+        title: t.settingsSectionRides,
+        children: [
+          SwitchListTile(
+            value: settings.autoTripEnabled,
+            onChanged: (v) async {
+              await settings.setAutoTrip(v);
+              widget.service.autoTripEnabled = v;
+              if (mounted) setState(() {});
+            },
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            title: Text(t.autoTripTitle, style: const TextStyle(fontSize: 14)),
+            subtitle: Text(
+              t.autoTripHint,
+              style: TextStyle(
+                fontSize: 11.5,
+                height: 1.4,
+                color: context.colors.textFaint,
+              ),
+            ),
+          ),
+          if (settings.autoTripEnabled)
+            AutoTripPocketNote(linkWatchOn: settings.linkWatchEnabled),
+          const SizedBox(height: 4),
+        ],
+      ),
+      Section(
+        key: const ValueKey('settings-link'),
+        title: t.settingsSectionLink,
+        intro: t.settingsSectionLinkHint,
+        children: [
+          SwitchListTile(
+            value: settings.linkWatchEnabled,
+            onChanged: (v) async {
+              await settings.setLinkWatch(v);
+              widget.service.linkWatchEnabled = v;
+              if (mounted) setState(() {});
+            },
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            title: Text(t.linkWatchTitle, style: const TextStyle(fontSize: 14)),
+            subtitle: Text(
+              t.linkWatchHint,
+              style: TextStyle(
+                fontSize: 11.5,
+                height: 1.4,
+                color: context.colors.textFaint,
+              ),
+            ),
+          ),
+          // Moved here from the charging section, because it is the same
+          // mechanism as the switch above and not a kind of alert. Two
+          // controls that both hold the one foreground service open,
+          // sitting in different sections under different headings, is
+          // why a rider could not work out which one to touch.
+          //
+          // The subtitle says outright that the switch above already
+          // covers this while it is on. It used to describe Android's
+          // service rules and never the consequence, so the honest
+          // reading of it was "turn both on and hope".
+          SwitchListTile(
+            value: canWatchCharge && settings.chargeWatchEnabled,
+            onChanged: canWatchCharge
+                ? (v) async {
+                    await settings.setChargeWatch(v);
+                    widget.service.chargeWatchEnabled = v;
+                    if (mounted) setState(() {});
+                  }
+                : null,
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            title: Row(
               children: [
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final choice in AppAppearance.values)
-                      ChoiceChip(
-                        label: Text(switch (choice) {
-                          AppAppearance.system => t.appearanceSystem,
-                          AppAppearance.light => t.appearanceLight,
-                          AppAppearance.dark => t.appearanceDark,
-                        }),
-                        avatar: Icon(switch (choice) {
-                          AppAppearance.system =>
-                            Icons.brightness_auto_outlined,
-                          AppAppearance.light => Icons.light_mode_outlined,
-                          AppAppearance.dark => Icons.dark_mode_outlined,
-                        }, size: 18),
-                        selected: settings.appearance == choice,
-                        onSelected: (_) => settings.setAppearance(choice),
-                        materialTapTargetSize: MaterialTapTargetSize.padded,
+                Expanded(
+                  child: Text(
+                    t.chargeWatchTitle,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ),
+                if (!canWatchCharge) const ProBadge(),
+              ],
+            ),
+            subtitle: Text(
+              [
+                if (!canWatchCharge) t.chargeWatchProHint,
+                if (settings.linkWatchEnabled && canWatchCharge)
+                  t.chargeWatchRedundant
+                else
+                  t.chargeWatchHint,
+              ].join('\n'),
+              style: TextStyle(
+                fontSize: 11.5,
+                height: 1.4,
+                color: context.colors.textFaint,
+              ),
+            ),
+          ),
+          if (!canWatchCharge)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: () => openLicenseScreen(context),
+                child: Text(t.licenseOpen),
+              ),
+            ),
+          // Three positions rather than a switch: "never" and "always"
+          // are both real answers, and the middle one is the reason the
+          // wakelock existed in the first place.
+          Padding(
+            padding: const EdgeInsets.only(top: 6, bottom: 2),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(t.screenAwakeTitle, style: const TextStyle(fontSize: 14)),
+                const SizedBox(height: 2),
+                Text(
+                  t.screenAwakeHint,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    height: 1.4,
+                    color: context.colors.textFaint,
+                  ),
+                ),
+                if (settings.linkWatchEnabled) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    t.screenAwakeReason,
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      height: 1.4,
+                      color: context.colors.good,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 8),
+                SegmentedButton<ScreenAwake>(
+                  showSelectedIcon: false,
+                  style: const ButtonStyle(
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  segments: [
+                    ButtonSegment(
+                      value: ScreenAwake.never,
+                      label: Text(
+                        t.screenAwakeNever,
+                        style: const TextStyle(fontSize: 12),
                       ),
+                    ),
+                    ButtonSegment(
+                      value: ScreenAwake.whileRiding,
+                      label: Text(
+                        t.screenAwakeRiding,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ),
+                    ButtonSegment(
+                      value: ScreenAwake.always,
+                      label: Text(
+                        t.screenAwakeAlways,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ),
                   ],
-                ),
-                const SizedBox(height: 8),
-              ],
-            ),
-            if (widget.onOpenSystem != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: ListTile(
-                  leading: const Icon(Icons.settings_input_component_outlined),
-                  title: Text(t.tabSystem),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: widget.onOpenSystem,
-                ),
-              ),
-            UpdateCard(service: widget.updateService, settings: settings),
-            const LicenseCard(),
-            PacksCard(service: widget.service, handsFree: widget.handsFree),
-            if (widget.handsFree case final controller?)
-              HandsFreeCard(controller: controller),
-            Section(
-              title: t.inspectionsTitle,
-              intro: t.inspectionsIntro,
-              children: [
-                OutlinedButton.icon(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) =>
-                          InspectionsListScreen(service: widget.service),
-                    ),
-                  ),
-                  icon: const Icon(Icons.fact_check_outlined, size: 18),
-                  label: Text(t.inspectionsOpen),
-                ),
-                const SizedBox(height: 8),
-                // The buyer's half: check a certificate somebody else's phone
-                // produced, with no keys and no network.
-                OutlinedButton.icon(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const CertificateVerifyScreen(),
-                    ),
-                  ),
-                  icon: const Icon(Icons.verified_outlined, size: 18),
-                  label: Text(t.certificateVerifyOpen),
-                ),
-                const SizedBox(height: 6),
-              ],
-            ),
-            // Next to the inspections because that is who prints them: a
-            // workshop handing a customer, or a buyer, a sheet with its own
-            // name at the top.
-            const ProGate(
-              feature: Feature.workshopExtras,
-              child: WorkshopBrandingCard(),
-            ),
-            ProGate(
-              feature: Feature.backupExportImport,
-              child: BackupCard(
-                service: widget.service,
-                settings: widget.settings,
-                onSettingsRestored: () {
-                  _pushThresholds();
-                  if (mounted) setState(() {});
-                },
-              ),
-            ),
-            // Rides had ended up inside the charging section, along with the
-            // link and the screen. Four of that section's five controls had
-            // nothing to do with charging: it had quietly become the place new
-            // settings went, which is how a rider stops being able to find
-            // anything.
-            Section(
-              title: t.settingsSectionRides,
-              children: [
-                SwitchListTile(
-                  value: settings.autoTripEnabled,
-                  onChanged: (v) async {
-                    await settings.setAutoTrip(v);
-                    widget.service.autoTripEnabled = v;
+                  selected: {settings.screenAwake},
+                  onSelectionChanged: (picked) async {
+                    await settings.setScreenAwake(picked.first);
                     if (mounted) setState(() {});
                   },
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    t.autoTripTitle,
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                  subtitle: Text(
-                    t.autoTripHint,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      height: 1.4,
-                      color: context.colors.textFaint,
-                    ),
-                  ),
                 ),
-                if (settings.autoTripEnabled)
-                  AutoTripPocketNote(linkWatchOn: settings.linkWatchEnabled),
-                const SizedBox(height: 4),
               ],
             ),
-            Section(
-              title: t.settingsSectionLink,
-              intro: t.settingsSectionLinkHint,
-              children: [
-                SwitchListTile(
-                  value: settings.linkWatchEnabled,
-                  onChanged: (v) async {
-                    await settings.setLinkWatch(v);
-                    widget.service.linkWatchEnabled = v;
-                    if (mounted) setState(() {});
-                  },
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    t.linkWatchTitle,
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                  subtitle: Text(
-                    t.linkWatchHint,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      height: 1.4,
-                      color: context.colors.textFaint,
-                    ),
-                  ),
+          ),
+          const SizedBox(height: 4),
+        ],
+      ),
+      // Every alert, each with its own switch, in one place that is
+      // easy to find. The alternative people reach for when they cannot
+      // find this is switching the whole app's notifications off.
+      Section(
+        key: const ValueKey('settings-alerts'),
+        title: t.alertsSectionTitle,
+        intro: t.alertsSectionHint,
+        children: [
+          for (final group in alertGroups(t)) ...[
+            Padding(
+              padding: const EdgeInsets.only(top: 10, bottom: 2),
+              child: Text(
+                group.heading.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.8,
+                  color: context.colors.textFaint,
                 ),
-                // Moved here from the charging section, because it is the same
-                // mechanism as the switch above and not a kind of alert. Two
-                // controls that both hold the one foreground service open,
-                // sitting in different sections under different headings, is
-                // why a rider could not work out which one to touch.
-                //
-                // The subtitle says outright that the switch above already
-                // covers this while it is on. It used to describe Android's
-                // service rules and never the consequence, so the honest
-                // reading of it was "turn both on and hope".
-                SwitchListTile(
-                  value: canWatchCharge && settings.chargeWatchEnabled,
-                  onChanged: canWatchCharge
-                      ? (v) async {
-                          await settings.setChargeWatch(v);
-                          widget.service.chargeWatchEnabled = v;
-                          if (mounted) setState(() {});
-                        }
-                      : null,
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  title: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          t.chargeWatchTitle,
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                      ),
-                      if (!canWatchCharge) const ProBadge(),
-                    ],
-                  ),
-                  subtitle: Text(
-                    [
-                      if (!canWatchCharge) t.chargeWatchProHint,
-                      if (settings.linkWatchEnabled && canWatchCharge)
-                        t.chargeWatchRedundant
-                      else
-                        t.chargeWatchHint,
-                    ].join('\n'),
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      height: 1.4,
-                      color: context.colors.textFaint,
-                    ),
-                  ),
-                ),
-                if (!canWatchCharge)
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton(
-                      onPressed: () => openLicenseScreen(context),
-                      child: Text(t.licenseOpen),
-                    ),
-                  ),
-                // Three positions rather than a switch: "never" and "always"
-                // are both real answers, and the middle one is the reason the
-                // wakelock existed in the first place.
-                Padding(
-                  padding: const EdgeInsets.only(top: 6, bottom: 2),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        t.screenAwakeTitle,
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        t.screenAwakeHint,
+              ),
+            ),
+            for (final a in group.items)
+              SwitchListTile(
+                value: !settings.isMuted(a.name),
+                // The link-lost alert only ever speaks while a watch
+                // holds the connection: with both off the switch did
+                // nothing, and looked as though it did.
+                onChanged:
+                    a.name == BmsService.linkLostAlertKey && !_linkLostCanFire
+                    ? null
+                    : (on) async {
+                        await settings.setAlertMuted(a.name, !on);
+                        widget.service.mutedAlerts = settings.mutedAlerts;
+                        if (mounted) setState(() {});
+                      },
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                title: Text(a.label, style: const TextStyle(fontSize: 13.5)),
+                // An ANT that has not answered the read of its current
+                // limit leaves this alert nothing to compare against,
+                // so it cannot fire. Said, rather than leaving a
+                // switch that looks like it works.
+                subtitle: _alertHint(t, a.name) == null
+                    ? null
+                    : Text(
+                        _alertHint(t, a.name)!,
                         style: TextStyle(
                           fontSize: 11.5,
                           height: 1.4,
                           color: context.colors.textFaint,
                         ),
                       ),
-                      if (settings.linkWatchEnabled) ...[
-                        const SizedBox(height: 3),
-                        Text(
-                          t.screenAwakeReason,
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            height: 1.4,
-                            color: context.colors.good,
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 8),
-                      SegmentedButton<ScreenAwake>(
-                        showSelectedIcon: false,
-                        style: const ButtonStyle(
-                          visualDensity: VisualDensity.compact,
-                        ),
-                        segments: [
-                          ButtonSegment(
-                            value: ScreenAwake.never,
-                            label: Text(
-                              t.screenAwakeNever,
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                          ),
-                          ButtonSegment(
-                            value: ScreenAwake.whileRiding,
-                            label: Text(
-                              t.screenAwakeRiding,
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                          ),
-                          ButtonSegment(
-                            value: ScreenAwake.always,
-                            label: Text(
-                              t.screenAwakeAlways,
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                          ),
-                        ],
-                        selected: {settings.screenAwake},
-                        onSelectionChanged: (picked) async {
-                          await settings.setScreenAwake(picked.first);
-                          if (mounted) setState(() {});
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 4),
-              ],
-            ),
-            // Every alert, each with its own switch, in one place that is
-            // easy to find. The alternative people reach for when they cannot
-            // find this is switching the whole app's notifications off.
-            Section(
-              title: t.alertsSectionTitle,
-              intro: t.alertsSectionHint,
-              children: [
-                for (final group in alertGroups(t)) ...[
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10, bottom: 2),
-                    child: Text(
-                      group.heading.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.8,
-                        color: context.colors.textFaint,
-                      ),
-                    ),
-                  ),
-                  for (final a in group.items)
-                    SwitchListTile(
-                      value: !settings.isMuted(a.name),
-                      // The link-lost alert only ever speaks while a watch
-                      // holds the connection: with both off the switch did
-                      // nothing, and looked as though it did.
-                      onChanged:
-                          a.name == BmsService.linkLostAlertKey &&
-                              !_linkLostCanFire
-                          ? null
-                          : (on) async {
-                              await settings.setAlertMuted(a.name, !on);
-                              widget.service.mutedAlerts = settings.mutedAlerts;
-                              if (mounted) setState(() {});
-                            },
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(
-                        a.label,
-                        style: const TextStyle(fontSize: 13.5),
-                      ),
-                      // An ANT that has not answered the read of its current
-                      // limit leaves this alert nothing to compare against,
-                      // so it cannot fire. Said, rather than leaving a
-                      // switch that looks like it works.
-                      subtitle: _alertHint(t, a.name) == null
-                          ? null
-                          : Text(
-                              _alertHint(t, a.name)!,
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                height: 1.4,
-                                color: context.colors.textFaint,
-                              ),
-                            ),
-                    ),
-                ],
-                const SizedBox(height: 4),
-              ],
-            ),
-            Section(
-              title: t.alertsThresholdsTitle,
-              intro: t.alertsThresholdsIntro,
-              children: [
-                // Both of these also move the charging alerts, downwards
-                // only, and the hint says so: see [BmsService.applySettings].
-                _threshold(
-                  label: t.alertsDeltaWarn,
-                  hint: t.alertsDeltaWarnHint(
-                    (ChargeAlerts.maxSpreadWarn * 1000).toStringAsFixed(0),
-                  ),
-                  value: settings.alertDeltaWarn,
-                  min: 0.030,
-                  max: 0.300,
-                  divisions: 27,
-                  format: (v) => '${(v * 1000).toStringAsFixed(0)} mV',
-                  onChanged: (v) => settings.setAlertThresholds(delta: v),
-                ),
-                _threshold(
-                  label: t.alertsTempWarn,
-                  hint: t.alertsTempWarnHint(
-                    ChemistryLimits.hotChargeLimitCelsius.toStringAsFixed(0),
-                  ),
-                  value: settings.alertTempWarn,
-                  min: 35,
-                  max: 75,
-                  divisions: 40,
-                  format: (v) => '${v.toStringAsFixed(0)} °C',
-                  onChanged: (v) => settings.setAlertThresholds(temperature: v),
-                ),
-                // From one above "nearly gone", because low charge only trips
-                // above that level: the slider used to go down to 5, and
-                // anything from 5 to 7 switched the alert off in silence.
-                _threshold(
-                  label: t.alertsLowChargeWarn,
-                  hint: t.alertsLowChargeWarnHint,
-                  value: settings.alertLowChargeWarn,
-                  min: RideAlerts.minLowChargeWarn,
-                  max: 40,
-                  divisions: (40 - RideAlerts.minLowChargeWarn).round(),
-                  format: (v) => '${v.toStringAsFixed(0)} %',
-                  onChanged: (v) => settings.setAlertThresholds(lowCharge: v),
-                ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () async {
-                      await settings.resetAlertThresholds();
-                      _pushThresholds();
-                      if (mounted) setState(() {});
-                    },
-                    child: Text(t.alertsResetDefaults),
-                  ),
-                ),
-              ],
-            ),
-            Section(
-              title: t.chargeAlertsTitle,
-              intro: t.chargeAlertsIntro,
-              children: [
-                InfoRow(
-                  t.chargeTarget,
-                  settings.chargeTargetSoc == null
-                      ? t.chargeTargetOff
-                      : '${settings.chargeTargetSoc!.toStringAsFixed(0)} %',
-                  dim: settings.chargeTargetSoc == null,
-                ),
-                Slider(
-                  // 50 is the off position rather than a level anybody wants
-                  // announced: below that the alert would fire on the way up
-                  // from every ride.
-                  value: (settings.chargeTargetSoc ?? 50).clamp(50, 100),
-                  min: 50,
-                  max: 100,
-                  divisions: 50,
-                  label: settings.chargeTargetSoc == null
-                      ? t.chargeTargetOff
-                      : settings.chargeTargetSoc!.toStringAsFixed(0),
-                  onChanged: (v) async {
-                    final soc = v.roundToDouble();
-                    await settings.setChargeTarget(soc <= 50 ? null : soc);
-                    widget.service.chargeAlerts.targetSoc =
-                        settings.chargeTargetSoc;
-                    if (mounted) setState(() {});
-                  },
-                ),
-                // A target up where the counter runs ahead of the cells is
-                // announced as the charge finishing. It used to be announced
-                // by nothing at all: the target alert refused anything at or
-                // above the completion level, and never said so.
-                if ((settings.chargeTargetSoc ?? 0) >=
-                    widget.service.chargeAlerts.completeSoc)
-                  Text(
-                    t.chargeTargetAtTop(
-                      widget.service.chargeAlerts.completeSoc.toStringAsFixed(
-                        0,
-                      ),
-                    ),
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      height: 1.4,
-                      color: context.colors.textFaint,
-                    ),
-                  ),
-                const SizedBox(height: 4),
-              ],
-            ),
-            // Where an alert goes once it has fired. Separate from which
-            // alerts exist, above: one is about what is worth saying and this
-            // is about whether anybody will hear it.
-            Section(
-              title: t.alertsNotifyTitle,
-              intro: t.alertsNotifyIntro,
-              children: [
-                SwitchListTile(
-                  value: settings.notifyAlerts,
-                  onChanged: (v) async {
-                    await settings.setNotifyAlerts(v);
-                    if (v) {
-                      await widget.service.prepareAlertNotifications(
-                        channelName: t.alertsNotifyTitle,
-                        channelDescription: t.alertsNotifyIntro,
-                        quietChannelName: t.alertsNotifyQuietChannel,
-                      );
-                    } else {
-                      widget.service.notifyAlerts = false;
-                    }
-                    if (mounted) setState(() {});
-                  },
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    t.alertsNotifyEnable,
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                ),
-                // Android can refuse, and a rider who believes alerts will
-                // arrive when they will not is worse off than one who knows.
-                if (settings.notifyAlerts &&
-                    !widget.service.alertNotifications.isReady)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4, bottom: 8),
-                    child: Text(
-                      t.alertsNotifyDenied,
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        height: 1.45,
-                        color: context.colors.watch,
-                      ),
-                    ),
-                  ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 2, bottom: 6),
-                  child: Text(
-                    t.alertsNotifyOneConnection,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      height: 1.45,
-                      color: context.colors.textFaint,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            // Its own section, with its own warning, and never next to a
-            // switch somebody flicks without reading. Turning it on asks
-            // first; turning it off does not, because off is the safe way.
-            // Not shown at all while the writes are not shipped: a setting
-            // that can do nothing would be a promise the app does not keep.
-            if (bmsWritesShipped)
-              Section(
-                title: t.settingsSectionBmsWrites,
-                accent: settings.allowBmsWrites ? context.colors.watch : null,
-                children: [
-                  SwitchListTile(
-                    key: const ValueKey('allow-bms-writes'),
-                    value: settings.allowBmsWrites,
-                    onChanged: (v) async {
-                      if (v && !await _confirmBmsWrites(t)) return;
-                      await settings.setAllowBmsWrites(v);
-                      widget.service.bmsWritesAllowed = v;
-                      if (mounted) setState(() {});
-                    },
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(
-                      t.bmsWritesTitle,
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                    subtitle: Text(
-                      t.bmsWritesHint,
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        height: 1.4,
-                        color: context.colors.textFaint,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                ],
               ),
-            Section(
-              title: t.settingsSectionApp,
-              children: [
-                SwitchListTile(
-                  value: settings.hapticAlerts,
-                  onChanged: (v) async {
-                    await settings.setHapticAlerts(v);
-                    widget.service.hapticAlerts = v;
-                    if (mounted) setState(() {});
-                  },
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    t.settingsHaptics,
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                  subtitle: Text(
-                    t.settingsHapticsHint,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      color: context.colors.textFaint,
-                    ),
-                  ),
-                ),
-                SwitchListTile(
-                  value: settings.recordRawFrames,
-                  onChanged: (v) async {
-                    await settings.setRecordRawFrames(v);
-                    widget.service.repository?.recordRawFrames = v;
-                    if (mounted) setState(() {});
-                  },
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    t.settingsRawFrames,
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                  subtitle: Text(
-                    t.settingsRawFramesHint,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      color: context.colors.textFaint,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Caption(t.systemLanguageTitle, color: context.colors.textFaint),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    _localeChip(
-                      t.systemLanguageSpanish,
-                      LanguageChoice.spanish,
-                    ),
-                    _localeChip(
-                      t.systemLanguageEnglish,
-                      LanguageChoice.english,
-                    ),
-                    _localeChip(t.systemLanguageSystem, LanguageChoice.system),
-                  ],
-                ),
-                const SizedBox(height: 8),
-              ],
-            ),
           ],
+          const SizedBox(height: 4),
+        ],
+      ),
+      Section(
+        key: const ValueKey('settings-thresholds'),
+        title: t.alertsThresholdsTitle,
+        intro: t.alertsThresholdsIntro,
+        children: [
+          // Both of these also move the charging alerts, downwards
+          // only, and the hint says so: see [BmsService.applySettings].
+          _threshold(
+            label: t.alertsDeltaWarn,
+            hint: t.alertsDeltaWarnHint(
+              (ChargeAlerts.maxSpreadWarn * 1000).toStringAsFixed(0),
+            ),
+            value: settings.alertDeltaWarn,
+            min: 0.030,
+            max: 0.300,
+            divisions: 27,
+            format: (v) => '${(v * 1000).toStringAsFixed(0)} mV',
+            onChanged: (v) => settings.setAlertThresholds(delta: v),
+          ),
+          _threshold(
+            label: t.alertsTempWarn,
+            hint: t.alertsTempWarnHint(
+              ChemistryLimits.hotChargeLimitCelsius.toStringAsFixed(0),
+            ),
+            value: settings.alertTempWarn,
+            min: 35,
+            max: 75,
+            divisions: 40,
+            format: (v) => '${v.toStringAsFixed(0)} °C',
+            onChanged: (v) => settings.setAlertThresholds(temperature: v),
+          ),
+          // From one above "nearly gone", because low charge only trips
+          // above that level: the slider used to go down to 5, and
+          // anything from 5 to 7 switched the alert off in silence.
+          _threshold(
+            label: t.alertsLowChargeWarn,
+            hint: t.alertsLowChargeWarnHint,
+            value: settings.alertLowChargeWarn,
+            min: RideAlerts.minLowChargeWarn,
+            max: 40,
+            divisions: (40 - RideAlerts.minLowChargeWarn).round(),
+            format: (v) => '${v.toStringAsFixed(0)} %',
+            onChanged: (v) => settings.setAlertThresholds(lowCharge: v),
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () async {
+                await settings.resetAlertThresholds();
+                _pushThresholds();
+                if (mounted) setState(() {});
+              },
+              child: Text(t.alertsResetDefaults),
+            ),
+          ),
+        ],
+      ),
+      Section(
+        key: const ValueKey('settings-charge-alerts'),
+        title: t.chargeAlertsTitle,
+        intro: t.chargeAlertsIntro,
+        children: [
+          InfoRow(
+            t.chargeTarget,
+            settings.chargeTargetSoc == null
+                ? t.chargeTargetOff
+                : '${settings.chargeTargetSoc!.toStringAsFixed(0)} %',
+            dim: settings.chargeTargetSoc == null,
+          ),
+          Slider(
+            // 50 is the off position rather than a level anybody wants
+            // announced: below that the alert would fire on the way up
+            // from every ride.
+            value: (settings.chargeTargetSoc ?? 50).clamp(50, 100),
+            min: 50,
+            max: 100,
+            divisions: 50,
+            label: settings.chargeTargetSoc == null
+                ? t.chargeTargetOff
+                : settings.chargeTargetSoc!.toStringAsFixed(0),
+            onChanged: (v) async {
+              final soc = v.roundToDouble();
+              await settings.setChargeTarget(soc <= 50 ? null : soc);
+              widget.service.chargeAlerts.targetSoc = settings.chargeTargetSoc;
+              if (mounted) setState(() {});
+            },
+          ),
+          // A target up where the counter runs ahead of the cells is
+          // announced as the charge finishing. It used to be announced
+          // by nothing at all: the target alert refused anything at or
+          // above the completion level, and never said so.
+          if ((settings.chargeTargetSoc ?? 0) >=
+              widget.service.chargeAlerts.completeSoc)
+            Text(
+              t.chargeTargetAtTop(
+                widget.service.chargeAlerts.completeSoc.toStringAsFixed(0),
+              ),
+              style: TextStyle(
+                fontSize: 11.5,
+                height: 1.4,
+                color: context.colors.textFaint,
+              ),
+            ),
+          const SizedBox(height: 4),
+        ],
+      ),
+      // Where an alert goes once it has fired. Separate from which
+      // alerts exist, above: one is about what is worth saying and this
+      // is about whether anybody will hear it.
+      Section(
+        key: const ValueKey('settings-notifications'),
+        title: t.alertsNotifyTitle,
+        intro: t.alertsNotifyIntro,
+        children: [
+          SwitchListTile(
+            value: settings.notifyAlerts,
+            onChanged: (v) async {
+              await settings.setNotifyAlerts(v);
+              if (v) {
+                await widget.service.prepareAlertNotifications(
+                  channelName: t.alertsNotifyTitle,
+                  channelDescription: t.alertsNotifyIntro,
+                  quietChannelName: t.alertsNotifyQuietChannel,
+                );
+              } else {
+                widget.service.notifyAlerts = false;
+              }
+              if (mounted) setState(() {});
+            },
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            title: Text(
+              t.alertsNotifyEnable,
+              style: const TextStyle(fontSize: 14),
+            ),
+          ),
+          // Android can refuse, and a rider who believes alerts will
+          // arrive when they will not is worse off than one who knows.
+          if (settings.notifyAlerts &&
+              !widget.service.alertNotifications.isReady)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, bottom: 8),
+              child: Text(
+                t.alertsNotifyDenied,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  height: 1.45,
+                  color: context.colors.watch,
+                ),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.only(top: 2, bottom: 6),
+            child: Text(
+              t.alertsNotifyOneConnection,
+              style: TextStyle(
+                fontSize: 11.5,
+                height: 1.45,
+                color: context.colors.textFaint,
+              ),
+            ),
+          ),
+        ],
+      ),
+      // Its own section, with its own warning, and never next to a
+      // switch somebody flicks without reading. Turning it on asks
+      // first; turning it off does not, because off is the safe way.
+      // Not shown at all while the writes are not shipped: a setting
+      // that can do nothing would be a promise the app does not keep.
+      if (bmsWritesShipped)
+        Section(
+          key: const ValueKey('settings-writes'),
+          title: t.settingsSectionBmsWrites,
+          accent: settings.allowBmsWrites ? context.colors.watch : null,
+          children: [
+            SwitchListTile(
+              key: const ValueKey('allow-bms-writes'),
+              value: settings.allowBmsWrites,
+              onChanged: (v) async {
+                if (v && !await _confirmBmsWrites(t)) return;
+                await settings.setAllowBmsWrites(v);
+                widget.service.bmsWritesAllowed = v;
+                if (mounted) setState(() {});
+              },
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                t.bmsWritesTitle,
+                style: const TextStyle(fontSize: 14),
+              ),
+              subtitle: Text(
+                t.bmsWritesHint,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  height: 1.4,
+                  color: context.colors.textFaint,
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+          ],
+        ),
+      Section(
+        key: const ValueKey('settings-app'),
+        title: t.settingsSectionApp,
+        children: [
+          SwitchListTile(
+            value: settings.hapticAlerts,
+            onChanged: (v) async {
+              await settings.setHapticAlerts(v);
+              widget.service.hapticAlerts = v;
+              if (mounted) setState(() {});
+            },
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            title: Text(
+              t.settingsHaptics,
+              style: const TextStyle(fontSize: 14),
+            ),
+            subtitle: Text(
+              t.settingsHapticsHint,
+              style: TextStyle(fontSize: 11.5, color: context.colors.textFaint),
+            ),
+          ),
+          SwitchListTile(
+            value: settings.recordRawFrames,
+            onChanged: (v) async {
+              await settings.setRecordRawFrames(v);
+              widget.service.repository?.recordRawFrames = v;
+              if (mounted) setState(() {});
+            },
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            title: Text(
+              t.settingsRawFrames,
+              style: const TextStyle(fontSize: 14),
+            ),
+            subtitle: Text(
+              t.settingsRawFramesHint,
+              style: TextStyle(fontSize: 11.5, color: context.colors.textFaint),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Caption(t.systemLanguageTitle, color: context.colors.textFaint),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            children: [
+              _localeChip(t.systemLanguageSpanish, LanguageChoice.spanish),
+              _localeChip(t.systemLanguageEnglish, LanguageChoice.english),
+              _localeChip(t.systemLanguageSystem, LanguageChoice.system),
+            ],
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    ];
+  }
+
+  List<Widget> _overview(BuildContext context) {
+    final t = AppL10n.of(context);
+    final all = _allSettings(context);
+    bool section(Widget w, List<String> titles) =>
+        w is Section && titles.any((id) => w.key == ValueKey('settings-$id'));
+    Widget category(
+      String Function(AppL10n) label,
+      IconData icon,
+      bool Function(Widget) matches,
+    ) => ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+      leading: Icon(icon, color: context.colors.good),
+      title: Text(
+        label(t),
+        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+      ),
+      trailing: const Icon(Icons.chevron_right, size: 20),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (context) => Scaffold(
+            appBar: AppBar(title: Text(label(AppL10n.of(context)))),
+            body: SafeArea(
+              child: StreamBuilder(
+                stream: widget.service.antSettings,
+                builder: (context, _) => StreamBuilder(
+                  stream: widget.service.snapshots,
+                  builder: (context, _) => ListenableBuilder(
+                    listenable: widget.settings,
+                    builder: (context, _) => ListView(
+                      padding: const EdgeInsets.only(bottom: 24),
+                      children: _allSettings(context).where(matches).toList(),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
+    final alertTitles = [
+      'alerts',
+      'thresholds',
+      'charge-alerts',
+      'notifications',
+    ];
+    return [
+      ...all.where((w) => section(w, ['appearance'])),
+      if (widget.onOpenSystem != null) ...all.whereType<Padding>(),
+      category(
+        (t) => t.packsTitle,
+        Icons.battery_charging_full_outlined,
+        (w) => w is PacksCard || w is HandsFreeCard,
+      ),
+      category(
+        (t) => t.settingsSectionRides,
+        Icons.two_wheeler_outlined,
+        (w) => section(w, ['rides', 'link']),
+      ),
+      category(
+        (t) => t.alertsSectionTitle,
+        Icons.notifications_outlined,
+        (w) => section(w, alertTitles),
+      ),
+      category(
+        (t) => t.inspectionsTitle,
+        Icons.fact_check_outlined,
+        (w) =>
+            section(w, ['inspections']) ||
+            w is ProGate && w.child is WorkshopBrandingCard,
+      ),
+      category(
+        (t) => t.backupTitle,
+        Icons.backup_outlined,
+        (w) => w is ProGate && w.child is BackupCard,
+      ),
+      category(
+        (t) => t.updateTitle,
+        Icons.system_update_outlined,
+        (w) => w is UpdateCard,
+      ),
+      category(
+        (t) => t.licenseTitle,
+        Icons.verified_outlined,
+        (w) => w is LicenseCard,
+      ),
+      category(
+        (t) => t.settingsSectionApp,
+        Icons.tune_outlined,
+        (w) => section(w, ['app']),
+      ),
+      if (bmsWritesShipped)
+        category(
+          (t) => t.settingsSectionBmsWrites,
+          Icons.admin_panel_settings_outlined,
+          (w) => section(w, ['writes']),
+        ),
+    ];
   }
 
   Future<bool> _confirmBmsWrites(AppL10n t) async {

@@ -10,6 +10,7 @@ import 'trip_grade_rows.dart';
 import 'trip_learned_section.dart';
 import 'trip_summary_view.dart';
 import 'instruments.dart';
+import 'cockpit.dart';
 import 'energy_source_label.dart';
 
 /// Opens the end-of-ride summary.
@@ -95,25 +96,42 @@ class _TripSummarySheetState extends State<TripSummarySheet> {
           Section(
             title: t.tripTitle,
             children: [
-              InfoRow(t.tripMoving, _long(view.movingDuration)),
-              InfoRow(t.tripElapsed, _long(view.totalDuration)),
-              InfoRow(
-                t.tripStopped,
-                _long(view.totalDuration - view.movingDuration),
+              TelemetryStrip(
+                padding: const EdgeInsets.only(top: 12),
+                size: 28,
+                items: [
+                  TelemetryDatum(t.tripMoving, _long(view.movingDuration)),
+                  TelemetryDatum(t.tripElapsed, _long(view.totalDuration)),
+                  TelemetryDatum(t.tripStopped, _long(view.stoppedDuration)),
+                ],
               ),
-              InfoRow(
-                t.tripMaxSpeed,
-                '${view.maxSpeedKmh.toStringAsFixed(0)} km/h',
-              ),
-              InfoRow(
-                t.tripAvgSpeed,
-                '${view.averageSpeedKmh.toStringAsFixed(0)} km/h',
+              TelemetryStrip(
+                padding: const EdgeInsets.only(top: 14),
+                size: 30,
+                items: [
+                  TelemetryDatum(
+                    t.tripMaxSpeed,
+                    view.maxSpeedKmh.toStringAsFixed(0),
+                    unit: 'km/h',
+                  ),
+                  TelemetryDatum(
+                    t.tripAvgSpeed,
+                    view.averageSpeedKmh.toStringAsFixed(0),
+                    unit: 'km/h',
+                  ),
+                ],
               ),
             ],
           ),
           Section(
             title: t.tripPackDuring,
             children: [
+              ChargeJourney(
+                startLabel: t.tripChargeStart,
+                endLabel: t.tripChargeEnd,
+                start: view.startSoc.toStringAsFixed(0),
+                end: view.endSoc.toStringAsFixed(0),
+              ),
               InfoRow(
                 t.tripEnergyOut,
                 view.energyMeasured

@@ -4,6 +4,8 @@ import '../../../l10n/app_localizations.dart';
 import '../../data/database.dart';
 import '../../metrics/grade_profile.dart';
 import 'common.dart';
+import 'cockpit.dart';
+import '../theme.dart';
 
 /// How far the ride went uphill, along the flat, and downhill.
 ///
@@ -67,44 +69,76 @@ class TripGradeRows extends StatelessWidget {
     String km(double? v) => v == null ? '--' : '${v.toStringAsFixed(1)} km';
     final dim = profile == null;
     if (asTiles) {
-      final items = [
-        MetricTile(
-          label: '↑ ${t.tripUphill}',
-          value: profile?.uphillKm.toStringAsFixed(1) ?? '--',
-          unit: 'km',
-        ),
-        MetricTile(
-          label: '→ ${t.tripFlat}',
-          value: profile?.flatKm.toStringAsFixed(1) ?? '--',
-          unit: 'km',
-        ),
-        MetricTile(
-          label: '↓ ${t.tripDownhill}',
-          value: profile?.downhillKm.toStringAsFixed(1) ?? '--',
-          unit: 'km',
-        ),
+      final distances = [
+        profile?.uphillKm,
+        profile?.flatKm,
+        profile?.downhillKm,
       ];
-      return MediaQuery.textScalerOf(context).scale(16) > 23
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                items[0],
-                const SizedBox(height: 8),
-                items[1],
-                const SizedBox(height: 8),
-                items[2],
-              ],
-            )
-          : Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: items[0]),
-                const SizedBox(width: 6),
-                Expanded(child: items[1]),
-                const SizedBox(width: 6),
-                Expanded(child: items[2]),
-              ],
-            );
+      final colors = [
+        context.colors.good,
+        context.colors.textSecondary,
+        context.colors.cool,
+      ];
+      final total = distances.fold<double>(
+        0,
+        (sum, value) => sum + (value ?? 0),
+      );
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TelemetryStrip(
+            padding: const EdgeInsets.only(top: 12),
+            size: 34,
+            items: [
+              TelemetryDatum(
+                '↑ ${t.tripUphill}',
+                distances[0]?.toStringAsFixed(1) ?? '--',
+                unit: 'km',
+                color: colors[0],
+              ),
+              TelemetryDatum(
+                '→ ${t.tripFlat}',
+                distances[1]?.toStringAsFixed(1) ?? '--',
+                unit: 'km',
+                color: colors[1],
+              ),
+              TelemetryDatum(
+                '↓ ${t.tripDownhill}',
+                distances[2]?.toStringAsFixed(1) ?? '--',
+                unit: 'km',
+                color: colors[2],
+              ),
+            ],
+          ),
+          if (total > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 10, bottom: 6),
+              child: ExcludeSemantics(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(2),
+                  child: SizedBox(
+                    height: 6,
+                    child: Row(
+                      children: [
+                        for (var i = 0; i < distances.length; i++)
+                          if ((distances[i] ?? 0) > 0)
+                            Expanded(
+                              flex: ((distances[i]! / total) * 10000)
+                                  .round()
+                                  .clamp(1, 10000),
+                              child: ColoredBox(
+                                color: colors[i],
+                                child: const SizedBox.expand(),
+                              ),
+                            ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      );
     }
     return Column(
       children: [

@@ -241,6 +241,7 @@ class Section extends StatelessWidget {
     required this.children,
     this.trailing,
     this.intro,
+    this.introAsHelp = false,
     this.accent,
     super.key,
   });
@@ -249,19 +250,15 @@ class Section extends StatelessWidget {
   final List<Widget> children;
   final Widget? trailing;
   final String? intro;
+  final bool introAsHelp;
   final Color? accent;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: Container(
-        decoration: BoxDecoration(
-          color: context.colors.surfaceRaised,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: context.colors.hairline),
-        ),
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(2, 14, 2, 6),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -270,10 +267,34 @@ class Section extends StatelessWidget {
                 Expanded(
                   child: Caption(title, color: accent ?? context.colors.good),
                 ),
+                if (introAsHelp && intro != null)
+                  IconButton(
+                    tooltip: MaterialLocalizations.of(
+                      context,
+                    ).moreButtonTooltip,
+                    icon: const Icon(Icons.info_outline, size: 18),
+                    onPressed: () => showDialog<void>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: Text(title),
+                        content: SingleChildScrollView(child: Text(intro!)),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: Text(
+                              MaterialLocalizations.of(
+                                context,
+                              ).closeButtonLabel,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ?trailing,
               ],
             ),
-            if (intro != null) ...[
+            if (intro != null && !introAsHelp) ...[
               const SizedBox(height: 8),
               Text(
                 intro!,
@@ -316,13 +337,20 @@ class StatusBand extends StatelessWidget {
     final colour = AppTheme.resolve(context, health.color);
     final band = Container(
       width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       decoration: BoxDecoration(
-        color: colour.withValues(alpha: 0.12),
+        color: health == PackHealth.good
+            ? Colors.transparent
+            : colour.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: colour.withValues(alpha: 0.45)),
+        border: health == PackHealth.good
+            ? null
+            : Border.all(color: colour.withValues(alpha: 0.45)),
       ),
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      padding: EdgeInsets.symmetric(
+        horizontal: health == PackHealth.good ? 2 : 14,
+        vertical: 12,
+      ),
       child: Row(
         children: [
           Icon(health.icon, size: 18, color: colour),
@@ -659,12 +687,10 @@ class StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 11, 10, 12),
       decoration: BoxDecoration(
-        color: context.colors.surfaceRaised,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: emphasis && color != null
-              ? tone.withValues(alpha: 0.45)
-              : context.colors.hairline,
+        border: Border(
+          bottom: BorderSide(
+            color: emphasis && color != null ? tone : context.colors.hairline,
+          ),
         ),
       ),
       child: Column(

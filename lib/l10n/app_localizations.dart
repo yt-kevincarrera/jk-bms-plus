@@ -2053,6 +2053,24 @@ abstract class AppL10n {
   /// **'Recuperada'**
   String get tripEnergyIn;
 
+  /// No description provided for @packTemperature.
+  ///
+  /// In es, this message translates to:
+  /// **'Temperatura'**
+  String get packTemperature;
+
+  /// No description provided for @tripChargeStart.
+  ///
+  /// In es, this message translates to:
+  /// **'Al salir'**
+  String get tripChargeStart;
+
+  /// No description provided for @tripChargeEnd.
+  ///
+  /// In es, this message translates to:
+  /// **'Al llegar'**
+  String get tripChargeEnd;
+
   /// No description provided for @tripSocUsed.
   ///
   /// In es, this message translates to:
