@@ -139,38 +139,34 @@ void main() {
     }))!;
     expect(service.activeDevice, isNotNull);
 
-    Future<bool> hintShown() async {
-      final license = await unlockedLicense(tester);
-      await tester.pumpWidget(
-        harness(
-          license,
-          AppSettingsScreen(
-            service: service,
-            settings: AppSettings(),
-            localeController: LocaleController(),
-            updateService: UpdateService(
-              currentVersion: const AppVersion(2, 29, 1),
-            ),
+    final license = await unlockedLicense(tester);
+    await tester.pumpWidget(
+      harness(
+        license,
+        AppSettingsScreen(
+          service: service,
+          settings: AppSettings(),
+          localeController: LocaleController(),
+          updateService: UpdateService(
+            currentVersion: const AppVersion(2, 32, 0),
           ),
         ),
-      );
-      await tester.pump();
-      final list = find.byType(Scrollable).first;
-      for (var i = 0; i < 40; i++) {
-        if (find.text(t.alertNearLimitUnavailable).evaluate().isNotEmpty) {
-          return true;
-        }
-        await tester.drag(list, const Offset(0, -400));
-        await tester.pump();
-      }
-      return false;
-    }
-
-    expect(await hintShown(), isTrue);
+      ),
+    );
+    await tester.pump();
+    await tester.scrollUntilVisible(find.text(t.alertsSectionTitle), 200);
+    await tester.tap(find.text(t.alertsSectionTitle));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text(t.alertNearLimitUnavailable),
+      200,
+    );
+    expect(find.text(t.alertNearLimitUnavailable), findsOneWidget);
     await tester.runAsync(
       () => link.deliver(settingReply(AntSetting.dischargeOcp, 1200)),
     );
-    expect(await hintShown(), isFalse);
+    await tester.pumpAndSettle();
+    expect(find.text(t.alertNearLimitUnavailable), findsNothing);
     await tester.runAsync(() async {
       await service.dispose();
       await repo.dispose();

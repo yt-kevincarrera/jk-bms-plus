@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../theme.dart';
 import 'common.dart';
+import 'cockpit.dart';
 
 /// One segment is five percentage points, including a partly filled segment.
 class ChargeSegments extends StatelessWidget {
@@ -87,58 +88,72 @@ class RangeInstrument extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.symmetric(horizontal: 16),
-    child: Container(
-      decoration: BoxDecoration(
-        color: context.colors.surfaceRaised,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: context.colors.hairline),
-      ),
-      padding: const EdgeInsets.all(17),
+    child: CockpitPanel(
       child: LayoutBuilder(
         builder: (context, constraints) {
           final stack =
               constraints.maxWidth < 260 ||
               MediaQuery.textScalerOf(context).scale(16) > 23;
-          final charge = Readout(
-            label: socLabel,
-            value: soc.toStringAsFixed(0),
-            unit: '%',
-            size: 36,
-            color: context.colors.good,
-          );
-          final range = Readout(
-            label: rangeLabel,
-            value: rangeValue,
+          final range = InstrumentReading(
+            rangeValue,
             unit: 'km',
-            size: 84,
+            size: stack ? 100 : 130,
+          );
+          final charge = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Caption(socLabel),
+              const SizedBox(height: 6),
+              InstrumentReading(
+                soc.toStringAsFixed(0),
+                unit: '%',
+                size: 38,
+                color: context.colors.good,
+              ),
+            ],
           );
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Row(
+                children: [
+                  Expanded(child: Caption(rangeLabel)),
+                  const SportSignature(),
+                ],
+              ),
+              const SizedBox(height: 18),
+              ChargeSegments(soc: soc, label: socLabel),
+              const SizedBox(height: 12),
               if (stack) ...[
                 range,
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 charge,
               ] else
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(flex: 3, child: range),
-                    const SizedBox(width: 12),
-                    Expanded(flex: 2, child: charge),
+                    Container(
+                      width: 1,
+                      height: 64,
+                      margin: const EdgeInsets.symmetric(horizontal: 14),
+                      color: context.colors.hairline,
+                    ),
+                    Expanded(child: charge),
                   ],
                 ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 8),
               Text(
                 band,
                 style: TextStyle(
                   fontSize: 13,
+                  height: 1.4,
                   color: context.colors.textSecondary,
                 ),
               ),
-              const SizedBox(height: 14),
-              ChargeSegments(soc: soc, label: socLabel),
-              const SizedBox(height: 11),
+              const SizedBox(height: 16),
+              Divider(height: 1, color: context.colors.hairline),
+              const SizedBox(height: 12),
               Text(
                 capacity,
                 style: TextStyle(
@@ -181,17 +196,26 @@ class TripInstruments extends StatelessWidget {
       builder: (context, constraints) {
         final stack = MediaQuery.textScalerOf(context).scale(16) > 23;
         final metrics = [
-          MetricTile(
-            label: distanceLabel,
-            value: distance,
-            unit: 'km',
-            size: 52,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Caption(distanceLabel),
+              const SizedBox(height: 8),
+              InstrumentReading(distance, unit: 'km', size: 86),
+            ],
           ),
-          MetricTile(
-            label: consumptionLabel,
-            value: consumption,
-            unit: 'Wh/km',
-            size: 40,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Caption(consumptionLabel),
+              const SizedBox(height: 8),
+              InstrumentReading(
+                consumption,
+                unit: 'Wh/km',
+                size: 34,
+                color: context.colors.good,
+              ),
+            ],
           ),
         ];
         return stack
@@ -202,9 +226,9 @@ class TripInstruments extends StatelessWidget {
             : Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(child: metrics[0]),
+                  Expanded(flex: 3, child: metrics[0]),
                   const SizedBox(width: 10),
-                  Expanded(child: metrics[1]),
+                  Expanded(flex: 2, child: metrics[1]),
                 ],
               );
       },

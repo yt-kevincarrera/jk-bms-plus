@@ -328,15 +328,19 @@ class CellTile extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 3),
-          Text(
-            voltage.toStringAsFixed(3),
-            style: TextStyle(
-              fontSize: 16,
-              height: 1.0,
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.4,
-              color: color,
-              fontFeatures: AppTheme.tabular,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              voltage.toStringAsFixed(3),
+              style: TextStyle(
+                fontSize: 16,
+                height: 1.0,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.4,
+                color: color,
+                fontFeatures: AppTheme.tabular,
+              ),
             ),
           ),
           const SizedBox(height: 6),

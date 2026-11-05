@@ -17,6 +17,7 @@ import 'widgets/energy_source_label.dart';
 import 'widgets/representative_question.dart';
 import 'widgets/trip_grade_rows.dart';
 import 'widgets/instruments.dart';
+import 'widgets/cockpit.dart';
 import 'widgets/trip_learned_section.dart';
 import 'widgets/trip_map.dart';
 import 'widgets/trip_summary_view.dart';
@@ -236,6 +237,12 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
             Section(
               title: t.tripPackDuring,
               children: [
+                ChargeJourney(
+                  startLabel: t.tripChargeStart,
+                  endLabel: t.tripChargeEnd,
+                  start: trip.startSoc.toStringAsFixed(0),
+                  end: trip.endSoc.toStringAsFixed(0),
+                ),
                 InfoRow(
                   t.tripEnergyOut,
                   measured

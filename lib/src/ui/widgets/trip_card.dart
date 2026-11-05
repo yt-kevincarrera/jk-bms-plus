@@ -8,6 +8,7 @@ import '../../metrics/trip_learning.dart';
 import '../theme.dart';
 import '../trip_detail_screen.dart';
 import 'pro_gate.dart';
+import 'cockpit.dart';
 import 'representative_question.dart';
 
 /// One stored ride, as a row.
@@ -103,86 +104,66 @@ class TripCard extends StatelessWidget {
               border: Border.all(color: context.colors.hairline),
             ),
             padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
                         _date(trip.startedAt),
                         style: TextStyle(
                           fontSize: 12,
+                          color: context.colors.textSecondary,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.north_east,
+                      size: 18,
+                      color: context.colors.good,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.end,
+                  spacing: 18,
+                  runSpacing: 8,
+                  children: [
+                    InstrumentReading(
+                      trip.distanceKm.toStringAsFixed(1),
+                      unit: 'km',
+                      size: 52,
+                    ),
+                    if (measured)
+                      InstrumentReading(
+                        whPerKm?.toStringAsFixed(0) ?? '--',
+                        unit: 'Wh/km',
+                        size: 30,
+                        color: context.colors.good,
+                      )
+                    else
+                      Text(
+                        t.tripNotMeasured,
+                        style: TextStyle(
+                          fontSize: 13,
                           color: context.colors.textFaint,
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: [
-                          Text(
-                            trip.distanceKm.toStringAsFixed(1),
-                            style: AppTheme.readout(24),
-                          ),
-                          const SizedBox(width: 3),
-                          Text(
-                            'km',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: context.colors.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          if (!measured)
-                            Text(
-                              t.tripNotMeasured,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: context.colors.textFaint,
-                              ),
-                            )
-                          else ...[
-                            Text(
-                              whPerKm == null
-                                  ? '--'
-                                  : whPerKm.toStringAsFixed(0),
-                              style: AppTheme.readout(24),
-                            ),
-                            const SizedBox(width: 3),
-                            Text(
-                              'Wh/km',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: context.colors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        '${_duration(trip.movingSeconds)} / '
-                        '${_duration(trip.totalSeconds)}  ·  '
-                        // No climb figure here any more. The uphill and
-                        // downhill distances that replaced it are worked out
-                        // from the track, and a list of cards is the one place
-                        // that cannot afford to read a thousand points per row
-                        // to fill in one line of small print.
-                        '${trip.maxSpeedKmh.toStringAsFixed(0)} km/h  ·  $soc',
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          color: context.colors.textSecondary,
-                          fontFeatures: AppTheme.tabular,
-                        ),
-                      ),
-                    ],
-                  ),
+                  ],
                 ),
-                Icon(
-                  Icons.chevron_right,
-                  size: 18,
-                  color: context.colors.textFaint,
+                const SizedBox(height: 12),
+                Divider(height: 1, color: context.colors.hairline),
+                const SizedBox(height: 10),
+                Text(
+                  '${_duration(trip.movingSeconds)} / ${_duration(trip.totalSeconds)}  ·  ${trip.maxSpeedKmh.toStringAsFixed(0)} km/h  ·  $soc',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: context.colors.textSecondary,
+                    fontFeatures: AppTheme.tabular,
+                  ),
                 ),
               ],
             ),

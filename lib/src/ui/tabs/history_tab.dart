@@ -13,6 +13,8 @@ import '../widgets/trip_card.dart';
 import '../trends_screen.dart';
 import '../trip_screen.dart';
 import '../widgets/common.dart';
+import '../widgets/cockpit.dart';
+import '../widgets/instruments.dart';
 import '../widgets/learning_why_card.dart';
 import '../license_scope.dart';
 
@@ -82,44 +84,40 @@ class HistoryTab extends StatelessWidget {
           padding: const EdgeInsets.only(top: 8, bottom: 28),
           children: [
             _StartTripButton(service: service, settings: settings),
-            // Right under the totals, which is where somebody notices that
-            // eight recorded rides have taught the estimate nothing and comes
-            // looking for a reason.
-            LearningWhyCard(
-              report: LearningReport.from(
-                trips,
-                learnedKm: service.rangeEstimator.learnedKm,
-              ),
-              t: t,
+            const SizedBox(height: 18),
+            TripInstruments(
+              distanceLabel: t.historyTotalDistance,
+              distance: totalKm.toStringAsFixed(1),
+              consumptionLabel: t.historyAverage,
+              consumption: learnKm < 0.5
+                  ? '--'
+                  : (learnWh / learnKm).toStringAsFixed(1),
             ),
-            Section(
-              title: t.historyTotals,
-              children: [
-                InfoRow(t.historyTotalTrips, '${finished.length}'),
-                InfoRow(
-                  t.historyTotalDistance,
-                  '${totalKm.toStringAsFixed(1)} km',
-                ),
-                InfoRow(
+            TelemetryStrip(
+              size: 28,
+              items: [
+                TelemetryDatum(t.historyTotalTrips, '${finished.length}'),
+                TelemetryDatum(
                   t.historyTotalEnergy,
-                  '${(totalWh / 1000).toStringAsFixed(2)} kWh',
-                ),
-                InfoRow(
-                  t.historyAverage,
-                  learnKm < 0.5
-                      ? '--'
-                      : '${(learnWh / learnKm).toStringAsFixed(1)} Wh/km',
-                  dim: learnKm < 0.5,
-                  hint: learning.length == finished.length
-                      ? null
-                      : t.historyAverageOf(
-                          '${learning.length}',
-                          '${finished.length}',
-                        ),
-                  last: true,
+                  (totalWh / 1000).toStringAsFixed(2),
+                  unit: 'kWh',
                 ),
               ],
             ),
+            if (learning.length != finished.length)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+                child: Text(
+                  t.historyAverageOf(
+                    '${learning.length}',
+                    '${finished.length}',
+                  ),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: context.colors.textSecondary,
+                  ),
+                ),
+              ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: OutlinedButton.icon(
@@ -146,6 +144,14 @@ class HistoryTab extends StatelessWidget {
                 learned: () => LearnedRange.ofService(service),
                 t: t,
               ),
+            // Keep the learning evidence available after the recorded rides.
+            LearningWhyCard(
+              report: LearningReport.from(
+                trips,
+                learnedKm: service.rangeEstimator.learnedKm,
+              ),
+              t: t,
+            ),
             if (hidden > 0)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
